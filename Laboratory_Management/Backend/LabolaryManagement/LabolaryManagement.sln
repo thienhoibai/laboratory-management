@@ -83,6 +83,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IAM.Migrations", "IAM.Migra
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IAM.Presentation", "IAM.Presentation\IAM.Presentation.csproj", "{5AC0C59C-E1FD-4FA4-A558-EC05360396C2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Persistence", "Persistence\Persistence.csproj", "{ECF39E0D-D9B6-4DF9-BCAF-6185B506D86C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -141,6 +143,10 @@ Global
 		{5AC0C59C-E1FD-4FA4-A558-EC05360396C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5AC0C59C-E1FD-4FA4-A558-EC05360396C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5AC0C59C-E1FD-4FA4-A558-EC05360396C2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ECF39E0D-D9B6-4DF9-BCAF-6185B506D86C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ECF39E0D-D9B6-4DF9-BCAF-6185B506D86C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ECF39E0D-D9B6-4DF9-BCAF-6185B506D86C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ECF39E0D-D9B6-4DF9-BCAF-6185B506D86C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -173,6 +179,7 @@ Global
 		{146149E8-4075-41B3-A143-3170B7573376} = {07EEA336-15EB-40E9-B044-A30FA8C93E8F}
 		{4ECA8CF0-D556-44B6-BECB-D181C81E5386} = {07EEA336-15EB-40E9-B044-A30FA8C93E8F}
 		{5AC0C59C-E1FD-4FA4-A558-EC05360396C2} = {07EEA336-15EB-40E9-B044-A30FA8C93E8F}
+		{ECF39E0D-D9B6-4DF9-BCAF-6185B506D86C} = {4D1DE8CA-1C5B-45D3-8B59-B56F054B62F4}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {34AF52F6-015E-4868-9FFC-BA436F03CB8A}
