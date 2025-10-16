@@ -1,12 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Contracts.Permissions
+﻿namespace Contracts.Permissions
 {
-    internal class PermissionCatalog
+    public static class PermissionCatalog
     {
+        public const string UsersRead = "users.read";
+        public const string UsersWrite = "users.write";
+        public const string RolesRead = "roles.read";
+        public const string RolesWrite = "roles.write";
+        public const string AuditRead = "audit.read";
     }
 }
