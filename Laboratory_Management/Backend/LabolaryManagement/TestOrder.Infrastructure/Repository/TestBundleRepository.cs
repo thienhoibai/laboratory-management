@@ -33,5 +33,14 @@ namespace TestOrder.Infrastructure.Repository
 
             await _context.SaveChangesAsync();
         }
+        public async Task DeleteBundleAsync(int id)
+        {
+            var bundle = await _context.TestBundles.FirstOrDefaultAsync(b => b.BundleId == id);
+            if (bundle == null)
+                throw new KeyNotFoundException($"Bundle with id {id} not found.");
+
+            _context.TestBundles.Remove(bundle);
+            await _context.SaveChangesAsync();
+        }
     }
 }
