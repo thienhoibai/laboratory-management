@@ -16,16 +16,12 @@ namespace TestOrder.Presentation.Controllers
         {
             _service = service;
         }
-
-        // GET: api/TestBundle
         [HttpGet]
         public async Task<IActionResult> GetAllBundlesAsync()
         {
             var bundles = await _service.GetAllBundlesAsync();
             return Ok(bundles);
         }
-
-        // GET: api/TestBundle/{id}
         [HttpGet("{id}")]
         public async Task<IActionResult> GetByIdAsync(int id)
         {
@@ -33,20 +29,22 @@ namespace TestOrder.Presentation.Controllers
             if (bundle == null) return NotFound();
             return Ok(bundle);
         }
-
-        // POST: api/TestBundle
         [HttpPost]
         public async Task<IActionResult> AddBundleAsync([FromBody] TestBundle bundle)
         {
             await _service.AddBundleAsync(bundle);
             return CreatedAtAction(nameof(GetByIdAsync), new { id = bundle.BundleId }, bundle);
         }
-
-        // PUT: api/TestBundle/{id}
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateBundleAsync(int id, [FromBody] UpdateBundleDTO model)
         {
             await _service.UpdateBundleAsync(id, model.BundleName, model.Description, model.Price);
+            return NoContent();
+        }
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteBundleAsync(int id)
+        {
+            await _service.DeleteBundleAsync(id);
             return NoContent();
         }
     }

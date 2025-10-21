@@ -38,5 +38,9 @@ namespace TestOrder.Application.Services
         {
             return await _repository.GetActiveBundlesAsync();
         }
+        public async Task DeleteBundleAsync(int id)
+        {
+            await _repository.DeleteBundleAsync(id);
+        }
     }
 }
