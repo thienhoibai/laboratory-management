@@ -1,3 +1,9 @@
+﻿
+using Microsoft.EntityFrameworkCore;
+using TestOrder.Application.Services;
+using TestOrder.Infrastructure.Base;
+using TestOrder.Infrastructure.Data;
+using TestOrder.Infrastructure.Repository;
 
 namespace TestOrder.Presentation
 {
@@ -11,6 +17,14 @@ namespace TestOrder.Presentation
 
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+            builder.Services.AddDbContext<TestOrderDBContext>(options =>
+            options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+            builder.Services.AddScoped(typeof(GenericRepository<>));
+            builder.Services.AddScoped<TestCatalogRepository>();
+            builder.Services.AddScoped<TestCatalogService>();
+            builder.Services.AddScoped<TestBundleRepository>();
+            builder.Services.AddScoped<TestBundleService>();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 

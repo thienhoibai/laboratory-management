@@ -9,9 +9,7 @@ namespace TestOrder.Infrastructure.Base
 {
     public class GenericRepository<T> where T : class
     {
-
         protected readonly TestOrderDBContext _context;
-
         private const int PageSize = 10;
 
         public GenericRepository(TestOrderDBContext context)
@@ -19,14 +17,8 @@ namespace TestOrder.Infrastructure.Base
             _context = context;
         }
 
-        public GenericRepository()
-        {
-            _context ??= new TestOrderDBContext();
-        }
-
         public Task<List<T>> GetAllPagedAsync(int pageNumber)
         {
-            
             return Task.Run(() => _context.Set<T>()
                 .Skip((pageNumber - 1) * PageSize)
                 .Take(PageSize)
@@ -69,7 +61,5 @@ namespace TestOrder.Infrastructure.Base
                 _context.SaveChanges();
             });
         }
-
-
     }
 }
