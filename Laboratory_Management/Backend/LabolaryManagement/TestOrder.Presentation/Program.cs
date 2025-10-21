@@ -23,6 +23,8 @@ namespace TestOrder.Presentation
             builder.Services.AddScoped(typeof(GenericRepository<>));
             builder.Services.AddScoped<TestCatalogRepository>();
             builder.Services.AddScoped<TestCatalogService>();
+            builder.Services.AddScoped<TestBundleRepository>();
+            builder.Services.AddScoped<TestBundleService>();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 

@@ -29,7 +29,6 @@ namespace TestOrder.Application.Services
             await _repository.AddAsync(catalog);
         }
 
-        // ✅ Update chỉ Description & Price
         public async Task UpdateCatalogAsync(int id, string description, double price)
         {
             await _repository.UpdateCatalogAsync(id, description, price);

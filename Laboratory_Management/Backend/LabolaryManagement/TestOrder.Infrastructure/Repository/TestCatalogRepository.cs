@@ -21,7 +21,6 @@ namespace TestOrder.Infrastructure.Repository
                 .ToListAsync();
         }
 
-        // ✅ Chỉ update Description & Price
         public async Task UpdateCatalogAsync(int id, string description, double price)
         {
             var catalog = await _context.TestCatalogs.FirstOrDefaultAsync(c => c.CatalogId == id);
