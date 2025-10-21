@@ -17,6 +17,10 @@ namespace TestOrder.Infrastructure.Base
             _context = context;
         }
 
+        public GenericRepository()
+        {
+        }
+
         public Task<List<T>> GetAllPagedAsync(int pageNumber)
         {
             return Task.Run(() => _context.Set<T>()
