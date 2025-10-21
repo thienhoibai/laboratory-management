@@ -1,0 +1,117 @@
+.booking-header {
+  margin-bottom: 40px;
+}
+
+.booking-title-section {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.booking-title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #1f2937;
+  margin: 0 0 12px 0;
+  font-family: 'Geist', 'Inter', Arial, sans-serif;
+}
+
+.booking-subtitle {
+  font-size: 1.125rem;
+  color: #6b7280;
+  margin: 0;
+  font-weight: 400;
+  font-family: 'Geist', 'Inter', Arial, sans-serif;
+}
+
+.booking-steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+.step-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e5e7eb;
+  transition: all 0.3s ease;
+}
+
+.step.active .step-circle {
+  background: #2563eb;
+}
+
+.step-number {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #6b7280;
+  transition: color 0.3s ease;
+}
+
+.step.active .step-number {
+  color: #fff;
+}
+
+.step-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6b7280;
+  text-align: center;
+  transition: color 0.3s ease;
+}
+
+.step.active .step-label {
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.step-arrow {
+  display: flex;
+  align-items: center;
+  color: #d1d5db;
+  margin: 0 8px;
+}
+
+@media (max-width: 768px) {
+  .booking-title {
+    font-size: 2rem;
+  }
+  
+  .booking-subtitle {
+    font-size: 1rem;
+  }
+  
+  .booking-steps {
+    gap: 4px;
+  }
+  
+  .step-circle {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .step-number {
+    font-size: 0.875rem;
+  }
+  
+  .step-label {
+    font-size: 0.75rem;
+  }
+  
+  .step-arrow {
+    margin: 0 4px;
+  }
+}

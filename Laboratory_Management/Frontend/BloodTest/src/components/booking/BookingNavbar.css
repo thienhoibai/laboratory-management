@@ -1,0 +1,184 @@
+.booking-navbar {
+  width: 100%;
+  background: #fff;
+  border-bottom: 1.5px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 32px;
+  font-family: 'Geist', Arial, sans-serif;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  min-height: 56px;
+  box-sizing: border-box;
+  box-shadow: 0 2px 8px rgba(59,130,246,0.06);
+}
+
+.booking-navbar-inner {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.booking-navbar-logo {
+  display: flex;
+  align-items: center;
+  font-size: 1.45rem;
+  font-weight: 600;
+  color: #2563eb;
+  gap: 8px;
+}
+
+.booking-navbar-logo-icon {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(59,130,246,0.2);
+}
+
+.booking-navbar-logo-img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+.booking-navbar-logo-text {
+  font-weight: 600;
+  color: #2563eb;
+  letter-spacing: -1px;
+}
+
+.booking-navbar-menu {
+  display: flex;
+  gap: 32px;
+  margin-left: 28px;
+  align-items: center;
+}
+
+.booking-navbar-link {
+  color: #6b7280;
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 1rem;
+  padding: 10px 0 14px 0;
+  border-bottom: 2px solid transparent;
+  transition: border 0.2s, color 0.2s;
+  background: none;
+  display: inline-block;
+}
+
+.booking-navbar-link.active,
+.booking-navbar-link:hover {
+  color: #2563eb;
+  border-bottom: 3px solid #2563eb;
+  font-weight: 600;
+}
+
+.booking-navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.booking-navbar-login {
+  color: #374151;
+  font-weight: 600;
+  font-family: 'Geist', 'Inter', Arial, sans-serif;
+  margin-right: 6px;
+  text-decoration: none;
+  background: none;
+  border: none;
+  font-size: 1rem;
+  transition: color 0.2s;
+  font-family: 'Geist', 'Inter', Arial, sans-serif;
+}
+
+.booking-navbar-login:hover {
+  color: #2563eb;
+  font-family: 'Geist', 'Inter', Arial, sans-serif;
+}
+
+.booking-navbar-register {
+  background: #ffffff;
+  color: #2563eb;
+  border-radius: 12px;
+  padding: 8px 22px;
+  font-weight: 600;
+  font-family: 'Geist', 'Inter', Arial, sans-serif;
+  text-decoration: none;
+  font-size: 0.98rem;
+  transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+  border: 1.5px solid #2563eb;
+  box-shadow: 0 2px 8px 0 rgba(59,130,246,0.06);
+  display: inline-block;
+  font-family: 'Geist', 'Inter', Arial, sans-serif;
+}
+
+.booking-navbar-register:hover {
+  background: rgba(37, 99, 235, 0.06);
+  color: #2563eb;
+  border-color: #1d4ed8;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(59,130,246,0.18);
+  font-family: 'Geist', 'Inter', Arial, sans-serif;
+}
+
+.booking-navbar-register:active {
+  background: rgba(37, 99, 235, 0.12);
+  color: #2563eb;
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(59,130,246,0.14);
+  font-family: 'Geist', 'Inter', Arial, sans-serif;
+}
+
+.booking-navbar-user {
+  color: #374151;
+  font-weight: 500;
+  font-family: 'Geist', 'Inter', Arial, sans-serif;
+  margin-right: 8px;
+}
+
+.booking-navbar-logout {
+  background: #ef4444;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+  font-family: 'Geist', 'Inter', Arial, sans-serif;
+}
+
+.booking-navbar-logout:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 900px) {
+  .booking-navbar {
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px 8px 0 8px;
+    min-height: unset;
+  }
+  
+  .booking-navbar-menu {
+    gap: 16px;
+    margin-left: 0;
+    font-family: 'Geist', 'Inter', Arial, sans-serif;
+  }
+  
+  .booking-navbar-actions {
+    gap: 8px;
+    font-family: 'Geist', 'Inter', Arial, sans-serif;
+  }
+}
