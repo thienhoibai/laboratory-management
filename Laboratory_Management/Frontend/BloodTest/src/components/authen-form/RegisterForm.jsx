@@ -2,13 +2,30 @@ import React from "react";
 import { Button, Form, Input, Card } from "antd";
 import { Link, useNavigate } from "react-router-dom";
 import "./register.css";
+import api from "../../configs/axios";
+import { toast } from "react-toastify";
 
 function RegisterForm() {
   const navigate = useNavigate();
 
   const onFinish = async (values) => {
-    console.log("Đăng ký:", values);
-    navigate("/login");
+    console.log("Success:", values);
+    try {
+      const payload = {
+        username: values.UserName,
+        email: values.email,
+        password: values.password,
+        confirmPassword: values.confirmPassword,
+        fullName: values.fullname,
+      };
+
+      await api.post("Auth/register", payload);
+      toast.success("Đăng ký thành công!");
+      navigate("/login");
+    } catch (error) {
+      console.error("Registration error:", error.message);
+      toast.error("Đăng ký không thành công, vui lòng thử lại sau!");
+    }
   };
 
   return (
