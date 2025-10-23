@@ -1,4 +1,4 @@
-using IAM.Application.Auth;
+﻿using IAM.Application.Auth;
 using IAM.Application.Auth.DTOs;
 using IAM.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -12,20 +12,23 @@ using IAM.Application.Users;
 using Common.Web.Extensions;
 using Messaging.Email;
 using Messaging.Notifications;
+using IAM.Presentation.Grpc;
 
+AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 var builder = WebApplication.CreateBuilder(args);
 
 // Config
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
 builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
-
+builder.Services.AddHealthChecks(); 
 // Email & Notifications
 builder.Services.AddSingleton<IEmailSender, SmtpEmailSender>();
 builder.Services.AddSingleton<IEmailTemplateRenderer, FileEmailTemplateRenderer>();
 builder.Services.AddSingleton<INotificationPublisher, LoggingNotificationPublisher>();
 
+
 // DbContext
-var conn = builder.Configuration.GetConnectionString("LabIAM") ?? "Server=localhost;Database=LabIAM;Trusted_Connection=True;TrustServerCertificate=True";
+var conn = builder.Configuration.GetConnectionString("LabIAM") ?? builder.Configuration["ConnectionStrings:LabIAM"] ?? "Server=localhost;Database=LabIAM;Trusted_Connection=True;TrustServerCertificate=True";
 builder.Services.AddDbContext<IamDbContext>(opt =>
 {
     opt.UseSqlServer(conn);
@@ -90,13 +93,31 @@ builder.Services.AddSwaggerGen(c =>
     c.AddSecurityRequirement(securityRequirement);
 });
 
+// gRPC + reflection for tooling
+builder.Services.AddGrpc();
+builder.Services.AddGrpcReflection();
+
 var app = builder.Build();
 
 app.UseMiddleware<ProblemDetailsMiddleware>();
 app.UseSwagger();
 app.UseSwaggerUI();
+
 app.UseAuthentication();
 app.UseAuthorization();
+
+// gRPC (chọn đúng lớp service của bạn)
+app.MapGrpcService<IamGrpcUserService>(); // hoặc UserService
+
+// Reflection chỉ bật khi dev
+if (app.Environment.IsDevelopment())
+    app.MapGrpcReflectionService();
+
+// Health & ping cho gateway
+app.MapGet("/", () => Results.Ok("IAM up"));
+app.MapHealthChecks("/healthz");
+
+// REST controllers
 app.MapControllers();
 
 app.Run();
