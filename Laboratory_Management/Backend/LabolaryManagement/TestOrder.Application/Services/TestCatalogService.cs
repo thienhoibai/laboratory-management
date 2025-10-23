@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using TestOrder.Application.DTOs;
 using TestOrder.Infrastructure.Models;
 using TestOrder.Infrastructure.Repository;
 
@@ -24,9 +25,14 @@ namespace TestOrder.Application.Services
             return await _repository.GetByIdAsync(id);
         }
 
-        public async Task AddCatalogAsync(TestCatalog catalog)
+        public async Task AddCatalogAsync(TestCatalogDTO catalog)
         {
-            await _repository.AddAsync(catalog);
+            var entity = new TestCatalog
+            {
+                TestName = catalog.TestName,
+                Description = catalog.Description,
+                Price = catalog.Price,
+            };
         }
 
         public async Task UpdateCatalogAsync(int id, string description, double price)
