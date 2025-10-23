@@ -3,30 +3,41 @@ import { Button, Checkbox, Form, Input, Card } from "antd";
 import "./login.css";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify"; // Import toast
-import { setUserData } from "../../utils/auth";
+import api from "../../configs/axios";
+
 const LoginForm = ({ errorMessage }) => {
   const navigate = useNavigate();
 
   const onFinish = async (values) => {
+    console.log("Đăng nhập:", values);
     try {
-      // Giả lập gọi API đăng nhập
-      // const response = await api.post('/login', values);
-      // const userData = response.data;
+      const response = await api.post("Auth/login", {
+        username: values.username,
+        password: values.password,
+      });
 
-      // Giả lập thành công
-      const userData = { email: values.email, fullname: "" };
-      localStorage.setItem("user", JSON.stringify(userData));
-      setUserData(userData);
-      // Hiển thị thông báo thành công
+      const data = response?.data || {};
+      if (data?.token) {
+        localStorage.setItem("token", data.token);
+      }
+      if (data?.refreshToken) {
+        localStorage.setItem("refreshToken", data.refreshToken);
+      }
+      localStorage.setItem("user", JSON.stringify(data));
+
       toast.success("Đăng nhập thành công!");
-
-      // Chờ một chút rồi chuyển trang để người dùng kịp thấy thông báo
-      setTimeout(() => {
-        navigate("/");
-      }, 1500);
+      navigate("/");
     } catch (error) {
-      // Hiển thị thông báo lỗi
-      toast.error(error.message);
+      const serverMsg =
+        (typeof error?.response?.data === "string" && error.response.data) ||
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        "";
+      toast.error(
+        typeof serverMsg === "string" && serverMsg.trim()
+          ? serverMsg
+          : "Tên đăng nhập hoặc mật khẩu không chính xác!"
+      );
     }
   };
 
@@ -94,14 +105,11 @@ const LoginForm = ({ errorMessage }) => {
               className="auth-login-form"
             >
               <Form.Item
-                label="Email"
-                name="email"
-                rules={[
-                  { required: true, message: "Vui lòng nhập email!" },
-                  { type: "email", message: "Email không hợp lệ!" },
-                ]}
+                label="Tên đăng nhập"
+                name="username"
+                rules={[{ required: true, message: "Vui lòng nhập tên đăng nhập!" }]}
               >
-                <Input placeholder="Nhập email của bạn" size="large" />
+                <Input placeholder="Nhập tên đăng nhập" size="large" />
               </Form.Item>
               <Form.Item
                 label="Mật khẩu"

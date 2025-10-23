@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { getUserData, removeUserData } from "../../utils/auth";
+import { getUserData, logoutUser } from "../../utils/auth";
 import "./Navbar.css";
 
 function Navbar() {
@@ -12,8 +12,8 @@ function Navbar() {
     setUser(userData);
   }, []);
 
-  const handleLogout = () => {
-    removeUserData();
+  const handleLogout = async () => {
+    await logoutUser();
     setUser(null);
     navigate("/login");
   };
