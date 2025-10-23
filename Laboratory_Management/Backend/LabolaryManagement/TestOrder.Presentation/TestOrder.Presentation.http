@@ -1,0 +1,6 @@
+@TestOrder.Presentation_HostAddress = http://localhost:5048
+
+GET {{TestOrder.Presentation_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
