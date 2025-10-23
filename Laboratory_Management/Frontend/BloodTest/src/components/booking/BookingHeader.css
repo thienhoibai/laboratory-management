@@ -12,7 +12,7 @@
   font-weight: 800;
   color: #1f2937;
   margin: 0 0 12px 0;
-  font-family: 'Geist', 'Inter', Arial, sans-serif;
+  font-family: "Geist", "Inter", Arial, sans-serif;
 }
 
 .booking-subtitle {
@@ -20,7 +20,7 @@
   color: #6b7280;
   margin: 0;
   font-weight: 400;
-  font-family: 'Geist', 'Inter', Arial, sans-serif;
+  font-family: "Geist", "Inter", Arial, sans-serif;
 }
 
 .booking-steps {
@@ -40,8 +40,8 @@
 }
 
 .step-circle {
-  width: 40px;
-  height: 40px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -89,28 +89,28 @@
   .booking-title {
     font-size: 2rem;
   }
-  
+
   .booking-subtitle {
     font-size: 1rem;
   }
-  
+
   .booking-steps {
     gap: 4px;
   }
-  
+
   .step-circle {
     width: 32px;
     height: 32px;
   }
-  
+
   .step-number {
     font-size: 0.875rem;
   }
-  
+
   .step-label {
     font-size: 0.75rem;
   }
-  
+
   .step-arrow {
     margin: 0 4px;
   }

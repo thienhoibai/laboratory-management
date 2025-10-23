@@ -6,13 +6,13 @@
   align-items: center;
   justify-content: space-between;
   padding: 4px 32px;
-  font-family: 'Geist', Arial, sans-serif;
+  font-family: "Geist", Arial, sans-serif;
   position: sticky;
   top: 0;
   z-index: 100;
   min-height: 56px;
   box-sizing: border-box;
-  box-shadow: 0 2px 8px rgba(59,130,246,0.06);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.06);
 }
 
 .booking-navbar-inner {
@@ -40,12 +40,11 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(59,130,246,0.2);
 }
 
 .booking-navbar-logo-img {
-  width: 18px;
-  height: 18px;
+  width: 24px;
+  height: 24px;
   object-fit: contain;
 }
 
@@ -90,19 +89,19 @@
 .booking-navbar-login {
   color: #374151;
   font-weight: 600;
-  font-family: 'Geist', 'Inter', Arial, sans-serif;
+  font-family: "Geist", "Inter", Arial, sans-serif;
   margin-right: 6px;
   text-decoration: none;
   background: none;
   border: none;
   font-size: 1rem;
   transition: color 0.2s;
-  font-family: 'Geist', 'Inter', Arial, sans-serif;
+  font-family: "Geist", "Inter", Arial, sans-serif;
 }
 
 .booking-navbar-login:hover {
   color: #2563eb;
-  font-family: 'Geist', 'Inter', Arial, sans-serif;
+  font-family: "Geist", "Inter", Arial, sans-serif;
 }
 
 .booking-navbar-register {
@@ -111,14 +110,15 @@
   border-radius: 12px;
   padding: 8px 22px;
   font-weight: 600;
-  font-family: 'Geist', 'Inter', Arial, sans-serif;
+  font-family: "Geist", "Inter", Arial, sans-serif;
   text-decoration: none;
   font-size: 0.98rem;
-  transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+  transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.2s,
+    box-shadow 0.2s;
   border: 1.5px solid #2563eb;
-  box-shadow: 0 2px 8px 0 rgba(59,130,246,0.06);
+  box-shadow: 0 2px 8px 0 rgba(59, 130, 246, 0.06);
   display: inline-block;
-  font-family: 'Geist', 'Inter', Arial, sans-serif;
+  font-family: "Geist", "Inter", Arial, sans-serif;
 }
 
 .booking-navbar-register:hover {
@@ -126,22 +126,22 @@
   color: #2563eb;
   border-color: #1d4ed8;
   transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(59,130,246,0.18);
-  font-family: 'Geist', 'Inter', Arial, sans-serif;
+  box-shadow: 0 6px 18px rgba(59, 130, 246, 0.18);
+  font-family: "Geist", "Inter", Arial, sans-serif;
 }
 
 .booking-navbar-register:active {
   background: rgba(37, 99, 235, 0.12);
   color: #2563eb;
   transform: translateY(0);
-  box-shadow: 0 2px 8px rgba(59,130,246,0.14);
-  font-family: 'Geist', 'Inter', Arial, sans-serif;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.14);
+  font-family: "Geist", "Inter", Arial, sans-serif;
 }
 
 .booking-navbar-user {
   color: #374151;
   font-weight: 500;
-  font-family: 'Geist', 'Inter', Arial, sans-serif;
+  font-family: "Geist", "Inter", Arial, sans-serif;
   margin-right: 8px;
 }
 
@@ -155,7 +155,7 @@
   font-size: 0.9rem;
   cursor: pointer;
   transition: background 0.2s, transform 0.2s;
-  font-family: 'Geist', 'Inter', Arial, sans-serif;
+  font-family: "Geist", "Inter", Arial, sans-serif;
 }
 
 .booking-navbar-logout:hover {
@@ -170,15 +170,15 @@
     padding: 10px 8px 0 8px;
     min-height: unset;
   }
-  
+
   .booking-navbar-menu {
     gap: 16px;
     margin-left: 0;
-    font-family: 'Geist', 'Inter', Arial, sans-serif;
+    font-family: "Geist", "Inter", Arial, sans-serif;
   }
-  
+
   .booking-navbar-actions {
     gap: 8px;
-    font-family: 'Geist', 'Inter', Arial, sans-serif;
+    font-family: "Geist", "Inter", Arial, sans-serif;
   }
 }

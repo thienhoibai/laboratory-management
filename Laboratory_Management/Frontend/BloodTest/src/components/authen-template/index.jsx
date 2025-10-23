@@ -2,17 +2,14 @@ import React from "react";
 import "./index.css";
 import LoginForm from "../authen-form/LoginForm";
 import RegisterForm from "../authen-form/RegisterForm";
-import { useNavigate } from "react-router-dom";
 // import mountainBg from "../../assets/images/login1.png";
 
 function AuthenTemplate({ isLogin }) {
-  const navigate = useNavigate();
-
   // Nếu là trang đăng nhập, sử dụng layout 2 cột mới
   if (isLogin) {
     return <LoginForm />;
   }
-  
+
   // Nếu là trang đăng ký, hiển thị layout 2 cột mới
   if (!isLogin) {
     return <RegisterForm />;
@@ -22,7 +19,7 @@ function AuthenTemplate({ isLogin }) {
   return (
     <div
       className="authen-template"
-    //   style={{ backgroundImage: `url(${mountainBg})` }}
+      //   style={{ backgroundImage: `url(${mountainBg})` }}
     >
       <div className="authen-template__form">
         <LoginForm />

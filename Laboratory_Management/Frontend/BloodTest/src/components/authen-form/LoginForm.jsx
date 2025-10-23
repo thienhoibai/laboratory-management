@@ -3,38 +3,30 @@ import { Button, Checkbox, Form, Input, Card } from "antd";
 import "./login.css";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify"; // Import toast
-import api from "../../configs/axios";
-
+import { setUserData } from "../../utils/auth";
 const LoginForm = ({ errorMessage }) => {
   const navigate = useNavigate();
 
   const onFinish = async (values) => {
-    console.log("Đăng nhập:", values);
     try {
-      const response = await api.post("Auth/login", {
-        username: values.username,
-        password: values.password,
-      });
+      // Giả lập gọi API đăng nhập
+      // const response = await api.post('/login', values);
+      // const userData = response.data;
 
-      const data = response?.data || {};
-      if (data?.token) {
-        localStorage.setItem("token", data.token);
-      }
-      localStorage.setItem("user", JSON.stringify(data));
-
+      // Giả lập thành công
+      const userData = { email: values.email, fullname: "" };
+      localStorage.setItem("user", JSON.stringify(userData));
+      setUserData(userData);
+      // Hiển thị thông báo thành công
       toast.success("Đăng nhập thành công!");
-      navigate("/");
+
+      // Chờ một chút rồi chuyển trang để người dùng kịp thấy thông báo
+      setTimeout(() => {
+        navigate("/");
+      }, 1500);
     } catch (error) {
-      const serverMsg =
-        (typeof error?.response?.data === "string" && error.response.data) ||
-        error?.response?.data?.message ||
-        error?.response?.data?.error ||
-        "";
-      toast.error(
-        typeof serverMsg === "string" && serverMsg.trim()
-          ? serverMsg
-          : "Tên đăng nhập hoặc mật khẩu không chính xác!"
-      );
+      // Hiển thị thông báo lỗi
+      toast.error(error.message);
     }
   };
 
@@ -102,11 +94,14 @@ const LoginForm = ({ errorMessage }) => {
               className="auth-login-form"
             >
               <Form.Item
-                label="Tên đăng nhập"
-                name="username"
-                rules={[{ required: true, message: "Vui lòng nhập tên đăng nhập!" }]}
+                label="Email"
+                name="email"
+                rules={[
+                  { required: true, message: "Vui lòng nhập email!" },
+                  { type: "email", message: "Email không hợp lệ!" },
+                ]}
               >
-                <Input placeholder="Nhập tên đăng nhập" size="large" />
+                <Input placeholder="Nhập email của bạn" size="large" />
               </Form.Item>
               <Form.Item
                 label="Mật khẩu"

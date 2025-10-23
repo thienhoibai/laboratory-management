@@ -1,11 +1,14 @@
+body {
+  overflow-x: hidden;
+}
 #root {
   width: 100vw;
   min-height: 100vh;
   margin: 0;
   padding: 0;
   text-align: initial;
-  box-sizing: border-box;       
-} 
+  box-sizing: border-box;
+}
 
 .logo {
   height: 6em;

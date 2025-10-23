@@ -1,30 +1,30 @@
 // Utility functions for authentication
 export const setAuthToken = (token) => {
-  localStorage.setItem('authToken', token);
+  localStorage.setItem("authToken", token);
 };
 
 export const getAuthToken = () => {
-  return localStorage.getItem('authToken');
+  return localStorage.getItem("authToken");
 };
 
 export const removeAuthToken = () => {
-  localStorage.removeItem('authToken');
+  localStorage.removeItem("authToken");
 };
 
 // User data functions
 export const setUserData = (userData) => {
-  localStorage.setItem('user', JSON.stringify(userData));
+  localStorage.setItem("user", JSON.stringify(userData));
   // Also set auth token for compatibility
-  setAuthToken('user-logged-in');
+  setAuthToken("user-logged-in");
 };
 
 export const getUserData = () => {
-  const userData = localStorage.getItem('user');
+  const userData = localStorage.getItem("user");
   return userData ? JSON.parse(userData) : null;
 };
 
 export const removeUserData = () => {
-  localStorage.removeItem('user');
+  localStorage.removeItem("user");
   removeAuthToken();
 };
 
@@ -47,7 +47,7 @@ export const demoLogin = () => {
     address: "123 Đường Lê Lợi, Quận 1, TP.HCM",
     idCard: "079085001234",
     healthInsurance: "BH-2024-001234",
-    registrationDate: "15 tháng 1, 2024"
+    registrationDate: "15 tháng 1, 2024",
   };
   setUserData(demoUser);
   window.location.reload(); // Reload to update login status
@@ -58,4 +58,3 @@ export const demoLogout = () => {
   removeUserData();
   window.location.reload(); // Reload to update login status
 };
-
