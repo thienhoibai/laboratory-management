@@ -6,11 +6,12 @@ import {
   FiEye,
   FiTrash2,
   FiChevronDown,
+  FiX,
 } from "react-icons/fi";
 import { Pagination } from "antd";
 import api from "../../../configs/axios.js";
 import { setAuthToken } from "../../../utils/auth.js";
-
+import { toast } from "react-toastify";
 const endPoint = "iam/api/Users";
 
 const getRoleClass = (role) => {
@@ -57,6 +58,24 @@ const UserManagementPage = () => {
   const [sortBy, setSortBy] = useState("UpdatedAt");
   const [sortDir, setSortDir] = useState("desc");
   const [searchDebounce, setSearchDebounce] = useState("");
+
+  // Modal states
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    username: "",
+    password: "",
+    confirmPassword: "",
+    roleId: "",
+  });
+  const [formErrors, setFormErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const roleMapping = {
+    Admin: 1,
+    Manager: 2,
+    Staff: 3,
+    Customer: 5,
+  };
 
   // Debounce search
   useEffect(() => {
@@ -174,6 +193,97 @@ const UserManagementPage = () => {
     }
   };
 
+  // Modal handlers
+  const handleOpenModal = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setFormData({
+      username: "",
+      password: "",
+      confirmPassword: "",
+      roleId: "",
+    });
+    setFormErrors({});
+  };
+
+  const handleFormChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+    if (formErrors[name]) {
+      setFormErrors((prev) => ({
+        ...prev,
+        [name]: "",
+      }));
+    }
+  };
+
+  const validateForm = () => {
+    const errors = {};
+
+    if (!formData.username.trim()) {
+      errors.username = "Tên đăng nhập là bắt buộc";
+    }
+
+    if (!formData.password) {
+      errors.password = "Mật khẩu là bắt buộc";
+    } else if (formData.password.length < 6) {
+      errors.password = "Mật khẩu phải có ít nhất 6 ký tự";
+    }
+
+    if (!formData.confirmPassword) {
+      errors.confirmPassword = "Vui lòng xác nhận mật khẩu";
+    } else if (formData.password !== formData.confirmPassword) {
+      errors.confirmPassword = "Mật khẩu xác nhận không khớp";
+    }
+
+    if (!formData.roleId) {
+      errors.roleId = "Vui lòng chọn vai trò";
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSubmitUser = async (e) => {
+    e.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const requestData = {
+        username: formData.username.trim(),
+        password: formData.password,
+        roleId: parseInt(formData.roleId),
+      };
+
+      const response = await api.post(endPoint, requestData);
+
+      if (response.status === 200 || response.status === 201) {
+        toast("Thêm tài khoản thành công!");
+        handleCloseModal();
+        fetchUsers();
+      }
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.errors?.[0] ||
+        "Có lỗi xảy ra khi thêm tài khoản";
+      toast.error(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <AdminLayout pageTitle="Users Management" breadcrumbs={breadcrumbs}>
       <div className="admin-content-card">
@@ -232,7 +342,7 @@ const UserManagementPage = () => {
             </div>
           </div>
 
-          <button className="admin-add-button">
+          <button className="admin-add-button" onClick={handleOpenModal}>
             <FiPlus /> Add User
           </button>
         </div>
@@ -250,9 +360,9 @@ const UserManagementPage = () => {
             <span className="sortable" onClick={() => handleSort("createdat")}>
               Ngày Tạo{getSortIcon("createdat")}
             </span>
-            <span className="sortable" onClick={() => handleSort("updatedat")}>
+            {/* <span className="sortable" onClick={() => handleSort("updatedat")}>
               Cập Nhật{getSortIcon("updatedat")}
-            </span>
+            </span> */}
             <span className="sortable" onClick={() => handleSort("status")}>
               Trạng Thái{getSortIcon("status")}
             </span>
@@ -264,16 +374,16 @@ const UserManagementPage = () => {
               <span>{user.email}</span>
               <span>
                 <div className={`admin-badge ${getRoleClass(user.role)}`}>
-                  {user.role}
+                  {user.roles}
                 </div>
               </span>
-              <span>{user.lastLogin || "N/A"}</span>
+              <span>{user.lastLoginAt || "N/A"}</span>
               <span>{new Date(user.createdAt).toLocaleDateString()}</span>
-              <span>
+              {/* <span>
                 {user.updatedAt
                   ? new Date(user.updatedAt).toLocaleDateString()
                   : "N/A"}
-              </span>
+              </span> */}
               <span>
                 <div
                   className={`admin-badge ${
@@ -326,6 +436,119 @@ const UserManagementPage = () => {
           />
         </div>
       </div>
+
+      {/* Add User Modal */}
+      {isModalOpen && (
+        <div className="modal-overlay" onClick={handleCloseModal}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Thêm Tài Khoản Mới</h2>
+              <button className="modal-close-btn" onClick={handleCloseModal}>
+                <FiX />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitUser} className="modal-form">
+              <div className="form-group">
+                <label htmlFor="username">
+                  Tên Đăng Nhập <span className="required">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="username"
+                  name="username"
+                  value={formData.username}
+                  onChange={handleFormChange}
+                  className={formErrors.username ? "input-error" : ""}
+                  placeholder="Nhập tên đăng nhập"
+                />
+                {formErrors.username && (
+                  <span className="error-message">{formErrors.username}</span>
+                )}
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="password">
+                  Mật Khẩu <span className="required">*</span>
+                </label>
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleFormChange}
+                  className={formErrors.password ? "input-error" : ""}
+                  placeholder="Nhập mật khẩu"
+                />
+                {formErrors.password && (
+                  <span className="error-message">{formErrors.password}</span>
+                )}
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="confirmPassword">
+                  Xác Nhận Mật Khẩu <span className="required">*</span>
+                </label>
+                <input
+                  type="password"
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleFormChange}
+                  className={formErrors.confirmPassword ? "input-error" : ""}
+                  placeholder="Nhập lại mật khẩu"
+                />
+                {formErrors.confirmPassword && (
+                  <span className="error-message">
+                    {formErrors.confirmPassword}
+                  </span>
+                )}
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="roleId">
+                  Vai Trò <span className="required">*</span>
+                </label>
+                <select
+                  id="roleId"
+                  name="roleId"
+                  value={formData.roleId}
+                  onChange={handleFormChange}
+                  className={formErrors.roleId ? "input-error" : ""}
+                >
+                  <option value="">Chọn vai trò</option>
+                  {Object.entries(roleMapping).map(([roleName, roleValue]) => (
+                    <option key={roleValue} value={roleValue}>
+                      {roleName}
+                    </option>
+                  ))}
+                </select>
+                {formErrors.roleId && (
+                  <span className="error-message">{formErrors.roleId}</span>
+                )}
+              </div>
+
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  className="btn-cancel"
+                  onClick={handleCloseModal}
+                  disabled={isSubmitting}
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  className="btn-submit"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Đang xử lý..." : "Thêm Tài Khoản"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   );
 };
