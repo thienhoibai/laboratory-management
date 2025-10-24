@@ -237,6 +237,7 @@ public class PatientService : IPatientService
         return OperationResult<PatientDetailDto>.Success(dto);
     }
 
+
     public async Task<(IReadOnlyList<PatientSummaryDto> Items, long Total)> ListAsync(int page, int pageSize, string? name, DateOnly? dob, bool? isDeleted, string? sortBy, string? sortDir, CancellationToken ct = default)
     {
         var q = _db.Patients.AsNoTracking().AsQueryable();

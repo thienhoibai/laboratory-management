@@ -5,11 +5,14 @@ import "./register.css";
 import api from "../../configs/axios";
 import { toast } from "react-toastify";
 
+const URL = "iam/api/Auth/register";
+
 function RegisterForm() {
   const navigate = useNavigate();
 
   const onFinish = async (values) => {
     console.log("Success:", values);
+
     try {
       const payload = {
         username: values.UserName,
@@ -19,9 +22,13 @@ function RegisterForm() {
         fullName: values.fullname,
       };
 
-      await api.post("Auth/register", payload);
-      toast.success("Đăng ký thành công!");
-      navigate("/login");
+      const response = await api.post(URL, payload);
+      if (response && response.status >= 200 && response.status < 300) {
+        toast.success("Đăng ký thành công!");
+        navigate("/login");
+      } else {
+        toast.error("Đăng ký không thành công!");
+      }
     } catch (error) {
       console.error("Registration error:", error.message);
       toast.error("Đăng ký không thành công, vui lòng thử lại sau!");
@@ -91,7 +98,11 @@ function RegisterForm() {
                   name="fullname"
                   rules={[{ required: true, message: "Vui lòng nhập họ tên!" }]}
                 >
-                  <Input placeholder="Nhập họ và tên" size="large" />
+                  <Input
+                    placeholder="Nhập họ và tên"
+                    size="large"
+                    className="placeholder"
+                  />
                 </Form.Item>
               </div>
               <div className="auth-register-form-item">
