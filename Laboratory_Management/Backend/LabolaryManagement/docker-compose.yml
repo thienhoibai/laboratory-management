@@ -29,6 +29,9 @@
       Jwt__SigningKey: "Jx6n2QvB5pTf8Kz3Wm9aS4Ld7Yh0Nr2Xu8Cj5Pk1Vg3Mz7Rb0Hq4Tn6Wy8Le2"
       Jwt__AccessTokenMinutes: "60"
       Jwt__RefreshTokenDays: "14"
+
+      Auth__Google__ClientId: "834593887103-av11ov3n9l5pp160ekmr68e844nq2kg2.apps.googleusercontent.com"
+
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -73,3 +76,4 @@
       - iam.api
       - patient.api
     ports: ["8080:8080"]
+     

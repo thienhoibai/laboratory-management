@@ -2,31 +2,42 @@ import React from "react";
 import { Button, Checkbox, Form, Input, Card } from "antd";
 import "./login.css";
 import { Link, useNavigate } from "react-router-dom";
-import { toast } from "react-toastify"; // Import toast
+import { toast } from "react-toastify";
 import api from "../../configs/axios";
+import { setUserData } from "../../utils/auth";
+import { GoogleLogin } from "@react-oauth/google";
+import { jwtDecode } from "jwt-decode";
 
 const LoginForm = ({ errorMessage }) => {
   const navigate = useNavigate();
 
+  // Xử lý login bằng username/password
   const onFinish = async (values) => {
-    console.log("Đăng nhập:", values);
     try {
-      const response = await api.post("Auth/login", {
+      const response = await api.post("iam/api/Auth/login", {
         username: values.username,
         password: values.password,
       });
 
-      const data = response?.data || {};
-      if (data?.token) {
-        localStorage.setItem("token", data.token);
-      }
-      if (data?.refreshToken) {
-        localStorage.setItem("refreshToken", data.refreshToken);
-      }
-      localStorage.setItem("user", JSON.stringify(data));
+      const data = response?.data.data || {};
+      const decode = jwtDecode(data.accessToken);
+      const role =
+        decode["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
 
-      toast.success("Đăng nhập thành công!");
-      navigate("/");
+      if (response.status === 200) {
+        localStorage.setItem("accessToken", data.accessToken);
+        localStorage.setItem("refreshToken", data.refreshToken);
+        localStorage.setItem("expiresAt", data.expiresAt);
+        setUserData(data);
+
+        if (role === "Customer") {
+          toast.success("Đăng nhập thành công!");
+          navigate("/");
+        } else if (role === "Admin") {
+          toast.success("Đăng nhập thành công!");
+          navigate("/admin/users");
+        }
+      }
     } catch (error) {
       const serverMsg =
         (typeof error?.response?.data === "string" && error.response.data) ||
@@ -38,6 +49,37 @@ const LoginForm = ({ errorMessage }) => {
           ? serverMsg
           : "Tên đăng nhập hoặc mật khẩu không chính xác!"
       );
+    }
+  };
+
+  // ✅ Đăng nhập bằng Google
+  const handleGoogleLoginSuccess = async (credentialResponse) => {
+    try {
+      const idToken = credentialResponse.credential;
+      console.log(idToken);
+      if (!idToken) {
+        toast.error("Không nhận được token từ Google");
+        return;
+      }
+
+      // Gửi idToken sang backend để xác thực
+      const response = await api.post("iam/v1/auth/google", { idToken });
+
+      const data = response?.data || {};
+      if (response.status <= 200 && response.status < 300) {
+        localStorage.setItem("accessToken", data.accessToken);
+        localStorage.setItem("refreshToken", data.refreshToken);
+        localStorage.setItem("expiresAt", data.expiresAt);
+
+        setUserData(data);
+        toast.success("Đăng nhập bằng Google thành công!");
+        navigate("/");
+      } else {
+        toast.error("Không nhận được access token từ server");
+      }
+    } catch (error) {
+      console.error("Google login error:", error);
+      toast.error("Đăng nhập bằng Google thất bại!");
     }
   };
 
@@ -107,7 +149,9 @@ const LoginForm = ({ errorMessage }) => {
               <Form.Item
                 label="Tên đăng nhập"
                 name="username"
-                rules={[{ required: true, message: "Vui lòng nhập tên đăng nhập!" }]}
+                rules={[
+                  { required: true, message: "Vui lòng nhập tên đăng nhập!" },
+                ]}
               >
                 <Input placeholder="Nhập tên đăng nhập" size="large" />
               </Form.Item>
@@ -155,6 +199,14 @@ const LoginForm = ({ errorMessage }) => {
                 <Link to="/register" className="auth-login-register-link-a">
                   Đăng ký ngay
                 </Link>
+              </div>
+
+              {/* ✅ Nút Google Login */}
+              <div style={{ marginTop: 12, textAlign: "center" }}>
+                <GoogleLogin
+                  onSuccess={handleGoogleLoginSuccess}
+                  onError={() => toast.error("Đăng nhập Google thất bại!")}
+                />
               </div>
             </Form>
           </Card>

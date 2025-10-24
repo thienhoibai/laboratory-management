@@ -1,7 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getUserData, setUserData as saveUserData } from "../../utils/auth";
+import { Card, Button, Modal, Form, Input } from "antd";
+import { toast } from "react-toastify";
+import api from "../../configs/axios";
 import "./ProfilePage.css";
+import "./ChangePassword.css";
+import { setAuthToken } from "../../utils/auth";
+import { jwtDecode } from "jwt-decode";
+
+const URL = "iam/api/Auth/change-password";
 
 const mockUserData = {
   fullname: "Nguyễn Văn An",
@@ -28,20 +36,150 @@ const initialFormData = {
   healthInsurance: "",
 };
 
+const ChangePasswordModal = ({ open, onClose }) => {
+  const [form] = Form.useForm();
+  const [loading, setLoading] = useState(false);
+  const token = localStorage.getItem("accessToken");
+  const passwordPattern =
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+
+  const handleSubmit = async (values) => {
+    setLoading(true);
+    setAuthToken(token);
+    try {
+      const response = await api.post(URL, {
+        currentPassword: values.oldPassword,
+        newPassword: values.newPassword,
+      });
+
+      if (response.status >= 200 && response.status < 300) {
+        toast.success(response?.data?.message || "Đổi mật khẩu thành công!");
+        form.resetFields();
+        onClose();
+      }
+    } catch (err) {
+      const serverMsg =
+        (typeof err?.response?.data === "string" && err.response.data) ||
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        "Đổi mật khẩu thất bại.";
+      toast.error(serverMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Modal
+      title="Đổi mật khẩu"
+      open={open}
+      onCancel={() => {
+        form.resetFields();
+        onClose();
+      }}
+      footer={null}
+      className="cp-modal"
+    >
+      <Form form={form} layout="vertical" onFinish={handleSubmit}>
+        <Form.Item
+          label="Mật khẩu cũ"
+          name="oldPassword"
+          rules={[{ required: true, message: "Vui lòng nhập mật khẩu cũ" }]}
+        >
+          <Input.Password placeholder="Mật khẩu cũ" size="large" />
+        </Form.Item>
+
+        <Form.Item
+          label="Mật khẩu mới"
+          name="newPassword"
+          rules={[
+            { required: true, message: "Vui lòng nhập mật khẩu mới" },
+            {
+              validator: (_, value) => {
+                if (!value) return Promise.reject();
+                return passwordPattern.test(value)
+                  ? Promise.resolve()
+                  : Promise.reject(
+                      new Error(
+                        "Mật khẩu phải có ít nhất 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt"
+                      )
+                    );
+              },
+            },
+          ]}
+        >
+          <Input.Password placeholder="Mật khẩu mới" size="large" />
+        </Form.Item>
+        <div className="cp-password-hint">
+          Mật khẩu cần tối thiểu 8 ký tự và phải bao gồm chữ hoa, chữ thường,
+          chữ số và ký tự đặc biệt.
+        </div>
+
+        <Form.Item
+          label="Xác nhận mật khẩu mới"
+          name="confirmPassword"
+          dependencies={["newPassword"]}
+          rules={[
+            { required: true, message: "Vui lòng xác nhận mật khẩu mới" },
+            ({ getFieldValue }) => ({
+              validator(_, value) {
+                if (!value || getFieldValue("newPassword") === value) {
+                  return Promise.resolve();
+                }
+                return Promise.reject(
+                  new Error("Mật khẩu xác nhận không khớp")
+                );
+              },
+            }),
+          ]}
+        >
+          <Input.Password placeholder="Xác nhận mật khẩu mới" size="large" />
+        </Form.Item>
+
+        <Form.Item>
+          <div className="cp-actions">
+            <Button
+              onClick={() => {
+                form.resetFields();
+                onClose();
+              }}
+              style={{ marginRight: 8 }}
+            >
+              Hủy
+            </Button>
+            <Button type="primary" htmlType="submit" loading={loading}>
+              Lưu
+            </Button>
+          </div>
+        </Form.Item>
+      </Form>
+    </Modal>
+  );
+};
+
 export default function ProfilePage() {
   const [userData, setUserData] = useState(mockUserData);
   const [activeTab, setActiveTab] = useState("personal");
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState({});
+  const [openChange, setOpenChange] = useState(false);
   const navigate = useNavigate();
-
+  const token = localStorage.getItem("accessToken");
   useEffect(() => {
+    setAuthToken(token);
     // Load user data from localStorage or API
-    const savedUser = getUserData();
-    if (savedUser) {
-      setUserData((prev) => ({ ...prev, ...savedUser }));
-    }
+    const getProfile = async () => {
+      let id = null;
+      const decode = jwtDecode(token);
+      id = decode.sub;
+      const response = await api.get(`patient/v1/patients/${id}`);
+      if (response.status === 200) {
+        console.log(response.data);
+      }
+    };
+    getProfile();
   }, []);
 
   const parseBirthdayToInput = (birthday) => {
@@ -189,33 +327,114 @@ export default function ProfilePage() {
     return `${day} tháng ${monthNames[parseInt(month) - 1]}, ${year}`;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const newErrors = validateForm();
     setErrors(newErrors);
 
-    if (Object.keys(newErrors).length === 0) {
-      // Calculate age from birthday
-      const age = calculateAge(formData.birthday);
-      const formattedBirthday = formatBirthday(formData.birthday);
+    if (Object.keys(newErrors).length !== 0) {
+      return;
+    }
 
-      // Update user data
-      const updatedUser = {
-        ...userData,
-        fullname: formData.fullname,
-        gender: formData.gender,
-        phone: formData.phone,
-        email: formData.email,
-        address: formData.address,
-        idCard: formData.idCard,
-        healthInsurance: formData.healthInsurance,
-        birthday: formattedBirthday,
-        age: age,
-      };
+    // Prepare data for backend
+    const toISODate = (mmddyyyy) => {
+      // expects MM/DD/YYYY -> returns YYYY-MM-DD
+      const parts = mmddyyyy.split("/");
+      if (parts.length !== 3) return null;
+      const [mm, dd, yyyy] = parts;
+      return `${yyyy.padStart(4, "0")}-${mm.padStart(2, "0")}-${dd.padStart(
+        2,
+        "0"
+      )}`;
+    };
 
-      setUserData(updatedUser); // Update local state immediately
-      saveUserData(updatedUser); // Save to localStorage using auth utility
-      setShowModal(false);
-      alert("Cập nhật thông tin thành công!");
+    const mapGender = (g) => {
+      if (!g) return 0;
+      const lower = String(g).toLowerCase();
+      if (lower.includes("nam") || lower === "male") return 1;
+      if (lower.includes("nữ") || lower === "nu" || lower === "female")
+        return 2;
+      return 0;
+    };
+
+    // Get current user id from saved user data (if available)
+    const savedUser = getUserData() || {};
+    const userId =
+      savedUser.userId ||
+      savedUser.id ||
+      savedUser.user_id ||
+      savedUser.userIdFromToken ||
+      null;
+
+    // Build payload according to required JSON
+    const payload = {
+      fullName: formData.fullname,
+      dateOfBirth: toISODate(formData.birthday),
+      gender: mapGender(formData.gender),
+      phone: formData.phone,
+      email: formData.email,
+      address: formData.address,
+      idNumber: formData.idCard,
+      insuranceNumber: formData.healthInsurance,
+      userId: userId,
+      createdChannel: "mobile_app",
+    };
+
+    // Basic validation for date conversion
+    if (!payload.dateOfBirth) {
+      toast.error(
+        "Ngày sinh không hợp lệ. Vui lòng kiểm tra định dạng MM/DD/YYYY."
+      );
+      return;
+    }
+
+    try {
+      // send token header and call API
+      const token = localStorage.getItem("accessToken");
+      let id = null;
+      const decoded = jwtDecode(token);
+      id = decoded.sub;
+      console.log(id);
+
+      setAuthToken(token);
+
+      // Use PUT to update patient info (adjust to POST if your backend expects)
+      const response = await api.put(`patient/v1/patients${id}`, payload);
+
+      if (response?.status >= 200 && response?.status < 300) {
+        const age = calculateAge(formData.birthday);
+        const formattedBirthday = formatBirthday(formData.birthday);
+
+        const updatedUser = {
+          ...userData,
+          fullname: formData.fullname,
+          gender: formData.gender,
+          phone: formData.phone,
+          email: formData.email,
+          address: formData.address,
+          idCard: formData.idCard,
+          healthInsurance: formData.healthInsurance,
+          birthday: formattedBirthday,
+          age: age,
+        };
+
+        setUserData(updatedUser); // update component state
+        saveUserData(updatedUser); // persist to localStorage
+        setShowModal(false);
+        toast.success(
+          response?.data?.message || "Cập nhật thông tin thành công!"
+        );
+      } else {
+        const msg = response?.data?.message || "Cập nhật thất bại.";
+        toast.error(msg);
+      }
+    } catch (err) {
+      const serverMsg =
+        (typeof err?.response?.data === "string" && err.response.data) ||
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        "Cập nhật thất bại.";
+      toast.error(serverMsg);
     }
   };
 
@@ -326,10 +545,21 @@ export default function ProfilePage() {
         {activeTab === "personal" && (
           <div className="profile-tab-content">
             <div className="profile-section">
-              <h2 className="profile-section-title">Thông tin cá nhân</h2>
-              <p className="profile-section-subtitle">
-                Thông tin chi tiết về bệnh nhân
-              </p>
+              <div className="profile-title">
+                <div>
+                  <h2 className="profile-section-title">Thông tin cá nhân</h2>
+                  <p className="profile-section-subtitle">
+                    Thông tin chi tiết về bệnh nhân
+                  </p>
+                </div>
+                <Button
+                  type="default"
+                  onClick={() => setOpenChange(true)}
+                  className="btn-change-password"
+                >
+                  Đổi mật khẩu
+                </Button>
+              </div>
 
               <div className="profile-info-grid">
                 <div className="profile-info-column">
@@ -776,6 +1006,11 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
+
+      <ChangePasswordModal
+        open={openChange}
+        onClose={() => setOpenChange(false)}
+      />
     </div>
   );
 }

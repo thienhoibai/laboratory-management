@@ -1,38 +1,17 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import AdminLayout from "../../../components/admin/layout/AdminLayout.jsx";
-import { FiSearch, FiPlus, FiEye, FiTrash2 } from "react-icons/fi";
+import {
+  FiSearch,
+  FiPlus,
+  FiEye,
+  FiTrash2,
+  FiChevronDown,
+} from "react-icons/fi";
+import { Pagination } from "antd";
+import api from "../../../configs/axios.js";
+import { setAuthToken } from "../../../utils/auth.js";
 
-// Dữ liệu giả lập
-const users = [
-  {
-    name: "Dr. Sarah Johnson",
-    email: "sarah.johnson@lab.com",
-    phone: "+1 (555) 123-4567",
-    role: "Doctor",
-    status: "Active",
-  },
-  {
-    name: "Michael Chen",
-    email: "michael.chen@lab.com",
-    phone: "+1 (555) 234-5678",
-    role: "Lab Technician",
-    status: "Active",
-  },
-  {
-    name: "Emily Rodriguez",
-    email: "emily.rodriguez@lab.com",
-    phone: "+1 (555) 345-6789",
-    role: "Receptionist",
-    status: "Inactive",
-  },
-  {
-    name: "David Thompson",
-    email: "david.thompson@lab.com",
-    phone: "+1 (555) 456-7890",
-    role: "Lab Manager",
-    status: "Active",
-  },
-];
+const endPoint = "iam/api/Users";
 
 const getRoleClass = (role) => {
   switch (role) {
@@ -44,6 +23,16 @@ const getRoleClass = (role) => {
       return "role-receptionist";
     case "Lab Manager":
       return "role-manager";
+    case "Admin":
+      return "role-manager";
+    case "Manager":
+      return "role-manager";
+    case "Staff":
+      return "role-receptionist";
+    case "Patient":
+      return "role-doctor";
+    case "Customer":
+      return "role-technician";
     default:
       return "";
   }
@@ -54,47 +43,244 @@ const UserManagementPage = () => {
     { name: "Laboratory", link: "#" },
     { name: "Users Management" },
   ];
+  const token = localStorage.getItem("accessToken");
+  const [users, setUsers] = useState([]);
+  const [total, setTotal] = useState(0);
+
+  // Filter states
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
+  const [search, setSearch] = useState("");
+  const [role, setRole] = useState("");
+  const [type, setType] = useState("");
+  const [status, setStatus] = useState("");
+  const [sortBy, setSortBy] = useState("UpdatedAt");
+  const [sortDir, setSortDir] = useState("desc");
+  const [searchDebounce, setSearchDebounce] = useState("");
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchDebounce(search);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
+    if (token) setAuthToken(token);
+    fetchUsers();
+  }, [page, pageSize, searchDebounce, role, type, status, sortBy, sortDir]);
+
+  const fetchUsers = async () => {
+    try {
+      const params = new URLSearchParams();
+      params.append("page", page);
+      params.append("pageSize", pageSize);
+      if (searchDebounce) params.append("search", searchDebounce);
+      if (role) params.append("role", role);
+      if (type) params.append("type", type);
+      if (status)
+        params.append("isActive", status === "active" ? "true" : "false");
+
+      // Backend expects lowercase sortBy based on C# code
+      if (sortBy) {
+        const sortByLower = sortBy.toLowerCase();
+        params.append("sortBy", sortByLower);
+      }
+      if (sortDir) params.append("sortDir", sortDir.toLowerCase());
+
+      console.log("Request params:", params.toString());
+
+      const response = await api.get(`${endPoint}?${params.toString()}`);
+
+      if (response.status === 200) {
+        const res = response.data;
+        const usersList = res.data || [];
+        const meta = res.meta || {};
+
+        console.log("Response:", { meta, usersCount: usersList.length });
+
+        setUsers(usersList);
+        setTotal(meta.totalItems || 0);
+      }
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      console.error("Error response:", error.response?.data);
+    }
+  };
+
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
+    setPage(1);
+  };
+
+  const handleRoleChange = (e) => {
+    setRole(e.target.value);
+    setPage(1);
+  };
+
+  const handleTypeChange = (e) => {
+    setType(e.target.value);
+    setPage(1);
+  };
+
+  const handleStatusChange = (e) => {
+    const value = e.target.value;
+    setStatus(value);
+    setPage(1);
+  };
+
+  const handleSort = (field) => {
+    // Map frontend field names to backend field names
+    const fieldMapping = {
+      name: "name",
+      role: "role",
+      createdat: "createdat",
+      updatedat: "updatedat",
+      status: "status",
+    };
+
+    const backendField = fieldMapping[field] || field;
+
+    if (sortBy.toLowerCase() === backendField) {
+      // Toggle direction if same field
+      setSortDir(sortDir === "asc" ? "desc" : "asc");
+    } else {
+      // New field, start with asc
+      setSortBy(backendField);
+      setSortDir("asc");
+    }
+    setPage(1);
+  };
+
+  const getSortIcon = (field) => {
+    const fieldMapping = {
+      name: "name",
+      role: "role",
+      createdat: "createdat",
+      updatedat: "updatedat",
+      status: "status",
+    };
+
+    const backendField = fieldMapping[field] || field;
+    if (sortBy.toLowerCase() !== backendField) return null;
+    return sortDir === "asc" ? " ↑" : " ↓";
+  };
+
+  const handlePageChange = (newPage, newPageSize) => {
+    setPage(newPage);
+    if (newPageSize !== pageSize) {
+      setPageSize(newPageSize);
+    }
+  };
 
   return (
     <AdminLayout pageTitle="Users Management" breadcrumbs={breadcrumbs}>
       <div className="admin-content-card">
         <div className="admin-table-controls">
-          <div className="admin-search-bar">
-            <FiSearch />
-            <input type="text" placeholder="Search" />
+          <div className="admin-filters-row">
+            <div className="admin-search-bar">
+              <FiSearch />
+              <input
+                type="text"
+                placeholder="Search by name or email..."
+                value={search}
+                onChange={handleSearchChange}
+              />
+            </div>
+
+            <div className="admin-filter-group">
+              <select
+                className="admin-filter-select"
+                value={role}
+                onChange={handleRoleChange}
+              >
+                <option value="">All Roles</option>
+                <option value="Admin">Admin</option>
+                <option value="Manager">Manager</option>
+                <option value="Staff">Staff</option>
+                <option value="Patient">Patient</option>
+                <option value="Customer">Customer</option>
+              </select>
+              <FiChevronDown className="admin-select-icon" />
+            </div>
+
+            <div className="admin-filter-group">
+              <select
+                className="admin-filter-select"
+                value={type}
+                onChange={handleTypeChange}
+              >
+                <option value="">All Types</option>
+                <option value="internal">Internal</option>
+                <option value="external">External</option>
+              </select>
+              <FiChevronDown className="admin-select-icon" />
+            </div>
+
+            <div className="admin-filter-group">
+              <select
+                className="admin-filter-select"
+                value={status}
+                onChange={handleStatusChange}
+              >
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+              <FiChevronDown className="admin-select-icon" />
+            </div>
           </div>
+
           <button className="admin-add-button">
             <FiPlus /> Add User
           </button>
         </div>
+
         <div className="admin-table">
           <div className="admin-table-header">
-            <span>Full Name</span>
+            <span className="sortable" onClick={() => handleSort("name")}>
+              Họ Và Tên{getSortIcon("name")}
+            </span>
             <span>Email</span>
-            <span>Phone</span>
-            <span>Role</span>
-            <span>Status</span>
-            <span>Actions</span>
+            <span className="sortable" onClick={() => handleSort("role")}>
+              Role{getSortIcon("role")}
+            </span>
+            <span>Lần Đăng Nhập Cuối Cùng</span>
+            <span className="sortable" onClick={() => handleSort("createdat")}>
+              Ngày Tạo{getSortIcon("createdat")}
+            </span>
+            <span className="sortable" onClick={() => handleSort("updatedat")}>
+              Cập Nhật{getSortIcon("updatedat")}
+            </span>
+            <span className="sortable" onClick={() => handleSort("status")}>
+              Trạng Thái{getSortIcon("status")}
+            </span>
+            <span>Hành Động</span>
           </div>
           {users.map((user, index) => (
             <div className="admin-table-row" key={index}>
-              <span>{user.name}</span>
+              <span>{user.fullName}</span>
               <span>{user.email}</span>
-              <span>{user.phone}</span>
               <span>
                 <div className={`admin-badge ${getRoleClass(user.role)}`}>
                   {user.role}
                 </div>
               </span>
+              <span>{user.lastLogin || "N/A"}</span>
+              <span>{new Date(user.createdAt).toLocaleDateString()}</span>
+              <span>
+                {user.updatedAt
+                  ? new Date(user.updatedAt).toLocaleDateString()
+                  : "N/A"}
+              </span>
               <span>
                 <div
                   className={`admin-badge ${
-                    user.status === "Active"
-                      ? "status-active"
-                      : "status-inactive"
+                    user.isActive ? "status-active" : "status-inactive"
                   }`}
                 >
-                  {user.status}
+                  {user.isActive ? "Active" : "Inactive"}
                 </div>
               </span>
               <span className="admin-table-actions">
@@ -103,6 +289,41 @@ const UserManagementPage = () => {
               </span>
             </div>
           ))}
+        </div>
+
+        {users.length === 0 && (
+          <div className="admin-no-data">
+            <p>Không tìm thấy người dùng nào</p>
+          </div>
+        )}
+
+        <div className="admin-pagination">
+          <Pagination
+            current={page}
+            pageSize={pageSize}
+            total={total}
+            onChange={handlePageChange}
+            showSizeChanger
+            showQuickJumper
+            showTotal={(total, range) =>
+              total > 0
+                ? `${range[0]}-${range[1]} của ${total} dữ liệu`
+                : "0 dữ liệu"
+            }
+            pageSizeOptions={["5", "10", "20", "50", "100"]}
+            locale={{
+              items_per_page: "/ trang",
+              jump_to: "Đến",
+              jump_to_confirm: "xác nhận",
+              page: "",
+              prev_page: "Trang trước",
+              next_page: "Trang sau",
+              prev_5: "5 trang trước",
+              next_5: "5 trang sau",
+              prev_3: "3 trang trước",
+              next_3: "3 trang sau",
+            }}
+          />
         </div>
       </div>
     </AdminLayout>

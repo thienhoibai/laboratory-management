@@ -93,6 +93,21 @@ builder.Services.AddSwaggerGen(c =>
     c.AddSecurityRequirement(securityRequirement);
 });
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins(
+            "http://localhost:5174",   
+            "http://127.0.0.1:5174"   
+        )
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials();
+    });
+});
+
+builder.Services.AddControllers();
 // gRPC + reflection for tooling
 builder.Services.AddGrpc();
 builder.Services.AddGrpcReflection();
@@ -102,7 +117,7 @@ var app = builder.Build();
 app.UseMiddleware<ProblemDetailsMiddleware>();
 app.UseSwagger();
 app.UseSwaggerUI();
-
+app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 

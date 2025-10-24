@@ -45,6 +45,7 @@ builder.Services.AddAuthorization();
 // Swagger optional for demo
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddScoped<PatientService>();
 
 // Health checks
 builder.Services.AddHealthChecks();
@@ -91,6 +92,20 @@ builder.Services.AddMassTransit(x =>
         });
     });
 });
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins(
+            "http://localhost:5174",   // FE chạy ở Vite
+            "http://127.0.0.1:5174"
+        )
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials();
+    });
+});
+
 
 var app = builder.Build();
 
@@ -112,6 +127,7 @@ if (app.Environment.IsDevelopment())
 }
 
 // No HTTPS redirection for docker h2c
+app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 
