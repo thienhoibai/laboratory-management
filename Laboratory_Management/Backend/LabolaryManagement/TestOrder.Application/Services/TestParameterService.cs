@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using TestOrder.Application.DTOs;
 using TestOrder.Infrastructure.Models;
 using TestOrder.Infrastructure.Repository;
 
@@ -24,9 +25,17 @@ namespace TestOrder.Application.Services
             return await _repository.GetByIdAsync(id);
         }
 
-        public async Task AddParameterAsync(TestParameter parameter)
+        public async Task AddParameterAsync(TestParameterDTO parameter)
         {
-            await _repository.AddParameterAsync(parameter);
+            var entity = new TestParameter
+            {
+                ParameterName = parameter.ParameterName,
+                Unit = parameter.Unit,
+                ReferenceRange = parameter.ReferenceRange,
+                CatalogId = parameter.CatalogId
+
+            };
+            await _repository.AddParameterAsync(entity);
         }
     }
 }

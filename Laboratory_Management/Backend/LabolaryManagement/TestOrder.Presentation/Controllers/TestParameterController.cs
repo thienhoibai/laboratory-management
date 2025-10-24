@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
+using TestOrder.Application.DTOs;
 using TestOrder.Application.Services;
 using TestOrder.Infrastructure.Models;
 
@@ -29,10 +30,17 @@ namespace TestOrder.Presentation.Controllers
             return Ok(parameter);
         }
         [HttpPost]
-        public async Task<IActionResult> AddParameterAsync([FromBody] TestParameter parameter)
+        public async Task<IActionResult> AddParameterAsync([FromBody] TestParameterDTO parameter)
         {
+           var entity = new TestParameter
+            {
+                ParameterName = parameter.ParameterName,
+                Unit = parameter.Unit,
+                ReferenceRange = parameter.ReferenceRange,
+                CatalogId = parameter.CatalogId
+           };
             await _service.AddParameterAsync(parameter);
-            return CreatedAtAction(nameof(GetByIdAsync), new { id = parameter.ParameterId }, parameter);
+            return Ok(entity);
         }
     }
 }
