@@ -73,3 +73,24 @@
       - iam.api
       - patient.api
     ports: ["8080:8080"]
+
+  notify.api:
+    build:
+      context: .
+      dockerfile: deployments/docker/Notify.Dockerfile
+    container_name: notify.api
+    environment:
+      ASPNETCORE_URLS: "http://0.0.0.0:5601"
+      ConnectionStrings__Notify: "Server=host.docker.internal,1433;Database=notify;User Id=sa;Password=12345;TrustServerCertificate=True;Encrypt=False"
+      RabbitMQ__Host: "rabbitmq"
+      RabbitMQ__User: "lab"
+      RabbitMQ__Pass: "lab123"
+      Notify__Smtp__Host: "smtp.gmail.com"
+      Notify__Smtp__Port: "587"
+      Notify__Smtp__User: "managermentlabolary@gmail.com"
+      Notify__Smtp__Pass: "qivyvznissngdvhn"
+      Notify__Smtp__From: "managermentlabolary@gmail.com"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    ports: ["5601:5601"]

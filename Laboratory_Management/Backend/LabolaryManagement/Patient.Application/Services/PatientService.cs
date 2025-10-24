@@ -22,18 +22,17 @@ public class PatientService : IPatientService
     private static string NormalizeName(string? name)
         => string.IsNullOrWhiteSpace(name) ? string.Empty : name.Trim().ToUpperInvariant();
 
-    private static string? Last4(string? phone)
-        => string.IsNullOrWhiteSpace(phone) || phone.Length < 4 ? null : phone[^4..];
+    private static string? Last4(string? s)
+        => string.IsNullOrWhiteSpace(s) || s.Length < 4 ? null : s[^4..];
 
     public Task<bool> IsOwnerAsync(Guid patientId, Guid actorUserId, CancellationToken ct)
-        => _db.Patients.AnyAsync(p => p.PatientId == patientId && p.UserId == actorUserId, ct);
+        => _db.PatientOwners.AnyAsync(o => o.PatientId == patientId && o.UserId == actorUserId, ct);
 
     public async Task<OperationResult<PatientDetailDto>> CreateAsync(
     CreatePatientRequest request, Guid actorUserId, string? actorIp = null, CancellationToken ct = default)
     {
         var entity = new PatientEntity
         {
-            // Nếu DB tự sinh patient_id thì bỏ dòng này
             PatientId = Guid.NewGuid(),
             FullNameEnc = _pii.Encrypt(request.FullName),
             DobEnc = request.DateOfBirth.HasValue ? _pii.Encrypt(request.DateOfBirth.Value.ToString("yyyy-MM-dd")) : null,
@@ -46,8 +45,8 @@ public class PatientService : IPatientService
             FullNameNorm = NormalizeName(request.FullName),
             DateOfBirth = request.DateOfBirth,
             PhoneLast4 = Last4(request.Phone),
-            // Ép owner = actor, không nhận từ request
-            UserId = actorUserId,
+            IdLast4 = Last4(request.IdNumber),
+            UserId = null,
             CreatedChannel = request.CreatedChannel,
             CreatedByUserId = actorUserId,
             UpdatedByUserId = actorUserId,
@@ -57,6 +56,7 @@ public class PatientService : IPatientService
         };
 
         _db.Patients.Add(entity);
+        _db.PatientOwners.Add(new PatientOwner { PatientId = entity.PatientId, UserId = actorUserId });
 
         var version = new PatientRecordVersion
         {
@@ -109,8 +109,8 @@ public class PatientService : IPatientService
         var entity = await _db.Patients.FirstOrDefaultAsync(p => p.PatientId == patientId && !p.IsDeleted, ct);
         if (entity == null) return OperationResult<PatientDetailDto>.Fail(Common.Errors.ErrorCodes.NotFound);
 
-        // Double-safety: chỉ chủ sở hữu được cập nhật
-        if (entity.UserId != actorUserId)
+        // Only owner can update
+        if (!await IsOwnerAsync(patientId, actorUserId, ct))
             return OperationResult<PatientDetailDto>.Fail(Common.Errors.ErrorCodes.Forbidden);
 
         var oldSnapshot = new
@@ -132,10 +132,8 @@ public class PatientService : IPatientService
         if (request.Phone != null) { entity.PhoneEnc = _pii.Encrypt(request.Phone); entity.PhoneLast4 = Last4(request.Phone); }
         if (request.Email != null) entity.EmailEnc = _pii.Encrypt(request.Email);
         if (request.Address != null) entity.AddressEnc = _pii.Encrypt(request.Address);
-        if (request.IdNumber != null) entity.IdNumberEnc = _pii.Encrypt(request.IdNumber);
+        if (request.IdNumber != null) { entity.IdNumberEnc = _pii.Encrypt(request.IdNumber); entity.IdLast4 = Last4(request.IdNumber); }
         if (request.InsuranceNumber != null) entity.InsuranceNumberEnc = _pii.Encrypt(request.InsuranceNumber);
-        // KHÔNG cho đổi chủ
-        // if (request.UserId.HasValue) entity.UserId = request.UserId;
 
         entity.UpdatedByUserId = actorUserId;
         entity.UpdatedAt = DateTime.UtcNow;
@@ -167,7 +165,6 @@ public class PatientService : IPatientService
         diff("Address", oldSnapshot.Address, newSnapshot.Address);
         diff("IdNumber", oldSnapshot.IdNumber, newSnapshot.IdNumber);
         diff("InsuranceNumber", oldSnapshot.InsuranceNumber, newSnapshot.InsuranceNumber);
-        diff("UserId", oldSnapshot.UserId, newSnapshot.UserId);
 
         var latestVersionNo = await _db.PatientRecordVersions.Where(v => v.PatientId == patientId).Select(v => (int?)v.VersionNo).MaxAsync(ct) ?? 0;
         _db.PatientRecordVersions.Add(new PatientRecordVersion
@@ -203,8 +200,8 @@ public class PatientService : IPatientService
         var entity = await _db.Patients.FirstOrDefaultAsync(p => p.PatientId == patientId && !p.IsDeleted, ct);
         if (entity == null) return OperationResult.Fail(Common.Errors.ErrorCodes.NotFound);
 
-        // Double-safety: chỉ chủ sở hữu được xóa
-        if (entity.UserId != actorUserId)
+        // Only owner can delete
+        if (!await IsOwnerAsync(patientId, actorUserId, ct))
             return OperationResult.Fail(Common.Errors.ErrorCodes.Forbidden);
 
         entity.IsDeleted = true;
@@ -237,7 +234,7 @@ public class PatientService : IPatientService
         return OperationResult<PatientDetailDto>.Success(dto);
     }
 
-    public async Task<(IReadOnlyList<PatientSummaryDto> Items, long Total)> ListAsync(int page, int pageSize, string? name, DateOnly? dob, bool? isDeleted, string? sortBy, string? sortDir, CancellationToken ct = default)
+    public async Task<(IReadOnlyList<PatientSummaryDto> Items, long Total)> ListAsync(int page, int pageSize, string? name, DateOnly? dob, bool? isDeleted, string? sortBy, string? sortDir, string? idLast4, string? phoneLast4, CancellationToken ct = default)
     {
         var q = _db.Patients.AsNoTracking().AsQueryable();
         if (!string.IsNullOrWhiteSpace(name))
@@ -247,13 +244,15 @@ public class PatientService : IPatientService
         }
         if (dob.HasValue) q = q.Where(p => p.DateOfBirth == dob);
         if (isDeleted.HasValue) q = q.Where(p => p.IsDeleted == isDeleted.Value);
+        if (!string.IsNullOrWhiteSpace(phoneLast4)) q = q.Where(p => p.PhoneLast4 == phoneLast4);
+        if (!string.IsNullOrWhiteSpace(idLast4)) q = q.Where(p => p.IdLast4 == idLast4);
 
         q = sortBy?.ToLowerInvariant() switch
         {
             "name" => (sortDir?.ToLowerInvariant() == "desc" ? q.OrderByDescending(x => x.FullNameNorm) : q.OrderBy(x => x.FullNameNorm)),
             "createdat" => (sortDir?.ToLowerInvariant() == "asc" ? q.OrderBy(x => x.CreatedAt) : q.OrderByDescending(x => x.CreatedAt)),
             "updatedat" => (sortDir?.ToLowerInvariant() == "asc" ? q.OrderBy(x => x.UpdatedAt) : q.OrderByDescending(x => x.UpdatedAt)),
-            _ => q.OrderByDescending(x => x.UpdatedAt)
+            _ => q.OrderByDescending(x => x.CreatedAt) // default newest first
         };
 
         var total = await q.LongCountAsync(ct);
