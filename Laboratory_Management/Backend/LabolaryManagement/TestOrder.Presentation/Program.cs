@@ -27,6 +27,11 @@ namespace TestOrder.Presentation
             builder.Services.AddScoped<TestBundleService>();
             builder.Services.AddScoped<TestParameterRepository>();
             builder.Services.AddScoped<TestParameterService>();
+            builder.Services.AddScoped<CatalogBundleRepository>();
+            builder.Services.AddScoped<CatalogBundleService>();
+            builder.Services.AddScoped<CatalogParameterService>();
+            builder.Services.AddScoped<CatalogParameterRepository>();
+
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 

@@ -98,35 +98,8 @@ public partial class TestOrderDBContext : DbContext
                 .HasConstraintName("FK__BookingTe__Catal__5535A963");
         });
 
-        modelBuilder.Entity<CatalogBundle>(entity =>
-        {
-            entity
-                .HasNoKey()
-                .ToTable("CatalogBundle");
 
-            entity.HasOne(d => d.Bundle).WithMany()
-                .HasForeignKey(d => d.BundleId)
-                .HasConstraintName("FK__CatalogBu__Bundl__07C12930");
 
-            entity.HasOne(d => d.Catalog).WithMany()
-                .HasForeignKey(d => d.CatalogId)
-                .HasConstraintName("FK__CatalogBu__Catal__08B54D69");
-        });
-
-        modelBuilder.Entity<CatalogParameter>(entity =>
-        {
-            entity
-                .HasNoKey()
-                .ToTable("CatalogParameter");
-
-            entity.HasOne(d => d.Catalog).WithMany()
-                .HasForeignKey(d => d.CatalogId)
-                .HasConstraintName("FK__CatalogPa__Catal__6EF57B66");
-
-            entity.HasOne(d => d.Parameter).WithMany()
-                .HasForeignKey(d => d.ParameterId)
-                .HasConstraintName("FK__CatalogPa__Param__6FE99F9F");
-        });
 
         modelBuilder.Entity<Comment>(entity =>
         {
@@ -219,6 +192,35 @@ public partial class TestOrderDBContext : DbContext
                 .HasForeignKey(d => d.TestBookingNo)
                 .HasConstraintName("FK__TestResul__TestB__5812160E");
         });
+        modelBuilder.Entity<CatalogBundle>(entity =>
+        {
+            entity.HasKey(e => new { e.BundleId, e.CatalogId });
+            entity.ToTable("CatalogBundle");
+
+            entity.HasOne(d => d.Bundle)
+                .WithMany()
+                .HasForeignKey(d => d.BundleId)
+                .HasConstraintName("FK__CatalogBu__Bundl__07C12930");
+
+            entity.HasOne(d => d.Catalog)
+                .WithMany()
+                .HasForeignKey(d => d.CatalogId)
+                .HasConstraintName("FK__CatalogBu__Catal__08B54D69");
+        });
+
+        modelBuilder.Entity<CatalogParameter>(entity =>
+        {
+            entity.HasKey(e => new { e.CatalogId, e.ParameterId });
+            entity.ToTable("CatalogParameter");
+            entity.HasOne(d => d.Catalog)
+                .WithMany()
+                .HasForeignKey(d => d.CatalogId)
+                .HasConstraintName("FK__CatalogPa__Catal__6EF57B66");
+            entity.HasOne(d => d.Parameter)
+                .WithMany()
+                .HasForeignKey(d => d.ParameterId)
+                .HasConstraintName("FK__CatalogPa__Param__6FE99F9F");
+        });
 
         modelBuilder.Entity<TimeBlock>(entity =>
         {
@@ -233,6 +235,7 @@ public partial class TestOrderDBContext : DbContext
 
         OnModelCreatingPartial(modelBuilder);
     }
+
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
 }
