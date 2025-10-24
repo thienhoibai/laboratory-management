@@ -8,12 +8,12 @@ using TestOrder.Infrastructure.Models;
 
 namespace TestOrder.Infrastructure.Repository
 {
-    public class TimeBlockRepository : GenericRepository<TimeBlock>
+    public class BookingRepository : GenericRepository<Booking>
     {
-        public TimeBlockRepository(Data.TestOrderDBContext context) : base(context)
+        public BookingRepository(Data.TestOrderDBContext context) : base(context)
         {
         }
-        public TimeBlockRepository() : base()
+        public BookingRepository() : base()
         {
         }
     }
