@@ -1,0 +1,75 @@
+﻿services:
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: rabbitmq
+    ports: ["5672:5672","15672:15672"]
+    environment:
+      RABBITMQ_DEFAULT_USER: lab
+      RABBITMQ_DEFAULT_PASS: lab123
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  iam.api:
+    build:
+      context: .
+      dockerfile: iam.Dockerfile
+    container_name: iam.api
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Docker"
+      ConnectionStrings__LabIAM: "Server=host.docker.internal,1433;Database=LabIAM;User Id=sa;Password=12345;TrustServerCertificate=True;Encrypt=False"
+      RabbitMQ__Host: "rabbitmq"
+      RabbitMQ__User: "lab"
+      RabbitMQ__Pass: "lab123"
+      # JWT config (must match patient.api)
+      Jwt__Issuer: "lab-iam"
+      Jwt__Audience: "lab-services"
+      Jwt__SigningKey: "Jx6n2QvB5pTf8Kz3Wm9aS4Ld7Yh0Nr2Xu8Cj5Pk1Vg3Mz7Rb0Hq4Tn6Wy8Le2"
+      Jwt__AccessTokenMinutes: "60"
+      Jwt__RefreshTokenDays: "14"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    ports: ["5001:5001"]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  patient.api:
+    build:
+      context: .
+      dockerfile: patient.Dockerfile
+    container_name: patient.api
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Docker"
+      UseInMemoryDb: "false"     
+      ConnectionStrings__PatientService3: "Server=host.docker.internal,1433;Database=PatientService3;User Id=sa;Password=12345;TrustServerCertificate=True;Encrypt=False"
+      RabbitMQ__Host: "rabbitmq"
+      RabbitMQ__User: "lab"
+      RabbitMQ__Pass: "lab123"
+      # JWT config (must match iam.api)
+      Jwt__Issuer: "lab-iam"
+      Jwt__Audience: "lab-services"
+      Jwt__SigningKey: "Jx6n2QvB5pTf8Kz3Wm9aS4Ld7Yh0Nr2Xu8Cj5Pk1Vg3Mz7Rb0Hq4Tn6Wy8Le2"
+      # PII encryption keys (primary first, then legacy). Keep them secret.
+      PATIENT_PII_KEYS: |
+        FES03/bBdxXAmpgtDTccC15qDWd112gVLcksrZEib98=
+        8wCAUQo+Bggcq7suyJ2io37vmFLjOORzl7RMbhmipR0=
+        W2mPvA+pi08SJGTUV43coZxqWVNP3guFg0puMHW4jdc=
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    ports: ["5002:5002"]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  api.gateway:
+    build:
+      context: .
+      dockerfile: gateway.Dockerfile
+    container_name: api.gateway
+    depends_on:
+      - iam.api
+      - patient.api
+    ports: ["8080:8080"]
