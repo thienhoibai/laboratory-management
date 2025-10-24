@@ -10,6 +10,9 @@ using Patient.Application.Security;
 using Patient.Application.Services;
 using Patient.Infrastructure;
 using Patient.Presentation.Infrastructure;
+using Contracts.Notifications;
+using Patient.Infrastructure.Outbox;
+using RabbitMQ.Client;
 
 // Allow gRPC over HTTP/2 (h2c) without TLS
 AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
@@ -21,8 +24,8 @@ builder.Services.AddControllers();
 
 // Authentication + Authorization
 var issuer = builder.Configuration["Jwt:Issuer"] ?? "lab-iam";
-var audience = builder.Configuration["Jwt:Audience"] ?? "lab-client";
-var signingKey = builder.Configuration["Jwt:SigningKey"] ?? "DevSecretKey_MustBe_AtLeast_32Chars!!!";
+var audience = builder.Configuration["Jwt:Audience"] ?? "lab-services";
+var signingKey = builder.Configuration["Jwt:SigningKey"] ?? "Jx6n2QvB5pTf8Kz3Wm9aS4Ld7Yh0Nr2Xu8Cj5Pk1Vg3Mz7Rb0Hq4Tn6Wy8Le2";
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -61,8 +64,12 @@ if (useInMemory)
 }
 else
 {
-    var conn = builder.Configuration.GetConnectionString("PatientService3") ?? "Server=localhost;Database=PatientService3;Trusted_Connection=True;TrustServerCertificate=True";
-    builder.Services.AddDbContext<PatientDbContext>(opt => opt.UseSqlServer(conn));
+    var conn = builder.Configuration.GetConnectionString("PatientService3");
+    if (string.IsNullOrWhiteSpace(conn))
+        conn = "Server=localhost;Database=PatientService3;Trusted_Connection=True;TrustServerCertificate=True;Connect Timeout=5";
+
+    builder.Services.AddDbContext<PatientDbContext>(opt =>
+        opt.UseSqlServer(conn, sql => sql.MigrationsAssembly("Patient.Migrations")));
 }
 
 builder.Services.AddScoped<IPatientService, PatientService>();
@@ -70,12 +77,18 @@ builder.Services.AddScoped<IPatientService, PatientService>();
 // Event publisher adapter
 builder.Services.AddScoped<IPatientEventPublisher, MassTransitPatientEventPublisher>();
 
+// Outbox services
+builder.Services.AddScoped<OutboxWriter>();
+builder.Services.AddHostedService<Patient.Infrastructure.Outbox.OutboxProcessor>();
+
 // gRPC client to IAM (h2c). Use Grpc.Net.Client factory registration via generated client
 builder.Services.AddGrpcClient<UserService.UserServiceClient>((sp, o) =>
 {
     var url = builder.Configuration["Grpc:IamUrl"] ?? "http://iam.api:5001";
     o.Address = new Uri(url);
 });
+
+const string notifyExchange = "lab.notify.v1";
 
 // MassTransit + RabbitMQ
 builder.Services.AddMassTransit(x =>
@@ -89,6 +102,13 @@ builder.Services.AddMassTransit(x =>
         {
             h.Username(user);
             h.Password(pass);
+        });
+        cfg.Message<NotificationRequestedV1>(m => m.SetEntityName(notifyExchange));
+        cfg.Publish<NotificationRequestedV1>(p =>
+        {
+            p.ExchangeType = ExchangeType.Topic;
+            p.Durable = true;
+            p.AutoDelete = false;
         });
     });
 });
@@ -114,7 +134,9 @@ if (!useInMemory)
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<PatientDbContext>();
+    db.Database.SetCommandTimeout(TimeSpan.FromMinutes(2));
     db.Database.Migrate();
+    await Patient.Infrastructure.Outbox.OutboxSchemaInitializer.EnsureCreatedAsync(db);
 }
 
 app.MapGet("/", () => Results.Ok("Patient up"));

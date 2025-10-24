@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Patient.Domain.Entities;
+using Patient.Infrastructure.Outbox;
 
 namespace Patient.Infrastructure;
 
@@ -10,6 +11,8 @@ public class PatientDbContext : DbContext
     public DbSet<PatientEntity> Patients => Set<PatientEntity>();
     public DbSet<PatientRecordVersion> PatientRecordVersions => Set<PatientRecordVersion>();
     public DbSet<PatientEventLog> PatientEventLogs => Set<PatientEventLog>();
+    public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
+    public DbSet<PatientOwner> PatientOwners => Set<PatientOwner>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -29,6 +32,7 @@ public class PatientDbContext : DbContext
             b.Property(x => x.FullNameNorm).HasColumnName("full_name_norm").HasMaxLength(256);
             b.Property(x => x.DateOfBirth).HasColumnName("date_of_birth");
             b.Property(x => x.PhoneLast4).HasColumnName("phone_last4").HasMaxLength(4).IsFixedLength();
+            b.Property(x => x.IdLast4).HasColumnName("id_last4").HasMaxLength(4).IsFixedLength();
             b.Property(x => x.UserId).HasColumnName("user_id");
             b.Property(x => x.CreatedChannel).HasColumnName("created_channel").HasMaxLength(32);
             b.Property(x => x.CreatedByUserId).HasColumnName("created_by_user_id");
@@ -42,6 +46,7 @@ public class PatientDbContext : DbContext
             // Indexes + soft delete filter
             b.HasIndex(x => new { x.FullNameNorm, x.DateOfBirth });
             b.HasIndex(x => x.PhoneLast4);
+            b.HasIndex(x => x.IdLast4);
             b.HasQueryFilter(x => !x.IsDeleted);
         });
 
@@ -79,6 +84,39 @@ public class PatientDbContext : DbContext
             b.HasIndex(x => new { x.EventType, x.OccurredAt }).HasDatabaseName("IX_log_event_time");
             b.HasOne(x => x.Patient)
              .WithMany(p => p.EventLogs)
+             .HasForeignKey(x => x.PatientId)
+             .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<OutboxMessage>(b =>
+        {
+            b.ToTable("outbox_messages");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Id).HasColumnName("id").ValueGeneratedNever();
+            b.Property(x => x.OccurredAt).HasColumnName("occurred_at").HasDefaultValueSql("SYSUTCDATETIME()");
+            b.Property(x => x.MessageType).HasColumnName("message_type").HasMaxLength(200).IsRequired();
+            b.Property(x => x.PayloadJson).HasColumnName("payload_json").IsRequired();
+            b.Property(x => x.HeadersJson).HasColumnName("headers_json");
+            b.Property(x => x.Status).HasColumnName("status").HasDefaultValue(0);
+            b.Property(x => x.RetryCount).HasColumnName("retry_count").HasDefaultValue(0);
+            b.Property(x => x.NextAttemptAt).HasColumnName("next_attempt_at");
+            b.Property(x => x.DedupKey).HasColumnName("dedup_key");
+            b.Property(x => x.CorrelationId).HasColumnName("correlation_id");
+            b.Property(x => x.CausationId).HasColumnName("causation_id");
+            b.HasIndex(x => new { x.Status, x.NextAttemptAt }).HasDatabaseName("IX_outbox_status_next");
+            b.HasIndex(x => new { x.Status, x.RetryCount }).HasDatabaseName("IX_outbox_status_retry");
+        });
+
+        modelBuilder.Entity<PatientOwner>(b =>
+        {
+            b.ToTable("patient_owners");
+            b.HasKey(x => new { x.PatientId, x.UserId });
+            b.Property(x => x.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("SYSUTCDATETIME()");
+            b.Property(x => x.PatientId).HasColumnName("patient_id");
+            b.Property(x => x.UserId).HasColumnName("user_id");
+            b.HasIndex(x => new { x.UserId, x.PatientId }).HasDatabaseName("IX_patient_owners_user");
+            b.HasOne(x => x.Patient)
+             .WithMany(p => p.Owners)
              .HasForeignKey(x => x.PatientId)
              .OnDelete(DeleteBehavior.Cascade);
         });
