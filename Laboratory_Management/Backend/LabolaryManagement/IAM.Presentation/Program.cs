@@ -2,6 +2,7 @@
 using IAM.Application.Auth.DTOs;
 using IAM.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Security.Authorization;
@@ -42,6 +43,16 @@ builder.Services.AddSingleton<IEmailSender, SmtpEmailSender>();
 builder.Services.AddSingleton<IEmailTemplateRenderer, FileEmailTemplateRenderer>();
 // Replace logging publisher with outbox-backed
 builder.Services.AddScoped<INotificationPublisher, OutboxNotificationPublisher>();
+
+// Application services (DI)
+builder.Services.AddSingleton<IPasswordPolicy, PasswordPolicy>();
+builder.Services.AddSingleton<IPasswordService, PasswordService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IUserService, UserService>();
+
+// Authorization dynamic permissions
+builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
 
 // Outbox services
 builder.Services.AddScoped<OutboxWriter>();
