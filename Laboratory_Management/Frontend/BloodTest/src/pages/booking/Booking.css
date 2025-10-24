@@ -1,0 +1,212 @@
+.booking-container {
+  min-height: 100vh;
+  background: #f8fafc;
+}
+
+.booking-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+
+.booking-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 40px;
+}
+
+.continue-btn {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.2s, transform 0.2s;
+  font-family: "Geist", "Inter", Arial, sans-serif;
+}
+
+.continue-btn:hover:not(:disabled) {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+.continue-btn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* New: package mode toggle buttons (two buttons like ảnh) */
+.package-mode-toggle {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin: 20px 0;
+  align-items: center;
+}
+
+/* filled black primary */
+.btn-primary-1 {
+  background: #fff;
+  color: #0b0b0b;
+  border: 0;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  min-width: 160px;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* outline white secondary */
+.btn-secondary {
+  background: #fff;
+  color: #111827;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  min-width: 160px;
+}
+
+/* active states: active button (either primary or secondary) => black bg, white text */
+.btn-primary-1.active,
+.btn-secondary.active {
+  background: #0b0b0b;
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 2px 6px rgba(11, 11, 11, 0.12);
+}
+
+/* Responsive: full width on small screens */
+@media (max-width: 480px) {
+  .package-mode-toggle {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .btn-primary-1,
+  .btn-secondary {
+    width: 100%;
+    min-width: auto;
+  }
+}
+
+/* New: attempt to hide search elements inside PackageSelection (covers common classnames) */
+.booking-content .package-search,
+.booking-content .search-bar,
+.booking-content .package-selection .search,
+.booking-content .search-input,
+.booking-content input[type="search"],
+.booking-content .search {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  .booking-content {
+    padding: 20px 16px;
+  }
+
+  .booking-actions {
+    margin-top: 24px;
+  }
+
+  .continue-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Booking header / progress steps */
+.booking-header {
+  margin-bottom: 20px;
+  text-align: center;
+}
+.booking-title-section {
+  margin-bottom: 18px;
+}
+.booking-title {
+  font-size: 28px;
+  margin: 0;
+  color: #0f172a;
+  font-weight: 700;
+}
+.booking-subtitle {
+  margin: 6px 0 0;
+  color: #6b7280;
+}
+
+/* Steps row */
+.booking-steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+.step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.step-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid rgba(15, 23, 42, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0f172a;
+  font-weight: 700;
+  transition: all 0.12s ease;
+  box-shadow: 0 1px 2px rgba(14, 30, 50, 0.03);
+}
+.step-number {
+  font-size: 16px;
+}
+
+/* active = current step: blue border + white bg? */
+.step.active .step-circle {
+  background: #2563eb;
+  border-color: rgba(59, 130, 246, 0.22);
+  box-shadow: 0 6px 18px rgba(59, 130, 246, 0.08);
+  color: #fff;
+}
+
+/* completed = checked: blue filled circle */
+.step.completed .step-circle {
+  background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 8px 26px rgba(37, 99, 235, 0.12);
+}
+
+/* step label */
+.step-label {
+  font-size: 13px;
+  color: #6b7280;
+  min-width: 70px;
+}
+
+/* connector line */
+.step-connector {
+  width: 60px;
+  height: 3px;
+  background-color: rgba(37, 99, 235, 0.9);
+  border-radius: 2px;
+  margin: 0 6px;
+}
+
+/* adjust when connector should be muted for future steps */
+.step:not(.completed) + .step-connector {
+  background: #e6eefc;
+}

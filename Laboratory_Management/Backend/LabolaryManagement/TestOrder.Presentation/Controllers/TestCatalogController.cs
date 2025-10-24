@@ -34,10 +34,16 @@ namespace TestOrder.Presentation.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> AddCatalogAsync([FromBody] TestCatalog catalog)
+        public async Task<IActionResult> AddCatalogAsync([FromBody] TestCatalogDTO catalog)
         {
+            var entity = new TestCatalog
+            {
+                TestName = catalog.TestName,
+                Description = catalog.Description,
+                Price = catalog.Price,
+            };
             await _service.AddCatalogAsync(catalog);
-            return CreatedAtAction(nameof(GetByIdAsync), new { id = catalog.CatalogId }, catalog);
+            return Ok(entity);
         }
 
         [HttpPut("{id}")]

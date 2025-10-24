@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using TestOrder.Application.DTOs;
 using TestOrder.Infrastructure.Models;
 using TestOrder.Infrastructure.Repository;
 
@@ -24,9 +25,17 @@ namespace TestOrder.Application.Services
             return await _repository.GetByIdAsync(id);
         }
 
-        public async Task AddBundleAsync(TestBundle bundle)
+        public async Task AddBundleAsync(TestBundleDTO dto)
         {
-            await _repository.AddAsync(bundle);
+            var entity = new TestBundle
+            {
+                BundleName = dto.BundleName,
+                Description = dto.Description,
+                Price = dto.Price,
+                IsActive = true
+            };
+
+            await _repository.AddAsync(entity);
         }
 
         public async Task UpdateBundleAsync(int id, string name, string description, double price)

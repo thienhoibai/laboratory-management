@@ -30,11 +30,23 @@ namespace TestOrder.Presentation.Controllers
             return Ok(bundle);
         }
         [HttpPost]
-        public async Task<IActionResult> AddBundleAsync([FromBody] TestBundle bundle)
+        public async Task<IActionResult> Create(TestBundleDTO dto)
         {
-            await _service.AddBundleAsync(bundle);
-            return CreatedAtAction(nameof(GetByIdAsync), new { id = bundle.BundleId }, bundle);
+            var entity = new TestBundle
+            {
+                BundleName = dto.BundleName,
+                Description = dto.Description,
+                Price = dto.Price,
+                IsActive = dto.IsActive
+            };
+
+            await _service.AddBundleAsync(dto);
+
+            return Ok(entity);
+            
+            
         }
+
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateBundleAsync(int id, [FromBody] UpdateBundleDTO model)
         {

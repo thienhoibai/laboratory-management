@@ -1,0 +1,338 @@
+.doctor-section-bg {
+  background: #F0F8FF;
+  width: calc(100vw - 48px);
+  padding: 60px 24px;
+  text-align: center;
+}
+.doctor-badge {
+  display: inline-block;
+  background: #E6F3FF;
+  color: #4A90E2;
+  font-weight: 500;
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-size: 0.9rem;
+  margin-bottom: 16px;
+  font-family: 'Inter', Arial, sans-serif;
+} 
+.doctor-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  font-family: 'Inter', Arial, sans-serif;
+  color: #2D3748;
+  margin-bottom: 12px;
+  text-align: center;
+}
+.doctor-desc {
+  font-size: 1.2rem;
+  color: #4A5568;
+  margin-bottom: 48px;
+  font-weight: 400;
+  text-align: center;
+  font-family: 'Inter', Arial, sans-serif;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.doctor-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 32px;
+  justify-content: center;
+  margin-top: 0;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0 20px;
+}
+.doctor-card {
+  background: #fff;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 0 0 24px 0;
+  width: 100%;
+  max-width: 350px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  overflow: hidden;
+  margin: 0 auto;
+}
+.doctor-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+.doctor-img-bg {
+  width: 100%;
+  height: 280px;
+  background: #F8FAFC;
+  border-radius: 12px 12px 0 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.doctor-img-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.doctor-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  display: block;
+  border-radius: 8px;
+}
+.doctor-info {
+  padding: 24px 24px 0 24px;
+  width: 100%;
+  text-align: left;
+}
+.doctor-name {
+  font-weight: 700;
+  font-family: 'Inter', Arial, sans-serif;
+  font-size: 1.2rem;
+  color: #2D3748;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 12px;
+}
+.doctor-rating {
+  color: #3182CE;
+  font-size: 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.doctor-specialty {
+  color: #4A5568;
+  font-size: 1rem;
+  margin-bottom: 8px;
+  font-family: 'Inter', Arial, sans-serif;
+  font-weight: 400;
+  text-align: center;
+}
+.doctor-exp, .doctor-location {
+  color: #718096;
+  font-size: 0.95rem;
+  margin-bottom: 4px;
+  font-family: 'Inter', Arial, sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-left: 12px;
+}
+.doctor-btn {
+  margin: 16px 24px 0 24px;
+  width: calc(100% - 48px);
+  background: #fff;
+  color: #4A5568;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  font-weight: 500;
+  padding: 12px 0;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Inter', Arial, sans-serif;
+}
+.doctor-btn:hover {
+  background: #F7FAFC;
+  border-color: #CBD5E0;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+.equipment-section-bg {
+  background: #f7fafc;
+  padding: 80px 24px;
+  text-align: center;
+}
+
+.equipment-badge {
+  display: inline-block;
+  background: #e0f2fe;
+  color: #0ea5e9;
+  font-weight: 600;
+  border-radius: 20px;
+  padding: 6px 18px;
+  font-size: 0.95rem;
+  margin-bottom: 16px;
+}
+
+.equipment-title {
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: #1a202c;
+  margin-bottom: 12px;
+}
+
+.equipment-desc {
+  font-size: 1.1rem;
+  color: #4a5568;
+  margin-bottom: 48px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.equipment-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 32px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.equipment-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s, box-shadow 0.3s;
+  overflow: hidden;
+}
+
+.equipment-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+}
+
+.equipment-img-bg {
+  width: 100%;
+  height: 250px;
+  background: #fff;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.equipment-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.equipment-info {
+  padding: 20px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.equipment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.equipment-name {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: #2563eb;
+}
+
+.equipment-rating {
+  color: #2563eb;
+  font-size: 1rem;
+  font-weight: 600;
+  white-space: nowrap;
+  margin-left: 12px;
+}
+
+.equipment-card-desc {
+  font-size: 0.95rem;
+  color: #4a5568;
+  margin-bottom: 16px;
+  line-height: 1.5;
+  flex-grow: 1;
+}
+
+.equipment-category {
+  color: #718096;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.equipment-category-icon {
+  color: #cbd5e0;
+}
+
+.equipment-btn {
+  width: 100%;
+  background: #fff;
+  color: #4a5568;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-weight: 500;
+  padding: 10px 0;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: auto;
+}
+
+.equipment-btn:hover {
+  background: #f7fafc;
+  border-color: #cbd5e0;
+  color: #2d3748;
+}
+
+@media (max-width: 768px) {
+  .doctor-cards {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    padding: 0 16px;
+  }
+  .doctor-card {
+    max-width: 100%;
+  }
+  .doctor-section-bg {
+    padding: 40px 16px;
+  }
+  .doctor-title {
+    font-size: 2rem;
+  }
+  .doctor-desc {
+    font-size: 1.1rem;
+  }
+  .equipment-section-bg {
+    padding: 60px 16px;
+  }
+  .equipment-title {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .doctor-cards {
+    padding: 0 8px;
+  }
+  .doctor-info {
+    padding: 20px 20px 0 20px;
+  }
+  .doctor-btn {
+    margin: 16px 20px 0 20px;
+    width: calc(100% - 40px);
+  }
+}
