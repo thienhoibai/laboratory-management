@@ -22,8 +22,9 @@ public class PatientEntity
     public string? FullNameNorm { get; set; }
     public DateOnly? DateOfBirth { get; set; }
     public string? PhoneLast4 { get; set; }
+    public string? IdLast4 { get; set; }
 
-    // Link to IAM user
+    // Link to IAM user (legacy, keep nullable for migration window)
     public Guid? UserId { get; set; }
 
     // Audit
@@ -38,7 +39,7 @@ public class PatientEntity
     public DateTime? DeletedAt { get; set; }
     public Guid? DeletedByUserId { get; set; }
 
-    // FIX: instantiate concrete collection types instead of the interface
     public ICollection<PatientEventLog> EventLogs { get; set; } = new List<PatientEventLog>();
     public ICollection<PatientRecordVersion> Versions { get; set; } = new List<PatientRecordVersion>();
+    public ICollection<PatientOwner> Owners { get; set; } = new List<PatientOwner>();
 }

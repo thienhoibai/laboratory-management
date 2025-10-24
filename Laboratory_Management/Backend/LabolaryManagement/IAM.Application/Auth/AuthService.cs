@@ -13,6 +13,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Security.Cryptography;
 using System.Text;
+using Contracts.Notifications;
 
 namespace IAM.Application.Auth
 {
@@ -357,17 +358,20 @@ namespace IAM.Application.Auth
             var baseUrl = _config["Email:ResetPasswordBaseUrl"] ?? "http://localhost:5274/reset-password";
             var link = $"{baseUrl}?token={token}";
 
-            var html = await _renderer.RenderAsync("ResetPassword.en-US", new Dictionary<string, string>
-            {
-                ["Username"] = user.Username,
-                ["Link"] = link,
-                ["ExpireMinutes"] = ((int)ResetTokenTtl.TotalMinutes).ToString()
-            }, ct);
-
-            await _email.SendAsync(user.Email, "Reset your password", html, ct);
-
-            // Publish notification event (for Notification service)
-            await _publisher.PublishAsync("PasswordResetRequested", new { userId = user.UserId, email = user.Email }, ct);
+            // Publish notification via Outbox (email)
+            var evt = new NotificationRequestedV1(
+                MessageId: Guid.NewGuid().ToString(),
+                Channel: "email",
+                To: user.Email,
+                Template: "ResetPassword",
+                Data: new Dictionary<string, string>
+                {
+                    ["Username"] = user.Username,
+                    ["Link"] = link,
+                    ["ExpireMinutes"] = ((int)ResetTokenTtl.TotalMinutes).ToString()
+                }
+            );
+            await _publisher.PublishAsync("PasswordResetRequested", new { to = user.Email, Username = user.Username, Link = link, ExpireMinutes = ((int)ResetTokenTtl.TotalMinutes).ToString() }, ct);
 
             return OperationResult.Success();
         }
