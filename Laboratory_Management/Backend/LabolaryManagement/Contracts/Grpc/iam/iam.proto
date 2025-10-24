@@ -1,12 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿syntax = "proto3";
 
-namespace Contracts.Grpc.iam
-{
-    class iam
-    {
-    }
+option csharp_namespace = "Iam.Grpc";
+
+package iam;
+
+// Simple IAM user contract for cross-service gRPC calls
+service UserService {
+  // Get a user by id
+  rpc GetUser (GetUserRequest) returns (GetUserReply);
+}
+
+message GetUserRequest {
+  string userId = 1;
+}
+
+message GetUserReply {
+  string userId = 1;
+  string fullName = 2;
+  string email = 3;
 }
