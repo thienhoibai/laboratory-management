@@ -1,0 +1,174 @@
+.package-selection {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Grid 3 columns like ảnh */
+.packages-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+/* Card */
+.package-card {
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 12px;
+  padding: 20px;
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease,
+    border-color 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 300px;
+}
+
+/* Selected card: blue outline + shadow, slightly elevated */
+.package-card.selected {
+  border: 2px solid #3b82f6; /* blue */
+  box-shadow: 0 8px 30px rgba(59, 130, 246, 0.12);
+  transform: translateY(-6px);
+}
+
+/* Popular badge */
+.popular-badge {
+  position: absolute;
+  right: 6px;
+  top: 5px;
+  background: #3b82f6;
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+/* Header */
+.package-title {
+  margin: 0;
+  font-size: 18px;
+  color: #0f172a;
+}
+.package-description {
+  margin: 6px 0 0 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+/* Price and duration row */
+.package-price {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+}
+.price-amount {
+  color: #3b82f6;
+  font-weight: 800;
+  font-size: 22px;
+}
+.package-duration {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+/* Includes list */
+.includes-title {
+  margin: 0 0 6px 0;
+  font-size: 14px;
+  color: #111827;
+}
+.includes-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+.includes-item {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  color: #374151;
+  font-size: 13px;
+}
+
+/* Summary bar below */
+.selection-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 12px;
+  padding: 18px 22px;
+  border: 2px solid rgba(59, 130, 246, 0.16);
+  background: #fff;
+  gap: 12px;
+}
+
+/* Left side: title and sub */
+.summary-left .summary-title {
+  font-weight: 700;
+  color: #0f172a;
+}
+.summary-left .summary-sub {
+  color: #6b7280;
+  margin-top: 6px;
+}
+
+/* Right side: price and continue button */
+.summary-right {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.summary-price {
+  font-weight: 800;
+  font-size: 20px;
+  color: #3b82f6;
+}
+
+/* Black rounded continue button like ảnh */
+.summary-continue {
+  background: #0b0b0b;
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+  min-width: 180px;
+}
+.summary-continue:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .packages-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 640px) {
+  .packages-grid {
+    grid-template-columns: 1fr;
+  }
+  .selection-summary {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .summary-right {
+    justify-content: space-between;
+  }
+  .summary-continue {
+    width: 100%;
+    min-width: auto;
+  }
+}
