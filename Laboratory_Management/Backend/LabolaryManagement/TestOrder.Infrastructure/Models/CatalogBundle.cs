@@ -9,7 +9,7 @@ public partial class CatalogBundle
 
     public int? CatalogId { get; set; }
 
-    public int? SortOrder { get; set; }
+    //public int? SortOrder { get; set; }
 
     public virtual TestBundle? Bundle { get; set; }
 
