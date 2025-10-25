@@ -37,7 +37,6 @@ namespace TestOrder.Presentation.Controllers
                 ParameterName = parameter.ParameterName,
                 Unit = parameter.Unit,
                 ReferenceRange = parameter.ReferenceRange,
-                CatalogId = parameter.CatalogId
            };
             await _service.AddParameterAsync(parameter);
             return Ok(entity);
