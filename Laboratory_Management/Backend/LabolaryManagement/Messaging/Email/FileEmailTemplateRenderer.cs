@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.Reflection;
 using System.Text;
 
@@ -24,31 +25,50 @@ namespace Messaging.Email
 
         public Task<string> RenderAsync(string templateName, IDictionary<string, string> model, CancellationToken ct = default)
         {
-            var embeddedPath = $"Templates/Emails/{templateName}.html";
-
-            string raw;
-            // Try embedded first
-            var fileInfo = _embedded.GetFileInfo(embeddedPath);
-            if (fileInfo.Exists)
+            // Resolve template with culture fallbacks
+            var culture = CultureInfo.CurrentUICulture;
+            var candidates = new List<string>
             {
-                if (!_cache.TryGetValue(embeddedPath, out raw!))
+                $"Templates/Emails/{templateName}.html",
+                $"Templates/Emails/{templateName}.{culture.Name}.html",
+                $"Templates/Emails/{templateName}.{culture.TwoLetterISOLanguageName}.html",
+                $"Templates/Emails/{templateName}.en-US.html"
+            };
+
+            string? raw = null;
+
+            foreach (var embeddedPath in candidates)
+            {
+                var fileInfo = _embedded.GetFileInfo(embeddedPath);
+                if (fileInfo.Exists)
                 {
-                    using var stream = fileInfo.CreateReadStream();
-                    using var reader = new StreamReader(stream, Encoding.UTF8);
-                    raw = reader.ReadToEnd();
-                    _cache[embeddedPath] = raw;
+                    if (!_cache.TryGetValue(embeddedPath, out raw!))
+                    {
+                        using var stream = fileInfo.CreateReadStream();
+                        using var reader = new StreamReader(stream, Encoding.UTF8);
+                        raw = reader.ReadToEnd();
+                        _cache[embeddedPath] = raw;
+                    }
+                    break;
+                }
+
+                // Try file system mirror path
+                var fsPath = Path.Combine(_fsTemplatesRoot, Path.GetFileName(embeddedPath));
+                if (File.Exists(fsPath))
+                {
+                    if (!_cache.TryGetValue(fsPath, out raw!))
+                    {
+                        raw = File.ReadAllText(fsPath, Encoding.UTF8);
+                        _cache[fsPath] = raw;
+                    }
+                    break;
                 }
             }
-            else
+
+            if (raw == null)
             {
-                // Fallback to file system
-                var fsPath = Path.Combine(_fsTemplatesRoot, templateName + ".html");
-                if (!File.Exists(fsPath))
-                {
-                    _logger.LogError("Email template not found in resources or file system: {Template}", templateName);
-                    throw new FileNotFoundException($"Email template not found: {templateName}");
-                }
-                raw = File.ReadAllText(fsPath, Encoding.UTF8);
+                _logger.LogError("Email template not found (tried: {Candidates})", string.Join(", ", candidates));
+                throw new FileNotFoundException($"Email template not found: {templateName}");
             }
 
             var html = raw;

@@ -23,6 +23,10 @@ public partial class Booking
 
     public long? AppointmentSlotId { get; set; }
 
+    public string? PatientName { get; set; }
+
+    public string? PatientPhone { get; set; }
+
     public virtual AppointmentSlot? AppointmentSlot { get; set; }
 
     public virtual ICollection<BookingTest> BookingTests { get; set; } = new List<BookingTest>();

@@ -1,0 +1,77 @@
+.footer-bg {
+  background: #fff;
+  border-top: 1px solid #e5e7eb;
+  margin-top: 32px;
+  font-family: 'Geist', Arial, sans-serif;
+}
+.footer-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 32px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 24px 24px 24px;
+  flex-wrap: wrap;
+}
+.footer-col {
+  min-width: 180px;
+  flex: 1;
+}
+.footer-logo {
+  display: flex;
+  align-items: center;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #2563eb;
+  margin-bottom: 10px;
+}
+.footer-logo-img {
+  font-size: 1.7rem;
+  margin-right: 8px;
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+.footer-logo-text {
+  font-weight: 600;
+}
+.footer-desc {
+  color: #6b7280;
+  font-size: 1rem;
+  margin-bottom: 0;
+}
+.footer-title {
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #22223b;
+}
+.footer-col ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.footer-col ul li {
+  color: #4b5563;
+  font-size: 1rem;
+  margin-bottom: 8px;
+  font-family: 'Geist', 'Inter', Arial, sans-serif;
+}
+.footer-bottom {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 0.98rem;
+  padding: 18px 0 8px 0;
+  border-top: 1px solid #e5e7eb;
+  background: #fff;
+  font-family: 'Geist', 'Inter', Arial, sans-serif;
+}
+@media (max-width: 900px) {
+  .footer-container {
+    flex-direction: column;
+    gap: 18px;
+    padding: 28px 8px 12px 8px;
+  }
+  .footer-col {
+    min-width: unset;
+  }
+}
