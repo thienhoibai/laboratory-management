@@ -11,4 +11,8 @@
     <ProjectReference Include="..\TestOrder.Infrastructure\TestOrder.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="DTOs\Bookings\" />
+  </ItemGroup>
+
 </Project>
