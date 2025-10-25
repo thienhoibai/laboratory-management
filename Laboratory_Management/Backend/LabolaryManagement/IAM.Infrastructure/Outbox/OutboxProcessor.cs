@@ -30,7 +30,13 @@ public class OutboxProcessor : BackgroundService
         var timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
         while (await timer.WaitForNextTickAsync(stoppingToken))
         {
-            try { await ProcessBatchAsync(stoppingToken); }
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
+            cts.CancelAfter(TimeSpan.FromSeconds(12)); // avoid long-hanging DB ops
+            try { await ProcessBatchAsync(cts.Token); }
+            catch (OperationCanceledException) when (!stoppingToken.IsCancellationRequested)
+            {
+                _logger.LogWarning("OutboxProcessor tick canceled due to timeout");
+            }
             catch (Exception ex) { _logger.LogError(ex, "OutboxProcessor error"); }
         }
     }
@@ -40,6 +46,17 @@ public class OutboxProcessor : BackgroundService
         using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IamDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IPublishEndpoint>();
+
+        // Fail fast if DB not reachable
+        using var pingCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        pingCts.CancelAfter(TimeSpan.FromSeconds(5));
+        if (!await db.Database.CanConnectAsync(pingCts.Token))
+        {
+            _logger.LogWarning("OutboxProcessor cannot connect to DB; will retry next tick");
+            return;
+        }
+
+        db.Database.SetCommandTimeout(TimeSpan.FromSeconds(10));
 
         var now = DateTime.UtcNow;
         var batch = await db.OutboxMessages
@@ -61,10 +78,7 @@ public class OutboxProcessor : BackgroundService
                 if (m.MessageType == nameof(NotificationRequestedV1))
                 {
                     var evt = JsonSerializer.Deserialize<NotificationRequestedV1>(m.PayloadJson, JsonOpts)!;
-                    await bus.Publish(evt, ctx =>
-                    {
-                        ctx.SetRoutingKey(evt.Channel);
-                    }, ct);
+                    await bus.Publish(evt, ctx => { ctx.SetRoutingKey(evt.Channel); }, ct);
                     m.Status = 1; // sent
                 }
                 else
@@ -72,6 +86,11 @@ public class OutboxProcessor : BackgroundService
                     _logger.LogWarning("Unknown outbox message type: {Type}", m.MessageType);
                     m.Status = 1; // mark as sent to skip
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.LogWarning("Publishing canceled due to timeout for {Id}", m.Id);
+                m.Status = 2; m.RetryCount++; m.NextAttemptAt = DateTime.UtcNow.AddSeconds(30);
             }
             catch (Exception ex)
             {
