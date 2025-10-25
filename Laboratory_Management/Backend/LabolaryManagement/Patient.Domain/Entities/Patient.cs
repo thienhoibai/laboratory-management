@@ -7,14 +7,13 @@ public class PatientEntity
 {
     public Guid PatientId { get; set; }
 
-    // Encrypted PII (VARBINARY)
-    public byte[]? FullNameEnc { get; set; }
-    public byte[]? DobEnc { get; set; }
-    public byte[]? PhoneEnc { get; set; }
-    public byte[]? EmailEnc { get; set; }
-    public byte[]? AddressEnc { get; set; }
-    public byte[]? IdNumberEnc { get; set; }
-    public byte[]? InsuranceNumberEnc { get; set; }
+    // Plain PII (stored as NVARCHAR)
+    public string? FullName { get; set; }
+    public string? Phone { get; set; }
+    public string? Email { get; set; }
+    public string? Address { get; set; }
+    public string? IdNumber { get; set; }
+    public string? InsuranceNumber { get; set; }
 
     public byte Gender { get; set; }
 

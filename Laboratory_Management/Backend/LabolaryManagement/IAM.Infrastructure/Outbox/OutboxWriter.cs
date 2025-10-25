@@ -18,7 +18,7 @@ public class OutboxWriter
         _db = db;
     }
 
-    public Task AppendAsync(string messageType, object payload, string? dedupKey = null, string? correlationId = null, string? causationId = null, CancellationToken ct = default)
+    public async Task AppendAsync(string messageType, object payload, string? dedupKey = null, string? correlationId = null, string? causationId = null, CancellationToken ct = default)
     {
         var msg = new OutboxMessage
         {
@@ -35,6 +35,7 @@ public class OutboxWriter
             CausationId = causationId
         };
         _db.OutboxMessages.Add(msg);
-        return Task.CompletedTask;
+        // Persist immediately so background processor can pick it up even if no further SaveChanges occurs
+        await _db.SaveChangesAsync(ct);
     }
 }
