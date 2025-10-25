@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,9 +10,7 @@ namespace TestOrder.Infrastructure.Base
 {
     public class GenericRepository<T> where T : class
     {
-
         protected readonly TestOrderDBContext _context;
-
         private const int PageSize = 10;
 
         public GenericRepository(TestOrderDBContext context)
@@ -21,13 +20,20 @@ namespace TestOrder.Infrastructure.Base
 
         public GenericRepository()
         {
-            _context ??= new TestOrderDBContext();
         }
 
         public Task<List<T>> GetAllPagedAsync(int pageNumber)
         {
-            
             return Task.Run(() => _context.Set<T>()
+                .Skip((pageNumber - 1) * PageSize)
+                .Take(PageSize)
+                .ToList());
+        }
+
+        public Task<List<T>> GetByIdPagesAsync(int id, int pageNumber)
+        {
+            return Task.Run(() => _context.Set<T>()
+                .Where(e => EF.Property<int>(e, "Id") == id)
                 .Skip((pageNumber - 1) * PageSize)
                 .Take(PageSize)
                 .ToList());
@@ -69,7 +75,5 @@ namespace TestOrder.Infrastructure.Base
                 _context.SaveChanges();
             });
         }
-
-
     }
 }
