@@ -1,4 +1,5 @@
 ﻿using IAM.Domain.Entities;
+using IAM.Infrastructure.Outbox;
 using Microsoft.EntityFrameworkCore;
 
 namespace IAM.Infrastructure
@@ -17,6 +18,7 @@ namespace IAM.Infrastructure
         public DbSet<UserSecurity> UserSecurities => Set<UserSecurity>();
         public DbSet<PasswordHistory> PasswordHistories => Set<PasswordHistory>();
         public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
+        public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -147,6 +149,25 @@ namespace IAM.Infrastructure
                 b.Property(x => x.CreatedAt);
                 b.HasIndex(x => x.TokenHash).IsUnique();
                 b.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<OutboxMessage>(b =>
+            {
+                b.ToTable("outbox_messages");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.Id).HasColumnName("id").ValueGeneratedNever();
+                b.Property(x => x.OccurredAt).HasColumnName("occurred_at").HasDefaultValueSql("SYSUTCDATETIME()");
+                b.Property(x => x.MessageType).HasColumnName("message_type").HasMaxLength(200).IsRequired();
+                b.Property(x => x.PayloadJson).HasColumnName("payload_json").IsRequired();
+                b.Property(x => x.HeadersJson).HasColumnName("headers_json");
+                b.Property(x => x.Status).HasColumnName("status").HasDefaultValue(0);
+                b.Property(x => x.RetryCount).HasColumnName("retry_count").HasDefaultValue(0);
+                b.Property(x => x.NextAttemptAt).HasColumnName("next_attempt_at");
+                b.Property(x => x.DedupKey).HasColumnName("dedup_key");
+                b.Property(x => x.CorrelationId).HasColumnName("correlation_id");
+                b.Property(x => x.CausationId).HasColumnName("causation_id");
+                b.HasIndex(x => new { x.Status, x.NextAttemptAt }).HasDatabaseName("IX_outbox_status_next");
+                b.HasIndex(x => new { x.Status, x.RetryCount }).HasDatabaseName("IX_outbox_status_retry");
             });
         }
 
