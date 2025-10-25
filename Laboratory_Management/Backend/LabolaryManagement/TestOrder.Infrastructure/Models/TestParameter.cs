@@ -12,7 +12,6 @@ public partial class TestParameter
     public string? Unit { get; set; }
 
     public string? ReferenceRange { get; set; }
-    public int CatalogId { get; set; }
 
     public virtual ICollection<TestResult> TestResults { get; set; } = new List<TestResult>();
 }
