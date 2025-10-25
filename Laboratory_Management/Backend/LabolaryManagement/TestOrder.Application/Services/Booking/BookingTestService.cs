@@ -15,10 +15,5 @@ namespace TestOrder.Application.Services.Booking
         {
             _bookingTestRepository = bookingTestRepository;
         }
-
-        public async Task<int> AddBookingTestAsync(long bookingId, long testId)
-        {
-           
-        }
     }
 }
