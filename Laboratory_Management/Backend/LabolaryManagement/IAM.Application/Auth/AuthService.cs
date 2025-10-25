@@ -13,6 +13,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Security.Cryptography;
 using System.Text;
+using Contracts.Notifications;
 
 namespace IAM.Application.Auth
 {
@@ -314,62 +315,74 @@ namespace IAM.Application.Auth
 
         public async Task<OperationResult> ForgotPasswordAsync(ForgotPasswordRequest request, CancellationToken ct = default)
         {
-            var user = await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Username == request.UsernameOrEmail || u.Email == request.UsernameOrEmail, ct);
-            if (user == null || !user.IsActive)
+            try
             {
+                var user = await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Username == request.UsernameOrEmail || u.Email == request.UsernameOrEmail, ct);
+                if (user == null || !user.IsActive)
+                {
+                    return OperationResult.Success();
+                }
+
+                var oneHourAgo = DateTime.UtcNow.AddHours(-1);
+                var recent = await _db.AuditLogs.CountAsync(a => a.UserId == user.UserId && a.Action == "FORGOT_PASSWORD" && a.CreatedAt >= oneHourAgo, ct);
+                if (recent >= MaxResetRequestsPerHour)
+                {
+                    return OperationResult.Fail(ErrorCodes.RateLimited);
+                }
+
+                var tokenBytes = RandomNumberGenerator.GetBytes(32);
+                var token = Convert.ToBase64String(tokenBytes).TrimEnd('=')
+                    .Replace('+', '-').Replace('/', '_');
+                using var sha = SHA256.Create();
+                var tokenHash = sha.ComputeHash(Encoding.UTF8.GetBytes(token));
+
+                _db.PasswordResetTokens.Add(new PasswordResetToken
+                {
+                    PasswordResetTokenId = Guid.NewGuid(),
+                    UserId = user.UserId,
+                    TokenHash = tokenHash,
+                    ExpiresAt = DateTime.UtcNow.Add(ResetTokenTtl),
+                    Attempts = 0,
+                    CreatedAt = DateTime.UtcNow
+                });
+
+                _db.AuditLogs.Add(new AuditLog
+                {
+                    Action = "FORGOT_PASSWORD",
+                    UserId = user.UserId,
+                    Resource = $"User:{user.UserId}",
+                    Description = "Requested password reset",
+                    CreatedAt = DateTime.UtcNow
+                });
+
+                await _db.SaveChangesAsync(ct);
+
+                var baseUrl = _config["Email:ResetPasswordBaseUrl"] ?? "http://localhost:5174/reset-password";
+                var link = $"{baseUrl}?token={token}";
+
+                // Publish notification via Outbox (email)
+                var evt = new NotificationRequestedV1(
+                    MessageId: Guid.NewGuid().ToString(),
+                    Channel: "email",
+                    To: user.Email,
+                    Template: "ResetPassword",
+                    Data: new Dictionary<string, string>
+                    {
+                        ["Username"] = user.Username,
+                        ["Link"] = link,
+                        ["ExpireMinutes"] = ((int)ResetTokenTtl.TotalMinutes).ToString()
+                    }
+                );
+                await _publisher.PublishAsync("PasswordResetRequested", new { to = user.Email, Username = user.Username, Link = link, ExpireMinutes = ((int)ResetTokenTtl.TotalMinutes).ToString() }, ct);
+
                 return OperationResult.Success();
             }
-
-            var oneHourAgo = DateTime.UtcNow.AddHours(-1);
-            var recent = await _db.AuditLogs.CountAsync(a => a.UserId == user.UserId && a.Action == "FORGOT_PASSWORD" && a.CreatedAt >= oneHourAgo, ct);
-            if (recent >= MaxResetRequestsPerHour)
+            catch (Exception ex)
             {
-                return OperationResult.Fail(ErrorCodes.RateLimited);
+                _logger.LogError(ex, "ForgotPassword failed for {UsernameOrEmail}", request.UsernameOrEmail);
+                // Do not reveal error to avoid user enumeration or leaking infra issues
+                return OperationResult.Success();
             }
-
-            var tokenBytes = RandomNumberGenerator.GetBytes(32);
-            var token = Convert.ToBase64String(tokenBytes).TrimEnd('=')
-                .Replace('+', '-').Replace('/', '_');
-            using var sha = SHA256.Create();
-            var tokenHash = sha.ComputeHash(Encoding.UTF8.GetBytes(token));
-
-            _db.PasswordResetTokens.Add(new PasswordResetToken
-            {
-                PasswordResetTokenId = Guid.NewGuid(),
-                UserId = user.UserId,
-                TokenHash = tokenHash,
-                ExpiresAt = DateTime.UtcNow.Add(ResetTokenTtl),
-                Attempts = 0,
-                CreatedAt = DateTime.UtcNow
-            });
-
-            _db.AuditLogs.Add(new AuditLog
-            {
-                Action = "FORGOT_PASSWORD",
-                UserId = user.UserId,
-                Resource = $"User:{user.UserId}",
-                Description = "Requested password reset",
-                CreatedAt = DateTime.UtcNow
-            });
-
-            await _db.SaveChangesAsync(ct);
-
-            var baseUrl = _config["Email:ResetPasswordBaseUrl"] ?? "http://localhost:5274/reset-password";
-            var link = $"{baseUrl}?token={token}";
-
-            var html = await _renderer.RenderAsync("ResetPassword.en-US", new Dictionary<string, string>
-            {
-                ["Username"] = user.Username,
-                ["Link"] = link,
-                ["ExpireMinutes"] = ((int)ResetTokenTtl.TotalMinutes).ToString()
-            }, ct);
-
-            await _email.SendAsync(user.Email, "Reset your password", html, ct);
-
-            // Publish notification event (for Notification service)
-            await _publisher.PublishAsync("PasswordResetRequested", new { userId = user.UserId, email = user.Email }, ct);
-
-            return OperationResult.Success();
         }
 
         public async Task<OperationResult> ResetPasswordAsync(ResetPasswordRequest request, CancellationToken ct = default)

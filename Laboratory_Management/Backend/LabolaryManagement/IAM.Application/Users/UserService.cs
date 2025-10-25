@@ -143,11 +143,26 @@ namespace IAM.Application.Users
             };
 
             var total = await query.LongCountAsync(ct);
+
             var items = await query.Skip((page - 1) * pageSize).Take(pageSize)
-                .Select(u => new UserSummaryDto(u.UserId, u.Username, u.Email, u.FullName, u.IsActive, u.CreatedAt))
+                .Select(u => new
+                {
+                    u.UserId,
+                    u.Username,
+                    u.Email,
+                    u.FullName,
+                    u.IsActive,
+                    u.CreatedAt,
+                    u.LastLoginAt,
+                    Roles = (from ur in _db.UserRoles
+                             join r in _db.Roles on ur.RoleId equals r.RoleId
+                             where ur.UserId == u.UserId
+                             select r.Name).ToArray()
+                })
                 .ToListAsync(ct);
 
-            return PageResult<UserSummaryDto>.From(items, page, pageSize, total);
+            var mapped = items.Select(i => new UserSummaryDto(i.UserId, i.Username, i.Email, i.FullName, i.IsActive, i.CreatedAt, i.LastLoginAt, i.Roles)).ToList();
+            return PageResult<UserSummaryDto>.From(mapped, page, pageSize, total);
         }
 
         public async Task<OperationResult> AssignRolesAsync(Guid id, AssignRolesRequest request, Guid actorId, CancellationToken ct = default)

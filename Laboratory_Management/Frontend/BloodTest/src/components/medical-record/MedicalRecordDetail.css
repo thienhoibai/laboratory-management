@@ -1,0 +1,396 @@
+.medical-record-detail {
+  min-height: 100vh;
+  background: linear-gradient(to bottom, #2563eb 300px, #f8fafc 300px);
+  padding-bottom: 60px;
+}
+
+/* Header */
+.medical-record-header {
+  padding: 10px 0px 10px;
+  color: white;
+}
+
+.breadcrumb {
+  margin-bottom: 20px;
+}
+
+.breadcrumb-link {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.9);
+  text-decoration: none;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+}
+
+.breadcrumb-link:hover {
+  text-decoration: underline;
+}
+
+.breadcrumb-link::before {
+  content: "←";
+  font-size: 16px;
+}
+
+.page-title {
+  font-size: 32px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+}
+
+.page-subtitle {
+  font-size: 16px;
+  margin: 0;
+  opacity: 0.9;
+}
+
+/* Sections */
+.patient-info-section,
+.appointment-history-section {
+  max-width: 1200px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 12px;
+  padding: 32px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 24px;
+}
+
+.section-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 8px 0;
+}
+
+.section-subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0 0 32px 0;
+}
+
+/* Patient Info Grid */
+.patient-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+.patient-info-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.patient-info-item.full-width {
+  grid-column: 1 / -1;
+}
+
+.info-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  background: #eff6ff;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.info-icon {
+  width: 24px;
+  height: 24px;
+  color: #2563eb;
+}
+
+.info-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.info-label {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.info-value {
+  font-size: 16px;
+  color: #1e293b;
+  font-weight: 600;
+}
+
+/* Filter Bar */
+.filter-bar {
+  background: #f8fafc;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.filter-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.filter-icon {
+  width: 20px;
+  height: 20px;
+  color: #64748b;
+}
+
+.filter-item > span:first-of-type {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.filter-note {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.filter-dates {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+}
+
+.date-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.date-picker label {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.date-picker input {
+  padding: 10px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.date-picker input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.filter-reset {
+  padding: 10px 24px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e293b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-reset:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+/* Appointment List */
+.appointment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.appointment-card-wrapper {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+
+.appointment-card-wrapper:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  border-color: #cbd5e1;
+}
+
+.appointment-card {
+  padding: 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  background: white;
+}
+
+.appointment-icon {
+  width: 48px;
+  height: 48px;
+  background: #dbeafe;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.appointment-icon svg {
+  width: 24px;
+  height: 24px;
+  color: #2563eb;
+}
+
+.appointment-content {
+  flex: 1;
+}
+
+.appointment-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 12px 0;
+}
+
+.appointment-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.appointment-date {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #64748b;
+}
+
+.date-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.appointment-location {
+  font-size: 13px;
+  color: #94a3b8;
+  padding-left: 24px;
+}
+
+.appointment-actions {
+  flex-shrink: 0;
+}
+
+.view-detail-btn {
+  padding: 10px 20px;
+  background: white;
+  border: 1px solid #2563eb;
+  border-radius: 6px;
+  color: #2563eb;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.view-detail-btn:hover {
+  background: #eff6ff;
+}
+
+.view-detail-btn.active {
+  background: #2563eb;
+  color: white;
+}
+
+.chevron-icon {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.2s;
+}
+
+.chevron-icon.expanded {
+  transform: rotate(180deg);
+}
+
+/* Test Detail Dropdown */
+.test-detail-dropdown {
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+  padding: 20px;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 2000px;
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .medical-record-header {
+    padding: 30px 20px 20px;
+  }
+
+  .page-title {
+    font-size: 24px;
+  }
+
+  .patient-info-section,
+  .appointment-history-section {
+    padding: 20px;
+    margin: 0 16px 16px;
+  }
+
+  .patient-info-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .filter-dates {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .appointment-card {
+    flex-direction: column;
+  }
+
+  .appointment-card-wrapper {
+    margin-bottom: 8px;
+  }
+
+  .appointment-actions {
+    width: 100%;
+  }
+
+  .view-detail-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .test-detail-dropdown {
+    padding: 16px;
+  }
+}
