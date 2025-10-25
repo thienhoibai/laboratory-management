@@ -44,6 +44,10 @@ builder.Services.AddSingleton<IEmailTemplateRenderer, FileEmailTemplateRenderer>
 // Replace logging publisher with outbox-backed
 builder.Services.AddScoped<INotificationPublisher, OutboxNotificationPublisher>();
 
+// Outbox services (required by OutboxNotificationPublisher)
+builder.Services.AddScoped<OutboxWriter>();
+builder.Services.AddHostedService<OutboxProcessor>();
+
 // Application services (DI)
 builder.Services.AddSingleton<IPasswordPolicy, PasswordPolicy>();
 builder.Services.AddSingleton<IPasswordService, PasswordService>();
@@ -54,15 +58,16 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
 builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
 
-// Outbox services
-builder.Services.AddScoped<OutboxWriter>();
-builder.Services.AddHostedService<OutboxProcessor>();
-
 // DbContext
 var conn = builder.Configuration.GetConnectionString("LabIAM") ?? builder.Configuration["ConnectionStrings:LabIAM"] ?? "Server=localhost;Database=LabIAM;Trusted_Connection=True;TrustServerCertificate=True";
 builder.Services.AddDbContext<IamDbContext>(opt =>
 {
-    opt.UseSqlServer(conn);
+    opt.UseSqlServer(conn, sql =>
+    {
+        // Retry transient errors and set reasonable timeout
+        sql.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(10), errorNumbersToAdd: null);
+        sql.CommandTimeout(30);
+    });
 });
 
 const string notifyExchange = "lab.notify.v1";

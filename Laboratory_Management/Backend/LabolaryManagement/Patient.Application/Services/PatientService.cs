@@ -34,14 +34,13 @@ public class PatientService : IPatientService
         var entity = new PatientEntity
         {
             PatientId = Guid.NewGuid(),
-            FullNameEnc = _pii.Encrypt(request.FullName),
-            DobEnc = request.DateOfBirth.HasValue ? _pii.Encrypt(request.DateOfBirth.Value.ToString("yyyy-MM-dd")) : null,
+            FullName = request.FullName,
             Gender = request.Gender,
-            PhoneEnc = _pii.Encrypt(request.Phone),
-            EmailEnc = _pii.Encrypt(request.Email),
-            AddressEnc = _pii.Encrypt(request.Address),
-            IdNumberEnc = _pii.Encrypt(request.IdNumber),
-            InsuranceNumberEnc = _pii.Encrypt(request.InsuranceNumber),
+            Phone = request.Phone,
+            Email = request.Email,
+            Address = request.Address,
+            IdNumber = request.IdNumber,
+            InsuranceNumber = request.InsuranceNumber,
             FullNameNorm = NormalizeName(request.FullName),
             DateOfBirth = request.DateOfBirth,
             PhoneLast4 = Last4(request.Phone),
@@ -115,39 +114,39 @@ public class PatientService : IPatientService
 
         var oldSnapshot = new
         {
-            FullName = _pii.Decrypt(entity.FullNameEnc),
+            FullName = entity.FullName,
             DateOfBirth = entity.DateOfBirth,
             Gender = entity.Gender,
-            Phone = _pii.Decrypt(entity.PhoneEnc),
-            Email = _pii.Decrypt(entity.EmailEnc),
-            Address = _pii.Decrypt(entity.AddressEnc),
-            IdNumber = _pii.Decrypt(entity.IdNumberEnc),
-            InsuranceNumber = _pii.Decrypt(entity.InsuranceNumberEnc),
+            Phone = entity.Phone,
+            Email = entity.Email,
+            Address = entity.Address,
+            IdNumber = entity.IdNumber,
+            InsuranceNumber = entity.InsuranceNumber,
             UserId = entity.UserId
         };
 
-        if (request.FullName != null) { entity.FullNameEnc = _pii.Encrypt(request.FullName); entity.FullNameNorm = NormalizeName(request.FullName); }
-        if (request.DateOfBirth.HasValue) { entity.DobEnc = _pii.Encrypt(request.DateOfBirth.Value.ToString("yyyy-MM-dd")); entity.DateOfBirth = request.DateOfBirth; }
+        if (request.FullName != null) { entity.FullName = request.FullName; entity.FullNameNorm = NormalizeName(request.FullName); }
+        if (request.DateOfBirth.HasValue) { entity.DateOfBirth = request.DateOfBirth; }
         if (request.Gender.HasValue) entity.Gender = request.Gender.Value;
-        if (request.Phone != null) { entity.PhoneEnc = _pii.Encrypt(request.Phone); entity.PhoneLast4 = Last4(request.Phone); }
-        if (request.Email != null) entity.EmailEnc = _pii.Encrypt(request.Email);
-        if (request.Address != null) entity.AddressEnc = _pii.Encrypt(request.Address);
-        if (request.IdNumber != null) { entity.IdNumberEnc = _pii.Encrypt(request.IdNumber); entity.IdLast4 = Last4(request.IdNumber); }
-        if (request.InsuranceNumber != null) entity.InsuranceNumberEnc = _pii.Encrypt(request.InsuranceNumber);
+        if (request.Phone != null) { entity.Phone = request.Phone; entity.PhoneLast4 = Last4(request.Phone); }
+        if (request.Email != null) entity.Email = request.Email;
+        if (request.Address != null) entity.Address = request.Address;
+        if (request.IdNumber != null) { entity.IdNumber = request.IdNumber; entity.IdLast4 = Last4(request.IdNumber); }
+        if (request.InsuranceNumber != null) entity.InsuranceNumber = request.InsuranceNumber;
 
         entity.UpdatedByUserId = actorUserId;
         entity.UpdatedAt = DateTime.UtcNow;
 
         var newSnapshot = new
         {
-            FullName = _pii.Decrypt(entity.FullNameEnc),
+            FullName = entity.FullName,
             DateOfBirth = entity.DateOfBirth,
             Gender = entity.Gender,
-            Phone = _pii.Decrypt(entity.PhoneEnc),
-            Email = _pii.Decrypt(entity.EmailEnc),
-            Address = _pii.Decrypt(entity.AddressEnc),
-            IdNumber = _pii.Decrypt(entity.IdNumberEnc),
-            InsuranceNumber = _pii.Decrypt(entity.InsuranceNumberEnc),
+            Phone = entity.Phone,
+            Email = entity.Email,
+            Address = entity.Address,
+            IdNumber = entity.IdNumber,
+            InsuranceNumber = entity.InsuranceNumber,
             UserId = entity.UserId
         };
 
@@ -230,7 +229,7 @@ public class PatientService : IPatientService
     {
         var e = await _db.Patients.AsNoTracking().FirstOrDefaultAsync(p => p.PatientId == patientId, ct);
         if (e == null) return OperationResult<PatientDetailDto>.Fail(Common.Errors.ErrorCodes.NotFound);
-        var dto = new PatientDetailDto(e.PatientId, _pii.Decrypt(e.FullNameEnc), e.DateOfBirth, e.Gender, _pii.Decrypt(e.PhoneEnc), _pii.Decrypt(e.EmailEnc), _pii.Decrypt(e.AddressEnc), _pii.Decrypt(e.IdNumberEnc), _pii.Decrypt(e.InsuranceNumberEnc), e.UserId, e.IsDeleted, e.CreatedAt, e.UpdatedAt);
+        var dto = new PatientDetailDto(e.PatientId, e.FullName, e.DateOfBirth, e.Gender, e.Phone, e.Email, e.Address, e.IdNumber, e.InsuranceNumber, e.UserId, e.IsDeleted, e.CreatedAt, e.UpdatedAt);
         return OperationResult<PatientDetailDto>.Success(dto);
     }
 
@@ -257,7 +256,7 @@ public class PatientService : IPatientService
 
         var total = await q.LongCountAsync(ct);
         var items = await q.Skip((page - 1) * pageSize).Take(pageSize)
-            .Select(e => new PatientSummaryDto(e.PatientId, e.FullNameNorm, e.DateOfBirth, e.Gender, e.PhoneLast4, e.IsDeleted, e.CreatedAt, e.UpdatedAt))
+            .Select(e => new PatientSummaryDto(e.PatientId, e.FullName, e.DateOfBirth, e.Gender, e.PhoneLast4, e.IsDeleted, e.CreatedAt, e.UpdatedAt))
             .ToListAsync(ct);
 
         return (items, total);
