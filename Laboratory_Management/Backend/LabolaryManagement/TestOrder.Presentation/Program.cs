@@ -1,4 +1,4 @@
-﻿
+
 using Microsoft.EntityFrameworkCore;
 using TestOrder.Application.Services;
 using TestOrder.Infrastructure.Base;
@@ -27,6 +27,10 @@ namespace TestOrder.Presentation
             builder.Services.AddScoped<TestBundleService>();
             builder.Services.AddScoped<TestParameterRepository>();
             builder.Services.AddScoped<TestParameterService>();
+            builder.Services.AddScoped<CatalogBundleRepository>();
+            builder.Services.AddScoped<CatalogBundleService>();
+            builder.Services.AddScoped<CatalogParameterService>();
+            builder.Services.AddScoped<CatalogParameterRepository>();
             builder.Services.AddScoped<AppointmentSlotRepository>();
             builder.Services.AddScoped<AppointmentSlotService>();
             builder.Services.AddEndpointsApiExplorer();
