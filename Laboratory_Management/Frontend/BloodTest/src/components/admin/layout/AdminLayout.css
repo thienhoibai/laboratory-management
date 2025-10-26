@@ -263,6 +263,14 @@ body {
 }
 
 .admin-badge {
+  padding: 4px 0;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-align: center;
+  display: inline-block;
+}
+.admin-badge-status {
   padding: 4px 12px;
   border-radius: 20px;
   font-size: 0.85rem;
@@ -603,6 +611,18 @@ body {
   margin-top: 6px;
   color: #dc3545;
   font-size: 0.85rem;
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .modal-actions {

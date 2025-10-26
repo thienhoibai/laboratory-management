@@ -386,7 +386,7 @@ const UserManagementPage = () => {
               </span> */}
               <span>
                 <div
-                  className={`admin-badge ${
+                  className={`admin-badge-status ${
                     user.isActive ? "status-active" : "status-inactive"
                   }`}
                 >
