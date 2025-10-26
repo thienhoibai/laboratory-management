@@ -46,34 +46,7 @@ public class PatientService : IPatientService
 
         _db.Patients.Add(entity);
 
-        _db.PatientRecordVersions.Add(new PatientRecordVersion
-        {
-            Patient = entity,
-            VersionNo = 1,
-            ChangedBy = actorUserId,
-            ChangedAt = DateTime.UtcNow,
-            FullSnapshot = System.Text.Json.JsonSerializer.Serialize(new
-            {
-                entity.PatientId,
-                request.FullName,
-                request.DateOfBirth,
-                request.Gender,
-                request.Phone,
-                request.Email,
-                request.Address,
-                request.IdNumber,
-                request.InsuranceNumber,
-                UserId = actorUserId
-            })
-        });
-        _db.PatientEventLogs.Add(new PatientEventLog
-        {
-            Patient = entity,
-            EventType = "Created",
-            ActorUserId = actorUserId,
-            Detail = actorIp == null ? null : System.Text.Json.JsonSerializer.Serialize(new { actorIp }),
-            OccurredAt = DateTime.UtcNow
-        });
+        // Only write audit log; skip event log and record versions (tables not present in DB)
         _db.AuditLogs.Add(new AuditLog
         {
             Entity = "Patient",
@@ -140,40 +113,7 @@ public class PatientService : IPatientService
             entity.UserId
         };
 
-        var changes = new List<object>();
-        void diff(string field, object? oldV, object? newV)
-        {
-            if (!Equals(oldV, newV)) changes.Add(new { field, old = oldV, @new = newV });
-        }
-
-        diff("FullName", oldSnapshot.FullName, newSnapshot.FullName);
-        diff("DateOfBirth", oldSnapshot.DateOfBirth, newSnapshot.DateOfBirth);
-        diff("Gender", oldSnapshot.Gender, newSnapshot.Gender);
-        diff("Phone", oldSnapshot.Phone, newSnapshot.Phone);
-        diff("Email", oldSnapshot.Email, newSnapshot.Email);
-        diff("Address", oldSnapshot.Address, newSnapshot.Address);
-        diff("IdNumber", oldSnapshot.IdNumber, newSnapshot.IdNumber);
-        diff("InsuranceNumber", oldSnapshot.InsuranceNumber, newSnapshot.InsuranceNumber);
-
-        var latestVersionNo = await _db.PatientRecordVersions.Where(v => v.PatientId == patientId).Select(v => (int?)v.VersionNo).MaxAsync(ct) ?? 0;
-        _db.PatientRecordVersions.Add(new PatientRecordVersion
-        {
-            PatientId = patientId,
-            VersionNo = latestVersionNo + 1,
-            ChangedBy = actorUserId,
-            ChangedAt = DateTime.UtcNow,
-            ChangeSet = System.Text.Json.JsonSerializer.Serialize(changes),
-            FullSnapshot = System.Text.Json.JsonSerializer.Serialize(newSnapshot)
-        });
-
-        _db.PatientEventLogs.Add(new PatientEventLog
-        {
-            PatientId = patientId,
-            EventType = "Updated",
-            ActorUserId = actorUserId,
-            Detail = System.Text.Json.JsonSerializer.Serialize(new { changesCount = changes.Count }),
-            OccurredAt = DateTime.UtcNow
-        });
+        // Audit only
         _db.AuditLogs.Add(new AuditLog
         {
             Entity = "Patient",
@@ -181,7 +121,7 @@ public class PatientService : IPatientService
             Action = "Update",
             OccurredAt = DateTime.UtcNow,
             UserId = actorUserId,
-            DetailJson = System.Text.Json.JsonSerializer.Serialize(new { changesCount = changes.Count })
+            DetailJson = System.Text.Json.JsonSerializer.Serialize(new { changes = newSnapshot })
         });
 
         await _db.SaveChangesAsync(ct);
@@ -203,14 +143,6 @@ public class PatientService : IPatientService
         entity.DeletedByUserId = actorUserId;
         entity.UpdatedAt = DateTime.UtcNow;
 
-        _db.PatientEventLogs.Add(new PatientEventLog
-        {
-            PatientId = patientId,
-            EventType = "Deleted",
-            ActorUserId = actorUserId,
-            Detail = reason == null ? null : System.Text.Json.JsonSerializer.Serialize(new { reason }),
-            OccurredAt = DateTime.UtcNow
-        });
         _db.AuditLogs.Add(new AuditLog
         {
             Entity = "Patient",
@@ -264,6 +196,12 @@ public class PatientService : IPatientService
         return (items, total);
     }
 
+    public Task<(IReadOnlyList<PatientVersionDto> Items, long Total)> GetVersionsAsync(Guid patientId, int page, int pageSize, string? sortDir, CancellationToken ct = default)
+    {
+        // Version table not present in DB, return empty
+        return Task.FromResult(((IReadOnlyList<PatientVersionDto>)Array.Empty<PatientVersionDto>(), 0L));
+    }
+
     public async Task<(IReadOnlyList<PatientSummaryDto> Items, long Total)> ListByOwnerAsync(Guid ownerUserId, int page, int pageSize, string? name, DateOnly? dob, string? sortBy, string? sortDir, CancellationToken ct = default)
     {
         var q = _db.Patients.AsNoTracking().Where(p => p.UserId == ownerUserId);
@@ -283,16 +221,5 @@ public class PatientService : IPatientService
             .Select(e => new PatientSummaryDto(e.PatientId, e.FullName, e.DateOfBirth, e.Gender, Last4(e.Phone), e.IsDeleted, e.CreatedAt, e.UpdatedAt))
             .ToListAsync(ct);
         return (list, total);
-    }
-
-    public async Task<(IReadOnlyList<PatientVersionDto> Items, long Total)> GetVersionsAsync(Guid patientId, int page, int pageSize, string? sortDir, CancellationToken ct = default)
-    {
-        var q = _db.PatientRecordVersions.AsNoTracking().Where(v => v.PatientId == patientId);
-        q = sortDir?.ToLowerInvariant() == "asc" ? q.OrderBy(v => v.ChangedAt) : q.OrderByDescending(v => v.ChangedAt);
-        var total = await q.LongCountAsync(ct);
-        var items = await q.Skip((page - 1) * pageSize).Take(pageSize)
-            .Select(v => new PatientVersionDto(v.VersionId, v.VersionNo, v.ChangedBy, v.ChangedAt, v.ChangeSet, v.FullSnapshot))
-            .ToListAsync(ct);
-        return (items, total);
     }
 }
