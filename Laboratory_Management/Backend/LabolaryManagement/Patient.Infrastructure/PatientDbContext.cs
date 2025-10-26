@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Patient.Domain.Entities;
-using Patient.Infrastructure.Outbox;
 
 namespace Patient.Infrastructure;
 
@@ -11,8 +10,7 @@ public class PatientDbContext : DbContext
     public DbSet<PatientEntity> Patients => Set<PatientEntity>();
     public DbSet<PatientRecordVersion> PatientRecordVersions => Set<PatientRecordVersion>();
     public DbSet<PatientEventLog> PatientEventLogs => Set<PatientEventLog>();
-    public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
-    public DbSet<PatientOwner> PatientOwners => Set<PatientOwner>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -22,38 +20,36 @@ public class PatientDbContext : DbContext
             b.HasKey(x => x.PatientId);
             b.Property(x => x.PatientId).HasColumnName("patient_id").ValueGeneratedNever();
 
-            // Plain columns
-            b.Property(x => x.FullName).HasColumnName("full_name").HasMaxLength(256);
-            b.Property(x => x.Phone).HasColumnName("phone").HasMaxLength(50);
+            b.Property(x => x.UserId).HasColumnName("owner_user_id").IsRequired();
+
+            b.Property(x => x.FullName).HasColumnName("full_name").HasMaxLength(150).IsRequired();
+            b.Property(x => x.DateOfBirth).HasColumnName("date_of_birth");
+            b.Property(x => x.Gender).HasColumnName("gender");
+            b.Property<string?>("BloodType").HasColumnName("blood_type").HasMaxLength(3);
+
+            b.Property(x => x.Phone).HasColumnName("phone").HasMaxLength(32);
             b.Property(x => x.Email).HasColumnName("email").HasMaxLength(256);
-            b.Property(x => x.Address).HasColumnName("address").HasMaxLength(512);
-            b.Property(x => x.IdNumber).HasColumnName("id_number").HasMaxLength(64);
+            b.Property(x => x.Address).HasColumnName("address").HasMaxLength(300);
+
+            b.Property(x => x.IdNumber).HasColumnName("citizen_id").HasMaxLength(12).IsFixedLength();
             b.Property(x => x.InsuranceNumber).HasColumnName("insurance_number").HasMaxLength(64);
 
-            b.Property(x => x.Gender).HasColumnName("gender");
-
-            // Searchable
-            b.Property(x => x.FullNameNorm).HasColumnName("full_name_norm").HasMaxLength(256);
-            b.Property(x => x.DateOfBirth).HasColumnName("date_of_birth");
-            b.Property(x => x.PhoneLast4).HasColumnName("phone_last4").HasMaxLength(4).IsFixedLength();
-            b.Property(x => x.IdLast4).HasColumnName("id_last4").HasMaxLength(4).IsFixedLength();
-
-            b.Property(x => x.UserId).HasColumnName("user_id");
-
-            b.Property(x => x.CreatedChannel).HasColumnName("created_channel").HasMaxLength(32);
-            b.Property(x => x.CreatedByUserId).HasColumnName("created_by_user_id");
-            b.Property(x => x.UpdatedByUserId).HasColumnName("updated_by_user_id");
             b.Property(x => x.CreatedAt).HasColumnName("created_at");
+            b.Property(x => x.CreatedByUserId).HasColumnName("created_by_user_id");
             b.Property(x => x.UpdatedAt).HasColumnName("updated_at");
+            b.Property(x => x.UpdatedByUserId).HasColumnName("updated_by_user_id");
 
             b.Property(x => x.IsDeleted).HasColumnName("is_deleted");
             b.Property(x => x.DeletedAt).HasColumnName("deleted_at");
             b.Property(x => x.DeletedByUserId).HasColumnName("deleted_by_user_id");
 
-            b.HasIndex(x => new { x.FullNameNorm, x.DateOfBirth });
-            b.HasIndex(x => x.PhoneLast4);
-            b.HasIndex(x => x.IdLast4);
+            // Ignore computed properties not in DB
+            b.Ignore(x => x.FullNameNorm);
+            b.Ignore(x => x.PhoneLast4);
+
             b.HasQueryFilter(x => !x.IsDeleted);
+            b.HasIndex(x => x.UserId).HasDatabaseName("IX_patients_owner");
+            b.HasIndex(x => x.FullName).HasDatabaseName("IX_patients_full_name");
         });
 
         modelBuilder.Entity<PatientRecordVersion>(b =>
@@ -67,11 +63,7 @@ public class PatientDbContext : DbContext
             b.Property(x => x.ChangedAt).HasColumnName("changed_at");
             b.Property(x => x.ChangeSet).HasColumnName("change_set");
             b.Property(x => x.FullSnapshot).HasColumnName("full_snapshot");
-            b.HasIndex(x => new { x.PatientId, x.ChangedAt }).HasDatabaseName("IX_prv_patient_time");
-            b.HasOne(x => x.Patient)
-             .WithMany(p => p.Versions)
-             .HasForeignKey(x => x.PatientId)
-             .OnDelete(DeleteBehavior.Cascade);
+            b.HasOne(x => x.Patient).WithMany(p => p.Versions).HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<PatientEventLog>(b =>
@@ -80,51 +72,27 @@ public class PatientDbContext : DbContext
             b.HasKey(x => x.LogId);
             b.Property(x => x.LogId).HasColumnName("log_id").ValueGeneratedOnAdd();
             b.Property(x => x.PatientId).HasColumnName("patient_id");
-            b.Property(x => x.EventType).HasColumnName("event_type").HasMaxLength(64);
+            b.Property(x => x.EventType).HasColumnName("event_type");
             b.Property(x => x.ActorUserId).HasColumnName("actor_user_id");
             b.Property(x => x.Detail).HasColumnName("detail");
             b.Property(x => x.OccurredAt).HasColumnName("occurred_at");
             b.Property(x => x.CorrelationId).HasColumnName("correlation_id");
             b.Property(x => x.TraceId).HasColumnName("trace_id");
-            b.HasIndex(x => new { x.PatientId, x.OccurredAt }).HasDatabaseName("IX_log_patient_time");
-            b.HasIndex(x => new { x.EventType, x.OccurredAt }).HasDatabaseName("IX_log_event_time");
-            b.HasOne(x => x.Patient)
-             .WithMany(p => p.EventLogs)
-             .HasForeignKey(x => x.PatientId)
-             .OnDelete(DeleteBehavior.Cascade);
+            b.HasOne(x => x.Patient).WithMany(p => p.EventLogs).HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<OutboxMessage>(b =>
+        modelBuilder.Entity<AuditLog>(b =>
         {
-            b.ToTable("outbox_messages");
-            b.HasKey(x => x.Id);
-            b.Property(x => x.Id).HasColumnName("id").ValueGeneratedNever();
-            b.Property(x => x.OccurredAt).HasColumnName("occurred_at").HasDefaultValueSql("SYSUTCDATETIME()");
-            b.Property(x => x.MessageType).HasColumnName("message_type").HasMaxLength(200).IsRequired();
-            b.Property(x => x.PayloadJson).HasColumnName("payload_json").IsRequired();
-            b.Property(x => x.HeadersJson).HasColumnName("headers_json");
-            b.Property(x => x.Status).HasColumnName("status").HasDefaultValue(0);
-            b.Property(x => x.RetryCount).HasColumnName("retry_count").HasDefaultValue(0);
-            b.Property(x => x.NextAttemptAt).HasColumnName("next_attempt_at");
-            b.Property(x => x.DedupKey).HasColumnName("dedup_key");
-            b.Property(x => x.CorrelationId).HasColumnName("correlation_id");
-            b.Property(x => x.CausationId).HasColumnName("causation_id");
-            b.HasIndex(x => new { x.Status, x.NextAttemptAt }).HasDatabaseName("IX_outbox_status_next");
-            b.HasIndex(x => new { x.Status, x.RetryCount }).HasDatabaseName("IX_outbox_status_retry");
-        });
-
-        modelBuilder.Entity<PatientOwner>(b =>
-        {
-            b.ToTable("patient_owners");
-            b.HasKey(x => new { x.PatientId, x.UserId });
-            b.Property(x => x.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("SYSUTCDATETIME()");
-            b.Property(x => x.PatientId).HasColumnName("patient_id");
+            b.ToTable("audit_logs");
+            b.HasKey(x => x.AuditId);
+            b.Property(x => x.AuditId).HasColumnName("audit_id").ValueGeneratedOnAdd();
+            b.Property(x => x.Entity).HasColumnName("entity").HasMaxLength(64).IsRequired();
+            b.Property(x => x.EntityId).HasColumnName("entity_id");
+            b.Property(x => x.Action).HasColumnName("action").HasMaxLength(32).IsRequired();
+            b.Property(x => x.OccurredAt).HasColumnName("occurred_at");
             b.Property(x => x.UserId).HasColumnName("user_id");
-            b.HasIndex(x => new { x.UserId, x.PatientId }).HasDatabaseName("IX_patient_owners_user");
-            b.HasOne(x => x.Patient)
-             .WithMany(p => p.Owners)
-             .HasForeignKey(x => x.PatientId)
-             .OnDelete(DeleteBehavior.Cascade);
+            b.Property(x => x.CorrelationId).HasColumnName("correlation_id").HasMaxLength(64);
+            b.Property(x => x.DetailJson).HasColumnName("detail_json");
         });
     }
 }
