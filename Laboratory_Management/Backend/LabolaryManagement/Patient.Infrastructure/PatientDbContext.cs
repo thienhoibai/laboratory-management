@@ -20,12 +20,12 @@ public class PatientDbContext : DbContext
             b.HasKey(x => x.PatientId);
             b.Property(x => x.PatientId).HasColumnName("patient_id").ValueGeneratedNever();
 
-            b.Property(x => x.UserId).HasColumnName("owner_user_id").IsRequired();
+            // Map to user_id to be compatible with existing DB
+            b.Property(x => x.UserId).HasColumnName("user_id").IsRequired();
 
             b.Property(x => x.FullName).HasColumnName("full_name").HasMaxLength(150).IsRequired();
             b.Property(x => x.DateOfBirth).HasColumnName("date_of_birth");
             b.Property(x => x.Gender).HasColumnName("gender");
-            b.Property<string?>("BloodType").HasColumnName("blood_type").HasMaxLength(3);
 
             b.Property(x => x.Phone).HasColumnName("phone").HasMaxLength(32);
             b.Property(x => x.Email).HasColumnName("email").HasMaxLength(256);
@@ -43,9 +43,10 @@ public class PatientDbContext : DbContext
             b.Property(x => x.DeletedAt).HasColumnName("deleted_at");
             b.Property(x => x.DeletedByUserId).HasColumnName("deleted_by_user_id");
 
-            // Ignore computed properties not in DB
+            // Ignore properties not in DB
             b.Ignore(x => x.FullNameNorm);
             b.Ignore(x => x.PhoneLast4);
+            b.Ignore(x => x.CreatedChannel);
 
             b.HasQueryFilter(x => !x.IsDeleted);
             b.HasIndex(x => x.UserId).HasDatabaseName("IX_patients_owner");
