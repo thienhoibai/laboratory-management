@@ -38,7 +38,8 @@ builder.Services.AddMassTransit(x =>
         cfg.ReceiveEndpoint("notify.email", e =>
         {
             e.Bind(notifyExchange, x => { x.RoutingKey = "email"; x.ExchangeType = ExchangeType.Topic; });
-            e.UseMessageRetry(r => r.Exponential(5, TimeSpan.FromSeconds(5), TimeSpan.FromMinutes(1), TimeSpan.FromSeconds(10)));
+            // Retry đúng yêu cầu: 3 lần exponential (5s, 15s, 30s)
+            e.UseMessageRetry(r => r.Exponential(3, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(5)));
             e.ConfigureConsumer<NotificationRequestedConsumer>(context);
         });
     });
