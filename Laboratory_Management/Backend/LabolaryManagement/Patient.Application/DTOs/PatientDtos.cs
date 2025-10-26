@@ -11,7 +11,6 @@ public record CreatePatientRequest(
     string? Address,
     string? IdNumber,
     string? InsuranceNumber,
-    Guid? UserId,
     string? CreatedChannel
 );
 
@@ -23,8 +22,7 @@ public record UpdatePatientRequest(
     string? Email,
     string? Address,
     string? IdNumber,
-    string? InsuranceNumber,
-    Guid? UserId
+    string? InsuranceNumber
 );
 
 public record PatientSummaryDto(
