@@ -29,13 +29,13 @@ const AdminHeader = ({ pageTitle, breadcrumbs }) => {
       <div className="admin-user-profile">
         <span>Administrator</span>
         <div className="admin-avatar">AD</div>
-        {/* Nút đăng xuất tạm thời không dùng icon */}
+
         <button
           onClick={handleLogout}
           className="admin-logout-button"
           title="Đăng xuất"
         >
-          Logout
+          Đăng xuất
         </button>
       </div>
     </header>
