@@ -21,29 +21,35 @@ public class PatientDbContext : DbContext
             b.ToTable("patients");
             b.HasKey(x => x.PatientId);
             b.Property(x => x.PatientId).HasColumnName("patient_id").ValueGeneratedNever();
-            b.Property(x => x.FullNameEnc).HasColumnName("full_name_enc");
-            b.Property(x => x.DobEnc).HasColumnName("dob_enc");
+
+            // Plain columns
+            b.Property(x => x.FullName).HasColumnName("full_name").HasMaxLength(256);
+            b.Property(x => x.Phone).HasColumnName("phone").HasMaxLength(50);
+            b.Property(x => x.Email).HasColumnName("email").HasMaxLength(256);
+            b.Property(x => x.Address).HasColumnName("address").HasMaxLength(512);
+            b.Property(x => x.IdNumber).HasColumnName("id_number").HasMaxLength(64);
+            b.Property(x => x.InsuranceNumber).HasColumnName("insurance_number").HasMaxLength(64);
+
             b.Property(x => x.Gender).HasColumnName("gender");
-            b.Property(x => x.PhoneEnc).HasColumnName("phone_enc");
-            b.Property(x => x.EmailEnc).HasColumnName("email_enc");
-            b.Property(x => x.AddressEnc).HasColumnName("address_enc");
-            b.Property(x => x.IdNumberEnc).HasColumnName("id_number_enc");
-            b.Property(x => x.InsuranceNumberEnc).HasColumnName("insurance_number_enc");
+
+            // Searchable
             b.Property(x => x.FullNameNorm).HasColumnName("full_name_norm").HasMaxLength(256);
             b.Property(x => x.DateOfBirth).HasColumnName("date_of_birth");
             b.Property(x => x.PhoneLast4).HasColumnName("phone_last4").HasMaxLength(4).IsFixedLength();
             b.Property(x => x.IdLast4).HasColumnName("id_last4").HasMaxLength(4).IsFixedLength();
+
             b.Property(x => x.UserId).HasColumnName("user_id");
+
             b.Property(x => x.CreatedChannel).HasColumnName("created_channel").HasMaxLength(32);
             b.Property(x => x.CreatedByUserId).HasColumnName("created_by_user_id");
             b.Property(x => x.UpdatedByUserId).HasColumnName("updated_by_user_id");
             b.Property(x => x.CreatedAt).HasColumnName("created_at");
             b.Property(x => x.UpdatedAt).HasColumnName("updated_at");
+
             b.Property(x => x.IsDeleted).HasColumnName("is_deleted");
             b.Property(x => x.DeletedAt).HasColumnName("deleted_at");
             b.Property(x => x.DeletedByUserId).HasColumnName("deleted_by_user_id");
 
-            // Indexes + soft delete filter
             b.HasIndex(x => new { x.FullNameNorm, x.DateOfBirth });
             b.HasIndex(x => x.PhoneLast4);
             b.HasIndex(x => x.IdLast4);
