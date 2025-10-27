@@ -14,7 +14,6 @@ using Common.Web.Extensions;
 using Messaging.Email;
 using Messaging.Notifications;
 using IAM.Presentation.Grpc;
-using IAM.Infrastructure.Outbox;
 using IAM.Infrastructure.Notifications;
 using MassTransit;
 using Contracts.Notifications;
@@ -28,7 +27,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Config
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
 builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
-builder.Services.AddHealthChecks(); 
+builder.Services.AddHealthChecks();
 
 // MVC + Filters
 builder.Services.AddControllers();
@@ -38,11 +37,8 @@ builder.Services.AddStandardApi();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Email & Notifications
-builder.Services.AddSingleton<IEmailSender, SmtpEmailSender>();
+// Email renderer for templates
 builder.Services.AddSingleton<IEmailTemplateRenderer, FileEmailTemplateRenderer>();
-// Replace logging publisher with outbox-backed
-builder.Services.AddScoped<INotificationPublisher, OutboxNotificationPublisher>();
 
 // Application services (DI)
 builder.Services.AddSingleton<IPasswordPolicy, PasswordPolicy>();
@@ -50,24 +46,11 @@ builder.Services.AddSingleton<IPasswordService, PasswordService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 
-// Authorization dynamic permissions
-builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
-builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
-
-// Outbox services
-builder.Services.AddScoped<OutboxWriter>();
-builder.Services.AddHostedService<OutboxProcessor>();
-
-// DbContext
-var conn = builder.Configuration.GetConnectionString("LabIAM") ?? builder.Configuration["ConnectionStrings:LabIAM"] ?? "Server=localhost;Database=LabIAM;Trusted_Connection=True;TrustServerCertificate=True";
-builder.Services.AddDbContext<IamDbContext>(opt =>
-{
-    opt.UseSqlServer(conn);
-});
+// Notifications via MassTransit -> RabbitMQ (no Outbox)
+builder.Services.AddScoped<INotificationPublisher, MassTransitNotificationPublisher>();
 
 const string notifyExchange = "lab.notify.v1";
 
-// MassTransit publish topology for notifications
 builder.Services.AddMassTransit(x =>
 {
     x.UsingRabbitMq((ctx, cfg) =>
@@ -77,7 +60,6 @@ builder.Services.AddMassTransit(x =>
         var pass = builder.Configuration["RabbitMQ:Pass"] ?? "guest";
         cfg.Host(host, h => { h.Username(user); h.Password(pass); });
 
-        // Set logical entity (exchange) name and type
         cfg.Message<NotificationRequestedV1>(m => m.SetEntityName(notifyExchange));
         cfg.Publish<NotificationRequestedV1>(p =>
         {
@@ -85,6 +67,17 @@ builder.Services.AddMassTransit(x =>
             p.Durable = true;
             p.AutoDelete = false;
         });
+    });
+});
+
+// DbContext
+var conn = builder.Configuration.GetConnectionString("LabIAM") ?? builder.Configuration["ConnectionStrings:LabIAM"] ?? "Server=localhost;Database=LabIAM;Trusted_Connection=True;TrustServerCertificate=True";
+builder.Services.AddDbContext<IamDbContext>(opt =>
+{
+    opt.UseSqlServer(conn, sql =>
+    {
+        sql.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(10), errorNumbersToAdd: null);
+        sql.CommandTimeout(30);
     });
 });
 
@@ -109,15 +102,31 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    // Register explicit permission policies expected by controllers
+    string[] perms = new[]
+    {
+        "User.List","User.View","User.Create","User.Delete","User.Update","Role.Update"
+    };
+    foreach (var p in perms)
+    {
+        options.AddPolicy($"perm:{p}", policy =>
+            policy.RequireAssertion(ctx =>
+                ctx.User.IsInRole("Admin")
+                || ctx.User.HasClaim("perm", p)
+                || ctx.User.HasClaim("permissions", p)
+                || ctx.User.HasClaim("scope", p)));
+    }
+});
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy.WithOrigins(
-            "http://localhost:5174",   
-            "http://127.0.0.1:5174"   
+            "http://localhost:5174",
+            "http://127.0.0.1:5174"
         )
         .AllowAnyHeader()
         .AllowAnyMethod()
@@ -132,12 +141,10 @@ builder.Services.AddGrpcReflection();
 
 var app = builder.Build();
 
-// Ensure DB exists + outbox schema
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<IamDbContext>();
     db.Database.Migrate();
-    await OutboxSchemaInitializer.EnsureCreatedAsync(db);
 }
 
 app.UseMiddleware<ProblemDetailsMiddleware>();

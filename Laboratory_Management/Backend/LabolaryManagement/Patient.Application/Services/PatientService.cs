@@ -1,8 +1,6 @@
 ﻿using Common.Results;
-using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Patient.Application.DTOs;
-using Patient.Application.Security;
 using Patient.Domain.Entities;
 using Patient.Infrastructure;
 
@@ -11,42 +9,33 @@ namespace Patient.Application.Services;
 public class PatientService : IPatientService
 {
     private readonly PatientDbContext _db;
-    private readonly ISensitiveDataProtector _pii;
-    private readonly IPublishEndpoint _bus;
 
-    public PatientService(PatientDbContext db, ISensitiveDataProtector pii, IPublishEndpoint bus)
+    public PatientService(PatientDbContext db)
     {
-        _db = db; _pii = pii; _bus = bus;
+        _db = db;
     }
-
-    private static string NormalizeName(string? name)
-        => string.IsNullOrWhiteSpace(name) ? string.Empty : name.Trim().ToUpperInvariant();
 
     private static string? Last4(string? s)
         => string.IsNullOrWhiteSpace(s) || s.Length < 4 ? null : s[^4..];
 
     public Task<bool> IsOwnerAsync(Guid patientId, Guid actorUserId, CancellationToken ct)
-        => _db.PatientOwners.AnyAsync(o => o.PatientId == patientId && o.UserId == actorUserId, ct);
+        => _db.Patients.AnyAsync(p => p.PatientId == patientId && p.UserId == actorUserId, ct);
 
     public async Task<OperationResult<PatientDetailDto>> CreateAsync(
-    CreatePatientRequest request, Guid actorUserId, string? actorIp = null, CancellationToken ct = default)
+        CreatePatientRequest request, Guid actorUserId, string? actorIp = null, CancellationToken ct = default)
     {
         var entity = new PatientEntity
         {
             PatientId = Guid.NewGuid(),
-            FullNameEnc = _pii.Encrypt(request.FullName),
-            DobEnc = request.DateOfBirth.HasValue ? _pii.Encrypt(request.DateOfBirth.Value.ToString("yyyy-MM-dd")) : null,
+            FullName = request.FullName,
             Gender = request.Gender,
-            PhoneEnc = _pii.Encrypt(request.Phone),
-            EmailEnc = _pii.Encrypt(request.Email),
-            AddressEnc = _pii.Encrypt(request.Address),
-            IdNumberEnc = _pii.Encrypt(request.IdNumber),
-            InsuranceNumberEnc = _pii.Encrypt(request.InsuranceNumber),
-            FullNameNorm = NormalizeName(request.FullName),
+            Phone = request.Phone,
+            Email = request.Email,
+            Address = request.Address,
+            IdNumber = request.IdNumber,
+            InsuranceNumber = request.InsuranceNumber,
             DateOfBirth = request.DateOfBirth,
-            PhoneLast4 = Last4(request.Phone),
-            IdLast4 = Last4(request.IdNumber),
-            UserId = null,
+            UserId = actorUserId,
             CreatedChannel = request.CreatedChannel,
             CreatedByUserId = actorUserId,
             UpdatedByUserId = actorUserId,
@@ -56,44 +45,19 @@ public class PatientService : IPatientService
         };
 
         _db.Patients.Add(entity);
-        _db.PatientOwners.Add(new PatientOwner { PatientId = entity.PatientId, UserId = actorUserId });
 
-        var version = new PatientRecordVersion
+        // Only write audit log; skip event log and record versions (tables not present in DB)
+        _db.AuditLogs.Add(new AuditLog
         {
-            Patient = entity,
-            VersionNo = 1,
-            ChangedBy = actorUserId,
-            ChangedAt = DateTime.UtcNow,
-            FullSnapshot = System.Text.Json.JsonSerializer.Serialize(new
-            {
-                entity.PatientId,
-                request.FullName,
-                request.DateOfBirth,
-                request.Gender,
-                request.Phone,
-                request.Email,
-                request.Address,
-                request.IdNumber,
-                request.InsuranceNumber,
-                UserId = actorUserId
-            })
-        };
-        var log = new PatientEventLog
-        {
-            Patient = entity,
-            EventType = "Created",
-            ActorUserId = actorUserId,
-            Detail = actorIp == null ? null : System.Text.Json.JsonSerializer.Serialize(new { actorIp }),
-            OccurredAt = DateTime.UtcNow
-        };
-
-        _db.PatientRecordVersions.Add(version);
-        _db.PatientEventLogs.Add(log);
+            Entity = "Patient",
+            EntityId = entity.PatientId,
+            Action = "Create",
+            OccurredAt = DateTime.UtcNow,
+            UserId = actorUserId,
+            DetailJson = System.Text.Json.JsonSerializer.Serialize(new { request.FullName, request.DateOfBirth })
+        });
 
         await _db.SaveChangesAsync(ct);
-
-        await _bus.Publish(new Contracts.Events.Patient.PatientCreatedV1(
-            entity.PatientId, actorUserId, entity.FullNameNorm ?? string.Empty, DateTime.UtcNow), ct);
 
         var dto = new PatientDetailDto(
             entity.PatientId, request.FullName, request.DateOfBirth, request.Gender,
@@ -103,93 +67,64 @@ public class PatientService : IPatientService
         return OperationResult<PatientDetailDto>.Success(dto);
     }
 
-
     public async Task<OperationResult<PatientDetailDto>> UpdateAsync(Guid patientId, UpdatePatientRequest request, Guid actorUserId, string? actorIp = null, CancellationToken ct = default)
     {
         var entity = await _db.Patients.FirstOrDefaultAsync(p => p.PatientId == patientId && !p.IsDeleted, ct);
         if (entity == null) return OperationResult<PatientDetailDto>.Fail(Common.Errors.ErrorCodes.NotFound);
 
-        // Only owner can update
         if (!await IsOwnerAsync(patientId, actorUserId, ct))
             return OperationResult<PatientDetailDto>.Fail(Common.Errors.ErrorCodes.Forbidden);
 
         var oldSnapshot = new
         {
-            FullName = _pii.Decrypt(entity.FullNameEnc),
-            DateOfBirth = entity.DateOfBirth,
-            Gender = entity.Gender,
-            Phone = _pii.Decrypt(entity.PhoneEnc),
-            Email = _pii.Decrypt(entity.EmailEnc),
-            Address = _pii.Decrypt(entity.AddressEnc),
-            IdNumber = _pii.Decrypt(entity.IdNumberEnc),
-            InsuranceNumber = _pii.Decrypt(entity.InsuranceNumberEnc),
-            UserId = entity.UserId
+            entity.FullName,
+            entity.DateOfBirth,
+            entity.Gender,
+            entity.Phone,
+            entity.Email,
+            entity.Address,
+            entity.IdNumber,
+            entity.InsuranceNumber,
+            entity.UserId
         };
 
-        if (request.FullName != null) { entity.FullNameEnc = _pii.Encrypt(request.FullName); entity.FullNameNorm = NormalizeName(request.FullName); }
-        if (request.DateOfBirth.HasValue) { entity.DobEnc = _pii.Encrypt(request.DateOfBirth.Value.ToString("yyyy-MM-dd")); entity.DateOfBirth = request.DateOfBirth; }
+        if (request.FullName != null) { entity.FullName = request.FullName; }
+        if (request.DateOfBirth.HasValue) { entity.DateOfBirth = request.DateOfBirth; }
         if (request.Gender.HasValue) entity.Gender = request.Gender.Value;
-        if (request.Phone != null) { entity.PhoneEnc = _pii.Encrypt(request.Phone); entity.PhoneLast4 = Last4(request.Phone); }
-        if (request.Email != null) entity.EmailEnc = _pii.Encrypt(request.Email);
-        if (request.Address != null) entity.AddressEnc = _pii.Encrypt(request.Address);
-        if (request.IdNumber != null) { entity.IdNumberEnc = _pii.Encrypt(request.IdNumber); entity.IdLast4 = Last4(request.IdNumber); }
-        if (request.InsuranceNumber != null) entity.InsuranceNumberEnc = _pii.Encrypt(request.InsuranceNumber);
+        if (request.Phone != null) { entity.Phone = request.Phone; }
+        if (request.Email != null) entity.Email = request.Email;
+        if (request.Address != null) entity.Address = request.Address;
+        if (request.IdNumber != null) { entity.IdNumber = request.IdNumber; }
+        if (request.InsuranceNumber != null) entity.InsuranceNumber = request.InsuranceNumber;
 
         entity.UpdatedByUserId = actorUserId;
         entity.UpdatedAt = DateTime.UtcNow;
 
         var newSnapshot = new
         {
-            FullName = _pii.Decrypt(entity.FullNameEnc),
-            DateOfBirth = entity.DateOfBirth,
-            Gender = entity.Gender,
-            Phone = _pii.Decrypt(entity.PhoneEnc),
-            Email = _pii.Decrypt(entity.EmailEnc),
-            Address = _pii.Decrypt(entity.AddressEnc),
-            IdNumber = _pii.Decrypt(entity.IdNumberEnc),
-            InsuranceNumber = _pii.Decrypt(entity.InsuranceNumberEnc),
-            UserId = entity.UserId
+            entity.FullName,
+            entity.DateOfBirth,
+            entity.Gender,
+            entity.Phone,
+            entity.Email,
+            entity.Address,
+            entity.IdNumber,
+            entity.InsuranceNumber,
+            entity.UserId
         };
 
-        var changes = new List<object>();
-        void diff(string field, object? oldV, object? newV)
+        // Audit only
+        _db.AuditLogs.Add(new AuditLog
         {
-            if (!Equals(oldV, newV)) changes.Add(new { field, old = oldV, @new = newV });
-        }
-
-        diff("FullName", oldSnapshot.FullName, newSnapshot.FullName);
-        diff("DateOfBirth", oldSnapshot.DateOfBirth, newSnapshot.DateOfBirth);
-        diff("Gender", oldSnapshot.Gender, newSnapshot.Gender);
-        diff("Phone", oldSnapshot.Phone, newSnapshot.Phone);
-        diff("Email", oldSnapshot.Email, newSnapshot.Email);
-        diff("Address", oldSnapshot.Address, newSnapshot.Address);
-        diff("IdNumber", oldSnapshot.IdNumber, newSnapshot.IdNumber);
-        diff("InsuranceNumber", oldSnapshot.InsuranceNumber, newSnapshot.InsuranceNumber);
-
-        var latestVersionNo = await _db.PatientRecordVersions.Where(v => v.PatientId == patientId).Select(v => (int?)v.VersionNo).MaxAsync(ct) ?? 0;
-        _db.PatientRecordVersions.Add(new PatientRecordVersion
-        {
-            PatientId = patientId,
-            VersionNo = latestVersionNo + 1,
-            ChangedBy = actorUserId,
-            ChangedAt = DateTime.UtcNow,
-            ChangeSet = System.Text.Json.JsonSerializer.Serialize(changes),
-            FullSnapshot = System.Text.Json.JsonSerializer.Serialize(newSnapshot)
-        });
-
-        _db.PatientEventLogs.Add(new PatientEventLog
-        {
-            PatientId = patientId,
-            EventType = "Updated",
-            ActorUserId = actorUserId,
-            Detail = System.Text.Json.JsonSerializer.Serialize(new { changesCount = changes.Count }),
-            OccurredAt = DateTime.UtcNow
+            Entity = "Patient",
+            EntityId = patientId,
+            Action = "Update",
+            OccurredAt = DateTime.UtcNow,
+            UserId = actorUserId,
+            DetailJson = System.Text.Json.JsonSerializer.Serialize(new { changes = newSnapshot })
         });
 
         await _db.SaveChangesAsync(ct);
-
-        await _bus.Publish(new Contracts.Events.Patient.PatientUpdatedV1(
-            entity.PatientId, actorUserId, DateTime.UtcNow, changes.Count), ct);
 
         var dto = new PatientDetailDto(entity.PatientId, newSnapshot.FullName, newSnapshot.DateOfBirth, newSnapshot.Gender, newSnapshot.Phone, newSnapshot.Email, newSnapshot.Address, newSnapshot.IdNumber, newSnapshot.InsuranceNumber, entity.UserId, entity.IsDeleted, entity.CreatedAt, entity.UpdatedAt);
         return OperationResult<PatientDetailDto>.Success(dto);
@@ -200,7 +135,6 @@ public class PatientService : IPatientService
         var entity = await _db.Patients.FirstOrDefaultAsync(p => p.PatientId == patientId && !p.IsDeleted, ct);
         if (entity == null) return OperationResult.Fail(Common.Errors.ErrorCodes.NotFound);
 
-        // Only owner can delete
         if (!await IsOwnerAsync(patientId, actorUserId, ct))
             return OperationResult.Fail(Common.Errors.ErrorCodes.Forbidden);
 
@@ -209,19 +143,17 @@ public class PatientService : IPatientService
         entity.DeletedByUserId = actorUserId;
         entity.UpdatedAt = DateTime.UtcNow;
 
-        _db.PatientEventLogs.Add(new PatientEventLog
+        _db.AuditLogs.Add(new AuditLog
         {
-            PatientId = patientId,
-            EventType = "Deleted",
-            ActorUserId = actorUserId,
-            Detail = reason == null ? null : System.Text.Json.JsonSerializer.Serialize(new { reason }),
-            OccurredAt = DateTime.UtcNow
+            Entity = "Patient",
+            EntityId = patientId,
+            Action = "Delete",
+            OccurredAt = DateTime.UtcNow,
+            UserId = actorUserId,
+            DetailJson = reason
         });
 
         await _db.SaveChangesAsync(ct);
-
-        await _bus.Publish(new Contracts.Events.Patient.PatientDeletedV1(
-            patientId, actorUserId, DateTime.UtcNow), ct);
 
         return OperationResult.Success();
     }
@@ -230,7 +162,7 @@ public class PatientService : IPatientService
     {
         var e = await _db.Patients.AsNoTracking().FirstOrDefaultAsync(p => p.PatientId == patientId, ct);
         if (e == null) return OperationResult<PatientDetailDto>.Fail(Common.Errors.ErrorCodes.NotFound);
-        var dto = new PatientDetailDto(e.PatientId, _pii.Decrypt(e.FullNameEnc), e.DateOfBirth, e.Gender, _pii.Decrypt(e.PhoneEnc), _pii.Decrypt(e.EmailEnc), _pii.Decrypt(e.AddressEnc), _pii.Decrypt(e.IdNumberEnc), _pii.Decrypt(e.InsuranceNumberEnc), e.UserId, e.IsDeleted, e.CreatedAt, e.UpdatedAt);
+        var dto = new PatientDetailDto(e.PatientId, e.FullName, e.DateOfBirth, e.Gender, e.Phone, e.Email, e.Address, e.IdNumber, e.InsuranceNumber, e.UserId, e.IsDeleted, e.CreatedAt, e.UpdatedAt);
         return OperationResult<PatientDetailDto>.Success(dto);
     }
 
@@ -239,38 +171,55 @@ public class PatientService : IPatientService
         var q = _db.Patients.AsNoTracking().AsQueryable();
         if (!string.IsNullOrWhiteSpace(name))
         {
-            var norm = name.Trim().ToUpperInvariant();
-            q = q.Where(p => p.FullNameNorm != null && p.FullNameNorm.Contains(norm));
+            q = q.Where(p => p.FullName != null && p.FullName.Contains(name));
         }
         if (dob.HasValue) q = q.Where(p => p.DateOfBirth == dob);
         if (isDeleted.HasValue) q = q.Where(p => p.IsDeleted == isDeleted.Value);
-        if (!string.IsNullOrWhiteSpace(phoneLast4)) q = q.Where(p => p.PhoneLast4 == phoneLast4);
-        if (!string.IsNullOrWhiteSpace(idLast4)) q = q.Where(p => p.IdLast4 == idLast4);
+        if (!string.IsNullOrWhiteSpace(phoneLast4)) q = q.Where(p => p.Phone != null && p.Phone.EndsWith(phoneLast4));
+        if (!string.IsNullOrWhiteSpace(idLast4)) q = q.Where(p => p.IdNumber != null && p.IdNumber.EndsWith(idLast4));
 
         q = sortBy?.ToLowerInvariant() switch
         {
-            "name" => (sortDir?.ToLowerInvariant() == "desc" ? q.OrderByDescending(x => x.FullNameNorm) : q.OrderBy(x => x.FullNameNorm)),
+            "name" => (sortDir?.ToLowerInvariant() == "desc" ? q.OrderByDescending(x => x.FullName) : q.OrderBy(x => x.FullName)),
             "createdat" => (sortDir?.ToLowerInvariant() == "asc" ? q.OrderBy(x => x.CreatedAt) : q.OrderByDescending(x => x.CreatedAt)),
             "updatedat" => (sortDir?.ToLowerInvariant() == "asc" ? q.OrderBy(x => x.UpdatedAt) : q.OrderByDescending(x => x.UpdatedAt)),
-            _ => q.OrderByDescending(x => x.CreatedAt) // default newest first
+            _ => q.OrderByDescending(x => x.CreatedAt)
         };
 
         var total = await q.LongCountAsync(ct);
-        var items = await q.Skip((page - 1) * pageSize).Take(pageSize)
-            .Select(e => new PatientSummaryDto(e.PatientId, e.FullNameNorm, e.DateOfBirth, e.Gender, e.PhoneLast4, e.IsDeleted, e.CreatedAt, e.UpdatedAt))
+        var data = await q.Skip((page - 1) * pageSize).Take(pageSize)
+            .Select(e => new { e.PatientId, e.FullName, e.DateOfBirth, e.Gender, e.Phone, e.IsDeleted, e.CreatedAt, e.UpdatedAt })
             .ToListAsync(ct);
+
+        var items = data.Select(e => new PatientSummaryDto(e.PatientId, e.FullName, e.DateOfBirth, e.Gender, Last4(e.Phone), e.IsDeleted, e.CreatedAt, e.UpdatedAt)).ToList();
 
         return (items, total);
     }
 
-    public async Task<(IReadOnlyList<PatientVersionDto> Items, long Total)> GetVersionsAsync(Guid patientId, int page, int pageSize, string? sortDir, CancellationToken ct = default)
+    public Task<(IReadOnlyList<PatientVersionDto> Items, long Total)> GetVersionsAsync(Guid patientId, int page, int pageSize, string? sortDir, CancellationToken ct = default)
     {
-        var q = _db.PatientRecordVersions.AsNoTracking().Where(v => v.PatientId == patientId);
-        q = sortDir?.ToLowerInvariant() == "asc" ? q.OrderBy(v => v.ChangedAt) : q.OrderByDescending(v => v.ChangedAt);
+        // Version table not present in DB, return empty
+        return Task.FromResult(((IReadOnlyList<PatientVersionDto>)Array.Empty<PatientVersionDto>(), 0L));
+    }
+
+    public async Task<(IReadOnlyList<PatientSummaryDto> Items, long Total)> ListByOwnerAsync(Guid ownerUserId, int page, int pageSize, string? name, DateOnly? dob, string? sortBy, string? sortDir, CancellationToken ct = default)
+    {
+        var q = _db.Patients.AsNoTracking().Where(p => p.UserId == ownerUserId);
+        if (!string.IsNullOrWhiteSpace(name)) q = q.Where(p => p.FullName != null && p.FullName.Contains(name));
+        if (dob.HasValue) q = q.Where(p => p.DateOfBirth == dob);
+
+        q = sortBy?.ToLowerInvariant() switch
+        {
+            "name" => (sortDir?.ToLowerInvariant() == "desc" ? q.OrderByDescending(x => x.FullName) : q.OrderBy(x => x.FullName)),
+            "createdat" => (sortDir?.ToLowerInvariant() == "asc" ? q.OrderBy(x => x.CreatedAt) : q.OrderByDescending(x => x.CreatedAt)),
+            "updatedat" => (sortDir?.ToLowerInvariant() == "asc" ? q.OrderBy(x => x.UpdatedAt) : q.OrderByDescending(x => x.UpdatedAt)),
+            _ => q.OrderByDescending(x => x.CreatedAt)
+        };
+
         var total = await q.LongCountAsync(ct);
-        var items = await q.Skip((page - 1) * pageSize).Take(pageSize)
-            .Select(v => new PatientVersionDto(v.VersionId, v.VersionNo, v.ChangedBy, v.ChangedAt, v.ChangeSet, v.FullSnapshot))
+        var list = await q.Skip((page - 1) * pageSize).Take(pageSize)
+            .Select(e => new PatientSummaryDto(e.PatientId, e.FullName, e.DateOfBirth, e.Gender, Last4(e.Phone), e.IsDeleted, e.CreatedAt, e.UpdatedAt))
             .ToListAsync(ct);
-        return (items, total);
+        return (list, total);
     }
 }
