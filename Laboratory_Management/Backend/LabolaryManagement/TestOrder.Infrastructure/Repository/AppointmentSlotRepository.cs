@@ -37,7 +37,7 @@ namespace TestOrder.Infrastructure.Repository
             });
         }
 
-        public async Task<int> GetBookingsCountForSlot(long appointmentSlotId)
+        public async Task<int> GetBookingsCountForSlot(Guid appointmentSlotId)
         {
             return await Task.Run(() =>
             {

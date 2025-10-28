@@ -16,12 +16,12 @@ namespace TestOrder.API.Controllers
             _service = service;
         }
 
-        [HttpGet("{parameterId}")]
-        public async Task<IActionResult> GetCatalogsByParameter(int parameterId)
-        {
-            var result = await _service.GetCatalogsByParameterAsync(parameterId);
-            return Ok(result);
-        }
+        //[HttpGet("{parameterId}")]
+        //public async Task<IActionResult> GetCatalogsByParameter(int parameterId)
+        //{
+        //    var result = await _service.GetCatalogsByParameterAsync(parameterId);
+        //    return Ok(result);
+        //}
 
         [HttpPost]
         public async Task<IActionResult> AddCatalogToParameter([FromBody] CatalogParameterDTO dto)

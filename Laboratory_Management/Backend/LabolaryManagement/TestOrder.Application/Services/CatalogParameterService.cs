@@ -15,10 +15,10 @@ namespace TestOrder.Application.Services
             _repository = repository;
         }
 
-        public async Task<IEnumerable<CatalogParameter>> GetCatalogsByParameterAsync(int parameterId)
-        {
-            return await _repository.GetByParameterIdAsync(parameterId);
-        }
+        //public async Task<IEnumerable<CatalogParameter>> GetCatalogsByParameterAsync(int parameterId)
+        //{
+        //    return await _repository.GetByParameterIdAsync(parameterId);
+        //}
 
         public async Task AddCatalogToParameterAsync(CatalogParameterDTO dto)
         {

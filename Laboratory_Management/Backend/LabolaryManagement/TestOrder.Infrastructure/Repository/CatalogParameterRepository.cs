@@ -11,18 +11,18 @@ namespace TestOrder.Infrastructure.Repository
     {
         public CatalogParameterRepository(Data.TestOrderDBContext context) : base(context) { }
 
-        public async Task<IEnumerable<CatalogParameter>> GetByParameterIdAsync(int parameterId)
-        {
-            return await _context.CatalogParameters
-                .Include(cb => cb.Catalog)
-                .Where(cb => cb.ParameterId == parameterId)
-                .ToListAsync();
-        }
+        //public async Task<IEnumerable<CatalogParameter>> GetByParameterIdAsync(int parameterId)
+        //{
+        //    return await _context.CatalogParameters
+        //        .Include(cb => cb.Catalog)
+        //        .Where(cb => cb.ParameterId == parameterId)
+        //        .ToListAsync();
+        //}
 
-        public async Task AddAsync(CatalogParameter entity)
-        {
-            _context.CatalogParameters.Add(entity);
-            await _context.SaveChangesAsync();
-        }
+        //public async Task AddAsync(CatalogParameter entity)
+        //{
+        //    _context.CatalogParameters.Add(entity);
+        //    await _context.SaveChangesAsync();
+        //}
     }
 }

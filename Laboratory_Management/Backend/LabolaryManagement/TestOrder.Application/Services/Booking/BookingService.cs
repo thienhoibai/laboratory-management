@@ -21,6 +21,11 @@ namespace TestOrder.Application.Services.Booking
             _appointmentSlotService = new AppointmentSlotService();
         }
 
+        public async Task<Infrastructure.Models.Booking?> GetBookingByIdAsync(Guid bookingId)
+        {
+            return await _bookingRepository.GetByIdAsync(bookingId);
+        }
+
         public async Task<Infrastructure.Models.Booking> CreateNewBooking(BookingRequestDTO bookingRequest)
         {
             if (!_appointmentSlotService.IsAppointmentsDateValid(bookingRequest.slotDTO.AppointmentDate))
@@ -59,7 +64,7 @@ namespace TestOrder.Application.Services.Booking
             }
 
 
-                return newBooking;
+             return newBooking;
 
         }
 
