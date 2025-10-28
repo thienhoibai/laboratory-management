@@ -65,7 +65,8 @@ public class PatientsController : ControllerBase
 
     [HttpGet("{id:guid}")]
     [Authorize]
-    public async Task<IActionResult>                                                                                                                                                                                                                (Guid id, CancellationToken ct)
+    public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
+                                                                                                                                                                                                 
     {
         var userId = GetUserId(User);
         var res = await _service.GetAsync(id, ct);
