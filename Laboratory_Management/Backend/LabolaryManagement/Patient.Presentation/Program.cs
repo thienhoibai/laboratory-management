@@ -47,7 +47,6 @@ builder.Services.AddAuthorization();
 // Swagger optional for demo
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddScoped<PatientService>();
 
 // Health checks
 builder.Services.AddHealthChecks();
@@ -98,45 +97,6 @@ builder.Services.AddGrpcClient<UserService.UserServiceClient>((sp, o) =>
     o.Address = new Uri(url);
 });
 
-const string notifyExchange = "lab.notify.v1";
-
-// MassTransit + RabbitMQ
-builder.Services.AddMassTransit(x =>
-{
-    x.UsingRabbitMq((context, cfg) =>
-    {
-        var host = builder.Configuration["RabbitMQ:Host"] ?? "rabbitmq";
-        var user = builder.Configuration["RabbitMQ:User"] ?? "guest";
-        var pass = builder.Configuration["RabbitMQ:Pass"] ?? "guest";
-        cfg.Host(host, h =>
-        {
-            h.Username(user);
-            h.Password(pass);
-        });
-        cfg.Message<NotificationRequestedV1>(m => m.SetEntityName(notifyExchange));
-        cfg.Publish<NotificationRequestedV1>(p =>
-        {
-            p.ExchangeType = ExchangeType.Topic;
-            p.Durable = true;
-            p.AutoDelete = false;
-        });
-    });
-});
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowFrontend", policy =>
-    {
-        policy.WithOrigins(
-            "http://localhost:5174",   // FE chạy ở Vite
-            "http://127.0.0.1:5174"
-        )
-        .AllowAnyHeader()
-        .AllowAnyMethod()
-        .AllowCredentials();
-    });
-});
-
-
 var app = builder.Build();
 
 // Ensure DB exists when using real SQL (DB created manually via script) -> do not run EF migrations
@@ -158,7 +118,6 @@ if (app.Environment.IsDevelopment())
 }
 
 // No HTTPS redirection for docker h2c
-app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 

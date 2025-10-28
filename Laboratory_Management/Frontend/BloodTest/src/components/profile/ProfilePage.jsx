@@ -162,6 +162,7 @@ export default function ProfilePage() {
   const [userData, setUserData] = useState(mockUserData);
   const [activeTab, setActiveTab] = useState("personal");
   const [showModal, setShowModal] = useState(false);
+  const [showMedicalRecordModal, setShowMedicalRecordModal] = useState(false);
   const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState({});
   const [openChange, setOpenChange] = useState(false);
@@ -180,6 +181,7 @@ export default function ProfilePage() {
       }
     };
     getProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const parseBirthdayToInput = (birthday) => {
@@ -732,10 +734,30 @@ export default function ProfilePage() {
         {activeTab === "medical" && (
           <div className="profile-tab-content">
             <div className="profile-section">
-              <h2 className="profile-section-title">Hồ sơ bệnh án</h2>
-              <p className="profile-section-subtitle">
-                Hồ sơ bệnh án của bệnh nhân (chỉ xem)
-              </p>
+              <div className="medical-record-header-section">
+                <div>
+                  <h2 className="profile-section-title">Hồ sơ bệnh án</h2>
+                  <p className="profile-section-subtitle">
+                    Hồ sơ bệnh án của bệnh nhân (chỉ xem)
+                  </p>
+                </div>
+                <button
+                  className="create-record-btn"
+                  onClick={() => setShowMedicalRecordModal(true)}
+                >
+                  <svg
+                    className="plus-icon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                  Tạo hồ sơ mới
+                </button>
+              </div>
 
               <div className="medical-records-list">
                 <div className="medical-record-card">
@@ -750,18 +772,15 @@ export default function ProfilePage() {
 
                   <div className="medical-record-dates">
                     <span className="medical-record-date">
-                      Ngày tạo: 15 tháng 1, 2024
+                      Ngày tạo: 15/1/2024
                     </span>
                     <span className="medical-record-separator">•</span>
                     <span className="medical-record-date">
-                      Cập nhật lần cuối: 10 tháng 3, 2024
+                      Cập nhật: 10/3/2024
                     </span>
                   </div>
 
                   <div className="medical-record-patient-info">
-                    <h4 className="medical-record-patient-title">
-                      Thông tin bệnh nhân
-                    </h4>
                     <div className="medical-record-patient-details">
                       <div className="medical-record-patient-column">
                         <div className="medical-record-patient-item">
@@ -816,24 +835,168 @@ export default function ProfilePage() {
                       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                       <circle cx="12" cy="12" r="3" />
                     </svg>
-                    Xem chi tiết hồ sơ bệnh án
+                    Xem chi tiết
+                  </button>
+                </div>
+
+                <div className="medical-record-card">
+                  <div className="medical-record-header">
+                    <h3 className="medical-record-title">
+                      Hồ sơ bệnh án #MR002
+                    </h3>
+                    <span className="medical-record-status status-archived">
+                      Lưu trữ
+                    </span>
+                  </div>
+
+                  <div className="medical-record-dates">
+                    <span className="medical-record-date">
+                      Ngày tạo: 20/12/2023
+                    </span>
+                    <span className="medical-record-separator">•</span>
+                    <span className="medical-record-date">
+                      Cập nhật: 5/2/2024
+                    </span>
+                  </div>
+
+                  <div className="medical-record-patient-info">
+                    <div className="medical-record-patient-details">
+                      <div className="medical-record-patient-column">
+                        <div className="medical-record-patient-item">
+                          <span className="medical-record-patient-label">
+                            Họ tên:
+                          </span>
+                          <span className="medical-record-patient-value">
+                            {userData.fullname}
+                          </span>
+                        </div>
+                        <div className="medical-record-patient-item">
+                          <span className="medical-record-patient-label">
+                            Ngày sinh:
+                          </span>
+                          <span className="medical-record-patient-value">
+                            15/3/1985
+                          </span>
+                        </div>
+                      </div>
+                      <div className="medical-record-patient-column">
+                        <div className="medical-record-patient-item">
+                          <span className="medical-record-patient-label">
+                            Mã BN:
+                          </span>
+                          <span className="medical-record-patient-value">
+                            {userData.patientId}
+                          </span>
+                        </div>
+                        <div className="medical-record-patient-item">
+                          <span className="medical-record-patient-label">
+                            Giới tính:
+                          </span>
+                          <span className="medical-record-patient-value">
+                            {userData.gender}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    className="medical-record-view-btn"
+                    onClick={() => navigate("/medical-record")}
+                  >
+                    <svg
+                      className="view-icon"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                    Xem chi tiết
+                  </button>
+                </div>
+
+                <div className="medical-record-card">
+                  <div className="medical-record-header">
+                    <h3 className="medical-record-title">
+                      Hồ sơ bệnh án #MR003
+                    </h3>
+                    <span className="medical-record-status status-archived">
+                      Lưu trữ
+                    </span>
+                  </div>
+
+                  <div className="medical-record-dates">
+                    <span className="medical-record-date">
+                      Ngày tạo: 10/10/2023
+                    </span>
+                    <span className="medical-record-separator">•</span>
+                    <span className="medical-record-date">
+                      Cập nhật: 15/11/2023
+                    </span>
+                  </div>
+
+                  <div className="medical-record-patient-info">
+                    <div className="medical-record-patient-details">
+                      <div className="medical-record-patient-column">
+                        <div className="medical-record-patient-item">
+                          <span className="medical-record-patient-label">
+                            Họ tên:
+                          </span>
+                          <span className="medical-record-patient-value">
+                            {userData.fullname}
+                          </span>
+                        </div>
+                        <div className="medical-record-patient-item">
+                          <span className="medical-record-patient-label">
+                            Ngày sinh:
+                          </span>
+                          <span className="medical-record-patient-value">
+                            15/3/1985
+                          </span>
+                        </div>
+                      </div>
+                      <div className="medical-record-patient-column">
+                        <div className="medical-record-patient-item">
+                          <span className="medical-record-patient-label">
+                            Mã BN:
+                          </span>
+                          <span className="medical-record-patient-value">
+                            {userData.patientId}
+                          </span>
+                        </div>
+                        <div className="medical-record-patient-item">
+                          <span className="medical-record-patient-label">
+                            Giới tính:
+                          </span>
+                          <span className="medical-record-patient-value">
+                            {userData.gender}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    className="medical-record-view-btn"
+                    onClick={() => navigate("/medical-record")}
+                  >
+                    <svg
+                      className="view-icon"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                    Xem chi tiết
                   </button>
                 </div>
               </div>
-
-              {/* <button className="profile-update-btn" onClick={handleOpenModal}>
-                <svg
-                  className="update-icon"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                </svg>
-                Cập nhật
-              </button> */}
             </div>
           </div>
         )}
@@ -1011,6 +1174,132 @@ export default function ProfilePage() {
         open={openChange}
         onClose={() => setOpenChange(false)}
       />
+
+      {/* Create Medical Record Modal */}
+      {showMedicalRecordModal && (
+        <div
+          className="modal-overlay"
+          onClick={() => setShowMedicalRecordModal(false)}
+        >
+          <div
+            className="modal-content medical-record-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-header">
+              <h2 className="modal-title">Tạo hồ sơ bệnh án mới</h2>
+              <p className="modal-subtitle">
+                Điền thông tin để tạo hồ sơ bệnh án mới
+              </p>
+              <button
+                className="modal-close"
+                onClick={() => setShowMedicalRecordModal(false)}
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="modal-body">
+              <div className="form-group">
+                <label>Họ và tên bệnh nhân</label>
+                <input
+                  type="text"
+                  value={userData.fullname}
+                  disabled
+                  className="disabled-input"
+                />
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Mã bệnh nhân</label>
+                  <input
+                    type="text"
+                    value={userData.patientId}
+                    disabled
+                    className="disabled-input"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Giới tính</label>
+                  <input
+                    type="text"
+                    value={userData.gender}
+                    disabled
+                    className="disabled-input"
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Ngày sinh</label>
+                  <input
+                    type="text"
+                    value={userData.birthday}
+                    disabled
+                    className="disabled-input"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Số điện thoại</label>
+                  <input
+                    type="text"
+                    value={userData.phone}
+                    disabled
+                    className="disabled-input"
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Lý do tạo hồ sơ</label>
+                <textarea
+                  rows="4"
+                  placeholder="Nhập lý do tạo hồ sơ bệnh án..."
+                  className="form-textarea"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Ghi chú (tùy chọn)</label>
+                <textarea
+                  rows="3"
+                  placeholder="Thêm ghi chú nếu cần..."
+                  className="form-textarea"
+                />
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button
+                className="btn-cancel"
+                onClick={() => setShowMedicalRecordModal(false)}
+              >
+                Hủy
+              </button>
+              <button
+                className="btn-save"
+                onClick={() => {
+                  toast.success("Tạo hồ sơ bệnh án thành công!");
+                  setShowMedicalRecordModal(false);
+                }}
+              >
+                Tạo hồ sơ
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

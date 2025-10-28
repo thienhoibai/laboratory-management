@@ -5,9 +5,10 @@
 }
 
 /* Header */
-.medical-record-header {
+.medical-record-header-1 {
   padding: 10px 0px 10px;
   color: white;
+
 }
 
 .breadcrumb {
@@ -15,38 +16,32 @@
 }
 
 .breadcrumb-link {
-  background: none;
-  border: none;
-  color: rgba(255, 255, 255, 0.9);
-  text-decoration: none;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-weight: 500;
   font-size: 14px;
-  display: inline-flex;
+  cursor: pointer;
+  display: flex;
   align-items: center;
   gap: 8px;
-  cursor: pointer;
-  padding: 0;
-  font-family: inherit;
+  transition: all 0.2s;
+  backdrop-filter: blur(10px);
 }
 
 .breadcrumb-link:hover {
-  text-decoration: underline;
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-1px);
 }
 
-.breadcrumb-link::before {
-  content: "←";
-  font-size: 16px;
-}
-
-.page-title {
+.page-title-1 {
   font-size: 32px;
   font-weight: 700;
   margin: 0 0 8px 0;
-}
-
-.page-subtitle {
-  font-size: 16px;
-  margin: 0;
-  opacity: 0.9;
+  text-align: center;
 }
 
 /* Sections */
@@ -349,11 +344,11 @@
 
 /* Responsive */
 @media (max-width: 768px) {
-  .medical-record-header {
+  .medical-record-header-1 {
     padding: 30px 20px 20px;
   }
 
-  .page-title {
+  .page-title-1 {
     font-size: 24px;
   }
 
