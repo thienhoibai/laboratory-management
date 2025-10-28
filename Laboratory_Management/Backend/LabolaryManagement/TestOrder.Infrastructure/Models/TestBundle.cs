@@ -16,4 +16,6 @@ public partial class TestBundle
     public bool? IsActive { get; set; }
 
     public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
+
+    public virtual ICollection<CatalogBundle> CatalogBundles { get; set; } = new List<CatalogBundle>();
 }
