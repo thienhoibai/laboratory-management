@@ -13,4 +13,6 @@ public interface IPatientService
     Task<(IReadOnlyList<PatientVersionDto> Items, long Total)> GetVersionsAsync(Guid patientId, int page, int pageSize, string? sortDir, CancellationToken ct = default);
     Task<bool> IsOwnerAsync(Guid patientId, Guid actorUserId, CancellationToken ct);
     Task<(IReadOnlyList<PatientSummaryDto> Items, long Total)> ListByOwnerAsync(Guid ownerUserId, int page, int pageSize, string? name, DateOnly? dob, string? sortBy, string? sortDir, CancellationToken ct = default);
+
+    Task<OperationResult<PatientDto>> GetByUserIdAsync(Guid userId, CancellationToken ct);
 }
