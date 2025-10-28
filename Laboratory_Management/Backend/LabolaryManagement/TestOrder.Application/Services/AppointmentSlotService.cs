@@ -9,7 +9,7 @@ using TestOrder.Application.DTOs.AppointmentSlots;
 using System.ComponentModel;
 namespace TestOrder.Application.Services
 {
-    internal class AppointmentSlotService
+    public class AppointmentSlotService
     {
         private readonly AppointmentSlotRepository _repository;
         private readonly TimeBlockRepository _timeBlockRepository;
