@@ -40,10 +40,8 @@ public partial class TestOrderDBContext : DbContext
 
     public virtual DbSet<TimeBlock> TimeBlocks { get; set; }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=LAPTOP-SHE2A3S2\\SQLEXPRESS;Database=TestOrderDB;User=sa;Password=12345;TrustServerCertificate=true");
 
+    
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<AppointmentSlot>(entity =>
@@ -242,8 +240,10 @@ public partial class TestOrderDBContext : DbContext
             entity.Property(e => e.TimeBlock1).HasColumnName("TimeBlock");
         });
 
+
         OnModelCreatingPartial(modelBuilder);
     }
+
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
 }

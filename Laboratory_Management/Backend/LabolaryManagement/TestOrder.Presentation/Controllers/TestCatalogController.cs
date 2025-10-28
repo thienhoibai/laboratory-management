@@ -52,6 +52,12 @@ namespace TestOrder.Presentation.Controllers
             await _service.UpdateCatalogAsync(id, model.Description, model.Price);
             return NoContent();
         }
-
+        [HttpPut]
+        [Route("{id}/parameters")]
+        public async Task<IActionResult> AddParameterAsync( [FromBody] CatalogParameterDTO dto)
+        {
+            var AddCatalog = await _service.AddParameterAsync(dto.CatalogId, dto.ParameterIds);
+            return Ok(AddCatalog);
+        }
     }
 }

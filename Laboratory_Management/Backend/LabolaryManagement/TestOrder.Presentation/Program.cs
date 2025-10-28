@@ -30,8 +30,6 @@ namespace TestOrder.Presentation
             builder.Services.AddScoped<TestParameterService>();
             builder.Services.AddScoped<CatalogBundleRepository>();
             builder.Services.AddScoped<CatalogBundleService>();
-            builder.Services.AddScoped<CatalogParameterService>();
-            builder.Services.AddScoped<CatalogParameterRepository>();
             builder.Services.AddScoped<AppointmentSlotRepository>();
             builder.Services.AddScoped<AppointmentSlotService>();
             builder.Services.AddScoped<BookingRepository>();
