@@ -1,4 +1,4 @@
-using Common.Pagination;
+﻿using Common.Pagination;
 using Common.Results;
 using IAM.Application.Users.DTOs;
 
@@ -14,7 +14,5 @@ namespace IAM.Application.Users
         Task<OperationResult> AssignRolesAsync(Guid id, AssignRolesRequest request, Guid actorId, CancellationToken ct = default);
         Task<OperationResult> LockAsync(Guid id, Guid actorId, CancellationToken ct = default);
         Task<OperationResult> UnlockAsync(Guid id, Guid actorId, CancellationToken ct = default);
-        Task<OperationResult> VerifyAsync(Guid id, VerifyUserRequest request, Guid actorId, CancellationToken ct = default);
-        Task<OperationResult> LinkPatientAsync(Guid id, LinkPatientRequest request, Guid actorId, CancellationToken ct = default);
     }
 }
