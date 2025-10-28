@@ -7,6 +7,7 @@ namespace TestOrder.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Tags("Danh mục gói xét nghiệm")]
     public class CatalogBundleController : ControllerBase
     {
         private readonly CatalogBundleService _service;

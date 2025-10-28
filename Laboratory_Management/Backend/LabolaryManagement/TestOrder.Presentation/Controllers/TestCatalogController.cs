@@ -9,6 +9,7 @@ namespace TestOrder.Presentation.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Tags("Danh mục xét nghiệm")]
     public class TestCatalogController : ControllerBase
     {
         private readonly TestCatalogService _service;

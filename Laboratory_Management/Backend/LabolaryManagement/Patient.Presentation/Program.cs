@@ -73,6 +73,8 @@ else
 
 builder.Services.AddScoped<IPatientService, PatientService>();
 
+
+
 // Event publisher adapter
 builder.Services.AddScoped<IPatientEventPublisher, MassTransitPatientEventPublisher>();
 
