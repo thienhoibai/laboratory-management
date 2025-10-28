@@ -90,6 +90,16 @@ builder.Services.AddMassTransit(x =>
     });
 });
 
+
+
+// Event publisher adapter
+builder.Services.AddScoped<IPatientEventPublisher, MassTransitPatientEventPublisher>();
+
+// Outbox services
+builder.Services.AddScoped<OutboxWriter>();
+builder.Services.AddHostedService<Patient.Infrastructure.Outbox.OutboxProcessor>();
+
+
 // gRPC client to IAM (h2c). Use Grpc.Net.Client factory registration via generated client
 builder.Services.AddGrpcClient<UserService.UserServiceClient>((sp, o) =>
 {

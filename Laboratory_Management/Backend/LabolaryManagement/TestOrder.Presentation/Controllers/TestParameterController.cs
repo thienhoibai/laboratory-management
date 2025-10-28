@@ -8,6 +8,7 @@ namespace TestOrder.Presentation.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Tags("Thông số xét nghiệm")]
     public class TestParameterController : ControllerBase
     {
         private readonly TestParameterService _service;
