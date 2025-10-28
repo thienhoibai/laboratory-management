@@ -10,6 +10,8 @@ import {
   FiEye,
   FiEyeOff,
   FiAlertTriangle,
+  FiLock,
+  FiUnlock,
 } from "react-icons/fi";
 import { Pagination } from "antd";
 import api from "../../../configs/axios.js";
@@ -60,16 +62,15 @@ const UserManagementPage = () => {
   });
   const [formErrors, setFormErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Delete modal states
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const [lockLoadingId, setLockLoadingId] = useState(null); // loading cho lock/unlock
+
   const roleMapping = {
-    Admin: 0,
     Manager: 2,
     Staff: 3,
     Customer: 5,
@@ -114,7 +115,12 @@ const UserManagementPage = () => {
         const usersList = res.data || [];
         const meta = res.meta || {};
 
-        console.log("Response:", { meta, usersCount: usersList.length });
+        // Log trạng thái status của từng user
+        usersList.forEach((u) => {
+          console.log(
+            `User ${u.fullName || u.username || u.id}: status = ${u.status}`
+          );
+        });
 
         setUsers(usersList);
         setTotal(meta.totalItems || 0);
@@ -274,8 +280,14 @@ const UserManagementPage = () => {
       const pwd = formData.password;
       if (pwd.length < 8) {
         errors.password = "Mật khẩu phải có ít nhất 8 ký tự";
-      } else if (!/[A-Z]/.test(pwd) || !/[a-z]/.test(pwd) || !/[0-9]/.test(pwd) || !/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/.test(pwd)) {
-        errors.password = "Mật khẩu phải gồm chữ hoa, chữ thường, số và ký tự đặc biệt";
+      } else if (
+        !/[A-Z]/.test(pwd) ||
+        !/[a-z]/.test(pwd) ||
+        !/[0-9]/.test(pwd) ||
+        !/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/.test(pwd)
+      ) {
+        errors.password =
+          "Mật khẩu phải gồm chữ hoa, chữ thường, số và ký tự đặc biệt";
       }
     }
 
@@ -309,9 +321,7 @@ const UserManagementPage = () => {
     };
 
     try {
-      const response = await api.post(endPoint, requestData, {
-        headers: { "Content-Type": "application/json" },
-      });
+      const response = await api.post(endPoint, requestData);
 
       if (response.status === 200 || response.status === 201) {
         toast("Thêm tài khoản thành công!");
@@ -321,8 +331,7 @@ const UserManagementPage = () => {
     } catch (error) {
       const data = error.response?.data;
       let detail =
-        (typeof data?.detail === "string" && data.detail) ||
-        data?.message;
+        (typeof data?.detail === "string" && data.detail) || data?.message;
       if (!detail && data?.errors) {
         if (Array.isArray(data.errors)) {
           detail = data.errors.join("; ");
@@ -340,11 +349,14 @@ const UserManagementPage = () => {
       if (data?.errors && typeof data.errors === "object") {
         const be = data.errors;
         const next = { ...formErrors };
-        const getMsg = (val) => (Array.isArray(val) ? val[0] : (val || ""));
+        const getMsg = (val) => (Array.isArray(val) ? val[0] : val || "");
         // common keys used by backends: Username, username, Password, password, RoleId, roleId
-        if (be.Username || be.username) next.username = getMsg(be.Username || be.username);
-        if (be.Password || be.password) next.password = getMsg(be.Password || be.password);
-        if (be.RoleId || be.roleId) next.roleId = getMsg(be.RoleId || be.roleId);
+        if (be.Username || be.username)
+          next.username = getMsg(be.Username || be.username);
+        if (be.Password || be.password)
+          next.password = getMsg(be.Password || be.password);
+        if (be.RoleId || be.roleId)
+          next.roleId = getMsg(be.RoleId || be.roleId);
         // generic message fallback
         if (!next.username && !next.password && !next.roleId && errorMessage) {
           next.username = errorMessage;
@@ -353,6 +365,57 @@ const UserManagementPage = () => {
       }
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Lock/Unlock handlers
+  const handleLockUser = async (user) => {
+    const id = user?.id ?? user?.userId ?? user?.uuid ?? user?.Id;
+    if (!id) {
+      toast.error("Không tìm thấy ID người dùng để thao tác");
+      return;
+    }
+    setLockLoadingId(id);
+    try {
+      const response = await api.post(`iam/api/Users/${id}/lock`);
+      if (response?.data?.data.status === "locked") {
+        toast.success("Tài khoản đã bị khóa!");
+      } else {
+        toast.info("Thao tác thành công!");
+      }
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.errors?.[0] ||
+        "Có lỗi xảy ra khi thao tác tài khoản";
+      toast.error(errorMessage);
+    } finally {
+      setLockLoadingId(null);
+    }
+  };
+
+  const handleUnlockUser = async (user) => {
+    const id = user?.id ?? user?.userId ?? user?.uuid ?? user?.Id;
+    if (!id) {
+      toast.error("Không tìm thấy ID người dùng để thao tác");
+      return;
+    }
+    setLockLoadingId(id);
+    try {
+      const response = await api.post(`iam/api/Users/${id}/unlock`);
+      if (response?.data?.data.status === "unlocked") {
+        toast.success("Tài khoản đã được mở khóa!");
+      } else {
+        toast.info("Thao tác thành công!");
+      }
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.errors?.[0] ||
+        "Có lỗi xảy ra khi thao tác tài khoản";
+      toast.error(errorMessage);
+    } finally {
+      setLockLoadingId(null);
     }
   };
 
@@ -461,6 +524,62 @@ const UserManagementPage = () => {
                   onClick={() => openDeleteModal(user)}
                   style={{ cursor: "pointer" }}
                 />
+                {/* Khóa */}
+                <FiLock
+                  title="Khóa tài khoản"
+                  style={{
+                    cursor:
+                      user.status === "locked" ||
+                      lockLoadingId ===
+                        (user.id ?? user.userId ?? user.uuid ?? user.Id)
+                        ? "not-allowed"
+                        : "pointer",
+                    color: user.status === "locked" ? "#bdbdbd" : "#e74c3c",
+                    filter:
+                      user.status === "locked"
+                        ? "grayscale(60%) brightness(0.8)"
+                        : "drop-shadow(0 0 4px #e74c3c)",
+                    opacity:
+                      lockLoadingId ===
+                      (user.id ?? user.userId ?? user.uuid ?? user.Id)
+                        ? 0.6
+                        : 1,
+                    transition: "filter 0.2s, color 0.2s",
+                  }}
+                  onClick={() =>
+                    user.status === "locked" || lockLoadingId
+                      ? null
+                      : handleLockUser(user)
+                  }
+                />
+                {/* Mở khóa */}
+                <FiUnlock
+                  title="Mở khóa tài khoản"
+                  style={{
+                    cursor:
+                      user.status === "unlocked" ||
+                      lockLoadingId ===
+                        (user.id ?? user.userId ?? user.uuid ?? user.Id)
+                        ? "not-allowed"
+                        : "pointer",
+                    color: user.status === "unlocked" ? "#bdbdbd" : "#198754",
+                    filter:
+                      user.status === "unlocked"
+                        ? "grayscale(60%) brightness(0.8)"
+                        : "drop-shadow(0 0 4px #198754)",
+                    opacity:
+                      lockLoadingId ===
+                      (user.id ?? user.userId ?? user.uuid ?? user.Id)
+                        ? 0.6
+                        : 1,
+                    transition: "filter 0.2s, color 0.2s",
+                  }}
+                  onClick={() =>
+                    user.status === "unlocked" || lockLoadingId
+                      ? null
+                      : handleUnlockUser(user)
+                  }
+                />
               </span>
             </div>
           ))}
@@ -536,42 +655,15 @@ const UserManagementPage = () => {
                 <label htmlFor="password">
                   Mật Khẩu <span className="required">*</span>
                 </label>
-                <div style={{ position: "relative" }}>
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    id="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleFormChange}
-                    className={formErrors.password ? "input-error" : ""}
-                    placeholder="Nhập mật khẩu"
-                    style={{ paddingRight: 36 }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((v) => !v)}
-                    aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
-                    title={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
-                    style={{
-                      position: "absolute",
-                      right: 6,
-                      top: "50%",
-                      transform: "translateY(-50%)",
-                      background: "#f5f5f5",
-                      border: "1px solid #d9d9d9",
-                      borderRadius: 6,
-                      cursor: "pointer",
-                      width: 32,
-                      height: 32,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      padding: 0,
-                    }}
-                  >
-                    {showPassword ? <FiEyeOff size={18} color="#333" /> : <FiEye size={18} color="#333" />}
-                  </button>
-                </div>
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleFormChange}
+                  className={formErrors.password ? "input-error" : ""}
+                  placeholder="Nhập mật khẩu"
+                />
                 {formErrors.password && (
                   <span className="error-message">{formErrors.password}</span>
                 )}
@@ -581,42 +673,15 @@ const UserManagementPage = () => {
                 <label htmlFor="confirmPassword">
                   Xác Nhận Mật Khẩu <span className="required">*</span>
                 </label>
-                <div style={{ position: "relative" }}>
-                  <input
-                    type={showConfirmPassword ? "text" : "password"}
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    value={formData.confirmPassword}
-                    onChange={handleFormChange}
-                    className={formErrors.confirmPassword ? "input-error" : ""}
-                    placeholder="Nhập lại mật khẩu"
-                    style={{ paddingRight: 36 }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword((v) => !v)}
-                    aria-label={showConfirmPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
-                    title={showConfirmPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
-                    style={{
-                      position: "absolute",
-                      right: 6,
-                      top: "50%",
-                      transform: "translateY(-50%)",
-                      background: "#f5f5f5",
-                      border: "1px solid #d9d9d9",
-                      borderRadius: 6,
-                      cursor: "pointer",
-                      width: 32,
-                      height: 32,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      padding: 0,
-                    }}
-                  >
-                    {showConfirmPassword ? <FiEyeOff size={18} color="#333" /> : <FiEye size={18} color="#333" />}
-                  </button>
-                </div>
+                <input
+                  type="password"
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleFormChange}
+                  className={formErrors.confirmPassword ? "input-error" : ""}
+                  placeholder="Nhập lại mật khẩu"
+                />
                 {formErrors.confirmPassword && (
                   <span className="error-message">
                     {formErrors.confirmPassword}
@@ -673,7 +738,10 @@ const UserManagementPage = () => {
       {isDeleteOpen && (
         <div className="modal-overlay" onClick={closeDeleteModal}>
           <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header" style={{ padding: "16px 20px", borderBottom: "1px solid #eee" }}>
+            <div
+              className="modal-header"
+              style={{ padding: "16px 20px", borderBottom: "1px solid #eee" }}
+            >
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <FiAlertTriangle style={{ color: "#e74c3c" }} />
                 <h2 style={{ margin: 0 }}>Xác nhận xóa người dùng</h2>
@@ -684,8 +752,7 @@ const UserManagementPage = () => {
             </div>
             <div className="modal-content" style={{ padding: "16px 20px" }}>
               <p style={{ marginTop: 4, marginBottom: 0, lineHeight: 1.5 }}>
-                Bạn có chắc chắn muốn xóa người dùng
-                {" "}
+                Bạn có chắc chắn muốn xóa người dùng{" "}
                 <strong>
                   {userToDelete?.fullName || userToDelete?.username || "này"}
                 </strong>
