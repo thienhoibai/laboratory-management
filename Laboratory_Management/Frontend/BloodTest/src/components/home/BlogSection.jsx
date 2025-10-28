@@ -34,9 +34,8 @@ export default function BlogSection() {
           <span className="blog-badge">Blog & Tin tức</span>
           <h2 className="blog-title"></h2>
         </div>
-        <p className="blog-desc">
+        <p className="blog-desc"> </p>
         <h2 className="blog-title">Kiến thức sức khỏe</h2>
-        </p>
         <a href="/blog" className="blog-viewall">
           Xem tất cả &rarr;
         </a>
