@@ -54,9 +54,9 @@ namespace TestOrder.Presentation.Controllers
         }
         [HttpPut]
         [Route("{id}/parameters")]
-        public async Task<IActionResult> AddParameterAsync( [FromBody] CatalogParameterDTO dto)
-        {
-            var AddCatalog = await _service.AddParameterAsync(dto.CatalogId, dto.ParameterIds);
+        public async Task<IActionResult> AddParameterAsync( int id, [FromBody] List<int>ParameterIds)
+        { 
+            var AddCatalog = await _service.AddParameterAsync(id, ParameterIds);
             return Ok(AddCatalog);
         }
     }
