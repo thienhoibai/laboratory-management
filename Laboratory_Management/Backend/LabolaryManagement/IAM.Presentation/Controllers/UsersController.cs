@@ -1,4 +1,4 @@
-using Common.Errors;
+﻿using Common.Errors;
 using Common.Pagination;
 using IAM.Application.Users;
 using IAM.Application.Users.DTOs;
@@ -101,26 +101,6 @@ namespace IAM.Presentation.Controllers
             var res = await _users.UnlockAsync(id, actorId, ct);
             if (!res.Succeeded) throw new ApiException(res.Error ?? ErrorCodes.ValidationError);
             return Ok(new { userId = id, status = "unlocked" });
-        }
-
-        [HttpPost("{id}/verify")]
-        [Authorize(Policy = "perm:User.Update")]
-        public async Task<IActionResult> Verify(Guid id, [FromBody] VerifyUserRequest request, CancellationToken ct)
-        {
-            var actorId = GetActorId(User);
-            var res = await _users.VerifyAsync(id, request, actorId, ct);
-            if (!res.Succeeded) throw new ApiException(res.Error ?? ErrorCodes.ValidationError);
-            return Ok(new { userId = id, approved = request.Approved });
-        }
-
-        [HttpPost("{id}/link-patient")]
-        [Authorize(Policy = "perm:User.Update")]
-        public async Task<IActionResult> LinkPatient(Guid id, [FromBody] LinkPatientRequest request, CancellationToken ct)
-        {
-            var actorId = GetActorId(User);
-            var res = await _users.LinkPatientAsync(id, request, actorId, ct);
-            if (!res.Succeeded) throw new ApiException(res.Error ?? ErrorCodes.ValidationError);
-            return Ok(new { userId = id, patientId = request.PatientId });
         }
     }
 }

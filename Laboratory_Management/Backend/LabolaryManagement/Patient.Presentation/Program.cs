@@ -11,7 +11,6 @@ using Patient.Application.Services;
 using Patient.Infrastructure;
 using Patient.Presentation.Infrastructure;
 using Contracts.Notifications;
-using Patient.Infrastructure.Outbox;
 using RabbitMQ.Client;
 
 // Allow gRPC over HTTP/2 (h2c) without TLS
@@ -68,17 +67,28 @@ else
         conn = "Server=localhost;Database=PatientService3;Trusted_Connection=True;TrustServerCertificate=True;Connect Timeout=5";
 
     builder.Services.AddDbContext<PatientDbContext>(opt =>
-        opt.UseSqlServer(conn, sql => sql.MigrationsAssembly("Patient.Migrations")));
+        opt.UseSqlServer(conn));
 }
 
 builder.Services.AddScoped<IPatientService, PatientService>();
 
-// Event publisher adapter
-builder.Services.AddScoped<IPatientEventPublisher, MassTransitPatientEventPublisher>();
-
-// Outbox services
-builder.Services.AddScoped<OutboxWriter>();
-builder.Services.AddHostedService<Patient.Infrastructure.Outbox.OutboxProcessor>();
+// MassTransit publish (nếu Patient cần publish sự kiện khác) - giữ cấu hình exchange để đồng bộ
+const string notifyExchange = "lab.notify.v1";
+builder.Services.AddMassTransit(x =>
+{
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        var host = builder.Configuration["RabbitMQ:Host"] ?? "rabbitmq";
+        var user = builder.Configuration["RabbitMQ:User"] ?? "guest";
+        var pass = builder.Configuration["RabbitMQ:Pass"] ?? "guest";
+        cfg.Host(host, h => { h.Username(user); h.Password(pass); });
+        cfg.Message<NotificationRequestedV1>(m => m.SetEntityName(notifyExchange));
+        cfg.Publish<NotificationRequestedV1>(p =>
+        {
+            p.ExchangeType = ExchangeType.Topic; p.Durable = true; p.AutoDelete = false;
+        });
+    });
+});
 
 // gRPC client to IAM (h2c). Use Grpc.Net.Client factory registration via generated client
 builder.Services.AddGrpcClient<UserService.UserServiceClient>((sp, o) =>
@@ -87,41 +97,15 @@ builder.Services.AddGrpcClient<UserService.UserServiceClient>((sp, o) =>
     o.Address = new Uri(url);
 });
 
-const string notifyExchange = "lab.notify.v1";
-
-// MassTransit + RabbitMQ
-builder.Services.AddMassTransit(x =>
-{
-    x.UsingRabbitMq((context, cfg) =>
-    {
-        var host = builder.Configuration["RabbitMQ:Host"] ?? "rabbitmq";
-        var user = builder.Configuration["RabbitMQ:User"] ?? "guest";
-        var pass = builder.Configuration["RabbitMQ:Pass"] ?? "guest";
-        cfg.Host(host, h =>
-        {
-            h.Username(user);
-            h.Password(pass);
-        });
-        cfg.Message<NotificationRequestedV1>(m => m.SetEntityName(notifyExchange));
-        cfg.Publish<NotificationRequestedV1>(p =>
-        {
-            p.ExchangeType = ExchangeType.Topic;
-            p.Durable = true;
-            p.AutoDelete = false;
-        });
-    });
-});
-
 var app = builder.Build();
 
-// Ensure DB exists when using real SQL
+// Ensure DB exists when using real SQL (DB created manually via script) -> do not run EF migrations
 if (!useInMemory)
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<PatientDbContext>();
     db.Database.SetCommandTimeout(TimeSpan.FromMinutes(2));
-    db.Database.Migrate();
-    await Patient.Infrastructure.Outbox.OutboxSchemaInitializer.EnsureCreatedAsync(db);
+    db.Database.EnsureCreated(); // avoid applying EF migrations that expect different column names
 }
 
 app.MapGet("/", () => Results.Ok("Patient up"));
