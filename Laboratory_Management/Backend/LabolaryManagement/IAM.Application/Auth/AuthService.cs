@@ -7,13 +7,11 @@ using IAM.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Security.Jwt;
 using IAM.Application.Security;
-using Messaging.Email;
 using Messaging.Notifications;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Security.Cryptography;
 using System.Text;
-using Contracts.Notifications;
 
 namespace IAM.Application.Auth
 {
@@ -23,11 +21,9 @@ namespace IAM.Application.Auth
         private readonly IJwtTokenService _jwt;
         private readonly IPasswordService _passwords;
         private readonly IPasswordPolicy _policy;
-        private readonly IEmailSender _email;
         private readonly IConfiguration _config;
-        private readonly INotificationPublisher _publisher;
         private readonly ILogger<AuthService> _logger;
-        private readonly IEmailTemplateRenderer _renderer;
+        private readonly INotificationPublisher _publisher;
 
         private const int MaxFailedAccess = 5;
         private static readonly TimeSpan LockoutDuration = TimeSpan.FromMinutes(15);
@@ -37,9 +33,9 @@ namespace IAM.Application.Auth
         private const int MaxResetRequestsPerHour = 5;
 
         public AuthService(IamDbContext db, IJwtTokenService jwt, IPasswordService passwords, IPasswordPolicy policy,
-            IEmailSender email, IConfiguration config, INotificationPublisher publisher, ILogger<AuthService> logger, IEmailTemplateRenderer renderer)
+            IConfiguration config, ILogger<AuthService> logger, INotificationPublisher publisher)
         {
-            _db = db; _jwt = jwt; _passwords = passwords; _policy = policy; _email = email; _config = config; _publisher = publisher; _logger = logger; _renderer = renderer;
+            _db = db; _jwt = jwt; _passwords = passwords; _policy = policy; _config = config; _logger = logger; _publisher = publisher;
         }
 
         public async Task<OperationResult<UserDetailDto>> RegisterAsync(RegisterRequest request, CancellationToken ct = default)
@@ -357,22 +353,9 @@ namespace IAM.Application.Auth
 
                 await _db.SaveChangesAsync(ct);
 
-                var baseUrl = _config["Email:ResetPasswordBaseUrl"] ?? "http://localhost:5174/reset-password";
+                var baseUrl = _config["Email:ResetPasswordBaseUrl"] ?? "http://localhost:5274/reset-password";
                 var link = $"{baseUrl}?token={token}";
 
-                // Publish notification via Outbox (email)
-                var evt = new NotificationRequestedV1(
-                    MessageId: Guid.NewGuid().ToString(),
-                    Channel: "email",
-                    To: user.Email,
-                    Template: "ResetPassword",
-                    Data: new Dictionary<string, string>
-                    {
-                        ["Username"] = user.Username,
-                        ["Link"] = link,
-                        ["ExpireMinutes"] = ((int)ResetTokenTtl.TotalMinutes).ToString()
-                    }
-                );
                 await _publisher.PublishAsync("PasswordResetRequested", new { to = user.Email, Username = user.Username, Link = link, ExpireMinutes = ((int)ResetTokenTtl.TotalMinutes).ToString() }, ct);
 
                 return OperationResult.Success();
@@ -380,7 +363,6 @@ namespace IAM.Application.Auth
             catch (Exception ex)
             {
                 _logger.LogError(ex, "ForgotPassword failed for {UsernameOrEmail}", request.UsernameOrEmail);
-                // Do not reveal error to avoid user enumeration or leaking infra issues
                 return OperationResult.Success();
             }
         }

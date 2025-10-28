@@ -205,23 +205,5 @@ namespace IAM.Application.Users
             await _db.SaveChangesAsync(ct);
             return OperationResult.Success();
         }
-
-        public async Task<OperationResult> VerifyAsync(Guid id, VerifyUserRequest request, Guid actorId, CancellationToken ct = default)
-        {
-            var user = await _db.Users.FirstOrDefaultAsync(u => u.UserId == id, ct);
-            if (user == null) return OperationResult.Fail(ErrorCodes.NotFound);
-
-            user.IsActive = request.Approved;
-
-            _db.AuditLogs.Add(new AuditLog { Action = "VERIFY_USER", UserId = actorId, Resource = $"User:{id}", Description = request.Approved ? "Approved" : "Rejected", CreatedAt = DateTime.UtcNow });
-            await _db.SaveChangesAsync(ct);
-            return OperationResult.Success();
-        }
-
-        public Task<OperationResult> LinkPatientAsync(Guid id, LinkPatientRequest request, Guid actorId, CancellationToken ct = default)
-        {
-            _db.AuditLogs.Add(new AuditLog { Action = "LINK_PATIENT", UserId = actorId, Resource = $"User:{id}", Description = $"Link patient {request.PatientId}", CreatedAt = DateTime.UtcNow });
-            return _db.SaveChangesAsync(ct).ContinueWith(_ => OperationResult.Success(), ct);
-        }
     }
 }
