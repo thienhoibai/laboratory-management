@@ -27,5 +27,15 @@ namespace TestOrder.Application.Services.Booking
             return await _bookingTestRepository.GetByBookingIdAsync(bookingId);
         }
 
+        public async Task AddBookingTestAsync(Guid bookingId, int catalogId)
+        {
+            var bookingTest = new BookingTest
+            {
+                BookingId = bookingId,
+                CatalogId = catalogId
+            };
+            await _bookingTestRepository.AddAsync(bookingTest);
+        }
+
     }
 }

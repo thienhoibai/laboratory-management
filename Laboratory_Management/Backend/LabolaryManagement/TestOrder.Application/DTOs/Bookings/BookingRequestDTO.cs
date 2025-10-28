@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TestOrder.Application.DTOs.AppointmentSlots;
 
 namespace TestOrder.Application.DTOs.Bookings
 {
@@ -26,10 +27,7 @@ namespace TestOrder.Application.DTOs.Bookings
         public List<int> Catalogs { get; set; } = new List<int>();
 
         [Required]
-        public DateOnly BookingDate { get; set; }
-
-        [Required]
-        public TimeOnly BookingTime { get; set; }
+        public AppointmentSlotDTO slotDTO { get; set; } = new AppointmentSlotDTO();
 
     }
 }
