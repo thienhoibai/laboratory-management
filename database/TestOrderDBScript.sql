@@ -1,9 +1,10 @@
-﻿use master
-drop DATABASE TestOrderDB
+﻿USE master;
+ALTER DATABASE TestOder SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+DROP DATABASE TestOder;
 
-CREATE DATABASE TestOrderDB
+CREATE DATABASE TestOder
 
-use TestOrderDB
+use TestOder
 
 
 CREATE TABLE TestBundle (
@@ -147,3 +148,4 @@ Values (N'Hồng cầu (RBC)', 'Nam: 4.2 - 6.0| Nữ: 3.8-5.0', '*10^12/L'),
 
 
 
+		select * from CatalogParameter

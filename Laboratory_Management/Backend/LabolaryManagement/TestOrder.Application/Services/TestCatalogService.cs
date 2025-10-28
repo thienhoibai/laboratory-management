@@ -34,6 +34,10 @@ namespace TestOrder.Application.Services
                 Price = catalog.Price,
             };
         }
+        public async Task<TestCatalog> AddParameterAsync(int catalogId, List<int> parameterIds)
+        {
+            return await _repository.AddParameter(catalogId, parameterIds);
+        }
 
         public async Task UpdateCatalogAsync(int id, string description, double price)
         {

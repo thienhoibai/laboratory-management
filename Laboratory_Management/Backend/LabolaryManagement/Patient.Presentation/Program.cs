@@ -64,7 +64,7 @@ else
 {
     var conn = builder.Configuration.GetConnectionString("PatientService3");
     if (string.IsNullOrWhiteSpace(conn))
-        conn = "Server=localhost;Database=PatientService3;Trusted_Connection=True;TrustServerCertificate=True;Connect Timeout=5";
+        conn = "Server=TUAN\\SQLEXPRESS01;Database=PatientService3;Trusted_Connection=True;uid=sa;pwd=12345;TrustServerCertificate=True;";
 
     builder.Services.AddDbContext<PatientDbContext>(opt =>
         opt.UseSqlServer(conn));
