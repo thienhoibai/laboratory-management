@@ -42,9 +42,9 @@ public partial class TestOrderDBContext : DbContext
 
     public virtual DbSet<TimeBlock> TimeBlocks { get; set; }
 
-//    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-//#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-//        => optionsBuilder.UseSqlServer("Server=LAPTOP-SHE2A3S2\\SQLEXPRESS;Database=TestOrderDB;User=sa;Password=12345;TrustServerCertificate=true");
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseSqlServer("Server=LAPTOP-SHE2A3S2\\SQLEXPRESS;Database=TestOrderDB;User=sa;Password=12345;TrustServerCertificate=true");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -72,6 +72,8 @@ public partial class TestOrderDBContext : DbContext
 
             entity.Property(e => e.CreateDate).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.CreatedBy).HasMaxLength(30);
+            entity.Property(e => e.PatientName).HasMaxLength(255);
+            entity.Property(e => e.PatientPhone).HasMaxLength(12);
             entity.Property(e => e.RanBy).HasMaxLength(30);
 
             entity.HasOne(d => d.AppointmentSlot).WithMany(p => p.Bookings)
@@ -98,35 +100,8 @@ public partial class TestOrderDBContext : DbContext
                 .HasConstraintName("FK__BookingTe__Catal__5535A963");
         });
 
-        modelBuilder.Entity<CatalogBundle>(entity =>
-        {
-            entity
-                .HasNoKey()
-                .ToTable("CatalogBundle");
 
-            entity.HasOne(d => d.Bundle).WithMany()
-                .HasForeignKey(d => d.BundleId)
-                .HasConstraintName("FK__CatalogBu__Bundl__07C12930");
 
-            entity.HasOne(d => d.Catalog).WithMany()
-                .HasForeignKey(d => d.CatalogId)
-                .HasConstraintName("FK__CatalogBu__Catal__08B54D69");
-        });
-
-        modelBuilder.Entity<CatalogParameter>(entity =>
-        {
-            entity
-                .HasNoKey()
-                .ToTable("CatalogParameter");
-
-            entity.HasOne(d => d.Catalog).WithMany()
-                .HasForeignKey(d => d.CatalogId)
-                .HasConstraintName("FK__CatalogPa__Catal__6EF57B66");
-
-            entity.HasOne(d => d.Parameter).WithMany()
-                .HasForeignKey(d => d.ParameterId)
-                .HasConstraintName("FK__CatalogPa__Param__6FE99F9F");
-        });
 
         modelBuilder.Entity<Comment>(entity =>
         {
@@ -219,6 +194,35 @@ public partial class TestOrderDBContext : DbContext
                 .HasForeignKey(d => d.TestBookingNo)
                 .HasConstraintName("FK__TestResul__TestB__5812160E");
         });
+        modelBuilder.Entity<CatalogBundle>(entity =>
+        {
+            entity.HasKey(e => new { e.BundleId, e.CatalogId });
+            entity.ToTable("CatalogBundle");
+
+            entity.HasOne(d => d.Bundle)
+                .WithMany()
+                .HasForeignKey(d => d.BundleId)
+                .HasConstraintName("FK__CatalogBu__Bundl__07C12930");
+
+            entity.HasOne(d => d.Catalog)
+                .WithMany()
+                .HasForeignKey(d => d.CatalogId)
+                .HasConstraintName("FK__CatalogBu__Catal__08B54D69");
+        });
+
+        modelBuilder.Entity<CatalogParameter>(entity =>
+        {
+            entity.HasKey(e => new { e.CatalogId, e.ParameterId });
+            entity.ToTable("CatalogParameter");
+            entity.HasOne(d => d.Catalog)
+                .WithMany()
+                .HasForeignKey(d => d.CatalogId)
+                .HasConstraintName("FK__CatalogPa__Catal__6EF57B66");
+            entity.HasOne(d => d.Parameter)
+                .WithMany()
+                .HasForeignKey(d => d.ParameterId)
+                .HasConstraintName("FK__CatalogPa__Param__6FE99F9F");
+        });
 
         modelBuilder.Entity<TimeBlock>(entity =>
         {
@@ -233,6 +237,7 @@ public partial class TestOrderDBContext : DbContext
 
         OnModelCreatingPartial(modelBuilder);
     }
+
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
 }

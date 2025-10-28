@@ -32,7 +32,6 @@ namespace TestOrder.Application.Services
                 ParameterName = parameter.ParameterName,
                 Unit = parameter.Unit,
                 ReferenceRange = parameter.ReferenceRange,
-                CatalogId = parameter.CatalogId
 
             };
             await _repository.AddParameterAsync(entity);
