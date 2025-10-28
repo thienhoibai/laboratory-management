@@ -11,6 +11,7 @@ using Patient.Application.Services;
 using Patient.Infrastructure;
 using Patient.Presentation.Infrastructure;
 using Contracts.Notifications;
+using Patient.Infrastructure.Outbox;
 using RabbitMQ.Client;
 
 // Allow gRPC over HTTP/2 (h2c) without TLS
@@ -47,7 +48,6 @@ builder.Services.AddAuthorization();
 // Swagger optional for demo
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddScoped<PatientService>();
 
 // Health checks
 builder.Services.AddHealthChecks();
@@ -68,28 +68,17 @@ else
         conn = "Server=localhost;Database=PatientService3;Trusted_Connection=True;TrustServerCertificate=True;Connect Timeout=5";
 
     builder.Services.AddDbContext<PatientDbContext>(opt =>
-        opt.UseSqlServer(conn));
+        opt.UseSqlServer(conn, sql => sql.MigrationsAssembly("Patient.Migrations")));
 }
 
 builder.Services.AddScoped<IPatientService, PatientService>();
 
-// MassTransit publish (nếu Patient cần publish sự kiện khác) - giữ cấu hình exchange để đồng bộ
-const string notifyExchange = "lab.notify.v1";
-builder.Services.AddMassTransit(x =>
-{
-    x.UsingRabbitMq((context, cfg) =>
-    {
-        var host = builder.Configuration["RabbitMQ:Host"] ?? "rabbitmq";
-        var user = builder.Configuration["RabbitMQ:User"] ?? "guest";
-        var pass = builder.Configuration["RabbitMQ:Pass"] ?? "guest";
-        cfg.Host(host, h => { h.Username(user); h.Password(pass); });
-        cfg.Message<NotificationRequestedV1>(m => m.SetEntityName(notifyExchange));
-        cfg.Publish<NotificationRequestedV1>(p =>
-        {
-            p.ExchangeType = ExchangeType.Topic; p.Durable = true; p.AutoDelete = false;
-        });
-    });
-});
+// Event publisher adapter
+builder.Services.AddScoped<IPatientEventPublisher, MassTransitPatientEventPublisher>();
+
+// Outbox services
+builder.Services.AddScoped<OutboxWriter>();
+builder.Services.AddHostedService<Patient.Infrastructure.Outbox.OutboxProcessor>();
 
 // gRPC client to IAM (h2c). Use Grpc.Net.Client factory registration via generated client
 builder.Services.AddGrpcClient<UserService.UserServiceClient>((sp, o) =>
@@ -136,16 +125,16 @@ builder.Services.AddCors(options =>
     });
 });
 
-
 var app = builder.Build();
 
-// Ensure DB exists when using real SQL (DB created manually via script) -> do not run EF migrations
+// Ensure DB exists when using real SQL
 if (!useInMemory)
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<PatientDbContext>();
     db.Database.SetCommandTimeout(TimeSpan.FromMinutes(2));
-    db.Database.EnsureCreated(); // avoid applying EF migrations that expect different column names
+    db.Database.Migrate();
+    await Patient.Infrastructure.Outbox.OutboxSchemaInitializer.EnsureCreatedAsync(db);
 }
 
 app.MapGet("/", () => Results.Ok("Patient up"));
@@ -158,10 +147,9 @@ if (app.Environment.IsDevelopment())
 }
 
 // No HTTPS redirection for docker h2c
-app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
-
+app.UseCors("AllowFrontend");
 app.MapControllers();
 
 app.Run();
