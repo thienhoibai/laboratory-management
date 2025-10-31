@@ -14,11 +14,13 @@ namespace TestOrder.Application.Services.Booking
         private readonly AppointmentSlotService _appointmentSlotService;
         private readonly BookingRepository _bookingRepository;
 
-        public BookingService(BookingRepository bookingRepository)
+        public BookingService(BookingRepository bookingRepository,
+                              BookingTestService bookingTestService,
+                              AppointmentSlotService appointmentSlotService)
         {
-            _bookingTestService = new BookingTestService();
+            _bookingTestService = bookingTestService;
             _bookingRepository = bookingRepository;
-            _appointmentSlotService = new AppointmentSlotService();
+            _appointmentSlotService = appointmentSlotService;
         }
 
         public async Task<BookingResponseDTO> GetBookingByIdAsync(Guid bookingId)
@@ -81,6 +83,7 @@ namespace TestOrder.Application.Services.Booking
             {
                 return -1;
             }
+            
 
             if (!_appointmentSlotService.IsAppointmentSlotExists(bookingRequest.slotDTO.AppointmentDate,
                                                                  bookingRequest.slotDTO.TimeBlock))
@@ -93,26 +96,25 @@ namespace TestOrder.Application.Services.Booking
                                         bookingRequest.slotDTO.TimeBlock);
 
             var newBooking = new Infrastructure.Models.Booking
-                {
-                BookingId = new Guid(),
+            {
+                BookingId = Guid.NewGuid(),
                 PatientId = bookingRequest.PatientId,
                 PatientName = bookingRequest.PatientName,
                 PatientPhone = bookingRequest.PatientPhoneNumber,
                 CreatedBy = bookingRequest.CreatedBy,
                 CreateDate = DateOnly.FromDateTime(DateTime.Now),
-                BundleId = bookingRequest.BundleId,
+                BundleId = bookingRequest.BundleId.Value != 0 ? bookingRequest.BundleId : null ,
                 AppointmentSlotId = appointmentSlot.SlotId,
                 Status = (byte?)BookingStatusEnum.Pending
             };
 
-             await _bookingRepository.AddAsync(newBooking);
-
+            await _bookingRepository.AddAsync(newBooking);
+        if (bookingRequest.Catalogs != null) { 
             foreach (var catalogId in bookingRequest.Catalogs)
             {
                 _bookingTestService.AddBookingTestAsync(newBooking.BookingId, catalogId).Wait();
             }
-
-
+        }
              return 0;
 
         }

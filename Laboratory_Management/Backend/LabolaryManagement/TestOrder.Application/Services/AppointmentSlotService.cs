@@ -14,10 +14,10 @@ namespace TestOrder.Application.Services
         private readonly AppointmentSlotRepository _repository;
         private readonly TimeBlockRepository _timeBlockRepository;
 
-        public AppointmentSlotService(AppointmentSlotRepository repository)
+        public AppointmentSlotService(AppointmentSlotRepository repository, TimeBlockRepository timeBlockRepository)
         {
             _repository = repository;
-            _timeBlockRepository = new TimeBlockRepository();
+            _timeBlockRepository = timeBlockRepository;
         }
 
         public AppointmentSlotService()
