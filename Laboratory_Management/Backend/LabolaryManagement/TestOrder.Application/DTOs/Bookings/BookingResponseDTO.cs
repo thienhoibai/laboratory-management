@@ -16,6 +16,7 @@ namespace TestOrder.Application.DTOs.Bookings
 
         [Phone]
         [MaxLength(12)]
+        [MinLength(10)]
         public string? PatientPhoneNumber { get; set; }
 
         [Required]
