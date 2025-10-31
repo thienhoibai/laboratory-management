@@ -7,6 +7,7 @@ namespace TestOrder.Presentation.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Tags("Đặt lịch xét nghiệm")]
     public class BookingController : ControllerBase
     {
         private readonly BookingService _bookingService;
@@ -16,11 +17,29 @@ namespace TestOrder.Presentation.Controllers
             _bookingService = bookingService;
         }
 
+        [HttpGet]
+        [Tags("Lấy thông tin Lịch hẹn xét nghiệm theo mã tham chiếu")]
+        public IActionResult GetBookingInfo([FromQuery] Guid bookingId)
+        {
+            var response = _bookingService.GetBookingByIdAsync(bookingId).Result;
+            return Ok(response);
+        }
+        [HttpGet]
+        [Tags("Lấy thông tin lịch hẹn xét nghiệm theo mã bệnh nhân")]
+        public IActionResult GetBookingsByPatientId([FromQuery] long patientId)
+        {
+            var response = _bookingService.GetBookingsByPatientIdAsync(patientId).Result;
+            return Ok(response);
+        }
+
+
         [HttpPost]
+        [Tags("Tạo mới đặt lịch xét nghiệm")]
         public IActionResult CreateBooking([FromBody] BookingRequestDTO createBookingDto)
         {
-            var bookingId = _bookingService.CreateNewBooking(createBookingDto);
-            return Ok(bookingId);
+            var response = _bookingService.CreateNewBooking(createBookingDto);
+            return Ok(response);
         }
+
     }
 }
