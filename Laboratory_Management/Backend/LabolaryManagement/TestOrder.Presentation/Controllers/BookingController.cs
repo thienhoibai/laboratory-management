@@ -1,7 +1,8 @@
-﻿
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using TestOrder.Application.Services.Booking;
 using TestOrder.Application.DTOs.Bookings;
+using System.Threading.Tasks;
 
 namespace TestOrder.Presentation.Controllers
 {
@@ -28,7 +29,7 @@ namespace TestOrder.Presentation.Controllers
         [Tags("Lấy thông tin lịch hẹn xét nghiệm theo mã bệnh nhân")]
         public IActionResult GetBookingsByPatientId([FromQuery] long patientId)
         {
-            var response = _bookingService.GetBookingsByPatientIdAsync(patientId).Result;
+            var response = _bookingService.GetBookingsByPatientIdAsync(patientId);
             return Ok(response);
         }
 
