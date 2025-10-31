@@ -19,6 +19,8 @@ import "react-toastify/dist/ReactToastify.css"; // Import CSS
 import MedicalRecord from "./page/medical-record/MedicalRecord";
 import ForgotPass from "./components/authen-form/ForgotPassword";
 import ResetPass from "./components/authen-form/ResetPassword/ResetPassword";
+import CreatePatient from "./components/profile/CreateProfile";
+
 function App() {
   const router = createBrowserRouter([
     {
@@ -72,6 +74,10 @@ function App() {
     {
       path: "reset-password",
       element: <ResetPass />,
+    },
+    {
+      path: "create-profile",
+      element: <CreatePatient />,
     },
   ]);
 
