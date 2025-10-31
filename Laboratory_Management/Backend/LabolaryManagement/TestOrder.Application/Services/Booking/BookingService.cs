@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using TestOrder.Application.DTOs.Bookings;
 using TestOrder.Infrastructure.Repository;
@@ -28,11 +26,9 @@ namespace TestOrder.Application.Services.Booking
             var booking = await _bookingRepository.GetByIdAsync(bookingId);
 
             if (booking == null)
-            {
                 throw new Exception("Booking not found");
-            }
-              
-            var bookingResponse = new BookingResponseDTO
+
+            return new BookingResponseDTO
             {
                 BookingId = booking.BookingId,
                 PatientId = booking.PatientId ?? 0,
@@ -40,24 +36,29 @@ namespace TestOrder.Application.Services.Booking
                 PatientPhoneNumber = booking.PatientPhone,
                 CreatedBy = booking.CreatedBy,
                 BundleId = booking.BundleId,
-                CreatedDate = booking.CreateDate.HasValue ? booking.CreateDate.Value.ToDateTime(new TimeOnly(0, 0)) : DateTime.MinValue,
-                RunDate = booking.RunDate.HasValue ? booking.RunDate.Value.ToDateTime(new TimeOnly(0, 0)) : (DateTime?)null,
+                CreatedDate = booking.CreateDate.HasValue
+                    ? booking.CreateDate.Value.ToDateTime(new TimeOnly(0, 0))
+                    : DateTime.MinValue,
+                RunDate = booking.RunDate.HasValue
+                    ? booking.RunDate.Value.ToDateTime(new TimeOnly(0, 0))
+                    : (DateTime?)null,
                 RanBy = booking.RanBy ?? string.Empty,
-                Status = booking.Status.HasValue ? ((BookingStatusEnum)booking.Status.Value).ToString() : "Unknown"
+                Status = booking.Status.HasValue
+                    ? ((BookingStatusEnum)booking.Status.Value).ToString()
+                    : "Unknown"
             };
-
-            return bookingResponse;
         }
 
         public async Task<List<BookingResponseDTO>> GetBookingsByPatientIdAsync(long patientId)
         {
             var bookings = await _bookingRepository.GetBookingsByPatientIdAsync(patientId);
             var bookingResponses = new List<BookingResponseDTO>();
+
             if (bookings != null)
             {
                 foreach (var booking in bookings)
                 {
-                    var bookingResponse = new BookingResponseDTO
+                    bookingResponses.Add(new BookingResponseDTO
                     {
                         BookingId = booking.BookingId,
                         PatientId = booking.PatientId ?? 0,
@@ -65,35 +66,39 @@ namespace TestOrder.Application.Services.Booking
                         PatientPhoneNumber = booking.PatientPhone,
                         CreatedBy = booking.CreatedBy,
                         BundleId = booking.BundleId,
-                        CreatedDate = booking.CreateDate.HasValue ? booking.CreateDate.Value.ToDateTime(new TimeOnly(0, 0)) : DateTime.MinValue,
-                        RunDate = booking.RunDate.HasValue ? booking.RunDate.Value.ToDateTime(new TimeOnly(0, 0)) : (DateTime?)null,
+                        CreatedDate = booking.CreateDate.HasValue
+                            ? booking.CreateDate.Value.ToDateTime(new TimeOnly(0, 0))
+                            : DateTime.MinValue,
+                        RunDate = booking.RunDate.HasValue
+                            ? booking.RunDate.Value.ToDateTime(new TimeOnly(0, 0))
+                            : (DateTime?)null,
                         RanBy = booking.RanBy ?? string.Empty,
-                        Status = booking.Status.HasValue ? ((BookingStatusEnum)booking.Status.Value).ToString() : "Unknown"
-                    };
-                    bookingResponses.Add(bookingResponse);
+                        Status = booking.Status.HasValue
+                            ? ((BookingStatusEnum)booking.Status.Value).ToString()
+                            : "Unknown"
+                    });
                 }
             }
-            return bookingResponses;
 
+            return bookingResponses;
         }
+
         #region Create New Booking
         public async Task<int> CreateNewBooking(BookingRequestDTO bookingRequest)
         {
             if (!_appointmentSlotService.IsAppointmentsDateValid(bookingRequest.slotDTO.AppointmentDate))
-            {
                 return -1;
-            }
-            
 
-            if (!_appointmentSlotService.IsAppointmentSlotExists(bookingRequest.slotDTO.AppointmentDate,
-                                                                 bookingRequest.slotDTO.TimeBlock))
+            if (!_appointmentSlotService.IsAppointmentSlotExists(
+                    bookingRequest.slotDTO.AppointmentDate,
+                    bookingRequest.slotDTO.TimeBlock))
             {
-                _appointmentSlotService.AddAppointmentSlotAsync(bookingRequest.slotDTO).Wait();
+                await _appointmentSlotService.AddAppointmentSlotAsync(bookingRequest.slotDTO);
             }
 
             var appointmentSlot = await _appointmentSlotService.GetAppointmentSlotByDateAndTimeAsync(
-                                        bookingRequest.slotDTO.AppointmentDate,
-                                        bookingRequest.slotDTO.TimeBlock);
+                bookingRequest.slotDTO.AppointmentDate,
+                bookingRequest.slotDTO.TimeBlock);
 
             var newBooking = new Infrastructure.Models.Booking
             {

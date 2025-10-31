@@ -14,16 +14,12 @@ namespace TestOrder.Application.Services
         private readonly AppointmentSlotRepository _repository;
         private readonly TimeBlockRepository _timeBlockRepository;
 
-        public AppointmentSlotService(AppointmentSlotRepository repository, TimeBlockRepository timeBlockRepository)
+        public AppointmentSlotService(
+            AppointmentSlotRepository repository,
+            TimeBlockRepository timeBlockRepository)
         {
             _repository = repository;
             _timeBlockRepository = timeBlockRepository;
-        }
-
-        public AppointmentSlotService()
-        {
-            _repository = new AppointmentSlotRepository();
-            _timeBlockRepository = new TimeBlockRepository();
         }
 
         public async Task<IEnumerable<AppointmentSlot>> GetAllAppointmentSlot(int pageNumber)
