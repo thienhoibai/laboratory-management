@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using TestOrder.Application.Services.Booking;
 using TestOrder.Application.DTOs.Bookings;
+using System.Threading.Tasks;
 
 namespace TestOrder.Presentation.Controllers
 {
@@ -24,20 +25,20 @@ namespace TestOrder.Presentation.Controllers
             var response = _bookingService.GetBookingByIdAsync(bookingId).Result;
             return Ok(response);
         }
-        [HttpGet]
+        [HttpGet("patient")]
         [Tags("Lấy thông tin lịch hẹn xét nghiệm theo mã bệnh nhân")]
         public IActionResult GetBookingsByPatientId([FromQuery] long patientId)
         {
-            var response = _bookingService.GetBookingsByPatientIdAsync(patientId).Result;
+            var response = _bookingService.GetBookingsByPatientIdAsync(patientId);
             return Ok(response);
         }
 
 
         [HttpPost]
         [Tags("Tạo mới đặt lịch xét nghiệm")]
-        public IActionResult CreateBooking([FromBody] BookingRequestDTO createBookingDto)
+        public async Task<IActionResult> CreateBooking([FromBody] BookingRequestDTO createBookingDto)
         {
-            var response = _bookingService.CreateNewBooking(createBookingDto);
+            var response = await _bookingService.CreateNewBooking(createBookingDto);
             return Ok(response);
         }
 
