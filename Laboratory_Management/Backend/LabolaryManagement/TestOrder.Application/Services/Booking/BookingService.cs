@@ -8,17 +8,16 @@ namespace TestOrder.Application.Services.Booking
 {
     public class BookingService
     {
-        private readonly BookingRepository _bookingRepository;
-        private readonly BookingTestRepository _bookingTestRepository;
+        private readonly BookingTestService _bookingTestService;
         private readonly AppointmentSlotService _appointmentSlotService;
+        private readonly BookingRepository _bookingRepository;
 
-        public BookingService(
-            BookingRepository bookingRepository,
-            BookingTestRepository bookingTestRepository,
-            AppointmentSlotService appointmentSlotService)
+        public BookingService(BookingRepository bookingRepository,
+                              BookingTestService bookingTestService,
+                              AppointmentSlotService appointmentSlotService)
         {
+            _bookingTestService = bookingTestService;
             _bookingRepository = bookingRepository;
-            _bookingTestRepository = bookingTestRepository;
             _appointmentSlotService = appointmentSlotService;
         }
 
@@ -109,19 +108,20 @@ namespace TestOrder.Application.Services.Booking
                 PatientPhone = bookingRequest.PatientPhoneNumber,
                 CreatedBy = bookingRequest.CreatedBy,
                 CreateDate = DateOnly.FromDateTime(DateTime.Now),
-                BundleId = bookingRequest.BundleId.Value == 0 ? null : bookingRequest.BundleId,
+                BundleId = bookingRequest.BundleId.Value != 0 ? bookingRequest.BundleId : null ,
                 AppointmentSlotId = appointmentSlot.SlotId,
                 Status = (byte?)BookingStatusEnum.Pending
             };
 
             await _bookingRepository.AddAsync(newBooking);
-
+        if (bookingRequest.Catalogs != null) { 
             foreach (var catalogId in bookingRequest.Catalogs)
             {
-                await _bookingTestRepository.AddBookingTestAsync(newBooking.BookingId, catalogId);
+                _bookingTestService.AddBookingTestAsync(newBooking.BookingId, catalogId).Wait();
             }
+        }
+             return 0;
 
-            return 0;
         }
         #endregion
     }
