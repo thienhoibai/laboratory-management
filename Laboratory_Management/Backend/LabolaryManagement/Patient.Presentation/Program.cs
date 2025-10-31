@@ -1,4 +1,4 @@
-﻿using System.Text;
+﻿using Contracts.Notifications;
 using Grpc.Net.Client;
 using Iam.Grpc;
 using MassTransit;
@@ -10,8 +10,8 @@ using Patient.Application.Security;
 using Patient.Application.Services;
 using Patient.Infrastructure;
 using Patient.Presentation.Infrastructure;
-using Contracts.Notifications;
 using RabbitMQ.Client;
+using System.Text;
 
 // Allow gRPC over HTTP/2 (h2c) without TLS
 AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
@@ -76,27 +76,41 @@ builder.Services.AddScoped<IPatientService, PatientService>();
 const string notifyExchange = "lab.notify.v1";
 builder.Services.AddMassTransit(x =>
 {
-    x.UsingRabbitMq((context, cfg) =>
+x.UsingRabbitMq((context, cfg) =>
+{
+var host = builder.Configuration["RabbitMQ:Host"] ?? "rabbitmq";
+var user = builder.Configuration["RabbitMQ:User"] ?? "guest";
+var pass = builder.Configuration["RabbitMQ:Pass"] ?? "guest";
+    cfg.Host(host, h => { h.Username(user); h.Password(pass); });
+    cfg.Message<NotificationRequestedV1>(m => m.SetEntityName(notifyExchange));
+    cfg.Publish<NotificationRequestedV1>(p =>
     {
-        var host = builder.Configuration["RabbitMQ:Host"] ?? "rabbitmq";
-        var user = builder.Configuration["RabbitMQ:User"] ?? "guest";
-        var pass = builder.Configuration["RabbitMQ:Pass"] ?? "guest";
-        cfg.Host(host, h => { h.Username(user); h.Password(pass); });
-        cfg.Message<NotificationRequestedV1>(m => m.SetEntityName(notifyExchange));
-        cfg.Publish<NotificationRequestedV1>(p =>
-        {
-            p.ExchangeType = ExchangeType.Topic; p.Durable = true; p.AutoDelete = false;
-        });
+        p.ExchangeType = ExchangeType.Topic; p.Durable = true; p.AutoDelete = false;
     });
 });
-
-// gRPC client to IAM (h2c). Use Grpc.Net.Client factory registration via generated client
-builder.Services.AddGrpcClient<UserService.UserServiceClient>((sp, o) =>
-{
-    var url = builder.Configuration["Grpc:IamUrl"] ?? "http://iam.api:5001";
-    o.Address = new Uri(url);
 });
 
+// Register UserService.UserServiceClient as a service
+builder.Services.AddScoped<UserService.UserServiceClient>(provider =>
+{
+    var url = builder.Configuration["Grpc:IamUrl"] ?? "http://iam.api:5001";
+    var channel = GrpcChannel.ForAddress(url);
+    return new UserService.UserServiceClient(channel);
+});
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins(
+            "http://localhost:5174",
+            "http://127.0.0.1:5174"
+        )
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials();
+    });
+});
 var app = builder.Build();
 
 // Ensure DB exists when using real SQL (DB created manually via script) -> do not run EF migrations
@@ -120,7 +134,7 @@ if (app.Environment.IsDevelopment())
 // No HTTPS redirection for docker h2c
 app.UseAuthentication();
 app.UseAuthorization();
-
+app.UseCors("AllowFrontend");
 app.MapControllers();
 
 app.Run();
