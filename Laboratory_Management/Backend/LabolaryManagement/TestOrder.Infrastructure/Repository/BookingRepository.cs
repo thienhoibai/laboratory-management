@@ -16,5 +16,12 @@ namespace TestOrder.Infrastructure.Repository
         public BookingRepository() : base()
         {
         }
+
+        public async Task<List<Booking>?> GetBookingsByPatientIdAsync(long patientId)
+        {
+            return await Task.Run(() => _context.Set<Booking>()
+                .Where(b => b.PatientId == patientId)
+                .ToList());
+        }
     }
 }
