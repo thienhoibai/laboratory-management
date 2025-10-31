@@ -23,11 +23,10 @@ public class NotificationRequestedConsumer : IConsumer<NotificationRequestedV1>
     public async Task Consume(ConsumeContext<NotificationRequestedV1> context)
     {
         var evt = context.Message;
-        // Idempotency
+        // Idempotency (unique index on message_id already exists)
         var existing = await _db.Jobs.AsNoTracking().FirstOrDefaultAsync(j => j.MessageId == evt.MessageId, context.CancellationToken);
         if (existing != null && existing.Status == 2)
         {
-            // Already processed (sent)
             _logger.LogInformation("Skip duplicate message {MessageId}", evt.MessageId);
             return;
         }
@@ -72,7 +71,7 @@ public class NotificationRequestedConsumer : IConsumer<NotificationRequestedV1>
             job.Status = 3; // failed
             job.Error = ex.Message;
             await _db.SaveChangesAsync(context.CancellationToken);
-            throw; // allow MT to retry
+            throw; // allow MassTransit retry (configured in bus)
         }
     }
 }
