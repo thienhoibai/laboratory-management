@@ -89,6 +89,21 @@
   color: #2563eb;
 }
 
+.navbar-lab-staff {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: white !important;
+  padding: 8px 16px !important;
+  border-radius: 8px;
+  font-weight: 600 !important;
+  transition: all 0.2s;
+}
+
+.navbar-lab-staff:hover {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
 .navbar-actions {
   display: flex;
   align-items: center;
