@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TestOrder.Infrastructure.Models;
 
 namespace TestOrder.Application.DTOs
 {
@@ -12,5 +13,6 @@ namespace TestOrder.Application.DTOs
         public string? Description { get; set; }
         public double? Price { get; set; }
         public bool? IsActive { get; set; }
+        
     }
 }

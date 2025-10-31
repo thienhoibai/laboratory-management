@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getUserData, logoutUser } from "../../utils/auth";
+// import api from "../../configs/axios";
 import "./Navbar.css";
+import api from "../../configs/axios";
+import { setAuthToken } from "../../utils/auth";
 
 function Navbar() {
   const [user, setUser] = useState(null);
@@ -16,6 +19,25 @@ function Navbar() {
     await logoutUser();
     setUser(null);
     navigate("/login");
+  };
+
+  const handleProfileClick = async () => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      setAuthToken(token);
+      const response = await api.get(`patient/v1/patients/me`);
+
+      console.log("Profile response:", response.data);
+
+      if (response.data && response.data.succeeded === true) {
+        navigate("/profile");
+      } else {
+        navigate("/create-profile");
+      }
+    } catch (error) {
+      console.error("Error checking patient profile:", error);
+      navigate("/create-profile");
+    }
   };
 
   return (
@@ -74,7 +96,8 @@ function Navbar() {
               </div>
               <div
                 className="navbar-avatar-dropdown"
-                onClick={() => navigate("/profile")}
+                onClick={handleProfileClick}
+                style={{ cursor: "pointer" }}
               >
                 <svg
                   className="user-icon"

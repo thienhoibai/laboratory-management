@@ -22,6 +22,8 @@ import ResetPass from "./components/authen-form/ResetPassword/ResetPassword";
 import AppointmentSchedule from "./pages/lab-staff/appointment-schedule/appointment-schedule";
 import LabStaffDashboard from "./pages/lab-staff/dashboard/dashboard";
 import LabStaffLanding from "./pages/lab-staff/landing/LabStaffLanding";
+import CreatePatient from "./components/profile/CreateProfile";
+
 function App() {
   const router = createBrowserRouter([
     {
@@ -87,6 +89,10 @@ function App() {
     {
       path: "lab-staff/appointment-schedule",
       element: <AppointmentSchedule />,
+    },
+    {
+      path: "create-profile",
+      element: <CreatePatient />,
     },
   ]);
 

@@ -38,7 +38,12 @@ const LoginForm = ({ errorMessage }) => {
           navigate("/admin/users");
         }
       }
+      // XÓA else if (response.status === 423) {...}
     } catch (error) {
+      if (error.response?.status === 423) {
+        toast.error("Tài Khoản Của Bạn Đã Bị Khóa!!");
+        return;
+      }
       const serverMsg =
         (typeof error?.response?.data === "string" && error.response.data) ||
         error?.response?.data?.message ||

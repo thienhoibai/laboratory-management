@@ -153,12 +153,14 @@ app.UseSwaggerUI();
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
+app.MapControllers();
+
 
 app.MapGrpcService<IamGrpcUserService>();
 if (app.Environment.IsDevelopment()) app.MapGrpcReflectionService();
 
 app.MapGet("/", () => Results.Ok("IAM up"));
 app.MapHealthChecks("/healthz");
-app.MapControllers();
+
 
 app.Run();
