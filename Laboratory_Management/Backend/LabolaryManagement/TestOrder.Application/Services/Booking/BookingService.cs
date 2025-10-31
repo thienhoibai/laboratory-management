@@ -89,6 +89,11 @@ namespace TestOrder.Application.Services.Booking
             if (!_appointmentSlotService.IsAppointmentsDateValid(bookingRequest.slotDTO.AppointmentDate))
                 return -1;
 
+            if (_appointmentSlotService.IsAppointmentSlotMaxedOut(bookingRequest.slotDTO))
+            {
+                return -2;
+            }
+
             if (!_appointmentSlotService.IsAppointmentSlotExists(
                     bookingRequest.slotDTO.AppointmentDate,
                     bookingRequest.slotDTO.TimeBlock))
