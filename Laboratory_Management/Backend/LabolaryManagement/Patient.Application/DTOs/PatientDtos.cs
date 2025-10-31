@@ -11,7 +11,6 @@ public record CreatePatientRequest(
     string? Address,
     string? IdNumber,
     string? InsuranceNumber,
-    Guid? UserId,
     string? CreatedChannel
 );
 
@@ -23,8 +22,7 @@ public record UpdatePatientRequest(
     string? Email,
     string? Address,
     string? IdNumber,
-    string? InsuranceNumber,
-    Guid? UserId
+    string? InsuranceNumber
 );
 
 public record PatientSummaryDto(
@@ -62,3 +60,17 @@ public record PatientVersionDto(
     string? ChangeSet,
     string? FullSnapshot
 );
+
+public class PatientDto
+{
+    public Guid PatientId { get; set; }
+    public string FullName { get; set; } = default!;
+    public DateOnly?DateOfBirth { get; set; }
+    public int Gender { get; set; }
+    public string Email { get; set; } = default!;
+    public string Phone { get; set; } = default!;
+    public string Address { get; set; } = default!;
+    public string IdNumber { get; set; }
+    public string? InsuranceNumber { get; set; }
+    public DateTime CreatedAt { get; set; }
+}

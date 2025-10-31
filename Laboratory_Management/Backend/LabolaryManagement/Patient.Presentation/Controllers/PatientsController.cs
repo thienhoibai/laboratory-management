@@ -1,148 +1,110 @@
-﻿using System.Security.Claims;
-using Common.Errors;
+﻿using Common.Errors;
 using Common.Responses;
+using Common.Web.Filters;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Patient.Application.DTOs;
 using Patient.Application.Services;
-using Microsoft.EntityFrameworkCore;
-using Patient.Infrastructure;
+using System.Diagnostics;
+using System.Security.Claims;
+
 
 namespace Patient.Presentation.Controllers;
 
-[Authorize]
 [ApiController]
 [Route("v1/patients")]
 public class PatientsController : ControllerBase
 {
-    private readonly IPatientService _svc;
-    private readonly PatientDbContext _db;
-    public PatientsController(IPatientService svc, PatientDbContext db) { _svc = svc; _db = db; }
+    private readonly IPatientService _service;
+    public PatientsController(IPatientService service)
+    {
+        _service = service;
+    }
 
-    private string TraceId => HttpContext.TraceIdentifier;
-    private Guid GetUserId() => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub")!);
+    private static Guid GetUserId(ClaimsPrincipal user)
+    {
+        var id = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
+        return id != null && Guid.TryParse(id, out var g) ? g : Guid.Empty;
+    }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreatePatientRequest req, CancellationToken ct)
+    [Authorize]
+    public async Task<IActionResult> Create([FromBody] CreatePatientRequest request, CancellationToken ct)
     {
-        var actor = GetUserId();
-        var result = await _svc.CreateAsync(req, actor, HttpContext.Connection.RemoteIpAddress?.ToString(), ct);
-        if (!result.Succeeded) throw new Common.Web.Filters.ApiException(result.Error ?? ErrorCodes.ValidationError);
-        return Ok(ApiResponse.Success(result.Data, null, TraceId));
+        var userId = GetUserId(User);
+        if (userId == Guid.Empty) return Unauthorized();
+        var result = await _service.CreateAsync(request, userId, null, ct);
+        if (!result.Succeeded) return BadRequest(new { error = result.Error?.ToString() });
+        return CreatedAtAction(nameof(GetById), new { id = result.Data!.PatientId }, result.Data);
     }
 
-    [HttpPut("{id:guid}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] UpdatePatientRequest req, CancellationToken ct)
+
+    [HttpGet("me")]
+    public async Task<IActionResult> GetMyPatient(CancellationToken ct)
     {
-        var actor = GetUserId();
-        if (!await _svc.IsOwnerAsync(id, actor, ct)) return Forbid();
-        var result = await _svc.UpdateAsync(id, req, actor, HttpContext.Connection.RemoteIpAddress?.ToString(), ct);
-        if (!result.Succeeded) throw new Common.Web.Filters.ApiException(result.Error ?? ErrorCodes.ValidationError);
-        return Ok(ApiResponse.Success(result.Data, null, TraceId));
-    }
+        var userId = GetUserId(User);
 
-    [HttpDelete("{id:guid}")]
-    public async Task<IActionResult> Delete(Guid id, [FromQuery] string? reason, CancellationToken ct)
-    {
-        var actor = GetUserId();
-        if (!await _svc.IsOwnerAsync(id, actor, ct)) return Forbid();
-        var result = await _svc.DeleteAsync(id, actor, reason, HttpContext.Connection.RemoteIpAddress?.ToString(), ct);
-        if (!result.Succeeded) throw new Common.Web.Filters.ApiException(result.Error ?? ErrorCodes.NotFound);
-        return Ok(ApiResponse.Success(new { deleted = true, patientId = id }, null, TraceId));
-    }
+        if (userId == Guid.Empty)
+            return Unauthorized(); ;
 
-    [HttpGet]
-    public async Task<IActionResult> List(
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 20,
-        [FromQuery] string? name = null,
-        [FromQuery] DateOnly? dob = null,
-        [FromQuery] bool? isDeleted = null,
-        [FromQuery] string? sortBy = null,
-        [FromQuery] string? sort = null,
-        [FromQuery] string? owner = null,
-        [FromQuery] string? idLast4 = null,
-        [FromQuery] string? phoneLast4 = null,
-        CancellationToken ct = default)
-    {
-        // Optional filter owner=me for backward compatibility
-        if (string.Equals(owner, "me", StringComparison.OrdinalIgnoreCase))
-        {
-            var userId = GetUserId();
-            var q = _db.PatientOwners.AsNoTracking().Where(x => x.UserId == userId).Select(x => x.Patient).AsQueryable();
-            if (!string.IsNullOrWhiteSpace(name))
-            {
-                var norm = name.Trim().ToUpperInvariant();
-                q = q.Where(p => p.FullNameNorm != null && p.FullNameNorm.Contains(norm));
-            }
-            if (dob.HasValue) q = q.Where(p => p.DateOfBirth == dob);
-            if (isDeleted.HasValue) q = q.Where(p => p.IsDeleted == isDeleted.Value);
-            if (!string.IsNullOrWhiteSpace(phoneLast4)) q = q.Where(p => p.PhoneLast4 == phoneLast4);
-            if (!string.IsNullOrWhiteSpace(idLast4)) q = q.Where(p => p.IdLast4 == idLast4);
-
-            q = sortBy?.ToLowerInvariant() switch
-            {
-                "name" => (sort?.ToLowerInvariant() == "desc" ? q.OrderByDescending(x => x.FullNameNorm) : q.OrderBy(x => x.FullNameNorm)),
-                "createdat" => (sort?.ToLowerInvariant() == "asc" ? q.OrderBy(x => x.CreatedAt) : q.OrderByDescending(x => x.CreatedAt)),
-                "updatedat" => (sort?.ToLowerInvariant() == "asc" ? q.OrderBy(x => x.UpdatedAt) : q.OrderByDescending(x => x.UpdatedAt)),
-                _ => q.OrderByDescending(x => x.CreatedAt)
-            };
-
-            var totalMine = await q.LongCountAsync(ct);
-            var itemsMine = await q.Skip((page - 1) * pageSize).Take(pageSize)
-                .Select(e => new PatientSummaryDto(e.PatientId, e.FullNameNorm, e.DateOfBirth, e.Gender, e.PhoneLast4, e.IsDeleted, e.CreatedAt, e.UpdatedAt))
-                .ToListAsync(ct);
-            var metaMine = new Common.Responses.PageMeta { Page = page, PageSize = pageSize, TotalItems = totalMine, TotalPages = (int)Math.Ceiling(totalMine / (double)pageSize) };
-            return Ok(ApiResponse.Success(itemsMine, metaMine, TraceId));
-        }
-
-        var (items, total) = await _svc.ListAsync(page, pageSize, name, dob, isDeleted, sortBy, sort, idLast4, phoneLast4, ct);
-        var meta = new Common.Responses.PageMeta { Page = page, PageSize = pageSize, TotalItems = total, TotalPages = (int)Math.Ceiling(total / (double)pageSize) };
-        return Ok(ApiResponse.Success(items, meta, TraceId));
-    }
-
-    [HttpGet("{id:guid}")]
-    public async Task<IActionResult> Get(Guid id, CancellationToken ct)
-    {
-        var result = await _svc.GetAsync(id, ct);
-        if (!result.Succeeded) throw new Common.Web.Filters.ApiException(result.Error ?? ErrorCodes.NotFound);
-        return Ok(ApiResponse.Success(result.Data, null, TraceId));
+        var result = await _service.GetByUserIdAsync(userId, ct);
+        if (result == null)
+            return NotFound();
+             return Ok(result);
     }
 
     [HttpGet("mine")]
-    public async Task<IActionResult> GetMine(
-        [FromQuery] int page = 1,
-        [FromQuery] int size = 20,
-        [FromQuery] string? sortBy = null,
-        [FromQuery] string? sort = null,
-        CancellationToken ct = default)
+    [Authorize]
+    public async Task<IActionResult> Mine(int page = 1, int pageSize = 50, string? name = null, CancellationToken ct = default)
     {
-        var userId = GetUserId();
-        var query = _db.PatientOwners.Where(x => x.UserId == userId).Select(x => x.Patient);
-
-        query = sortBy?.ToLowerInvariant() switch
-        {
-            "name" => (sort?.ToLowerInvariant() == "desc" ? query.OrderByDescending(x => x.FullNameNorm) : query.OrderBy(x => x.FullNameNorm)),
-            "createdat" => (sort?.ToLowerInvariant() == "asc" ? query.OrderBy(x => x.CreatedAt) : query.OrderByDescending(x => x.CreatedAt)),
-            "updatedat" => (sort?.ToLowerInvariant() == "asc" ? query.OrderBy(x => x.UpdatedAt) : query.OrderByDescending(x => x.UpdatedAt)),
-            _ => query.OrderByDescending(x => x.CreatedAt)
-        };
-
-        var total = await query.LongCountAsync(ct);
-        var items = await query
-            .Skip((page - 1) * size)
-            .Take(size)
-            .Select(e => new PatientSummaryDto(e.PatientId, e.FullNameNorm, e.DateOfBirth, e.Gender, e.PhoneLast4, e.IsDeleted, e.CreatedAt, e.UpdatedAt))
-            .ToListAsync(ct);
-        var meta = new Common.Responses.PageMeta { Page = page, PageSize = size, TotalItems = total, TotalPages = (int)Math.Ceiling(total / (double)size) };
-        return Ok(ApiResponse.Success(items, meta, TraceId));
+        var userId = GetUserId(User);
+        if (userId == Guid.Empty) return Unauthorized();
+        var (items, total) = await _service.ListByOwnerAsync(userId, page, pageSize, name, null, null, null, ct);
+        return Ok(new { total, items });
     }
 
-    [HttpGet("{id:guid}/versions")]
-    public async Task<IActionResult> Versions(Guid id, [FromQuery] int page = 1, [FromQuery] int pageSize = 20, [FromQuery] string? sort = null, CancellationToken ct = default)
+    [HttpGet("{id:guid}")]
+    [Authorize]
+    public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
+                                                                                                                                                                                                 
     {
-        var (items, total) = await _svc.GetVersionsAsync(id, page, pageSize, sort, ct);
-        var meta = new Common.Responses.PageMeta { Page = page, PageSize = pageSize, TotalItems = total, TotalPages = (int)Math.Ceiling(total / (double)pageSize) };
-        return Ok(ApiResponse.Success(items, meta, TraceId));
+        var userId = GetUserId(User);
+        var res = await _service.GetAsync(id, ct);
+        if (!res.Succeeded || res.Data == null) return NotFound();
+        var isOwner = await _service.IsOwnerAsync(id, userId, ct);
+        if (!isOwner && !User.IsInRole("Admin")) return Forbid();
+        return Ok(res.Data);
+    }
+
+    [HttpPut("{id:guid}")]
+    [Authorize]
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdatePatientRequest request, CancellationToken ct)
+    {
+        var userId = GetUserId(User);
+        if (userId == Guid.Empty) return Unauthorized();
+        var res = await _service.UpdateAsync(id, request, userId, null, ct);
+        if (!res.Succeeded)
+        {
+            if (res.Error == Common.Errors.ErrorCodes.Forbidden) return Forbid();
+            if (res.Error == Common.Errors.ErrorCodes.NotFound) return NotFound();
+            return BadRequest(new { error = res.Error?.ToString() });
+        }
+        return Ok(res.Data);
+    }
+
+    [HttpDelete("{id:guid}")]
+    [Authorize]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
+    {
+        var userId = GetUserId(User);
+        if (userId == Guid.Empty) return Unauthorized();
+        var res = await _service.DeleteAsync(id, userId, null, null, ct);
+        if (!res.Succeeded)
+        {
+            if (res.Error == Common.Errors.ErrorCodes.Forbidden) return Forbid();
+            if (res.Error == Common.Errors.ErrorCodes.NotFound) return NotFound();
+            return BadRequest(new { error = res.Error?.ToString() });
+        }
+        return NoContent();
     }
 }
