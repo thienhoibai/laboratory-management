@@ -1,4 +1,5 @@
-﻿using Common.Results;
+﻿using Common.Errors;
+using Common.Results;
 using Microsoft.EntityFrameworkCore;
 using Patient.Application.DTOs;
 using Patient.Domain.Entities;
@@ -9,7 +10,6 @@ namespace Patient.Application.Services;
 public class PatientService : IPatientService
 {
     private readonly PatientDbContext _db;
-
     public PatientService(PatientDbContext db)
     {
         _db = db;
@@ -222,4 +222,31 @@ public class PatientService : IPatientService
             .ToListAsync(ct);
         return (list, total);
     }
+
+    public async Task<OperationResult<PatientDto>> GetByUserIdAsync(Guid userId, CancellationToken ct)
+    {
+        var patient = await _db.Patients
+            .AsNoTracking()
+            .Where(p => p.UserId == userId && !p.IsDeleted)
+            .Select(p => new PatientDto
+            {
+                PatientId = p.PatientId,
+                FullName = p.FullName,
+                DateOfBirth = p.DateOfBirth,
+                Gender = p.Gender,
+                Email = p.Email,
+                Phone = p.Phone,
+                Address = p.Address,
+                IdNumber = p.IdNumber,
+                InsuranceNumber = p.InsuranceNumber,
+                CreatedAt = p.CreatedAt
+            })
+            .FirstOrDefaultAsync(ct);
+
+        if (patient == null)
+            return OperationResult<PatientDto>.Fail(ErrorCodes.NotFound);
+
+        return OperationResult<PatientDto>.Success(patient);
+    }
+
 }
