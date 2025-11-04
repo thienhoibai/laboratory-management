@@ -15,6 +15,10 @@ namespace BlogService.Presentation
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddDbContext<DBContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+            builder.Services.AddScoped<BlogService.Application.Services.BlogPostService>();
+            builder.Services.AddScoped<BlogService.Application.Services.CategoryService>();
+            builder.Services.AddScoped<BlogService.Infrastructure.Repository.BlogPostRepository>();
+            builder.Services.AddScoped<BlogService.Infrastructure.Repository.CategoryRepository>();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 

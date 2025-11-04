@@ -5,7 +5,7 @@ CREATE TABLE Category (
   CreatedDate DATETIME,
 );
 CREATE TABLE BlogPost(
- PostId INT PRIMARY KEY NOT NULL,
+ PostId INT IDENTITY(1,1) PRIMARY KEY,
  Title NVARCHAR(255),
  Content NVARCHAR (max),
  AuthorId BIGINT,
@@ -17,7 +17,7 @@ CREATE TABLE BlogPost(
  ThumbnailUrl NVARCHAR(500),
 );
 CREATE TABLE Tag(
-TagId INT PRIMARY KEY NOT NULL,
+TagId INT IDENTITY(1,1) PRIMARY KEY,
 TagName NVARCHAR(50),
 );
 CREATE TABLE BlogPostTag(
@@ -32,3 +32,14 @@ Content NVARCHAR(max),
 CreatedDate DATETIME,
 IsUpdated BIT
 );
+
+
+
+select * from BlogPost
+
+
+
+CREATE DATABASE BlogServiceDB;
+GO
+
+USE BlogServiceDB;
