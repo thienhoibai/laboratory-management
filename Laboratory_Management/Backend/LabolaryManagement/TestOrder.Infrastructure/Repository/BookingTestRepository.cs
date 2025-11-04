@@ -25,7 +25,7 @@ namespace TestOrder.Infrastructure.Repository
         }
 
         
-        public async Task AddBookingTestAsync(Guid bookingId, long catalogId)
+        public async Task AddBookingTestAsync(Guid bookingId, int catalogId)
         {
             
             var exists = _context.Set<BookingTest>()
@@ -35,8 +35,9 @@ namespace TestOrder.Infrastructure.Repository
             {
                 var bookingTest = new BookingTest
                 {
-                    BookingId = bookingId
-                    
+                    BookingId = bookingId,
+                    //CatalogId = catalogId
+
                 };
 
                 await _context.Set<BookingTest>().AddAsync(bookingTest);
