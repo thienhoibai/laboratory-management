@@ -32,7 +32,7 @@ const Sidebar = () => {
     <aside className="sidebar">
       <div className="sidebar-header">
         <div className="sidebar-logo">
-          {/* Có thể thêm <img/> logo ở đây */}
+          <img src="/logo.png" alt="HemaLink Logo" />
         </div>
         <div className="sidebar-title">
           <h3>HemaLink</h3>

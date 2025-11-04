@@ -1,31 +1,46 @@
 // Utility functions for authentication
 import api from "../configs/axios";
+
+const URL = "iam/api/Auth/logout";
 export const setAuthToken = (token) => {
-  localStorage.setItem('authToken', token);
+  // Lưu token vào localStorage (hỗ trợ cả key cũ và key chuẩn)
+  localStorage.setItem("authToken", token);
+  localStorage.setItem("accessToken", token);
+  // Gán header mặc định cho axios instance
+  if (token) {
+    api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+  } else {
+    delete api.defaults.headers.common["Authorization"];
+  }
 };
 
 export const getAuthToken = () => {
-  return localStorage.getItem('authToken');
+  // ưu tiên đọc từ accessToken nếu có
+  return (
+    localStorage.getItem("accessToken") || localStorage.getItem("authToken")
+  );
 };
 
 export const removeAuthToken = () => {
-  localStorage.removeItem('authToken');
+  localStorage.removeItem("authToken");
+  localStorage.removeItem("accessToken");
+  // Xóa header mặc định
+  delete api.defaults.headers.common["Authorization"];
 };
 
 // User data functions
 export const setUserData = (userData) => {
-  localStorage.setItem('user', JSON.stringify(userData));
-  // Also set auth token for compatibility
-  setAuthToken('user-logged-in');
+  localStorage.setItem("user", JSON.stringify(userData));
+  // Không tự động set token ở đây — gọi setAuthToken khi login thành công
 };
 
 export const getUserData = () => {
-  const userData = localStorage.getItem('user');
+  const userData = localStorage.getItem("user");
   return userData ? JSON.parse(userData) : null;
 };
 
 export const removeUserData = () => {
-  localStorage.removeItem('user');
+  localStorage.removeItem("user");
   removeAuthToken();
 };
 
@@ -35,7 +50,17 @@ export const isAuthenticated = () => {
   return !!(userData && token);
 };
 
-// Demo function to simulate login
+// Khởi tạo auth khi app load
+export const initAuth = () => {
+  const token = getAuthToken();
+  if (token) {
+    api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+  } else {
+    delete api.defaults.headers.common["Authorization"];
+  }
+};
+
+// Demo functions...
 export const demoLogin = () => {
   const demoUser = {
     fullname: "Nguyễn Văn An",
@@ -48,37 +73,41 @@ export const demoLogin = () => {
     address: "123 Đường Lê Lợi, Quận 1, TP.HCM",
     idCard: "079085001234",
     healthInsurance: "BH-2024-001234",
-    registrationDate: "15 tháng 1, 2024"
+    registrationDate: "15 tháng 1, 2024",
   };
   setUserData(demoUser);
-  window.location.reload(); // Reload to update login status
+  window.location.reload();
 };
 
-// Demo function to simulate logout
 export const demoLogout = () => {
   removeUserData();
-  window.location.reload(); // Reload to update login status
+  window.location.reload();
 };
 
-// Clear all auth-related storage
 export const clearAllAuth = () => {
-  localStorage.removeItem('token');
-  localStorage.removeItem('refreshToken');
-  localStorage.removeItem('user');
+  localStorage.removeItem("accessToken");
+  localStorage.removeItem("refreshToken");
+  localStorage.removeItem("expiresAt");
+  localStorage.removeItem("user");
   removeAuthToken();
 };
 
-// Call backend logout API using refreshToken, then clear storage
 export const logoutUser = async () => {
-  const refreshToken = localStorage.getItem('refreshToken');
+  const refreshToken = localStorage.getItem("refreshToken");
+  const accessToken = getAuthToken();
   try {
-    if (refreshToken) {
-      await api.post('Auth/logout', { refreshToken });
+    if (refreshToken || accessToken) {
+      await api.post(
+        URL,
+        { refreshToken },
+        {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }
+      );
     }
   } catch {
-    // Swallow errors to ensure local logout proceeds
+    // swallow
   } finally {
     clearAllAuth();
   }
 };
-
