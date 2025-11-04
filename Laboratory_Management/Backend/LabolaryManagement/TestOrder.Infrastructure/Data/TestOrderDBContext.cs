@@ -24,8 +24,6 @@ public partial class TestOrderDBContext : DbContext
 
     public virtual DbSet<CatalogBundle> CatalogBundles { get; set; }
 
-    public virtual DbSet<CatalogParameter> CatalogParameters { get; set; }
-
     public virtual DbSet<Comment> Comments { get; set; }
 
     public virtual DbSet<PaymentEnvoice> PaymentEnvoices { get; set; }
@@ -42,70 +40,86 @@ public partial class TestOrderDBContext : DbContext
 
     public virtual DbSet<TimeBlock> TimeBlocks { get; set; }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=LAPTOP-SHE2A3S2\\SQLEXPRESS;Database=TestOrderDB;User=sa;Password=12345;TrustServerCertificate=true");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<AppointmentSlot>(entity =>
         {
-            entity.HasKey(e => e.SlotId).HasName("PK__Appointm__0A124AAF146A6270");
+            entity.HasKey(e => e.SlotId).HasName("PK__Appointm__0A124AAFD31BABC9");
 
             entity.ToTable("AppointmentSlot");
 
             entity.HasIndex(e => new { e.AppointmentDate, e.TimeBlockId }, "UQ_TimeSlot").IsUnique();
 
+            entity.Property(e => e.SlotId).ValueGeneratedNever();
             entity.Property(e => e.MaxBooking).HasDefaultValue(10);
 
             entity.HasOne(d => d.TimeBlock).WithMany(p => p.AppointmentSlots)
                 .HasForeignKey(d => d.TimeBlockId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Appointme__TimeB__1CBC4616");
+                .HasConstraintName("FK__Appointme__TimeB__4F7CD00D");
         });
 
         modelBuilder.Entity<Booking>(entity =>
         {
-            entity.HasKey(e => e.BookingId).HasName("PK__Booking__73951AED45FF0B5E");
+            entity.HasKey(e => e.BookingId).HasName("PK__Booking__73951AED1D9D9E9C");
 
             entity.ToTable("Booking");
 
+            entity.Property(e => e.BookingId).ValueGeneratedNever();
             entity.Property(e => e.CreateDate).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.CreatedBy).HasMaxLength(30);
             entity.Property(e => e.PatientName).HasMaxLength(255);
             entity.Property(e => e.PatientPhone).HasMaxLength(12);
             entity.Property(e => e.RanBy).HasMaxLength(30);
+            entity.Property(e => e.BookingCode)
+                .HasMaxLength(10);
+                
 
             entity.HasOne(d => d.AppointmentSlot).WithMany(p => p.Bookings)
                 .HasForeignKey(d => d.AppointmentSlotId)
-                .HasConstraintName("FK__Booking__Appoint__1EA48E88");
+                .HasConstraintName("FK__Booking__Appoint__534D60F1");
 
             entity.HasOne(d => d.Bundle).WithMany(p => p.Bookings)
                 .HasForeignKey(d => d.BundleId)
-                .HasConstraintName("FK__Booking__BundleI__02FC7413");
+                .HasConstraintName("FK__Booking__BundleI__5535A963");
         });
 
         modelBuilder.Entity<BookingTest>(entity =>
         {
-            entity.HasKey(e => e.TestBookingNo).HasName("PK__BookingT__E0217BD0D0D56492");
+            entity.HasKey(e => e.TestBookingNo).HasName("PK__BookingT__E0217BD074152308");
 
             entity.ToTable("BookingTest");
 
             entity.HasOne(d => d.Booking).WithMany(p => p.BookingTests)
                 .HasForeignKey(d => d.BookingId)
-                .HasConstraintName("FK__BookingTe__Booki__5441852A");
+                .HasConstraintName("FK__BookingTe__Booki__6A30C649");
 
             entity.HasOne(d => d.Catalog).WithMany(p => p.BookingTests)
                 .HasForeignKey(d => d.CatalogId)
-                .HasConstraintName("FK__BookingTe__Catal__5535A963");
+                .HasConstraintName("FK__BookingTe__Catal__6B24EA82");
         });
 
+        modelBuilder.Entity<CatalogBundle>(entity =>
+        {
+            entity.HasKey(e => new { e.BundleId, e.CatalogId }).HasName("PK__CatalogB__DE2527E7F65DBF9D");
 
+            entity.ToTable("CatalogBundle");
 
+            entity.HasOne(d => d.Bundle).WithMany(p => p.CatalogBundles)
+                .HasForeignKey(d => d.BundleId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__CatalogBu__Bundl__60A75C0F");
+
+            entity.HasOne(d => d.Catalog).WithMany(p => p.CatalogBundles)
+                .HasForeignKey(d => d.CatalogId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__CatalogBu__Catal__619B8048");
+        });
 
         modelBuilder.Entity<Comment>(entity =>
         {
-            entity.HasKey(e => e.CommentId).HasName("PK__Comment__C3B4DFCAF6A33FD5");
+            entity.HasKey(e => e.CommentId).HasName("PK__Comment__C3B4DFCA2A3717BE");
 
             entity.ToTable("Comment");
 
@@ -115,47 +129,69 @@ public partial class TestOrderDBContext : DbContext
 
             entity.HasOne(d => d.Test).WithMany(p => p.Comments)
                 .HasForeignKey(d => d.TestId)
-                .HasConstraintName("FK__Comment__TestId__4CA06362");
+                .HasConstraintName("FK__Comment__TestId__5BE2A6F2");
         });
 
         modelBuilder.Entity<PaymentEnvoice>(entity =>
         {
-            entity.HasKey(e => e.PaymentNo).HasName("PK__PaymentE__9B5572677EF44743");
+            entity.HasKey(e => e.PaymentNo).HasName("PK__PaymentE__9B5572674E1508C5");
 
             entity.ToTable("PaymentEnvoice");
 
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
-            entity.Property(e => e.Method).HasMaxLength(15);
-            entity.Property(e => e.Token).HasMaxLength(50);
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.Method).HasMaxLength(50);
+            entity.Property(e => e.PaidAt).HasColumnType("datetime");
+            entity.Property(e => e.Status).HasMaxLength(50);
+            entity.Property(e => e.Token).HasMaxLength(100);
 
             entity.HasOne(d => d.Booking).WithMany(p => p.PaymentEnvoices)
                 .HasForeignKey(d => d.BookingId)
-                .HasConstraintName("FK__PaymentEn__Booki__72C60C4A");
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__PaymentEn__Booki__59063A47");
         });
 
         modelBuilder.Entity<TestBundle>(entity =>
         {
-            entity.HasKey(e => e.BundleId).HasName("PK__TestBund__42003451C368B937");
+            entity.HasKey(e => e.BundleId).HasName("PK__TestBund__42003451A6DF4F6F");
 
             entity.ToTable("TestBundle");
 
             entity.Property(e => e.BundleName).HasMaxLength(50);
-            entity.Property(e => e.IsActive).HasColumnName("isActive");
+            entity.Property(e => e.Description).HasMaxLength(255);
         });
 
         modelBuilder.Entity<TestCatalog>(entity =>
         {
-            entity.HasKey(e => e.CatalogId).HasName("PK__TestCata__C2513B68D7AA1C69");
+            entity.HasKey(e => e.CatalogId).HasName("PK__TestCata__C2513B68508C66DD");
 
             entity.ToTable("TestCatalog");
 
             entity.Property(e => e.Description).HasMaxLength(255);
             entity.Property(e => e.TestName).HasMaxLength(100);
+
+            entity.HasMany(d => d.Parameters).WithMany(p => p.Catalogs)
+                .UsingEntity<Dictionary<string, object>>(
+                    "CatalogParameter",
+                    r => r.HasOne<TestParameter>().WithMany()
+                        .HasForeignKey("ParameterId")
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .HasConstraintName("FK__CatalogPa__Param__6754599E"),
+                    l => l.HasOne<TestCatalog>().WithMany()
+                        .HasForeignKey("CatalogId")
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .HasConstraintName("FK__CatalogPa__Catal__66603565"),
+                    j =>
+                    {
+                        j.HasKey("CatalogId", "ParameterId").HasName("PK__CatalogP__ADD1FD4F5456E38F");
+                        j.ToTable("CatalogParameter");
+                    });
         });
 
         modelBuilder.Entity<TestParameter>(entity =>
         {
-            entity.HasKey(e => e.ParameterId).HasName("PK__TestPara__F80C627796B5D220");
+            entity.HasKey(e => e.ParameterId).HasName("PK__TestPara__F80C6277B0616CC6");
 
             entity.ToTable("TestParameter");
 
@@ -166,7 +202,7 @@ public partial class TestOrderDBContext : DbContext
 
         modelBuilder.Entity<TestReport>(entity =>
         {
-            entity.HasKey(e => e.DocumentId).HasName("PK__TestRepo__1ABEEF0FD2B4BE19");
+            entity.HasKey(e => e.DocumentId).HasName("PK__TestRepo__1ABEEF0F2B3DDF44");
 
             entity.ToTable("TestReport");
 
@@ -175,12 +211,12 @@ public partial class TestOrderDBContext : DbContext
 
             entity.HasOne(d => d.Booking).WithMany(p => p.TestReports)
                 .HasForeignKey(d => d.BookingId)
-                .HasConstraintName("FK__TestRepor__Booki__66603565");
+                .HasConstraintName("FK__TestRepor__Booki__71D1E811");
         });
 
         modelBuilder.Entity<TestResult>(entity =>
         {
-            entity.HasKey(e => e.ResultId).HasName("PK__TestResu__976902082DE6D008");
+            entity.HasKey(e => e.ResultId).HasName("PK__TestResu__9769020837B3CE33");
 
             entity.ToTable("TestResult");
 
@@ -188,52 +224,24 @@ public partial class TestOrderDBContext : DbContext
 
             entity.HasOne(d => d.Parameter).WithMany(p => p.TestResults)
                 .HasForeignKey(d => d.ParameterId)
-                .HasConstraintName("FK__TestResul__Param__59063A47");
+                .HasConstraintName("FK__TestResul__Param__6EF57B66");
 
             entity.HasOne(d => d.TestBookingNoNavigation).WithMany(p => p.TestResults)
                 .HasForeignKey(d => d.TestBookingNo)
-                .HasConstraintName("FK__TestResul__TestB__5812160E");
-        });
-        modelBuilder.Entity<CatalogBundle>(entity =>
-        {
-            entity.HasKey(e => new { e.BundleId, e.CatalogId });
-            entity.ToTable("CatalogBundle");
-
-            entity.HasOne(d => d.Bundle)
-                .WithMany()
-                .HasForeignKey(d => d.BundleId)
-                .HasConstraintName("FK__CatalogBu__Bundl__07C12930");
-
-            entity.HasOne(d => d.Catalog)
-                .WithMany()
-                .HasForeignKey(d => d.CatalogId)
-                .HasConstraintName("FK__CatalogBu__Catal__08B54D69");
-        });
-
-        modelBuilder.Entity<CatalogParameter>(entity =>
-        {
-            entity.HasKey(e => new { e.CatalogId, e.ParameterId });
-            entity.ToTable("CatalogParameter");
-            entity.HasOne(d => d.Catalog)
-                .WithMany()
-                .HasForeignKey(d => d.CatalogId)
-                .HasConstraintName("FK__CatalogPa__Catal__6EF57B66");
-            entity.HasOne(d => d.Parameter)
-                .WithMany()
-                .HasForeignKey(d => d.ParameterId)
-                .HasConstraintName("FK__CatalogPa__Param__6FE99F9F");
+                .HasConstraintName("FK__TestResul__TestB__6E01572D");
         });
 
         modelBuilder.Entity<TimeBlock>(entity =>
         {
-            entity.HasKey(e => e.TimeBlockId).HasName("PK__TimeBloc__78D14F4E4EDFA26D");
+            entity.HasKey(e => e.TimeBlockId).HasName("PK__TimeBloc__78D14F4E5917DF09");
 
             entity.ToTable("TimeBlock");
 
-            entity.HasIndex(e => e.TimeBlock1, "UQ__TimeBloc__3E92327B313B072E").IsUnique();
+            entity.HasIndex(e => e.TimeBlock1, "UQ__TimeBloc__3E92327B0E36365F").IsUnique();
 
             entity.Property(e => e.TimeBlock1).HasColumnName("TimeBlock");
         });
+
 
         OnModelCreatingPartial(modelBuilder);
     }

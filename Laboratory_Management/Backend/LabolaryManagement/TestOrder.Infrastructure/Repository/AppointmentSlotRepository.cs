@@ -36,5 +36,14 @@ namespace TestOrder.Infrastructure.Repository
                     .FirstOrDefault(a => a.AppointmentDate == appointmentDate && a.TimeBlockId == timeBlockId);
             });
         }
+
+        public async Task<int> GetBookingsCountForSlot(Guid appointmentSlotId)
+        {
+            return await Task.Run(() =>
+            {
+                return _context.Set<Booking>()
+                    .Count(b => b.AppointmentSlotId == appointmentSlotId);
+            });
+        }
     }
 }
