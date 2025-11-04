@@ -120,7 +120,22 @@ builder.Services.AddAuthorization(options =>
     }
 });
 
-// gRPC
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins(
+            "http://localhost:5174",   
+            "http://127.0.0.1:5174"   
+        )
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials();
+    });
+});
+
+builder.Services.AddControllers();
+// gRPC + reflection for tooling
 builder.Services.AddGrpc();
 builder.Services.AddGrpcReflection();
 
@@ -135,15 +150,17 @@ using (var scope = app.Services.CreateScope())
 app.UseMiddleware<ProblemDetailsMiddleware>();
 app.UseSwagger();
 app.UseSwaggerUI();
-
+app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
+app.MapControllers();
+
 
 app.MapGrpcService<IamGrpcUserService>();
 if (app.Environment.IsDevelopment()) app.MapGrpcReflectionService();
 
 app.MapGet("/", () => Results.Ok("IAM up"));
 app.MapHealthChecks("/healthz");
-app.MapControllers();
+
 
 app.Run();

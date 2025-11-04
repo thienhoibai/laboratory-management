@@ -8,17 +8,16 @@ namespace TestOrder.Application.Services.Booking
 {
     public class BookingService
     {
-        private readonly BookingRepository _bookingRepository;
-        private readonly BookingTestRepository _bookingTestRepository;
+        private readonly BookingTestService _bookingTestService;
         private readonly AppointmentSlotService _appointmentSlotService;
+        private readonly BookingRepository _bookingRepository;
 
-        public BookingService(
-            BookingRepository bookingRepository,
-            BookingTestRepository bookingTestRepository,
-            AppointmentSlotService appointmentSlotService)
+        public BookingService(BookingRepository bookingRepository,
+                              BookingTestService bookingTestService,
+                              AppointmentSlotService appointmentSlotService)
         {
+            _bookingTestService = bookingTestService;
             _bookingRepository = bookingRepository;
-            _bookingTestRepository = bookingTestRepository;
             _appointmentSlotService = appointmentSlotService;
         }
 
@@ -31,7 +30,7 @@ namespace TestOrder.Application.Services.Booking
 
             return new BookingResponseDTO
             {
-                BookingId = booking.BookingId,
+                BookingCode = booking.BookingCode ??="",
                 PatientId = booking.PatientId ?? 0,
                 PatientName = booking.PatientName ?? string.Empty,
                 PatientPhoneNumber = booking.PatientPhone,
@@ -61,7 +60,7 @@ namespace TestOrder.Application.Services.Booking
                 {
                     bookingResponses.Add(new BookingResponseDTO
                     {
-                        BookingId = booking.BookingId,
+                        BookingCode = booking.BookingCode ??= "",
                         PatientId = booking.PatientId ?? 0,
                         PatientName = booking.PatientName ?? string.Empty,
                         PatientPhoneNumber = booking.PatientPhone,
@@ -90,11 +89,17 @@ namespace TestOrder.Application.Services.Booking
             if (!_appointmentSlotService.IsAppointmentsDateValid(bookingRequest.slotDTO.AppointmentDate))
                 return -1;
 
+            
+
             if (!_appointmentSlotService.IsAppointmentSlotExists(
                     bookingRequest.slotDTO.AppointmentDate,
                     bookingRequest.slotDTO.TimeBlock))
             {
                 await _appointmentSlotService.AddAppointmentSlotAsync(bookingRequest.slotDTO);
+                if (_appointmentSlotService.IsAppointmentSlotMaxedOut(bookingRequest.slotDTO))
+                {
+                    return -2;
+                }
             }
 
             var appointmentSlot = await _appointmentSlotService.GetAppointmentSlotByDateAndTimeAsync(
@@ -117,20 +122,21 @@ namespace TestOrder.Application.Services.Booking
                 PatientPhone = bookingRequest.PatientPhoneNumber,
                 CreatedBy = bookingRequest.CreatedBy,
                 CreateDate = DateOnly.FromDateTime(DateTime.Now),
-                BundleId = bookingRequest.BundleId.Value == 0 ? null : bookingRequest.BundleId,
+                BundleId = bookingRequest.BundleId.Value != 0 ? bookingRequest.BundleId : null ,
                 AppointmentSlotId = appointmentSlot.SlotId,
                 Status = (byte?)BookingStatusEnum.Pending,
                 BookingCode = nextCode
             };
 
             await _bookingRepository.AddAsync(newBooking);
-
+        if (bookingRequest.Catalogs != null) { 
             foreach (var catalogId in bookingRequest.Catalogs)
             {
-                await _bookingTestRepository.AddBookingTestAsync(newBooking.BookingId, catalogId);
+                _bookingTestService.AddBookingTestAsync(newBooking.BookingId, catalogId).Wait();
             }
+        }
+             return 0;
 
-            return 0;
         }
         #endregion
     }

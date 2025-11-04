@@ -5,7 +5,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
-	<ItemGroup>
-		<Protobuf Include="Grpc\iam\iam.proto" GrpcServices="Client" />
-	</ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BlogService.Infrastructure\BlogService.Infrastructure.csproj" />
+  </ItemGroup>
+
 </Project>

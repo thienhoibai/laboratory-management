@@ -17,6 +17,9 @@ import DashboardPage from "./pages/admin/dashboard/DashboardPage";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css"; // Import CSS
 import MedicalRecord from "./page/medical-record/MedicalRecord";
+import ForgotPass from "./components/authen-form/ForgotPassword";
+import ResetPass from "./components/authen-form/ResetPassword/ResetPassword";
+import CreatePatient from "./components/profile/CreateProfile";
 
 function App() {
   const router = createBrowserRouter([
@@ -64,14 +67,26 @@ function App() {
       path: "medical-record",
       element: <MedicalRecord />,
     },
+    {
+      path: "forgot-password",
+      element: <ForgotPass />,
+    },
+    {
+      path: "reset-password",
+      element: <ResetPass />,
+    },
+    {
+      path: "create-profile",
+      element: <CreatePatient />,
+    },
   ]);
 
   return (
     <>
       <RouterProvider router={router} />
       <ToastContainer
-        position="top-right"
-        autoClose={3000}
+        position="bottom-center"
+        autoClose={2000}
         hideProgressBar={false}
         newestOnTop={false}
         closeOnClick
