@@ -402,7 +402,7 @@ const UserManagementPage = () => {
     }
     setLockLoadingId(id);
     try {
-      const response = await api.post(`iam/api/Users/${id}/unlock`);
+      const response = await api.post(`iam/api/Users/${id}/ `);
       if (response?.data?.data.status === "unlocked") {
         toast.success("Tài khoản đã được mở khóa!");
       } else {

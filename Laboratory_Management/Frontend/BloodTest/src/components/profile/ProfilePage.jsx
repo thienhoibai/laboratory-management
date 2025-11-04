@@ -14,10 +14,10 @@ import {
   Button,
 } from "antd";
 import dayjs from "dayjs";
-import "./ChangePassword.css";
+import ChangePasswordModal from "./ChangePassword";
 
+// ===== CONSTANTS & UTILS =====
 const URL = "iam/api/Auth/change-password";
-
 const initialFormData = {
   fullName: "",
   gender: "",
@@ -29,129 +29,9 @@ const initialFormData = {
   healthInsurance: "",
 };
 
-const ChangePasswordModal = ({ open, onClose }) => {
-  const [form] = Form.useForm();
-  const [loading, setLoading] = useState(false);
-  const token = localStorage.getItem("accessToken");
-  const passwordPattern =
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
-
-  const handleSubmit = async (values) => {
-    setLoading(true);
-    setAuthToken(token);
-    try {
-      const response = await api.post(URL, {
-        currentPassword: values.oldPassword,
-        newPassword: values.newPassword,
-      });
-
-      if (response.status >= 200 && response.status < 300) {
-        toast.success(response?.data?.message || "Đổi mật khẩu thành công!");
-        form.resetFields();
-        onClose();
-      }
-    } catch (err) {
-      const serverMsg =
-        (typeof err?.response?.data === "string" && err.response.data) ||
-        err?.response?.data?.message ||
-        err?.response?.data?.error ||
-        err?.message ||
-        "Đổi mật khẩu thất bại.";
-      toast.error(serverMsg);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <Modal
-      title="Đổi mật khẩu"
-      open={open}
-      onCancel={() => {
-        form.resetFields();
-        onClose();
-      }}
-      footer={null}
-      className="cp-modal"
-    >
-      <Form form={form} layout="vertical" onFinish={handleSubmit}>
-        <Form.Item
-          label="Mật khẩu cũ"
-          name="oldPassword"
-          rules={[{ required: true, message: "Vui lòng nhập mật khẩu cũ" }]}
-        >
-          <Input.Password placeholder="Mật khẩu cũ" size="large" />
-        </Form.Item>
-
-        <Form.Item
-          label="Mật khẩu mới"
-          name="newPassword"
-          rules={[
-            { required: true, message: "Vui lòng nhập mật khẩu mới" },
-            {
-              validator: (_, value) => {
-                if (!value) return Promise.reject();
-                return passwordPattern.test(value)
-                  ? Promise.resolve()
-                  : Promise.reject(
-                      new Error(
-                        "Mật khẩu phải có ít nhất 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt"
-                      )
-                    );
-              },
-            },
-          ]}
-        >
-          <Input.Password placeholder="Mật khẩu mới" size="large" />
-        </Form.Item>
-        <div className="cp-password-hint">
-          Mật khẩu cần tối thiểu 8 ký tự và phải bao gồm chữ hoa, chữ thường,
-          chữ số và ký tự đặc biệt.
-        </div>
-
-        <Form.Item
-          label="Xác nhận mật khẩu mới"
-          name="confirmPassword"
-          dependencies={["newPassword"]}
-          rules={[
-            { required: true, message: "Vui lòng xác nhận mật khẩu mới" },
-            ({ getFieldValue }) => ({
-              validator(_, value) {
-                if (!value || getFieldValue("newPassword") === value) {
-                  return Promise.resolve();
-                }
-                return Promise.reject(
-                  new Error("Mật khẩu xác nhận không khớp")
-                );
-              },
-            }),
-          ]}
-        >
-          <Input.Password placeholder="Xác nhận mật khẩu mới" size="large" />
-        </Form.Item>
-
-        <Form.Item>
-          <div className="cp-actions">
-            <Button
-              onClick={() => {
-                form.resetFields();
-                onClose();
-              }}
-              style={{ marginRight: 8 }}
-            >
-              Hủy
-            </Button>
-            <Button type="primary" htmlType="submit" loading={loading}>
-              Lưu
-            </Button>
-          </div>
-        </Form.Item>
-      </Form>
-    </Modal>
-  );
-};
-
+// ===== MAIN PROFILE PAGE COMPONENT =====
 export default function ProfilePage() {
+  // ===== STATE =====
   const [userData, setUserData] = useState([]);
   const [activeTab, setActiveTab] = useState("personal");
   const [showModal, setShowModal] = useState(false);
@@ -171,11 +51,13 @@ export default function ProfilePage() {
 
   const navigate = useNavigate();
 
+  // ===== HOOKS =====
   useEffect(() => {
     fetchProfile();
     fetchMedicalRecords(page, pageSize);
   }, [page, pageSize]);
 
+  // ===== API CALLS =====
   const fetchProfile = async () => {
     try {
       const token = localStorage.getItem("accessToken");
@@ -184,7 +66,6 @@ export default function ProfilePage() {
       const check = await api.get(`patient/v1/patients/me`);
 
       if (!check.data || check.data.succeeded === false || !check.data.data) {
-        console.warn("Không tìm thấy hồ sơ bệnh nhân -> tạo mới");
         navigate("/create-profile");
         return;
       }
@@ -193,7 +74,6 @@ export default function ProfilePage() {
       const patientId = patient.patientId;
 
       if (!patientId) {
-        console.warn("Không có patientId trong dữ liệu /me");
         navigate("/create-profile");
         return;
       }
@@ -202,13 +82,11 @@ export default function ProfilePage() {
 
       if (response.status === 200 && response.data) {
         setUserData(response.data);
-        console.log("Đã tải hồ sơ:", response.data);
       } else {
-        console.warn("Không tìm thấy hồ sơ trong DB, chuyển sang tạo mới");
         navigate("/create-pro file");
       }
     } catch (error) {
-      console.error("Lỗi khi tải hồ sơ:", error);
+      toast.error(error);
       navigate("/create-profile");
     } finally {
       setLoading(false);
@@ -235,6 +113,7 @@ export default function ProfilePage() {
     }
   };
 
+  // ===== FORM UTILS =====
   // Parse date string to input value (YYYY-MM-DD)
   const parseDateToInput = (dateStr) => {
     if (!dateStr) return "";
@@ -247,13 +126,6 @@ export default function ProfilePage() {
     }
     return "";
   };
-
-  // // hiển thị ngày sinh
-  // const formatDateDisplay = (dateStr) => {
-  //   if (!dateStr) return "";
-  //   const [year, month, day] = dateStr.split("-");
-  //   return `${parseInt(day)} tháng ${parseInt(month)}, ${year}`;
-  // };
 
   // Tính tuổi theo (YYYY-MM-DD)
   const calculateAge = (dateStr) => {
@@ -269,6 +141,35 @@ export default function ProfilePage() {
     return age;
   };
 
+  const getInitials = (name) => {
+    if (!name) return "";
+    return name
+      .split(" ")
+      .map((word) => word[0])
+      .join("")
+      .toUpperCase();
+  };
+  // format ngày va giờ
+  const formatDateTime = (isoString) => {
+    if (!isoString) return "";
+    const date = new Date(isoString);
+    const pad = (n) => n.toString().padStart(2, "0");
+    return (
+      date.getFullYear() +
+      "-" +
+      pad(date.getMonth() + 1) +
+      "-" +
+      pad(date.getDate()) +
+      " " +
+      pad(date.getHours()) +
+      ":" +
+      pad(date.getMinutes()) +
+      ":" +
+      pad(date.getSeconds())
+    );
+  };
+
+  // ===== HANDLERS =====
   const handleOpenModal = () => {
     setFormData({
       fullName: userData.fullName || "",
@@ -407,34 +308,7 @@ export default function ProfilePage() {
     }
   };
 
-  const getInitials = (name) => {
-    if (!name) return "";
-    return name
-      .split(" ")
-      .map((word) => word[0])
-      .join("")
-      .toUpperCase();
-  };
-  // format ngày va giờ
-  const formatDateTime = (isoString) => {
-    if (!isoString) return "";
-    const date = new Date(isoString);
-    const pad = (n) => n.toString().padStart(2, "0");
-    return (
-      date.getFullYear() +
-      "-" +
-      pad(date.getMonth() + 1) +
-      "-" +
-      pad(date.getDate()) +
-      " " +
-      pad(date.getHours()) +
-      ":" +
-      pad(date.getMinutes()) +
-      ":" +
-      pad(date.getSeconds())
-    );
-  };
-
+  // ===== RENDER LOADING =====
   if (loading) {
     return (
       <div className="profile-page">
@@ -443,24 +317,11 @@ export default function ProfilePage() {
     );
   }
 
+  // ===== RENDER MAIN UI =====
   return (
     <div className="profile-page">
-      {/* Header Section */}
+      {/* ===== HEADER SECTION ===== */}
       <div className="profile-header">
-        <button className="profile-back-btn" onClick={() => navigate("/")}>
-          <svg
-            className="back-icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            style={{ position: "relative", top: "2px" }}
-          >
-            <path d="M19 12H5" />
-            <path d="M12 19l-7-7 7-7" />
-          </svg>
-          Quay về trang chủ
-        </button>
         <div className="profile-header-content">
           <div className="profile-avatar-section">
             <div className="profile-avatar">
@@ -485,6 +346,20 @@ export default function ProfilePage() {
             </div>
           </div>
           <div className="profile-header-actions">
+            <button className="profile-back-btn" onClick={() => navigate("/")}>
+              <svg
+                className="back-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                style={{ position: "relative", top: "2px" }}
+              >
+                <path d="M19 12H5" />
+                <path d="M12 19l-7-7 7-7" />
+              </svg>
+              Quay về trang chủ
+            </button>
             <button
               className="profile-history-btn"
               onClick={() => navigate("/history")}
@@ -505,8 +380,9 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* ===== MAIN CONTENT ===== */}
       <div className="profile-content">
+        {/* ===== TABS ===== */}
         <div className="profile-tabs">
           <button
             className={`profile-tab ${
@@ -547,6 +423,7 @@ export default function ProfilePage() {
           </button>
         </div>
 
+        {/* ===== TAB: PERSONAL INFO ===== */}
         {activeTab === "personal" && (
           <div className="profile-tab-content">
             <div className="profile-section">
@@ -734,6 +611,7 @@ export default function ProfilePage() {
           </div>
         )}
 
+        {/* ===== TAB: MEDICAL RECORDS ===== */}
         {activeTab === "medical" && (
           <div className="profile-tab-content">
             {/* Khu vực hồ sơ bệnh án cá nhân (chỉ hiển thị profile hiện tại) */}
@@ -1030,7 +908,7 @@ export default function ProfilePage() {
         )}
       </div>
 
-      {/* Update Modal */}
+      {/* ===== UPDATE MODAL ===== */}
       {showModal && (
         <div className="modal-overlay" onClick={handleCloseModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -1179,7 +1057,7 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* Modal tạo hồ sơ bệnh án mới */}
+      {/* ===== CREATE MEDICAL RECORD MODAL ===== */}
       <Modal
         open={showCreateModal}
         title="Thêm hồ sơ bệnh án"
@@ -1309,6 +1187,8 @@ export default function ProfilePage() {
           </div>
         </Form>
       </Modal>
+
+      {/* ===== CHANGE PASSWORD MODAL ===== */}
       <ChangePasswordModal
         open={openChange}
         onClose={() => setOpenChange(false)}
