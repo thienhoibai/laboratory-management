@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using BlogService.Infrastructure.Data;
 
-namespace TestOrder.Infrastructure.Base
+namespace BlogService.Infrastructure.Base
 {
     public class GenericRepository<T> where T : class
     {
