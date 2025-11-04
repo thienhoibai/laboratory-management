@@ -1,8 +1,13 @@
-﻿using System.Security.Claims;
+﻿using Common.Errors;
+using Common.Responses;
+using Common.Web.Filters;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Patient.Application.DTOs;
 using Patient.Application.Services;
+using System.Diagnostics;
+using System.Security.Claims;
+
 
 namespace Patient.Presentation.Controllers;
 
@@ -11,7 +16,10 @@ namespace Patient.Presentation.Controllers;
 public class PatientsController : ControllerBase
 {
     private readonly IPatientService _service;
-    public PatientsController(IPatientService service) => _service = service;
+    public PatientsController(IPatientService service)
+    {
+        _service = service;
+    }
 
     private static Guid GetUserId(ClaimsPrincipal user)
     {
@@ -30,6 +38,21 @@ public class PatientsController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = result.Data!.PatientId }, result.Data);
     }
 
+
+    [HttpGet("me")]
+    public async Task<IActionResult> GetMyPatient(CancellationToken ct)
+    {
+        var userId = GetUserId(User);
+
+        if (userId == Guid.Empty)
+            return Unauthorized(); ;
+
+        var result = await _service.GetByUserIdAsync(userId, ct);
+        if (result == null)
+            return NotFound();
+             return Ok(result);
+    }
+
     [HttpGet("mine")]
     [Authorize]
     public async Task<IActionResult> Mine(int page = 1, int pageSize = 50, string? name = null, CancellationToken ct = default)
@@ -43,6 +66,7 @@ public class PatientsController : ControllerBase
     [HttpGet("{id:guid}")]
     [Authorize]
     public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
+                                                                                                                                                                                                 
     {
         var userId = GetUserId(User);
         var res = await _service.GetAsync(id, ct);
