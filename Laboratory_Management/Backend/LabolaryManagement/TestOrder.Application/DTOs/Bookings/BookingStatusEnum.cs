@@ -6,12 +6,12 @@ using System.Threading.Tasks;
 
 namespace TestOrder.Application.DTOs.Bookings
 {
-    public enum BookingStatusEnum
+    public enum BookingStatusEnum : byte
     {
-        Pending,
-        Confirmed,
-        InProgress,
-        Completed,
-        Cancelled
+        Pending = 1,
+        Confirmed = 2,
+        InProgress = 3,
+        Completed = 4,
+        Cancelled = 5
     }
 }

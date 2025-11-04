@@ -19,7 +19,32 @@ namespace TestOrder.Infrastructure.Repository
                 .Where(c => c.Price > 0)
                 .OrderBy(c => c.TestName)
                 .ToListAsync();
+
         }
+        public async Task<TestCatalog> AddParameter(int catalogId, List<int> parameterId)
+        {
+            var catalog = await _context.TestCatalogs
+                .Include(c => c.Parameters)
+                .FirstOrDefaultAsync(c => c.CatalogId == catalogId);
+            if (catalog == null)
+                throw new KeyNotFoundException($"Catalog with id {catalogId} not found.");
+            var parameters = await _context.TestParameters
+                .Where(p => parameterId.Contains(p.ParameterId))
+                .ToListAsync();
+            foreach (var parameter in parameters)
+            {
+                if (!catalog.Parameters.Any(p => p.ParameterId == parameter.ParameterId))
+                {
+                    catalog.Parameters.Add(parameter);
+                }
+            }
+            await _context.SaveChangesAsync();
+            return catalog;
+
+        }
+        
+        
+        
 
         public async Task UpdateCatalogAsync(int id, string description, double price)
         {

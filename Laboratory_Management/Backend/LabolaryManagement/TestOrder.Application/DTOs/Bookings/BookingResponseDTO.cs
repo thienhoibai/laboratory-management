@@ -4,29 +4,37 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using TestOrder.Application.DTOs.AppointmentSlots;
 
 namespace TestOrder.Application.DTOs.Bookings
 {
-    public class BookingRequestDTO
+    public class BookingResponseDTO
     {
+        [Required]
+        public string BookingCode { get; set; } = string.Empty;
         [Required]
         public long PatientId { get; set; }
 
         [Phone]
         [MaxLength(12)]
+        [MinLength(10)]
         public string? PatientPhoneNumber { get; set; }
 
         [Required]
+
         public string PatientName { get; set; } = string.Empty;
 
         public string? CreatedBy { get; set; }
-
         public int? BundleId { get; set; }
+        public DateTime CreatedDate { get; set; }
 
-        public List<int>? Catalogs { get; set; }
+        public DateTime? RunDate { get; set; }
+        public string RanBy { get; set; } = string.Empty;
 
-        public AppointmentSlotDTO slotDTO { get; set; } = new AppointmentSlotDTO();
+        public string Status { get; set; } = string.Empty;
+
+
+
+
 
     }
 }

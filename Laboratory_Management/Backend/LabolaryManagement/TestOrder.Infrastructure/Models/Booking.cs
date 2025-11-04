@@ -5,11 +5,19 @@ namespace TestOrder.Infrastructure.Models;
 
 public partial class Booking
 {
-    public long BookingId { get; set; }
+    public Guid BookingId { get; set; }
+
+    public string? BookingCode { get; set; }
 
     public long? PatientId { get; set; }
 
     public byte? Status { get; set; }
+
+    public string? PatientName { get; set; }
+
+    public string? PatientPhone { get; set; }
+
+    public Guid? AppointmentSlotId { get; set; }
 
     public DateOnly? CreateDate { get; set; }
 
@@ -20,12 +28,6 @@ public partial class Booking
     public string? RanBy { get; set; }
 
     public int? BundleId { get; set; }
-
-    public long? AppointmentSlotId { get; set; }
-
-    public string? PatientName { get; set; }
-
-    public string? PatientPhone { get; set; }
 
     public virtual AppointmentSlot? AppointmentSlot { get; set; }
 
