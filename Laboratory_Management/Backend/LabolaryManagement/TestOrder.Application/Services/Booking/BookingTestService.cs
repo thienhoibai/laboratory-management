@@ -8,7 +8,7 @@ using TestOrder.Infrastructure.Repository;
 
 namespace TestOrder.Application.Services.Booking
 {
-    internal class BookingTestService
+    public class BookingTestService
     {
         private readonly BookingTestRepository _bookingTestRepository;
 
@@ -22,9 +22,19 @@ namespace TestOrder.Application.Services.Booking
             _bookingTestRepository = new BookingTestRepository();
         }
 
-        public async Task<IEnumerable<BookingTest>> GetBookingTestsByBookingIdAsync(long bookingId)
+        public async Task<IEnumerable<BookingTest>> GetBookingTestsByBookingIdAsync(Guid bookingId)
         {
             return await _bookingTestRepository.GetByBookingIdAsync(bookingId);
+        }
+
+        public async Task AddBookingTestAsync(Guid bookingId, int catalogId)
+        {
+            var bookingTest = new BookingTest
+            {
+                BookingId = bookingId,
+                CatalogId = catalogId
+            };
+            await _bookingTestRepository.AddAsync(bookingTest);
         }
 
     }

@@ -7,7 +7,7 @@ public partial class TestReport
 {
     public long DocumentId { get; set; }
 
-    public long? BookingId { get; set; }
+    public Guid? BookingId { get; set; }
 
     public string Filename { get; set; } = null!;
 

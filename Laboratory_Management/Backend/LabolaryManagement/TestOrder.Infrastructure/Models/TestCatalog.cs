@@ -14,4 +14,8 @@ public partial class TestCatalog
     public double Price { get; set; }
 
     public virtual ICollection<BookingTest> BookingTests { get; set; } = new List<BookingTest>();
+
+    public virtual ICollection<CatalogBundle> CatalogBundles { get; set; } = new List<CatalogBundle>();
+
+    public virtual ICollection<TestParameter> Parameters { get; set; } = new List<TestParameter>();
 }

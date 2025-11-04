@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -18,7 +19,7 @@ namespace TestOrder.Infrastructure.Repository
         {
         }
 
-        public async Task<IEnumerable<BookingTest>> GetByBookingIdAsync(long bookingId)
+        public async Task<IEnumerable<BookingTest>> GetByBookingIdAsync(Guid bookingId)
         {
             return await Task.Run(() => _context.Set<BookingTest>()
                 .Where(bt => bt.BookingId == bookingId)

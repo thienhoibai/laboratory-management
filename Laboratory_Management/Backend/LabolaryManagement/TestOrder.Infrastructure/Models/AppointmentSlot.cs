@@ -5,7 +5,7 @@ namespace TestOrder.Infrastructure.Models;
 
 public partial class AppointmentSlot
 {
-    public long SlotId { get; set; }
+    public Guid SlotId { get; set; }
 
     public DateOnly AppointmentDate { get; set; }
 

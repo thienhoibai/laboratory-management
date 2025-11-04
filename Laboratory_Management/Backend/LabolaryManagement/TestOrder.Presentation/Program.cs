@@ -1,6 +1,7 @@
-
+﻿
 using Microsoft.EntityFrameworkCore;
 using TestOrder.Application.Services;
+using TestOrder.Application.Services.Booking;
 using TestOrder.Infrastructure.Base;
 using TestOrder.Infrastructure.Data;
 using TestOrder.Infrastructure.Repository;
@@ -29,10 +30,13 @@ namespace TestOrder.Presentation
             builder.Services.AddScoped<TestParameterService>();
             builder.Services.AddScoped<CatalogBundleRepository>();
             builder.Services.AddScoped<CatalogBundleService>();
-            builder.Services.AddScoped<CatalogParameterService>();
-            builder.Services.AddScoped<CatalogParameterRepository>();
             builder.Services.AddScoped<AppointmentSlotRepository>();
             builder.Services.AddScoped<AppointmentSlotService>();
+            builder.Services.AddScoped<BookingRepository>();
+            builder.Services.AddScoped<BookingService>();
+            builder.Services.AddScoped<BookingTestRepository>();
+            builder.Services.AddScoped<BookingTestService>();
+            builder.Services.AddScoped<TimeBlockRepository>();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
