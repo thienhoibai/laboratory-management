@@ -10,7 +10,7 @@ namespace TestOrder.Application.DTOs.Bookings
     public class BookingResponseDTO
     {
         [Required]
-        public Guid BookingId { get; set; }
+        public string BookingCode { get; set; } = string.Empty;
         [Required]
         public long PatientId { get; set; }
 

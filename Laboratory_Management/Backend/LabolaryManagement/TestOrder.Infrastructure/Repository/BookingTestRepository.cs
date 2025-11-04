@@ -1,6 +1,8 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using TestOrder.Infrastructure.Base;
 using TestOrder.Infrastructure.Models;
@@ -22,27 +24,6 @@ namespace TestOrder.Infrastructure.Repository
             return await Task.Run(() => _context.Set<BookingTest>()
                 .Where(bt => bt.BookingId == bookingId)
                 .ToList());
-        }
-
-        
-        public async Task AddBookingTestAsync(Guid bookingId, int catalogId)
-        {
-            
-            var exists = _context.Set<BookingTest>()
-                .Any(bt => bt.BookingId == bookingId && bt.CatalogId == catalogId);
-
-            if (!exists)
-            {
-                var bookingTest = new BookingTest
-                {
-                    BookingId = bookingId,
-                    //CatalogId = catalogId
-
-                };
-
-                await _context.Set<BookingTest>().AddAsync(bookingTest);
-                await _context.SaveChangesAsync();
-            }
         }
     }
 }

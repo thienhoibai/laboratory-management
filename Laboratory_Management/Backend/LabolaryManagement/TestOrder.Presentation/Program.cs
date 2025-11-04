@@ -35,6 +35,7 @@ namespace TestOrder.Presentation
             builder.Services.AddScoped<BookingRepository>();
             builder.Services.AddScoped<BookingService>();
             builder.Services.AddScoped<BookingTestRepository>();
+            builder.Services.AddScoped<BookingTestService>();
             builder.Services.AddScoped<TimeBlockRepository>();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();

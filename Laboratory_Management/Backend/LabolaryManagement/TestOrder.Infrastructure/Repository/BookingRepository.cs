@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -17,11 +18,11 @@ namespace TestOrder.Infrastructure.Repository
         {
         }
 
-        public async Task<List<Booking>?> GetBookingsByPatientIdAsync(long patientId)
+        public async Task<IEnumerable<Booking>?> GetBookingsByPatientIdAsync(long patientId)
         {
-            return await Task.Run(() => _context.Set<Booking>()
+            return await _context.Set<Booking>()
                 .Where(b => b.PatientId == patientId)
-                .ToList());
+                .ToListAsync();
         }
 
         public async Task<string?> GetLastBookingCodeAsync()

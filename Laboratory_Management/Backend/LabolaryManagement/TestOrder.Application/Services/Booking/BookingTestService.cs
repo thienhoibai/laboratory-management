@@ -8,7 +8,7 @@ using TestOrder.Infrastructure.Repository;
 
 namespace TestOrder.Application.Services.Booking
 {
-    internal class BookingTestService
+    public class BookingTestService
     {
         private readonly BookingTestRepository _bookingTestRepository;
 

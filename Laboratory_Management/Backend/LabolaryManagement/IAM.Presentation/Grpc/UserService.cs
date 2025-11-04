@@ -1,4 +1,4 @@
-﻿    using Grpc.Core;
+﻿using Grpc.Core;
 using Iam.Grpc;
 using IAM.Infrastructure;
 using Microsoft.EntityFrameworkCore;
