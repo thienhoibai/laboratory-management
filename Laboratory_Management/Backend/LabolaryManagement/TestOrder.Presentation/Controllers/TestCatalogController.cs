@@ -9,6 +9,7 @@ namespace TestOrder.Presentation.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Tags("Danh mục xét nghiệm")]
     public class TestCatalogController : ControllerBase
     {
         private readonly TestCatalogService _service;
@@ -52,6 +53,12 @@ namespace TestOrder.Presentation.Controllers
             await _service.UpdateCatalogAsync(id, model.Description, model.Price);
             return NoContent();
         }
-
+        [HttpPut]
+        [Route("{id}/parameters")]
+        public async Task<IActionResult> AddParameterAsync( int id, [FromBody] List<int>ParameterIds)
+        { 
+            var AddCatalog = await _service.AddParameterAsync(id, ParameterIds);
+            return Ok(AddCatalog);
+        }
     }
 }

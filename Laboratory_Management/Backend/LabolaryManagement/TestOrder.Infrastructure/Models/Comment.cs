@@ -7,7 +7,7 @@ public partial class Comment
 {
     public long CommentId { get; set; }
 
-    public long? TestId { get; set; }
+    public Guid? TestId { get; set; }
 
     public string? Comment1 { get; set; }
 
