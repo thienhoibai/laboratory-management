@@ -30,7 +30,7 @@ namespace TestOrder.Application.Services.Booking
 
             return new BookingResponseDTO
             {
-                BookingId = booking.BookingId,
+                BookingCode = booking.BookingCode ??="",
                 PatientId = booking.PatientId ?? 0,
                 PatientName = booking.PatientName ?? string.Empty,
                 PatientPhoneNumber = booking.PatientPhone,
@@ -60,7 +60,7 @@ namespace TestOrder.Application.Services.Booking
                 {
                     bookingResponses.Add(new BookingResponseDTO
                     {
-                        BookingId = booking.BookingId,
+                        BookingCode = booking.BookingCode ??= "",
                         PatientId = booking.PatientId ?? 0,
                         PatientName = booking.PatientName ?? string.Empty,
                         PatientPhoneNumber = booking.PatientPhone,
@@ -89,16 +89,17 @@ namespace TestOrder.Application.Services.Booking
             if (!_appointmentSlotService.IsAppointmentsDateValid(bookingRequest.slotDTO.AppointmentDate))
                 return -1;
 
-            if (_appointmentSlotService.IsAppointmentSlotMaxedOut(bookingRequest.slotDTO))
-            {
-                return -2;
-            }
+            
 
             if (!_appointmentSlotService.IsAppointmentSlotExists(
                     bookingRequest.slotDTO.AppointmentDate,
                     bookingRequest.slotDTO.TimeBlock))
             {
                 await _appointmentSlotService.AddAppointmentSlotAsync(bookingRequest.slotDTO);
+                if (_appointmentSlotService.IsAppointmentSlotMaxedOut(bookingRequest.slotDTO))
+                {
+                    return -2;
+                }
             }
 
             var appointmentSlot = await _appointmentSlotService.GetAppointmentSlotByDateAndTimeAsync(
