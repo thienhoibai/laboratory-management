@@ -35,7 +35,7 @@ const LoginForm = ({ errorMessage }) => {
           navigate("/");
         } else if (role === "Admin") {
           toast.success("Đăng nhập thành công!");
-          navigate("/admin/users");
+          navigate("/dashboard");
         }
       }
       // XÓA else if (response.status === 423) {...}

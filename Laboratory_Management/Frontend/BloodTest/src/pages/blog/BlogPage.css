@@ -3,6 +3,8 @@
   display: flex;
   flex-direction: column;
   background: #fff;
+  user-select: none;
+  cursor: default;
 }
 
 .blog-page-content {

@@ -68,51 +68,51 @@ function App() {
       element: <CatalogSelection />,
     },
     {
-      path: "admin/dashboard",
+      path: "/dashboard",
       element: <AdminDashboardPage />,
     },
     {
-      path: "admin/users",
+      path: "/users",
       element: <AdminUsersPage />,
     },
     {
-      path: "admin/roles",
+      path: "/roles",
       element: <AdminRolesPage />,
     },
     {
-      path: "admin/instruments",
+      path: "/instruments",
       element: <AdminInstrumentsPage />,
     },
     {
-      path: "admin/reagents",
+      path: "/reagents",
       element: <AdminReagentsPage />,
     },
     {
-      path: "admin/blogs",
+      path: "/blogs",
       element: <AdminBlogsPage />,
     },
     {
-      path: "admin/patients",
+      path: "/patients",
       element: <AdminPatientsPage />,
     },
     {
-      path: "admin/test-orders",
+      path: "/test-orders",
       element: <AdminTestOrdersPage />,
     },
     {
-      path: "admin/packages",
+      path: "/packages",
       element: <AdminPackagesPage />,
     },
     {
-      path: "admin/catalogs",
+      path: "/catalogs",
       element: <AdminCatalogsPage />,
     },
     {
-      path: "admin/parameter",
+      path: "/parameter",
       element: <AdminParameterPage />,
     },
     {
-      path: "admin/reports",
+      path: "/reports",
       element: <AdminReportsPage />,
     },
     {

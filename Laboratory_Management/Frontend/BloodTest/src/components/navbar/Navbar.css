@@ -29,6 +29,13 @@
   font-weight: 700;
   color: #2563eb;
   gap: 8px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+
+.navbar-logo:hover {
+  opacity: 0.8;
 }
 
 .navbar-logo-icon {
