@@ -8,8 +8,11 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "api-gateway", "api-gateway", "{89E1CD0E-FA8E-437C-9AD6-FC67BC99E9CC}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "building-blocks", "building-blocks", "{4D1DE8CA-1C5B-45D3-8B59-B56F054B62F4}"
+	ProjectSection(SolutionItems) = preProject
+		APIGateway.Presentation\Program.cs = APIGateway.Presentation\Program.cs
+	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "contracts", "contracts", "{081A667C-C773-45C2-BF33-DAF7BB2C757C}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Contracts", "Contracts", "{081A667C-C773-45C2-BF33-DAF7BB2C757C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "services", "services", "{D49279C2-5152-4F1C-B978-97AE5FF5E6E7}"
 EndProject
