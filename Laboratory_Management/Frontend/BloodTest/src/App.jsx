@@ -16,7 +16,7 @@ import DashboardPage from "./pages/admin/dashboard/DashboardPage";
 
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css"; // Import CSS
-import MedicalRecord from "./page/medical-record/MedicalRecord";
+import MedicalRecord from "./pages/medical-record/MedicalRecord";
 import ForgotPass from "./components/authen-form/ForgotPassword";
 import ResetPass from "./components/authen-form/ResetPassword/ResetPassword";
 import CreatePatient from "./components/profile/CreateProfile";
