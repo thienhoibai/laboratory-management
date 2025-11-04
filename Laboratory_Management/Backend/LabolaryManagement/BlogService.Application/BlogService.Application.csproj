@@ -10,9 +10,4 @@
     <ProjectReference Include="..\BlogService.Infrastructure\BlogService.Infrastructure.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="DTOs\" />
-    <Folder Include="Services\" />
-  </ItemGroup>
-
 </Project>
