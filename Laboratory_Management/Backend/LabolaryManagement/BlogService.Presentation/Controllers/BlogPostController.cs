@@ -34,12 +34,11 @@ namespace BlogService.Presentation.Controllers
             return Ok("Post created successfully.");
         }
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, BlogPost post)
+        public async Task<IActionResult> Update(int id,[FromBody] UpdateBlogPostDTO dto)
         {
-            if (id != post.PostId) return BadRequest();
-            post.UpdatedDate = DateTime.Now;
-            await _service.UpdateAsync(post);
-            return Ok("Post updated successfully.");
+            
+            await _service.UpdateAsync(dto, id);
+            return Ok(new { message = "Cập nhật bài viết thành công" });
         }
 
         [HttpDelete("{id}")]
