@@ -24,7 +24,7 @@ namespace TestOrder.Application.DTOs.Bookings
 
         public int? BundleId { get; set; }
 
-        public List<int> Catalogs { get; set; } = new List<int>();
+        public List<int>? Catalogs { get; set; }
 
         public AppointmentSlotDTO slotDTO { get; set; } = new AppointmentSlotDTO();
 

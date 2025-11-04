@@ -7,6 +7,8 @@ public partial class Booking
 {
     public Guid BookingId { get; set; }
 
+    public string? BookingCode { get; set; }
+
     public long? PatientId { get; set; }
 
     public byte? Status { get; set; }

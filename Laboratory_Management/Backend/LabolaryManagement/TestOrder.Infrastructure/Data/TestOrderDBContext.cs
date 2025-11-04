@@ -41,6 +41,7 @@ public partial class TestOrderDBContext : DbContext
     public virtual DbSet<TimeBlock> TimeBlocks { get; set; }
 
 
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<AppointmentSlot>(entity =>
@@ -72,6 +73,9 @@ public partial class TestOrderDBContext : DbContext
             entity.Property(e => e.PatientName).HasMaxLength(255);
             entity.Property(e => e.PatientPhone).HasMaxLength(12);
             entity.Property(e => e.RanBy).HasMaxLength(30);
+            entity.Property(e => e.BookingCode)
+                .HasMaxLength(10);
+                
 
             entity.HasOne(d => d.AppointmentSlot).WithMany(p => p.Bookings)
                 .HasForeignKey(d => d.AppointmentSlotId)

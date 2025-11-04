@@ -105,6 +105,14 @@ namespace TestOrder.Application.Services.Booking
                 bookingRequest.slotDTO.AppointmentDate,
                 bookingRequest.slotDTO.TimeBlock);
 
+            var lastBooking = await _bookingRepository.GetLastBookingCodeAsync();
+            int nextNumber = 1;
+            if (lastBooking != null && !string.IsNullOrEmpty(lastBooking))
+            {
+                if (int.TryParse(lastBooking, out int lastNumber))
+                    nextNumber = lastNumber + 1;
+            }
+            string nextCode = nextNumber.ToString("D6");
             var newBooking = new Infrastructure.Models.Booking
             {
                 BookingId = Guid.NewGuid(),
@@ -115,7 +123,8 @@ namespace TestOrder.Application.Services.Booking
                 CreateDate = DateOnly.FromDateTime(DateTime.Now),
                 BundleId = bookingRequest.BundleId.Value != 0 ? bookingRequest.BundleId : null ,
                 AppointmentSlotId = appointmentSlot.SlotId,
-                Status = (byte?)BookingStatusEnum.Pending
+                Status = (byte?)BookingStatusEnum.Pending,
+                BookingCode = nextCode
             };
 
             await _bookingRepository.AddAsync(newBooking);
