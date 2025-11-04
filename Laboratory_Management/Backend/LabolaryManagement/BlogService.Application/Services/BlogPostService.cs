@@ -19,10 +19,38 @@ namespace BlogService.Application.Services
             _repository = repository;
         }
 
-        public Task<List<BlogPost>> GetAllAsync() => _repository.GetAllWithCategoryAsync();
+        public async Task<List<BlogPostDTO>> GetAllAsync()
+        {
+            var posts = await _repository.GetAllWithCategoryAsync();
+
+            var result = posts.Select(p => new BlogPostDTO
+            {
+                
+                Title = p.Title,
+                Content = p.Content,
+                CategoryName = p.Category != null ? p.Category.CategoryName : null,
+                CreatedDate = p.CreatedDate,
+                IsPublished = p.IsPublished,
+                IsApproved = p.IsApproved,
+                ThumbnailUrl = p.ThumbnailUrl
+            }).ToList();
+
+            return result;
+        }
         public Task<BlogPost?> GetByIdAsync(int id) => _repository.GetByIdAsync(id);
         public Task AddAsync(BlogPost post) => _repository.AddAsync(post);
-        public Task UpdateAsync(BlogPost post) => _repository.UpdateAsync(post);
+        public async Task UpdateAsync(UpdateBlogPostDTO dto, int id)
+        {
+            var post = await _repository.GetByIdAsync(id);
+            if (post == null)
+                throw new Exception("Bài viết không tồn tại.");
+
+            post.Title = dto.Title ?? post.Title;
+            post.Content = dto.Content ?? post.Content;
+            post.UpdatedDate = DateTime.Now;
+
+            await _repository.UpdateAsync(post);
+        }
         public Task DeleteAsync(BlogPost post) => _repository.DeleteAsync(post);
         public Task<List<BlogPost>> GetPendingApprovalAsync() => _repository.GetPendingApprovalAsync();
 
