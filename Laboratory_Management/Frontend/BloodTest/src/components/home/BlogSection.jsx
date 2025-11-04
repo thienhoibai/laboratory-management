@@ -24,18 +24,22 @@ export default function BlogSection() {
       </div>
       <div className="blog-cards">
         {blogs.map((blog) => (
-          <Link to={`/blog/${blog.id}`} key={blog.id} className="blog-card">
-            <img src={blog.img} alt={blog.title} className="blog-img" />
-            <div className="blog-card-content">
-              <div className="blog-meta">
-                <span className="blog-tag">{blog.tag}</span>
-                <span className="blog-time">{blog.time}</span>
+          <div key={blog.id} className="blog-card">
+            <Link to={`/blog/${blog.id}`} className="blog-card-link">
+              <img src={blog.img} alt={blog.title} className="blog-img" />
+              <div className="blog-card-content">
+                <div className="blog-meta">
+                  <span className="blog-tag">{blog.tag}</span>
+                  <span className="blog-time">{blog.time}</span>
+                </div>
+                <div className="blog-card-title">{blog.title}</div>
+                <div className="blog-card-desc">{blog.desc}</div>
               </div>
-              <div className="blog-card-title">{blog.title}</div>
-              <div className="blog-card-desc">{blog.desc}</div>
-              <span className="blog-readmore">Đọc thêm &rarr;</span>
-            </div>
-          </Link>
+            </Link>
+            <Link to={`/blog/${blog.id}`} className="blog-view-details-btn">
+              Đọc thêm
+            </Link>
+          </div>
         ))}
       </div>
     </div>
