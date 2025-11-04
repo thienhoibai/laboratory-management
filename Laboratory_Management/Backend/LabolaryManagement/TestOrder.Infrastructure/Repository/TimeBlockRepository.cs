@@ -11,20 +11,15 @@ namespace TestOrder.Infrastructure.Repository
 {
     public class TimeBlockRepository : GenericRepository<TimeBlock>
     {
-        public TimeBlockRepository(): base()
-        {
-
-        }
-
         public TimeBlockRepository(Data.TestOrderDBContext context) : base(context)
         {
         }
-        
+
         public async Task<TimeBlock?> GetByTime(TimeOnly Time)
         {
-            
             return await _context.Set<TimeBlock>()
                 .FirstOrDefaultAsync(tb => tb.TimeBlock1 == Time);
         }
     }
+
 }
