@@ -1,6 +1,56 @@
+/* Disable text selection và cursor mặc định cho toàn bộ trang */
 body {
   overflow-x: hidden;
+  user-select: none;
+  cursor: default;
 }
+
+/* Cho phép select text trong các input và textarea */
+input,
+textarea,
+[contenteditable="true"] {
+  user-select: text !important;
+  cursor: text !important;
+}
+
+/* Cho phép click và có cursor pointer cho button, link và các element có thể click */
+button,
+a,
+label,
+[role="button"],
+[onclick],
+.pointer,
+.cursor-pointer,
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+input[type="checkbox"],
+input[type="radio"] {
+  cursor: pointer !important;
+  user-select: none;
+}
+
+/* Cho phép select text trong các phần nội dung cụ thể */
+td,
+th,
+code,
+pre {
+  user-select: text;
+}
+
+/* Chỉ cho phép select text trong nội dung bài viết blog */
+.blog-detail-body,
+.blog-detail-body *:not(button):not(a) {
+  user-select: text;
+  cursor: text;
+}
+
+/* Đảm bảo select box vẫn có cursor pointer */
+select {
+  cursor: pointer !important;
+  user-select: none;
+}
+
 #root {
   width: 100vw;
   min-height: 100vh;

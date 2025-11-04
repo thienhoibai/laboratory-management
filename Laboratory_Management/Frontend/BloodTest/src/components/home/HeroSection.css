@@ -112,6 +112,9 @@
 
 .hero-btn-primary:hover {
   background: #1d4ed8;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  transform: translateY(-1px);
+  color: #000000;
 }
 
 .hero-btn-outline {
@@ -128,7 +131,7 @@
 
 .hero-btn-outline:hover {
   background: #2563eb;
-  color: #fff;
+  color: #000000;
 }
 
 .hero-stats {

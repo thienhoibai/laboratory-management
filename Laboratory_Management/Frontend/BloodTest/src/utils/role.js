@@ -101,18 +101,18 @@ export const getMenuItems = () => {
   const permissions = getUserPermissions();
 
   const allMenuItems = [
-    { path: "/admin/dashboard", icon: "dashboard", name: "Tổng quan", permission: "dashboard" },
-    { path: "/admin/users", icon: "users", name: "Người dùng", permission: "users" },
-    { path: "/admin/roles", icon: "roles", name: "Vai trò", permission: "roles" },
-    { path: "/admin/instruments", icon: "instruments", name: "Thiết bị", permission: "instruments" },
-    { path: "/admin/reagents", icon: "reagents", name: "Thuốc thử", permission: "reagents" },
-    { path: "/admin/blogs", icon: "blogs", name: "Blog", permission: "blogs" },
-    { path: "/admin/patients", icon: "patients", name: "Bệnh nhân", permission: "patients" },
-    { path: "/admin/test-orders", icon: "test-orders", name: "Đơn xét nghiệm", permission: "test-orders" },
-    { path: "/admin/packages", icon: "packages", name: "Gói xét nghiệm", permission: "packages" },
-    { path: "/admin/catalogs", icon: "catalogs", name: "Danh mục", permission: "catalogs" },
-    { path: "/admin/parameter", icon: "parameter", name: "Tham số", permission: "parameter" },
-    { path: "/admin/reports", icon: "reports", name: "Báo cáo", permission: "reports" },
+    { path: "/dashboard", icon: "dashboard", name: "Tổng quan", permission: "dashboard" },
+    { path: "/users", icon: "users", name: "Người dùng", permission: "users" },
+    { path: "/roles", icon: "roles", name: "Quyền truy cập", permission: "roles" },
+    { path: "/instruments", icon: "instruments", name: "Thiết bị", permission: "instruments" },
+    { path: "/reagents", icon: "reagents", name: "Thuốc thử", permission: "reagents" },
+    { path: "/blogs", icon: "blogs", name: "Bài viết", permission: "blogs" },
+    { path: "/patients", icon: "patients", name: "Bệnh nhân", permission: "patients" },
+    { path: "/test-orders", icon: "test-orders", name: "Đơn xét nghiệm", permission: "test-orders" },
+    { path: "/packages", icon: "packages", name: "Gói xét nghiệm", permission: "packages" },
+    { path: "/catalogs", icon: "catalogs", name: "Mục xét nghiệm", permission: "catalogs" },
+    { path: "/parameter", icon: "parameter", name: "Chỉ số xét nghiệm", permission: "parameter" },
+    { path: "/reports", icon: "reports", name: "Báo cáo", permission: "reports" },
   ];
 
   return allMenuItems.filter((item) => permissions.includes(item.permission));
