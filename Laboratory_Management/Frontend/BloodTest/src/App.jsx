@@ -13,6 +13,7 @@ import CatalogSelection from "./components/booking/CatalogSelection";
 
 import UserManagementPage from "./pages/admin/user/UserManagementPage";
 import DashboardPage from "./pages/admin/dashboard/DashboardPage";
+import PatientManagement from "./pages/admin/patient/PatientManagement";
 
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css"; // Import CSS
@@ -65,6 +66,10 @@ function App() {
     {
       path: "admin/users",
       element: <UserManagementPage />,
+    },
+    {
+      path: "admin/patients",
+      element: <PatientManagement />,
     },
     {
       path: "medical-record",

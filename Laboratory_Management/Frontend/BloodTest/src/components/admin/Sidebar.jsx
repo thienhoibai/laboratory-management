@@ -13,16 +13,16 @@ import {
 import "./layout/AdminLayout.css"; // Sidebar cũng dùng chung CSS này
 
 const menuItems = [
-  { path: "/admin/dashboard", icon: <FiHome />, name: "Dashboard" },
-  { path: "/admin/users", icon: <FiUsers />, name: "Users" },
-  { path: "/admin/roles", icon: <FiBriefcase />, name: "Roles" },
-  { path: "/admin/instruments", icon: <FiPackage />, name: "Instruments" },
-  { path: "/admin/reagents", icon: <FiPackage />, name: "Reagents" },
-  { path: "/admin/patients", icon: <FiUsers />, name: "Patients" },
-  { path: "/admin/test-orders", icon: <FiFileText />, name: "Test Orders" },
-  { path: "/admin/event-log", icon: <FiList />, name: "Event Log" },
-  { path: "/admin/reports", icon: <FiBarChart2 />, name: "Reports" },
-  { path: "/admin/settings", icon: <FiSettings />, name: "Settings" },
+  { path: "/admin/dashboard", icon: <FiHome />, name: "Tổng quan" },
+  { path: "/admin/users", icon: <FiUsers />, name: "Quản lý người dùng" },
+  { path: "/admin/patients", icon: <FiUsers />, name: "Quản lý bệnh nhân" },
+  { path: "/admin/roles", icon: <FiBriefcase />, name: "Phân quyền" },
+  { path: "/admin/instruments", icon: <FiPackage />, name: "Thiết bị" },
+  { path: "/admin/reagents", icon: <FiPackage />, name: "Hóa chất" },
+  { path: "/admin/test-orders", icon: <FiFileText />, name: "Đơn xét nghiệm" },
+  { path: "/admin/event-log", icon: <FiList />, name: "Nhật ký" },
+  { path: "/admin/reports", icon: <FiBarChart2 />, name: "Báo cáo" },
+  { path: "/admin/settings", icon: <FiSettings />, name: "Cài đặt" },
 ];
 
 const Sidebar = () => {
