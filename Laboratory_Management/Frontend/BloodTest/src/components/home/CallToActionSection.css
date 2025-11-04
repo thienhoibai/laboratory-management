@@ -60,8 +60,8 @@
 }
 .cta-btn-primary:hover {
   background: #1d4ed8;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35);
+  color: #000000;
 }
 
 .cta-btn-icon {
@@ -85,6 +85,7 @@
   background: #f9fafb;
   border-color: #d1d5db;
   transform: translateY(-1px);
+  color: #000000;
 }
 .cta-right {
   flex: 1;
