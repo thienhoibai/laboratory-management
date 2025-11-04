@@ -24,5 +24,14 @@ namespace TestOrder.Infrastructure.Repository
                 .Where(b => b.PatientId == patientId)
                 .ToListAsync();
         }
+
+        public async Task<string?> GetLastBookingCodeAsync()
+        {
+            var lastBooking = await Task.Run(() => _context.Set<Booking>()
+                .OrderByDescending(b => b.CreateDate)
+                .FirstOrDefault());
+            return lastBooking?.BookingCode;
+        }
+
     }
 }

@@ -146,6 +146,10 @@ Values (N'Hồng cầu (RBC)', 'Nam: 4.2 - 6.0| Nữ: 3.8-5.0', '*10^12/L'),
 		(N'Hemoglobin (Hb)', 'Nam: 13.5-17.5|  Nữ: 13.5-17.5', 'g/dL'),
 		(N'Hematocrit (HCT)', 'Nam: 40-52| Nữ: 37-48', '%')
 
+ALTER TABLE Booking
+ADD BookingCode NVARCHAR(10);
 
 
-		select * from CatalogParameter
+		select * from Booking
+
+		
