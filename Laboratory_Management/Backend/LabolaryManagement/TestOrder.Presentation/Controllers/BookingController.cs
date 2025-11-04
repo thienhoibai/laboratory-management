@@ -19,14 +19,12 @@ namespace TestOrder.Presentation.Controllers
         }
 
         [HttpGet]
-        [Tags("Lấy thông tin Lịch hẹn xét nghiệm theo mã tham chiếu")]
         public IActionResult GetBookingInfo([FromQuery] Guid bookingId)
         {
             var response = _bookingService.GetBookingByIdAsync(bookingId).Result;
             return Ok(response);
         }
         [HttpGet("patient")]
-        [Tags("Lấy thông tin lịch hẹn xét nghiệm theo mã bệnh nhân")]
         public IActionResult GetBookingsByPatientId([FromQuery] long patientId)
         {
             var response = _bookingService.GetBookingsByPatientIdAsync(patientId);
@@ -35,7 +33,6 @@ namespace TestOrder.Presentation.Controllers
 
 
         [HttpPost]
-        [Tags("Tạo mới đặt lịch xét nghiệm")]
         public async Task<IActionResult> CreateBooking([FromBody] BookingRequestDTO createBookingDto)
         {
             var response = await _bookingService.CreateNewBooking(createBookingDto);

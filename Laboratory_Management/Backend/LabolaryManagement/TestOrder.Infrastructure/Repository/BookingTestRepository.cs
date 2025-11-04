@@ -25,26 +25,5 @@ namespace TestOrder.Infrastructure.Repository
                 .Where(bt => bt.BookingId == bookingId)
                 .ToList());
         }
-
-        
-        public async Task AddBookingTestAsync(Guid bookingId, int catalogId)
-        {
-            
-            var exists = _context.Set<BookingTest>()
-                .Any(bt => bt.BookingId == bookingId && bt.CatalogId == catalogId);
-
-            if (!exists)
-            {
-                var bookingTest = new BookingTest
-                {
-                    BookingId = bookingId,
-                    //CatalogId = catalogId
-
-                };
-
-                await _context.Set<BookingTest>().AddAsync(bookingTest);
-                await _context.SaveChangesAsync();
-            }
-        }
     }
 }
