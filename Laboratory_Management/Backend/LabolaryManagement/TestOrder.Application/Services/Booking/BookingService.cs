@@ -30,10 +30,11 @@ namespace TestOrder.Application.Services.Booking
 
             return new BookingResponseDTO
             {
-                BookingCode = booking.BookingCode ??= "",
-                PatientId = booking.PatientId ?? 0,
+                BookingCode = booking.BookingCode ??="",
+                PatientId = (Guid)booking.PatientId,
                 PatientName = booking.PatientName ?? string.Empty,
                 PatientPhoneNumber = booking.PatientPhone,
+                PatientEmail = booking.PatientEmail,
                 CreatedBy = booking.CreatedBy,
                 BundleId = booking.BundleId,
                 CreatedDate = booking.CreateDate.HasValue
@@ -49,7 +50,7 @@ namespace TestOrder.Application.Services.Booking
             };
         }
 
-        public async Task<List<BookingResponseDTO>> GetBookingsByPatientIdAsync(long patientId)
+        public async Task<List<BookingResponseDTO>> GetBookingsByPatientIdAsync(Guid patientId)
         {
             var bookings = await _bookingRepository.GetBookingsByPatientIdAsync(patientId);
             var bookingResponses = new List<BookingResponseDTO>();
@@ -61,9 +62,10 @@ namespace TestOrder.Application.Services.Booking
                     bookingResponses.Add(new BookingResponseDTO
                     {
                         BookingCode = booking.BookingCode ??= "",
-                        PatientId = booking.PatientId ?? 0,
+                        PatientId = (Guid)booking.PatientId,
                         PatientName = booking.PatientName ?? string.Empty,
                         PatientPhoneNumber = booking.PatientPhone,
+                        PatientEmail = booking.PatientEmail,
                         CreatedBy = booking.CreatedBy,
                         BundleId = booking.BundleId,
                         CreatedDate = booking.CreateDate.HasValue
@@ -120,6 +122,7 @@ namespace TestOrder.Application.Services.Booking
                 PatientId = bookingRequest.PatientId,
                 PatientName = bookingRequest.PatientName,
                 PatientPhone = bookingRequest.PatientPhoneNumber,
+                PatientEmail = bookingRequest.PatientEmail,
                 CreatedBy = bookingRequest.CreatedBy,
                 CreateDate = DateOnly.FromDateTime(DateTime.Now),
                 BundleId = bookingRequest.BundleId.Value != 0 ? bookingRequest.BundleId : null,
