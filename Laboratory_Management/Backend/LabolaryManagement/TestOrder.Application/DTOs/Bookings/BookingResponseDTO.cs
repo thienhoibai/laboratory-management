@@ -12,7 +12,7 @@ namespace TestOrder.Application.DTOs.Bookings
         [Required]
         public string BookingCode { get; set; } = string.Empty;
         [Required]
-        public long PatientId { get; set; }
+        public Guid PatientId { get; set; }
 
         [Phone]
         [MaxLength(12)]
@@ -22,6 +22,7 @@ namespace TestOrder.Application.DTOs.Bookings
         [Required]
 
         public string PatientName { get; set; } = string.Empty;
+        public string? PatientEmail { get; set; }
 
         public string? CreatedBy { get; set; }
         public int? BundleId { get; set; }
