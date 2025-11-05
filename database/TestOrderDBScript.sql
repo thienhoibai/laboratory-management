@@ -1,10 +1,10 @@
 ﻿USE master;
-ALTER DATABASE TestOder SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
-DROP DATABASE TestOder;
+ALTER DATABASE TestOrderDB SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+DROP DATABASE TestOrderDB;
 
-CREATE DATABASE TestOder
+CREATE DATABASE TestOrderDB
 
-use TestOder
+use TestOrderDB
 
 
 CREATE TABLE TestBundle (
@@ -36,13 +36,13 @@ CREATE TABLE AppointmentSlot
 CREATE TABLE Booking
 (
 	BookingId UNIQUEIDENTIFIER not null PRIMARY KEY,
-	PatientId bigint,
+	PatientId UNIQUEIDENTIFIER,
 	Status tinyint,
 	PatientName nvarchar(255),
 	PatientPhone nvarchar(12),
 	AppointmentSlotId UNIQUEIDENTIFIER FOREIGN KEY REFERENCES AppointmentSlot(SlotId),
 	CreateDate Date DEFAULT GETDATE(),
-	CreatedBy nvarchar(30),
+	CreatedBy nvarchar(255),
 	RunDate Date,
 	RanBy nvarchar(30),
 	BundleId int FOREIGN KEY REFERENCES TestBundle(BundleId)
@@ -148,6 +148,8 @@ Values (N'Hồng cầu (RBC)', 'Nam: 4.2 - 6.0| Nữ: 3.8-5.0', '*10^12/L'),
 
 ALTER TABLE Booking
 ADD BookingCode NVARCHAR(10);
+ALTER TABLE Booking
+ADD PatientEmail nvarchar(255);
 
 
 		select * from Booking
