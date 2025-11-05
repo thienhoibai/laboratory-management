@@ -29,7 +29,7 @@ const LoginForm = ({ errorMessage }) => {
         localStorage.setItem("accessToken", data.accessToken);
         localStorage.setItem("refreshToken", data.refreshToken);
         localStorage.setItem("expiresAt", data.expiresAt);
-        localStorage.setItem("permissions", JSON.stringify(perm));
+        localStorage.setItem("permissions", JSON.stringify(perm) || []);
         setUserData(data);
 
         if (role === "Customer" || role === "Patient") {
