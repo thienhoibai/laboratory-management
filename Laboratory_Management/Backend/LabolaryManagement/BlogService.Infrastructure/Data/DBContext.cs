@@ -18,21 +18,17 @@ public partial class DBContext : DbContext
 
     public virtual DbSet<BlogPost> BlogPosts { get; set; }
 
-    public virtual DbSet<BlogPostTag> BlogPostTags { get; set; }
-
     public virtual DbSet<Category> Categories { get; set; }
 
     public virtual DbSet<Comment> Comments { get; set; }
 
     public virtual DbSet<Tag> Tags { get; set; }
 
-    
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<BlogPost>(entity =>
         {
-            entity.HasKey(e => e.PostId).HasName("PK__BlogPost__AA126018687A5503");
+            entity.HasKey(e => e.PostId).HasName("PK__BlogPost__AA12601820DD6B56");
 
             entity.ToTable("BlogPost");
 
@@ -48,26 +44,28 @@ public partial class DBContext : DbContext
             entity.HasOne(d => d.Category).WithMany(p => p.BlogPosts)
                 .HasForeignKey(d => d.CategoryId)
                 .HasConstraintName("FK__BlogPost__Catego__4BAC3F29");
-        });
 
-        modelBuilder.Entity<BlogPostTag>(entity =>
-        {
-            entity
-                .HasNoKey()
-                .ToTable("BlogPostTag");
-
-            entity.HasOne(d => d.Post).WithMany()
-                .HasForeignKey(d => d.PostId)
-                .HasConstraintName("FK__BlogPostT__PostI__52593CB8");
-
-            entity.HasOne(d => d.Tag).WithMany()
-                .HasForeignKey(d => d.TagId)
-                .HasConstraintName("FK__BlogPostT__TagId__534D60F1");
+            entity.HasMany(d => d.Tags).WithMany(p => p.Posts)
+                .UsingEntity<Dictionary<string, object>>(
+                    "BlogPostTag",
+                    r => r.HasOne<Tag>().WithMany()
+                        .HasForeignKey("TagId")
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .HasConstraintName("FK__BlogPostT__TagId__5441852A"),
+                    l => l.HasOne<BlogPost>().WithMany()
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .HasConstraintName("FK__BlogPostT__PostI__534D60F1"),
+                    j =>
+                    {
+                        j.HasKey("PostId", "TagId").HasName("PK__BlogPost__7C45AF8237FE0883");
+                        j.ToTable("BlogPostTag");
+                    });
         });
 
         modelBuilder.Entity<Category>(entity =>
         {
-            entity.HasKey(e => e.CategoryId).HasName("PK__Category__19093A0B76E702F9");
+            entity.HasKey(e => e.CategoryId).HasName("PK__Category__19093A0B647D211F");
 
             entity.ToTable("Category");
 
@@ -78,7 +76,7 @@ public partial class DBContext : DbContext
 
         modelBuilder.Entity<Comment>(entity =>
         {
-            entity.HasKey(e => e.CommentId).HasName("PK__Comment__C3B4DFCA591E748E");
+            entity.HasKey(e => e.CommentId).HasName("PK__Comment__C3B4DFCACD7609A9");
 
             entity.ToTable("Comment");
 
@@ -86,12 +84,12 @@ public partial class DBContext : DbContext
 
             entity.HasOne(d => d.Post).WithMany(p => p.Comments)
                 .HasForeignKey(d => d.PostId)
-                .HasConstraintName("FK__Comment__PostId__5629CD9C");
+                .HasConstraintName("FK__Comment__PostId__571DF1D5");
         });
 
         modelBuilder.Entity<Tag>(entity =>
         {
-            entity.HasKey(e => e.TagId).HasName("PK__Tag__657CF9ACAFA175F3");
+            entity.HasKey(e => e.TagId).HasName("PK__Tag__657CF9AC49C3CEA6");
 
             entity.ToTable("Tag");
 
