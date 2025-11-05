@@ -5,8 +5,11 @@ import { getUserData, logoutUser } from "../../utils/auth";
 import "./Navbar.css";
 import api from "../../configs/axios";
 import { setAuthToken } from "../../utils/auth";
+import { usePermission } from "../../utils/permission";
 
 function Navbar() {
+  const { can } = usePermission();
+
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -172,9 +175,11 @@ function Navbar() {
                   <circle cx="12" cy="7" r="4" />
                 </svg>
               </div>
-              <button className="navbar-logout" onClick={handleLogout}>
-                Đăng Xuất
-              </button>
+              {can("Auth.Logout") && (
+                <button className="navbar-logout" onClick={handleLogout}>
+                  Đăng Xuất
+                </button>
+              )}
             </div>
           )}
         </div>
