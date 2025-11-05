@@ -23,19 +23,21 @@ const LoginForm = ({ errorMessage }) => {
       const decode = jwtDecode(data.accessToken);
       const role =
         decode["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
+      const perm = decode["perm"];
 
       if (response.status === 200) {
         localStorage.setItem("accessToken", data.accessToken);
         localStorage.setItem("refreshToken", data.refreshToken);
         localStorage.setItem("expiresAt", data.expiresAt);
+        localStorage.setItem("permissions", JSON.stringify(perm) || []);
         setUserData(data);
 
-        if (role === "Customer") {
+        if (role === "Customer" || role === "Patient") {
           toast.success("Đăng nhập thành công!");
           navigate("/");
-        } else if (role === "Admin") {
+        } else if (role === "Admin" || role === "Manager" || role === "Staff") {
           toast.success("Đăng nhập thành công!");
-          navigate("/admin/users");
+          navigate("/dashboard");
         }
       }
       // XÓA else if (response.status === 423) {...}
