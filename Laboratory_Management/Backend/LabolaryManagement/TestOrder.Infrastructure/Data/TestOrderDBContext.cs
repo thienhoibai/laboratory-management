@@ -40,6 +40,7 @@ public partial class TestOrderDBContext : DbContext
 
     public virtual DbSet<TimeBlock> TimeBlocks { get; set; }
 
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<AppointmentSlot>(entity =>

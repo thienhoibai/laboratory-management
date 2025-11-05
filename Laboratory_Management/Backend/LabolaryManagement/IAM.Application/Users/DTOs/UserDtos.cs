@@ -1,7 +1,7 @@
 ﻿namespace IAM.Application.Users.DTOs
 {
-    // Admin creates account with minimal fields (role by id)
-    public record CreateUserRequest(string Username, string Password, int RoleId);
+    // Admin creates account: admin nhập username, email, chọn role; password sẽ random và gửi qua email
+    public record CreateUserRequest(string Username, string Email, int RoleId);
     public record UpdateUserRequest(string? Email, string? FullName, string? Phone);
     public record AssignRolesRequest(int[] RoleIds);
 
