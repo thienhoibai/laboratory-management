@@ -18,7 +18,7 @@ namespace TestOrder.Infrastructure.Repository
         {
         }
 
-        public async Task<IEnumerable<Booking>?> GetBookingsByPatientIdAsync(long patientId)
+        public async Task<IEnumerable<Booking>?> GetBookingsByPatientIdAsync(Guid patientId)
         {
             return await _context.Set<Booking>()
                 .Where(b => b.PatientId == patientId)

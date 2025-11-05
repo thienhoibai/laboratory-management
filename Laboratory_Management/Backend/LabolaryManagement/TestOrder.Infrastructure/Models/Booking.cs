@@ -7,9 +7,7 @@ public partial class Booking
 {
     public Guid BookingId { get; set; }
 
-    public string? BookingCode { get; set; }
-
-    public long? PatientId { get; set; }
+    public Guid? PatientId { get; set; }
 
     public byte? Status { get; set; }
 
@@ -28,6 +26,10 @@ public partial class Booking
     public string? RanBy { get; set; }
 
     public int? BundleId { get; set; }
+
+    public string? BookingCode { get; set; }
+
+    public string? PatientEmail { get; set; }
 
     public virtual AppointmentSlot? AppointmentSlot { get; set; }
 
