@@ -24,6 +24,7 @@ export const getAuthToken = () => {
 export const removeAuthToken = () => {
   localStorage.removeItem("authToken");
   localStorage.removeItem("accessToken");
+  localStorage.removeItem("permissions");
   // Xóa header mặc định
   delete api.defaults.headers.common["Authorization"];
 };

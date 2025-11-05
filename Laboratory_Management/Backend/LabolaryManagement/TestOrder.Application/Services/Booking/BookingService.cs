@@ -91,7 +91,7 @@ namespace TestOrder.Application.Services.Booking
             if (!_appointmentSlotService.IsAppointmentsDateValid(bookingRequest.slotDTO.AppointmentDate))
                 return -1;
 
-            
+
 
             if (!_appointmentSlotService.IsAppointmentSlotExists(
                     bookingRequest.slotDTO.AppointmentDate,
@@ -125,20 +125,21 @@ namespace TestOrder.Application.Services.Booking
                 PatientEmail = bookingRequest.PatientEmail,
                 CreatedBy = bookingRequest.CreatedBy,
                 CreateDate = DateOnly.FromDateTime(DateTime.Now),
-                BundleId = bookingRequest.BundleId.Value != 0 ? bookingRequest.BundleId : null ,
+                BundleId = bookingRequest.BundleId.Value != 0 ? bookingRequest.BundleId : null,
                 AppointmentSlotId = appointmentSlot.SlotId,
                 Status = (byte?)BookingStatusEnum.Pending,
                 BookingCode = nextCode
             };
 
             await _bookingRepository.AddAsync(newBooking);
-        if (bookingRequest.Catalogs != null) { 
-            foreach (var catalogId in bookingRequest.Catalogs)
+            if (bookingRequest.Catalogs != null)
             {
-                _bookingTestService.AddBookingTestAsync(newBooking.BookingId, catalogId).Wait();
+                foreach (var catalogId in bookingRequest.Catalogs)
+                {
+                    _bookingTestService.AddBookingTestAsync(newBooking.BookingId, catalogId).Wait();
+                }
             }
-        }
-             return 0;
+            return 0;
 
         }
         #endregion
