@@ -40,6 +40,8 @@ const UsersManagement = () => {
   const [users, setUsers] = useState([]);
   const [total, setTotal] = useState(0);
 
+  const [statusLock, setStatusLock] = useState("");
+  const [statusUnlock, setStatusUnlock] = useState("");
   // Filter states
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
@@ -367,6 +369,7 @@ const UsersManagement = () => {
       const response = await api.post(`iam/api/Users/${id}/lock`);
       if (response?.data?.data.status === "locked") {
         toast.success("Tài khoản đã bị khóa!");
+        setStatusLock(response.data.data.status);
       } else {
         toast.info("Thao tác thành công!");
       }
@@ -389,9 +392,10 @@ const UsersManagement = () => {
     }
     setLockLoadingId(id);
     try {
-      const response = await api.post(`iam/api/Users/${id}/ `);
+      const response = await api.post(`iam/api/Users/${id}/unlock`);
       if (response?.data?.data.status === "unlocked") {
         toast.success("Tài khoản đã được mở khóa!");
+        setStatusUnlock(response.data.data.status);
       } else {
         toast.info("Thao tác thành công!");
       }
@@ -507,14 +511,14 @@ const UsersManagement = () => {
                   title="Khóa tài khoản"
                   style={{
                     cursor:
-                      user.status === "locked" ||
+                      statusLock === "locked" ||
                       lockLoadingId ===
                         (user.id ?? user.userId ?? user.uuid ?? user.Id)
                         ? "not-allowed"
                         : "pointer",
-                    color: user.status === "locked" ? "#bdbdbd" : "#e74c3c",
+                    color: statusLock === "locked" ? "#bdbdbd" : "#e74c3c",
                     filter:
-                      user.status === "locked"
+                      statusLock === "locked"
                         ? "grayscale(60%) brightness(0.8)"
                         : "drop-shadow(0 0 4px #e74c3c)",
                     opacity:
@@ -525,7 +529,7 @@ const UsersManagement = () => {
                     transition: "filter 0.2s, color 0.2s",
                   }}
                   onClick={() =>
-                    user.status === "locked" || lockLoadingId
+                    statusLock === "locked" || lockLoadingId
                       ? null
                       : handleLockUser(user)
                   }
@@ -534,14 +538,14 @@ const UsersManagement = () => {
                   title="Mở khóa tài khoản"
                   style={{
                     cursor:
-                      user.status === "unlocked" ||
+                      statusUnlock === "unlocked" ||
                       lockLoadingId ===
                         (user.id ?? user.userId ?? user.uuid ?? user.Id)
                         ? "not-allowed"
                         : "pointer",
-                    color: user.status === "unlocked" ? "#bdbdbd" : "#198754",
+                    color: statusUnlock === "unlocked" ? "#bdbdbd" : "#198754",
                     filter:
-                      user.status === "unlocked"
+                      statusUnlock === "unlocked"
                         ? "grayscale(60%) brightness(0.8)"
                         : "drop-shadow(0 0 4px #198754)",
                     opacity:
@@ -552,7 +556,7 @@ const UsersManagement = () => {
                     transition: "filter 0.2s, color 0.2s",
                   }}
                   onClick={() =>
-                    user.status === "unlocked" || lockLoadingId
+                    statusUnlock === "unlocked" || lockLoadingId
                       ? null
                       : handleUnlockUser(user)
                   }
