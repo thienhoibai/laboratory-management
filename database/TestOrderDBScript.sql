@@ -35,18 +35,21 @@ CREATE TABLE AppointmentSlot
 
 CREATE TABLE Booking
 (
-	BookingId UNIQUEIDENTIFIER not null PRIMARY KEY,
-	PatientId UNIQUEIDENTIFIER,
-	Status tinyint,
-	PatientName nvarchar(255),
-	PatientPhone nvarchar(12),
-	AppointmentSlotId UNIQUEIDENTIFIER FOREIGN KEY REFERENCES AppointmentSlot(SlotId),
-	CreateDate Date DEFAULT GETDATE(),
-	CreatedBy nvarchar(255),
-	RunDate Date,
-	RanBy nvarchar(30),
-	BundleId int FOREIGN KEY REFERENCES TestBundle(BundleId)
+    BookingId UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
+    PatientId UNIQUEIDENTIFIER,
+    Status TINYINT,
+    PatientName NVARCHAR(255),
+    PatientPhone NVARCHAR(12),
+    PatientEmail NVARCHAR(255),
+    BookingCode NVARCHAR(50),
+    AppointmentSlotId UNIQUEIDENTIFIER FOREIGN KEY REFERENCES AppointmentSlot(SlotId),
+    CreateDate DATE DEFAULT GETDATE(),
+    CreatedBy NVARCHAR(255),
+    RunDate DATE,
+    RanBy NVARCHAR(30),
+    BundleId INT FOREIGN KEY REFERENCES TestBundle(BundleId)
 );
+
 
 
 CREATE TABLE PaymentEnvoice (
