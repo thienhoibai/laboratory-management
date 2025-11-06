@@ -15,7 +15,12 @@ namespace TestOrder.Application.Services
             _repository = repository;
         }
 
-        public async Task<IEnumerable<CatalogBundle>> GetCatalogsByBundleAsync(int bundleId)
+        public async Task<IEnumerable<object>> GetAllAsync()
+        {
+            return await _repository.GetAllAsync();
+        }
+
+        public async Task<IEnumerable<object>> GetCatalogsByBundleAsync(int bundleId)
         {
             return await _repository.GetByBundleIdAsync(bundleId);
         }
