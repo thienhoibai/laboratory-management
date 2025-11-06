@@ -23,6 +23,7 @@ import AdminPackagesPage from "./pages/admin/packages/AdminPackagesPage";
 import AdminCatalogsPage from "./pages/admin/catalogs/AdminCatalogsPage";
 import AdminParameterPage from "./pages/admin/parameter/AdminParameterPage";
 import AdminReportsPage from "./pages/admin/reports/AdminReportsPage";
+import AdminAppointmentSchedulePage from "./pages/admin/appointment-schedule/AdminAppointmentSchedulePage";
 
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css"; // Import CSS
@@ -70,6 +71,10 @@ function App() {
     {
       path: "/dashboard",
       element: <AdminDashboardPage />,
+    },
+    {
+      path: "/appointment-schedule",
+      element: <AdminAppointmentSchedulePage />,
     },
     {
       path: "/users",

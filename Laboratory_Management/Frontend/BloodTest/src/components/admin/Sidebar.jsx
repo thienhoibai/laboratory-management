@@ -10,6 +10,7 @@ import {
   FiBook,
   FiActivity,
   FiBox,
+  FiCalendar,
 } from "react-icons/fi";
 import "./layout/AdminLayout.css";
 import { getMenuItems } from "../../utils/role";
@@ -17,6 +18,7 @@ import { getMenuItems } from "../../utils/role";
 // Icon mapping
 const iconMap = {
   dashboard: <FiHome />,
+  "appointment-schedule": <FiCalendar />,
   users: <FiUsers />,
   roles: <FiBriefcase />,
   instruments: <FiPackage />,
