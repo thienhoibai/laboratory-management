@@ -15,4 +15,10 @@ public interface IPatientService
     Task<(IReadOnlyList<PatientSummaryDto> Items, long Total)> ListByOwnerAsync(Guid ownerUserId, int page, int pageSize, string? name, DateOnly? dob, string? sortBy, string? sortDir, CancellationToken ct = default);
 
     Task<OperationResult<PatientDto>> GetByUserIdAsync(Guid userId, CancellationToken ct);
+
+    // Guest linking flows
+    Task<OperationResult> StartLinkAsync(Guid patientId, Guid actorUserId, string mode, string baseLinkUrl, CancellationToken ct = default);
+    Task<OperationResult> ConfirmMagicLinkAsync(string token, Guid actorUserId, CancellationToken ct = default);
+    Task<OperationResult> RequestOtpAsync(Guid patientId, Guid actorUserId, CancellationToken ct = default);
+    Task<OperationResult> VerifyOtpAsync(Guid patientId, string code, Guid actorUserId, CancellationToken ct = default);
 }

@@ -11,6 +11,8 @@ public class PatientDbContext : DbContext
     public DbSet<PatientRecordVersion> PatientRecordVersions => Set<PatientRecordVersion>();
     public DbSet<PatientEventLog> PatientEventLogs => Set<PatientEventLog>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<PatientLinkToken> PatientLinkTokens => Set<PatientLinkToken>();
+    public DbSet<PatientOtpToken> PatientOtpTokens => Set<PatientOtpToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -20,8 +22,8 @@ public class PatientDbContext : DbContext
             b.HasKey(x => x.PatientId);
             b.Property(x => x.PatientId).HasColumnName("patient_id").ValueGeneratedNever();
 
-            // Map to user_id to be compatible with existing DB
-            b.Property(x => x.UserId).HasColumnName("user_id").IsRequired();
+            // Map to user_id to be compatible with existing DB (nullable for guest)
+            b.Property(x => x.UserId).HasColumnName("user_id");
 
             b.Property(x => x.FullName).HasColumnName("full_name").HasMaxLength(150).IsRequired();
             b.Property(x => x.DateOfBirth).HasColumnName("date_of_birth");
@@ -94,6 +96,35 @@ public class PatientDbContext : DbContext
             b.Property(x => x.UserId).HasColumnName("user_id");
             b.Property(x => x.CorrelationId).HasColumnName("correlation_id").HasMaxLength(64);
             b.Property(x => x.DetailJson).HasColumnName("detail_json");
+        });
+
+        modelBuilder.Entity<PatientLinkToken>(b =>
+        {
+            b.ToTable("patient_link_tokens");
+            b.HasKey(x => x.TokenId);
+            b.Property(x => x.TokenId).HasColumnName("token_id").ValueGeneratedNever();
+            b.Property(x => x.PatientId).HasColumnName("patient_id");
+            b.Property(x => x.TokenHash).HasColumnName("token_hash");
+            b.Property(x => x.ExpiresAt).HasColumnName("expires_at");
+            b.Property(x => x.UsedAt).HasColumnName("used_at");
+            b.Property(x => x.CreatedAt).HasColumnName("created_at");
+            b.Property(x => x.Mode).HasColumnName("mode").HasMaxLength(16);
+            b.HasIndex(x => x.TokenHash).HasDatabaseName("IX_patient_link_token_hash").IsUnique();
+            b.HasOne<PatientEntity>().WithMany().HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<PatientOtpToken>(b =>
+        {
+            b.ToTable("patient_otp_tokens");
+            b.HasKey(x => x.OtpId);
+            b.Property(x => x.OtpId).HasColumnName("otp_id").ValueGeneratedNever();
+            b.Property(x => x.PatientId).HasColumnName("patient_id");
+            b.Property(x => x.CodeHash).HasColumnName("code_hash");
+            b.Property(x => x.ExpiresAt).HasColumnName("expires_at");
+            b.Property(x => x.Attempts).HasColumnName("attempts");
+            b.Property(x => x.CreatedAt).HasColumnName("created_at");
+            b.Property(x => x.UsedAt).HasColumnName("used_at");
+            b.HasOne<PatientEntity>().WithMany().HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Cascade);
         });
     }
 }
