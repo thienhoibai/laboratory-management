@@ -18,6 +18,7 @@ const rolePermissions = {
     "catalogs",
     "parameter",
     "reports",
+    "appointment-schedule",
   ],
   Manager: [
     "dashboard",
@@ -28,6 +29,7 @@ const rolePermissions = {
     "patients",
     "catalogs",
     "parameter",
+    "appointment-schedule",
   ],
   Staff: [
     "instruments",
@@ -36,6 +38,7 @@ const rolePermissions = {
     "patients",
     "test-orders",
     "packages",
+    "appointment-schedule",
   ],
 };
 
@@ -102,6 +105,7 @@ export const getMenuItems = () => {
 
   const allMenuItems = [
     { path: "/dashboard", icon: "dashboard", name: "Tổng quan", permission: "dashboard" },
+    { path: "/appointment-schedule", icon: "appointment-schedule", name: "Lịch xét nghiệm", permission: "appointment-schedule" },
     { path: "/users", icon: "users", name: "Người dùng", permission: "users" },
     { path: "/roles", icon: "roles", name: "Quyền truy cập", permission: "roles" },
     { path: "/instruments", icon: "instruments", name: "Thiết bị", permission: "instruments" },
