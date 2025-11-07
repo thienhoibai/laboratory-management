@@ -39,6 +39,9 @@ namespace TestOrder.Presentation
             builder.Services.AddScoped<TimeBlockRepository>();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+            builder.Services.AddControllers()
+    .AddJsonOptions(x =>
+        x.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
 
             var app = builder.Build();
 
