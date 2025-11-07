@@ -32,11 +32,25 @@ namespace TestOrder.Application.Services
             return await _repository.GetByDateAsync(appointmentDate);
         }
 
-        public async Task<AppointmentSlot> GetAppointmentSlotByIdAsync(long appointmentSlotId)
+        public async Task<AppointmentSlot> GetAppointmentSlotByIdAsync(Guid appointmentSlotId)
         {
             return await _repository.GetByIdAsync(appointmentSlotId);
         }
 
+        public async Task<AppointmentSlotDTO> GetAppointmentSlotInfo (Guid slotId)
+        {
+            var slotEntity = await _repository.GetByIdAsync(slotId);
+            if (slotEntity == null)
+            {
+                throw new Exception("Appointment Slot not found");
+            }
+            var timeBlockEntity = await _timeBlockRepository.GetByIdAsync(slotEntity.TimeBlockId);
+            return new AppointmentSlotDTO
+            {
+                AppointmentDate = slotEntity.AppointmentDate,
+                TimeBlock = timeBlockEntity.TimeBlock1
+            };
+        }
 
         public async Task<AppointmentSlot> GetAppointmentSlotByDateAndTimeAsync(DateOnly appointmentDate, TimeOnly timeBlock)
         {
@@ -66,6 +80,22 @@ namespace TestOrder.Application.Services
                 availabilityResults.Add(!isMaxedOut);
             }
             return  availabilityResults;
+        }
+
+        public async Task<int> GetBookingsCountForSlotAsync(Guid slotId)
+        {
+            return await _repository.GetBookingsCountForSlot(slotId);
+        }
+
+        public async Task<List<int>> GetBookingsCountForMultipleSlotsAsync(List<Guid> slotIds)
+        {
+            var bookingsCounts = new List<int>();
+            foreach (var slotId in slotIds)
+            {
+                var count = await _repository.GetBookingsCountForSlot(slotId);
+                bookingsCounts.Add(count);
+            }
+            return bookingsCounts;
         }
 
 

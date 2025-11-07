@@ -8,6 +8,7 @@
 /* Header Actions */
 .profile-header-actions {
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 12px;
 }
@@ -572,6 +573,9 @@
 .profile-Title {
   display: flex;
   justify-content: space-between;
+}
+.btn-change-password {
+  font-weight: 600;
 }
 
 /* Responsive Design */
