@@ -31,8 +31,11 @@ namespace TestOrder.Application.Services
             {
                 TestName = catalog.TestName,
                 Description = catalog.Description,
-                Price = catalog.Price,
+                Price = catalog.Price
+
             };
+           await _repository.AddAsync(entity);
+
         }
         public async Task<TestCatalogResponseDTO> AddParameterAsync(int catalogId, List<int> parameterIds)
         {
