@@ -25,9 +25,9 @@ namespace TestOrder.Presentation.Controllers
             return Ok(response);
         }
         [HttpGet("patient")]
-        public IActionResult GetBookingsByPatientId([FromQuery] Guid patientId)
+        public async Task<IActionResult> GetBookingsByPatientId([FromQuery] Guid patientId)
         {
-            var response = _bookingService.GetBookingsByPatientIdAsync(patientId);
+            var response = await _bookingService.GetBookingsByPatientIdAsync(patientId);
             return Ok(response);
         }
 

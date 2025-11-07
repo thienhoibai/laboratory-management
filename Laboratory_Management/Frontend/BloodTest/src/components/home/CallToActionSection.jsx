@@ -38,7 +38,6 @@ export default function CallToActionSection() {
                 <path d="M2 6H14V7H2V6Z" fill="currentColor" />
               </svg>
             </Link>
-            <button className="cta-btn-outline">Tư vấn bác sĩ</button>
           </div>
         </div>
         <div className="cta-right">

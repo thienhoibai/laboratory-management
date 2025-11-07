@@ -1,0 +1,20 @@
+.home-container {
+  user-select: none;
+  cursor: default;
+}
+
+/* Cho phép select text trong các input và textarea */
+.home-container input,
+.home-container textarea,
+.home-container [contenteditable="true"] {
+  user-select: text;
+  cursor: text;
+}
+
+/* Cho phép select text trong các button và link để có thể click */
+.home-container button,
+.home-container a {
+  cursor: pointer;
+  user-select: none;
+}
+
