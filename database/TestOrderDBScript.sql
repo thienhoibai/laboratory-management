@@ -6,7 +6,13 @@ CREATE DATABASE TestOrderDB
 
 use TestOrderDB
 
-
+CREATE TABLE AuditLog
+(
+	AuditLogId UNIQUEIDENTIFIER Primary key,
+	Action nvarchar(255),
+	Description nvarchar(max),
+	UserId UNIQUEIDENTIFIER,
+);
 CREATE TABLE TestBundle (
     BundleId INT IDENTITY(1,1) PRIMARY KEY,
     BundleName NVARCHAR(50),
@@ -57,7 +63,7 @@ CREATE TABLE PaymentEnvoice (
     BookingId UNIQUEIDENTIFIER NOT NULL,
     Method NVARCHAR(50),
     Amount FLOAT,
-    Status NVARCHAR(50),
+    Status TINYINT,
     CreatedAt DATETIME DEFAULT GETDATE(),
     PaidAt DATETIME,
     Token NVARCHAR(100),
