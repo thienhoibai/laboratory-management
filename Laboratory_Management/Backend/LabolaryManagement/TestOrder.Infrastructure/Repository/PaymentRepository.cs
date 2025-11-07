@@ -11,11 +11,18 @@ namespace TestOrder.Infrastructure.Repository
 {
     public class PaymentRepository : GenericRepository<PaymentEnvoice>
     {
+        private readonly TestOrderDBContext _context;
         public PaymentRepository(TestOrderDBContext context) : base(context)
         {
         }
         public PaymentRepository() : base()
         {
+        }
+
+        public async Task<PaymentEnvoice?> GetByBookingIdAsync(Guid bookingId)
+        {
+            return await Task.Run(() => _context.Set<PaymentEnvoice>()
+                .FirstOrDefault(p => p.BookingId == bookingId));
         }
     }
 }
