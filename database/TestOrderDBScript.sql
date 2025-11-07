@@ -151,5 +151,6 @@ ADD BookingCode NVARCHAR(10);
 
 
 		select * from Booking
-
-		
+		select * from CatalogBundle
+		select * from TestCatalog
+		select * from TestBundle

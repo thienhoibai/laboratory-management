@@ -22,18 +22,28 @@ namespace TestOrder.Application.Services
 
         public async Task AddCatalogToBundleAsync(CatalogBundleDTO dto)
         {
-            var entity = new CatalogBundle
-            {
-                BundleId = dto.BundleId,
-                CatalogId = dto.CatalogId
-            };
+            // Xóa catalog cũ của bundle
+            await _repository.DeleteAllByBundleIdAsync(dto.BundleId);
 
-            await _repository.AddAsync(entity);
+            // Materialize IEnumerable trước khi add
+            var newEntities = dto.CatalogId
+                .Select(id => new CatalogBundle
+                {
+                    BundleId = dto.BundleId,
+                    CatalogId = id
+                })
+                .ToList();
+
+            await _repository.AddRangeAsync(newEntities);
         }
 
-        public async Task RemoveCatalogFromBundleAsync(int bundleId, int catalogId)
+
+        public async Task RemoveCatalogFromBundleAsync(int bundleId, List<int> catalogIds)
         {
-            await _repository.DeleteAsync(bundleId, catalogId);
+            foreach (var catalogId in catalogIds)
+            {
+                await _repository.DeleteAsync(bundleId, catalogId);
+            }
         }
     }
 }

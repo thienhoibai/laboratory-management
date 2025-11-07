@@ -36,5 +36,22 @@ namespace TestOrder.Infrastructure.Repository
                 await _context.SaveChangesAsync();
             }
         }
+        public async Task<bool> ExistsAsync(int bundleId, int catalogId)
+        {
+            return await _context.CatalogBundles
+                .AnyAsync(cb => cb.BundleId == bundleId && cb.CatalogId == catalogId);
+        }
+        public async Task AddRangeAsync(IEnumerable<CatalogBundle> entities)
+        {
+            _context.CatalogBundles.AddRange(entities);
+            await _context.SaveChangesAsync();
+        }
+        public async Task DeleteAllByBundleIdAsync(int bundleId)
+        {
+            var entities = _context.CatalogBundles.Where(cb => cb.BundleId == bundleId);
+            _context.CatalogBundles.RemoveRange(entities);
+            await _context.SaveChangesAsync();
+
+        }
     }
 }
