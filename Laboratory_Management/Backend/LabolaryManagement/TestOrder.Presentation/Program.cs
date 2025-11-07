@@ -39,6 +39,22 @@ namespace TestOrder.Presentation
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowFrontend", policy =>
+                {
+                    policy
+                        .WithOrigins(
+                            "http://localhost:5174",
+                            "http://127.0.0.1:5174"
+                        )
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .AllowCredentials();
+                });
+            });
+
+
             var app = builder.Build();
 
             var isDocker = string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Docker", StringComparison.OrdinalIgnoreCase);
@@ -50,12 +66,15 @@ namespace TestOrder.Presentation
                 app.UseSwaggerUI();
             }
 
+
             // Do not redirect to HTTPS inside container (no dev certs)
             if (!isDocker)
             {
                 app.UseHttpsRedirection();
             }
+            app.UseRouting();
 
+            app.UseCors("AllowFrontend");
             app.UseAuthorization();
 
             app.MapControllers();

@@ -98,10 +98,11 @@ namespace TestOrder.Application.Services.Booking
                     bookingRequest.slotDTO.TimeBlock))
             {
                 await _appointmentSlotService.AddAppointmentSlotAsync(bookingRequest.slotDTO);
-                if (_appointmentSlotService.IsAppointmentSlotMaxedOut(bookingRequest.slotDTO))
-                {
-                    return -2;
-                }
+                
+            }
+            if (_appointmentSlotService.IsAppointmentSlotMaxedOut(bookingRequest.slotDTO))
+            {
+                return -2;
             }
 
             var appointmentSlot = await _appointmentSlotService.GetAppointmentSlotByDateAndTimeAsync(

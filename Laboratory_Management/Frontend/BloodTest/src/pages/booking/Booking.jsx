@@ -9,6 +9,7 @@ import AcceptInfo from "../../components/booking/AcceptInfo";
 import LoginRequirement from "../../components/booking/LoginRequirement";
 import Payment from "../../components/booking/Payment";
 import Success from "../../components/booking/SuccessBooking";
+import QR from "../../components/booking/QR";
 import "./Booking.css";
 
 function Booking() {
@@ -22,6 +23,8 @@ function Booking() {
   const [showWarningModal, setShowWarningModal] = useState(false);
   // store payment result to show in Success
   const [paymentResult, setPaymentResult] = useState(null);
+  // QR step state
+  const [qrLoading, setQrLoading] = useState(false);
 
   // Reset booking to initial state (bắt đầu lại bước 1)
   const handleNewBooking = () => {
@@ -76,9 +79,8 @@ function Booking() {
 
   // Payment hoàn tất -> chuyển sang Success
   const handlePaymentFinish = (result) => {
-    // store result then go to success step
     setPaymentResult(result || { status: "success", time: Date.now() });
-    setCurrentStep(5);
+    setCurrentStep(6); // SuccessBooking là step 6
   };
 
   // back handlers
@@ -110,12 +112,10 @@ function Booking() {
   }, [currentStep]);
 
   const handleModalCancel = () => setShowWarningModal(false);
+  // Khi xác nhận modal, chuyển sang QR step
   const handleModalConfirm = () => {
     setShowWarningModal(false);
-    // simulate/perform payment here (or call API) then mark success
-    const result = { status: "success", confirmedAt: Date.now() };
-    // store and go to success
-    handlePaymentFinish(result);
+    setCurrentStep(5); // QR là step 5
   };
 
   // Nếu chưa đăng nhập, hiển thị yêu cầu đăng nhập
@@ -133,7 +133,7 @@ function Booking() {
     { id: 2, label: "Chọn giờ", name: "Chọn giờ" },
     { id: 3, label: "Xác nhận", name: "Xác nhận" },
     { id: 4, label: "Thanh toán", name: "Thanh toán" },
-    { id: 5, label: "Thành công", name: "Thành công" },
+    { id: 6, label: "Thành công", name: "Thành công" },
   ];
   // Nếu đã đăng nhập, hiển thị trang đặt lịch
   return (
@@ -196,6 +196,23 @@ function Booking() {
           />
         )}
         {currentStep === 5 && (
+          <QR
+            selectedItems={selectedItems}
+            selectedDateTime={selectedDateTime}
+            onConfirmPaid={() => {
+              setQrLoading(true);
+              setTimeout(() => {
+                setQrLoading(false);
+                handlePaymentFinish({
+                  status: "success",
+                  confirmedAt: Date.now(),
+                });
+              }, 5000);
+            }}
+            loading={qrLoading}
+          />
+        )}
+        {currentStep === 6 && (
           <Success
             paymentResult={paymentResult}
             selectedItems={selectedItems}
@@ -209,12 +226,12 @@ function Booking() {
           <div className="modal-overlay" role="dialog" aria-modal="true">
             <div className="modal-dialog">
               <div className="modal-title">Chính sách hoàn tiền</div>
-              <div className="modal-body">
+              <div className="modal-body-alert">
                 <p>
                   <strong>Lưu ý quan trọng:</strong>
                 </p>
                 <ul>
-                  <li>
+                  <li id>
                     Thanh toán sẽ <strong>không được hoàn</strong> nếu hủy trong
                     vòng 24 giờ trước lịch hẹn.
                   </li>
