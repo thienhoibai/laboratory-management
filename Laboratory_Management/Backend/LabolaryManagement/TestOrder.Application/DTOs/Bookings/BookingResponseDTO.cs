@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TestOrder.Application.DTOs.AppointmentSlots;
 
 namespace TestOrder.Application.DTOs.Bookings
 {
@@ -32,9 +33,7 @@ namespace TestOrder.Application.DTOs.Bookings
         public string RanBy { get; set; } = string.Empty;
 
         public string Status { get; set; } = string.Empty;
-
-
-
+        public AppointmentSlotDTO slotInfo { get; set; } = new AppointmentSlotDTO();
 
 
     }
