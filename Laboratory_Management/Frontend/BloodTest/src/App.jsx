@@ -11,15 +11,28 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Booking from "./pages/booking/Booking";
 import CatalogSelection from "./components/booking/CatalogSelection";
 
-import UserManagementPage from "./pages/admin/user/UserManagementPage";
-import DashboardPage from "./pages/admin/dashboard/DashboardPage";
+import AdminDashboardPage from "./pages/admin/dashboard/AdminDashboardPage";
+import AdminUsersPage from "./pages/admin/user/AdminUsersPage";
+import AdminRolesPage from "./pages/admin/roles/AdminRolesPage";
+import AdminInstrumentsPage from "./pages/admin/instruments/AdminInstrumentsPage";
+import AdminReagentsPage from "./pages/admin/reagents/AdminReagentsPage";
+import AdminBlogsPage from "./pages/admin/blogs/AdminBlogsPage";
+import AdminPatientsPage from "./pages/admin/patients/AdminPatientsPage";
+import AdminTestOrdersPage from "./pages/admin/test-orders/AdminTestOrdersPage";
+import AdminPackagesPage from "./pages/admin/packages/AdminPackagesPage";
+import AdminCatalogsPage from "./pages/admin/catalogs/AdminCatalogsPage";
+import AdminParameterPage from "./pages/admin/parameter/AdminParameterPage";
+import AdminReportsPage from "./pages/admin/reports/AdminReportsPage";
+import AdminAppointmentSchedulePage from "./pages/admin/appointment-schedule/AdminAppointmentSchedulePage";
 
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css"; // Import CSS
-import MedicalRecord from "./page/medical-record/MedicalRecord";
+import MedicalRecord from "./pages/medical-record/MedicalRecord";
 import ForgotPass from "./components/authen-form/ForgotPassword";
 import ResetPass from "./components/authen-form/ResetPassword/ResetPassword";
 import CreatePatient from "./components/profile/CreateProfile";
+import BlogPage from "./pages/blog/BlogPage";
+import BlogDetailPage from "./pages/blog/BlogDetailPage";
 
 function App() {
   const router = createBrowserRouter([
@@ -56,12 +69,56 @@ function App() {
       element: <CatalogSelection />,
     },
     {
-      path: "admin/dashboard",
-      element: <DashboardPage />,
+      path: "/dashboard",
+      element: <AdminDashboardPage />,
     },
     {
-      path: "admin/users",
-      element: <UserManagementPage />,
+      path: "/appointment-schedule",
+      element: <AdminAppointmentSchedulePage />,
+    },
+    {
+      path: "/users",
+      element: <AdminUsersPage />,
+    },
+    {
+      path: "/roles",
+      element: <AdminRolesPage />,
+    },
+    {
+      path: "/instruments",
+      element: <AdminInstrumentsPage />,
+    },
+    {
+      path: "/reagents",
+      element: <AdminReagentsPage />,
+    },
+    {
+      path: "/blogs",
+      element: <AdminBlogsPage />,
+    },
+    {
+      path: "/patients",
+      element: <AdminPatientsPage />,
+    },
+    {
+      path: "/test-orders",
+      element: <AdminTestOrdersPage />,
+    },
+    {
+      path: "/packages",
+      element: <AdminPackagesPage />,
+    },
+    {
+      path: "/catalogs",
+      element: <AdminCatalogsPage />,
+    },
+    {
+      path: "/parameter",
+      element: <AdminParameterPage />,
+    },
+    {
+      path: "/reports",
+      element: <AdminReportsPage />,
     },
     {
       path: "medical-record",
@@ -78,6 +135,14 @@ function App() {
     {
       path: "create-profile",
       element: <CreatePatient />,
+    },
+    {
+      path: "blog",
+      element: <BlogPage />,
+    },
+    {
+      path: "blog/:id",
+      element: <BlogDetailPage />,
     },
   ]);
 

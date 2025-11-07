@@ -11,13 +11,71 @@ namespace TestOrder.Infrastructure.Repository
     {
         public CatalogBundleRepository(Data.TestOrderDBContext context) : base(context) { }
 
-        public async Task<IEnumerable<CatalogBundle>> GetByBundleIdAsync(int bundleId)
+        public async Task<IEnumerable<object>> GetByBundleIdAsync(int bundleId)
         {
-            return await _context.CatalogBundles
-                .Include(cb => cb.Catalog)
+            var rows = await _context.CatalogBundles
+                .Include(cb => cb.Bundle)
                 .Where(cb => cb.BundleId == bundleId)
+                .Include(cb => cb.Catalog)
                 .ToListAsync();
+
+            var grouped = rows
+                .GroupBy(cb => new {
+                    cb.Bundle.BundleId,
+                    cb.Bundle.BundleName,
+                    cb.Bundle.Description,
+                    cb.Bundle.Price
+                })
+                .Select(g => new {
+                    g.Key.BundleId,
+                    g.Key.BundleName,
+                    g.Key.Description,
+                    g.Key.Price,
+                    Catalogs = g.Select(x => new {
+                        x.Catalog.CatalogId,
+                        x.Catalog.TestName,
+                        x.Catalog.Description,
+                        x.Catalog.Price
+                    }).ToList()
+                });
+
+            return grouped.ToList();
         }
+
+        public async Task<IEnumerable<object>> GetAllAsync()
+        {
+            var rows = await _context.CatalogBundles
+                .Include(cb => cb.Bundle)
+                .Include(cb => cb.Catalog)
+                .ToListAsync();
+
+     
+            var grouped = rows
+                .GroupBy(cb => new
+                {
+                    cb.Bundle.BundleId,
+                    cb.Bundle.BundleName,
+                    cb.Bundle.Description,
+                    cb.Bundle.Price
+                })
+                .Select(g => new
+                {
+                    g.Key.BundleId,
+                    g.Key.BundleName,
+                    g.Key.Description,
+                    g.Key.Price,
+                    Catalogs = g.Select(x => new
+                    {
+                        x.Catalog.CatalogId,
+                        x.Catalog.TestName,
+                        x.Catalog.Description,
+                        x.Catalog.Price
+                    }).ToList()
+                });
+
+            return grouped.ToList();
+        }
+
 
         public async Task AddAsync(CatalogBundle entity)
         {
