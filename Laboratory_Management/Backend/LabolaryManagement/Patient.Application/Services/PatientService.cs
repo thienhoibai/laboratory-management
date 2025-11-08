@@ -44,8 +44,8 @@ public class PatientService : IPatientService
             CreatedChannel = request.CreatedChannel,
             CreatedByUserId = actorUserId,
             UpdatedByUserId = actorUserId,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow,
+            CreatedAt = DateTime.Now,
+            UpdatedAt = DateTime.Now,
             IsDeleted = false
         };
 
@@ -111,7 +111,7 @@ public class PatientService : IPatientService
         if (request.InsuranceNumber != null) entity.InsuranceNumber = request.InsuranceNumber;
 
         entity.UpdatedByUserId = actorUserId;
-        entity.UpdatedAt = DateTime.UtcNow;
+        entity.UpdatedAt = DateTime.Now;
 
         var newSnapshot = new
         {
@@ -152,7 +152,7 @@ public class PatientService : IPatientService
         entity.IsDeleted = true;
         entity.DeletedAt = DateTime.UtcNow;
         entity.DeletedByUserId = actorUserId;
-        entity.UpdatedAt = DateTime.UtcNow;
+        entity.UpdatedAt = DateTime.Now;
 
         _db.PatientEventLogs.Add(new PatientEventLog
         {
@@ -267,7 +267,7 @@ public class PatientService : IPatientService
 
         if (string.Equals(mode, "magic", StringComparison.OrdinalIgnoreCase))
         {
-            var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+            var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)).TrimEnd('=');
             using var sha = SHA256.Create();
             var tokenHash = sha.ComputeHash(Encoding.UTF8.GetBytes(token));
             var rec = new PatientLinkToken
@@ -323,7 +323,7 @@ public class PatientService : IPatientService
         if (p.UserId.HasValue) return OperationResult.Success();
 
         p.UserId = actorUserId;
-        p.UpdatedAt = DateTime.UtcNow;
+        p.UpdatedAt = DateTime.Now;
         rec.UsedAt = DateTime.UtcNow;
 
         _db.PatientEventLogs.Add(new PatientEventLog { PatientId = p.PatientId, EventType = "LINK_MAGIC_CONFIRMED", ActorUserId = actorUserId, OccurredAt = DateTime.UtcNow });
@@ -381,7 +381,7 @@ public class PatientService : IPatientService
         if (p.UserId.HasValue) return OperationResult.Success();
 
         p.UserId = actorUserId;
-        p.UpdatedAt = DateTime.UtcNow;
+        p.UpdatedAt = DateTime.Now;
         rec.UsedAt = DateTime.UtcNow;
 
         _db.PatientEventLogs.Add(new PatientEventLog { PatientId = p.PatientId, EventType = "LINK_OTP_CONFIRMED", ActorUserId = actorUserId, OccurredAt = DateTime.UtcNow });
