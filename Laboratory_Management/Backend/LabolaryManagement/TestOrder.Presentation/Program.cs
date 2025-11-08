@@ -1,5 +1,4 @@
-﻿
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using TestOrder.Application.Services;
 using TestOrder.Application.Services.Booking;
 using TestOrder.Infrastructure.Base;
@@ -45,17 +44,22 @@ namespace TestOrder.Presentation
 
             var app = builder.Build();
 
+            var isDocker = string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Docker", StringComparison.OrdinalIgnoreCase);
+
             // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
+            if (app.Environment.IsDevelopment() || isDocker)
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
 
-            app.UseHttpsRedirection();
+            // Do not redirect to HTTPS inside container (no dev certs)
+            if (!isDocker)
+            {
+                app.UseHttpsRedirection();
+            }
 
             app.UseAuthorization();
-
 
             app.MapControllers();
 

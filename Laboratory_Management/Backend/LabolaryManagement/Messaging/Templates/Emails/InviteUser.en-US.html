@@ -1,0 +1,27 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Your account has been created</title>
+  <style>
+    body { font-family: Arial, Helvetica, sans-serif; color:#222; }
+    .container { max-width:600px; margin:0 auto; padding:24px; border:1px solid #eee; }
+    .muted { color:#666; font-size:12px; }
+    .box { background:#f7f7f7; padding:12px 16px; border-radius:6px; border:1px solid #e5e5e5; }
+    .code { font-family: Consolas, monospace; font-weight:600; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Your account has been created</h2>
+    <p>Hello {{Username}},</p>
+    <p>An administrator has created an account for you. Here are your initial credentials:</p>
+    <div class="box">
+      <p>Username: <span class="code">{{Username}}</span></p>
+      <p>Temporary password: <span class="code">{{Password}}</span></p>
+    </div>
+    <p>Please sign in and change your password immediately after your first login.</p>
+    <p class="muted">If you did not expect this email, please ignore it.</p>
+  </div>
+</body>
+</html>
