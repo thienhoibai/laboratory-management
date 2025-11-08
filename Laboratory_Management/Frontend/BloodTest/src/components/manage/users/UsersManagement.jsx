@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import AdminLayout from "../../../components/admin/layout/AdminLayout.jsx";
+import AdminLayout from "../../admin/layout/AdminLayout.jsx";
 import {
   FiSearch,
   FiPlus,
@@ -7,8 +7,6 @@ import {
   FiTrash2,
   FiChevronDown,
   FiX,
-  FiEye,
-  FiEyeOff,
   FiAlertTriangle,
   FiLock,
   FiUnlock,
@@ -17,9 +15,9 @@ import { Pagination } from "antd";
 import api from "../../../configs/axios.js";
 import { setAuthToken } from "../../../utils/auth.js";
 import { toast } from "react-toastify";
-const endPoint = "http://localhost:8080/iam/api/Users";
+import "./UsersManagement.css";
 
-// Removed old getRoleClass mapping; using inline color styles per role instead
+const endPoint = "http://localhost:8080/iam/api/Users";
 
 const getRoleStyle = (role) => {
   const name = String(role || "").toLowerCase();
@@ -33,7 +31,7 @@ const getRoleStyle = (role) => {
   return styles[name] || { backgroundColor: "#95a5a6", color: "#fff" };
 };
 
-const UserManagementPage = () => {
+const UsersManagement = () => {
   const breadcrumbs = [
     { name: "Laboratory", link: "#" },
     { name: "Users Management" },
@@ -42,6 +40,8 @@ const UserManagementPage = () => {
   const [users, setUsers] = useState([]);
   const [total, setTotal] = useState(0);
 
+  const [statusLock, setStatusLock] = useState("");
+  const [statusUnlock, setStatusUnlock] = useState("");
   // Filter states
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
@@ -68,7 +68,7 @@ const UserManagementPage = () => {
   const [userToDelete, setUserToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const [lockLoadingId, setLockLoadingId] = useState(null); // loading cho lock/unlock
+  const [lockLoadingId, setLockLoadingId] = useState(null);
 
   const roleMapping = {
     Manager: 2,
@@ -99,7 +99,6 @@ const UserManagementPage = () => {
       if (status)
         params.append("isActive", status === "active" ? "true" : "false");
 
-      // Backend expects lowercase sortBy based on C# code
       if (sortBy) {
         const sortByLower = sortBy.toLowerCase();
         params.append("sortBy", sortByLower);
@@ -115,7 +114,6 @@ const UserManagementPage = () => {
         const usersList = res.data || [];
         const meta = res.meta || {};
 
-        // Log trạng thái status của từng user
         usersList.forEach((u) => {
           console.log(
             `User ${u.fullName || u.username || u.id}: status = ${u.status}`
@@ -131,7 +129,6 @@ const UserManagementPage = () => {
     }
   };
 
-  // Delete handlers
   const openDeleteModal = (user) => {
     setUserToDelete(user);
     setIsDeleteOpen(true);
@@ -190,7 +187,6 @@ const UserManagementPage = () => {
   };
 
   const handleSort = (field) => {
-    // Map frontend field names to backend field names
     const fieldMapping = {
       name: "name",
       role: "role",
@@ -202,10 +198,8 @@ const UserManagementPage = () => {
     const backendField = fieldMapping[field] || field;
 
     if (sortBy.toLowerCase() === backendField) {
-      // Toggle direction if same field
       setSortDir(sortDir === "asc" ? "desc" : "asc");
     } else {
-      // New field, start with asc
       setSortBy(backendField);
       setSortDir("asc");
     }
@@ -233,7 +227,6 @@ const UserManagementPage = () => {
     }
   };
 
-  // Modal handlers
   const handleOpenModal = () => {
     setIsModalOpen(true);
   };
@@ -345,19 +338,16 @@ const UserManagementPage = () => {
       toast.error(errorMessage);
       console.error("Add User failed", { requestData, response: data });
 
-      // Map backend field errors to form fields if available
       if (data?.errors && typeof data.errors === "object") {
         const be = data.errors;
         const next = { ...formErrors };
         const getMsg = (val) => (Array.isArray(val) ? val[0] : val || "");
-        // common keys used by backends: Username, username, Password, password, RoleId, roleId
         if (be.Username || be.username)
           next.username = getMsg(be.Username || be.username);
         if (be.Password || be.password)
           next.password = getMsg(be.Password || be.password);
         if (be.RoleId || be.roleId)
           next.roleId = getMsg(be.RoleId || be.roleId);
-        // generic message fallback
         if (!next.username && !next.password && !next.roleId && errorMessage) {
           next.username = errorMessage;
         }
@@ -368,7 +358,6 @@ const UserManagementPage = () => {
     }
   };
 
-  // Lock/Unlock handlers
   const handleLockUser = async (user) => {
     const id = user?.id ?? user?.userId ?? user?.uuid ?? user?.Id;
     if (!id) {
@@ -380,6 +369,7 @@ const UserManagementPage = () => {
       const response = await api.post(`iam/api/Users/${id}/lock`);
       if (response?.data?.data.status === "locked") {
         toast.success("Tài khoản đã bị khóa!");
+        setStatusLock(response.data.data.status);
       } else {
         toast.info("Thao tác thành công!");
       }
@@ -405,6 +395,7 @@ const UserManagementPage = () => {
       const response = await api.post(`iam/api/Users/${id}/unlock`);
       if (response?.data?.data.status === "unlocked") {
         toast.success("Tài khoản đã được mở khóa!");
+        setStatusUnlock(response.data.data.status);
       } else {
         toast.info("Thao tác thành công!");
       }
@@ -421,10 +412,10 @@ const UserManagementPage = () => {
 
   return (
     <AdminLayout pageTitle="Users Management" breadcrumbs={breadcrumbs}>
-      <div className="admin-content-card">
-        <div className="admin-table-controls">
-          <div className="admin-filters-row">
-            <div className="admin-search-bar">
+      <div className="users-management-content">
+        <div className="users-table-controls">
+          <div className="users-filters-row">
+            <div className="users-search-bar">
               <FiSearch />
               <input
                 type="text"
@@ -434,9 +425,9 @@ const UserManagementPage = () => {
               />
             </div>
 
-            <div className="admin-filter-group">
+            <div className="users-filter-group">
               <select
-                className="admin-filter-select"
+                className="users-filter-select"
                 value={role}
                 onChange={handleRoleChange}
               >
@@ -447,12 +438,12 @@ const UserManagementPage = () => {
                 <option value="Patient">Patient</option>
                 <option value="Customer">Customer</option>
               </select>
-              <FiChevronDown className="admin-select-icon" />
+              <FiChevronDown className="users-select-icon" />
             </div>
 
-            <div className="admin-filter-group">
+            <div className="users-filter-group">
               <select
-                className="admin-filter-select"
+                className="users-filter-select"
                 value={status}
                 onChange={handleStatusChange}
               >
@@ -460,17 +451,17 @@ const UserManagementPage = () => {
                 <option value="active">Hoạt động</option>
                 <option value="inactive">Không hoạt động</option>
               </select>
-              <FiChevronDown className="admin-select-icon" />
+              <FiChevronDown className="users-select-icon" />
             </div>
           </div>
 
-          <button className="admin-add-button" onClick={handleOpenModal}>
+          <button className="users-add-button" onClick={handleOpenModal}>
             <FiPlus /> Add User
           </button>
         </div>
 
-        <div className="admin-table">
-          <div className="admin-table-header">
+        <div className="users-table">
+          <div className="users-table-header">
             <span className="sortable" onClick={() => handleSort("name")}>
               Họ Và Tên{getSortIcon("name")}
             </span>
@@ -482,21 +473,18 @@ const UserManagementPage = () => {
             <span className="sortable" onClick={() => handleSort("createdat")}>
               Ngày Tạo{getSortIcon("createdat")}
             </span>
-            {/* <span className="sortable" onClick={() => handleSort("updatedat")}>
-              Cập Nhật{getSortIcon("updatedat")}
-            </span> */}
             <span className="sortable" onClick={() => handleSort("status")}>
               Trạng Thái{getSortIcon("status")}
             </span>
             <span>Hành Động</span>
           </div>
           {users.map((user, index) => (
-            <div className="admin-table-row" key={index}>
+            <div className="users-table-row" key={index}>
               <span>{user.fullName}</span>
               <span>{user.email}</span>
               <span>
                 <div
-                  className="admin-badge"
+                  className="users-badge"
                   style={getRoleStyle(user.role || user.roles)}
                 >
                   {user.roles}
@@ -504,39 +492,33 @@ const UserManagementPage = () => {
               </span>
               <span>{user.lastLoginAt || "N/A"}</span>
               <span>{new Date(user.createdAt).toLocaleDateString()}</span>
-              {/* <span>
-                {user.updatedAt
-                  ? new Date(user.updatedAt).toLocaleDateString()
-                  : "N/A"}
-              </span> */}
               <span>
                 <div
-                  className={`admin-badge-status ${
+                  className={`users-badge-status ${
                     user.isActive ? "status-active" : "status-inactive"
                   }`}
                 >
                   {user.isActive ? "Hoạt động" : "Không hoạt động"}
                 </div>
               </span>
-              <span className="admin-table-actions">
+              <span className="users-table-actions">
                 <FiEdit2 style={{ cursor: "pointer" }} />
                 <FiTrash2
                   onClick={() => openDeleteModal(user)}
                   style={{ cursor: "pointer" }}
                 />
-                {/* Khóa */}
                 <FiLock
                   title="Khóa tài khoản"
                   style={{
                     cursor:
-                      user.status === "locked" ||
+                      statusLock === "locked" ||
                       lockLoadingId ===
                         (user.id ?? user.userId ?? user.uuid ?? user.Id)
                         ? "not-allowed"
                         : "pointer",
-                    color: user.status === "locked" ? "#bdbdbd" : "#e74c3c",
+                    color: statusLock === "locked" ? "#bdbdbd" : "#e74c3c",
                     filter:
-                      user.status === "locked"
+                      statusLock === "locked"
                         ? "grayscale(60%) brightness(0.8)"
                         : "drop-shadow(0 0 4px #e74c3c)",
                     opacity:
@@ -547,24 +529,23 @@ const UserManagementPage = () => {
                     transition: "filter 0.2s, color 0.2s",
                   }}
                   onClick={() =>
-                    user.status === "locked" || lockLoadingId
+                    statusLock === "locked" || lockLoadingId
                       ? null
                       : handleLockUser(user)
                   }
                 />
-                {/* Mở khóa */}
                 <FiUnlock
                   title="Mở khóa tài khoản"
                   style={{
                     cursor:
-                      user.status === "unlocked" ||
+                      statusUnlock === "unlocked" ||
                       lockLoadingId ===
                         (user.id ?? user.userId ?? user.uuid ?? user.Id)
                         ? "not-allowed"
                         : "pointer",
-                    color: user.status === "unlocked" ? "#bdbdbd" : "#198754",
+                    color: statusUnlock === "unlocked" ? "#bdbdbd" : "#198754",
                     filter:
-                      user.status === "unlocked"
+                      statusUnlock === "unlocked"
                         ? "grayscale(60%) brightness(0.8)"
                         : "drop-shadow(0 0 4px #198754)",
                     opacity:
@@ -575,7 +556,7 @@ const UserManagementPage = () => {
                     transition: "filter 0.2s, color 0.2s",
                   }}
                   onClick={() =>
-                    user.status === "unlocked" || lockLoadingId
+                    statusUnlock === "unlocked" || lockLoadingId
                       ? null
                       : handleUnlockUser(user)
                   }
@@ -586,12 +567,12 @@ const UserManagementPage = () => {
         </div>
 
         {users.length === 0 && (
-          <div className="admin-no-data">
+          <div className="users-no-data">
             <p>Không tìm thấy người dùng nào</p>
           </div>
         )}
 
-        <div className="admin-pagination">
+        <div className="users-pagination">
           <Pagination
             current={page}
             pageSize={pageSize}
@@ -623,17 +604,23 @@ const UserManagementPage = () => {
 
       {/* Add User Modal */}
       {isModalOpen && (
-        <div className="modal-overlay" onClick={handleCloseModal}>
-          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+        <div className="users-modal-overlay" onClick={handleCloseModal}>
+          <div
+            className="users-modal-container"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="users-modal-header">
               <h2>Thêm Tài Khoản Mới</h2>
-              <button className="modal-close-btn" onClick={handleCloseModal}>
+              <button
+                className="users-modal-close-btn"
+                onClick={handleCloseModal}
+              >
                 <FiX />
               </button>
             </div>
 
-            <form onSubmit={handleSubmitUser} className="modal-form">
-              <div className="form-group">
+            <form onSubmit={handleSubmitUser} className="users-modal-form">
+              <div className="users-form-group">
                 <label htmlFor="username">
                   Tên Đăng Nhập <span className="required">*</span>
                 </label>
@@ -651,7 +638,7 @@ const UserManagementPage = () => {
                 )}
               </div>
 
-              <div className="form-group">
+              <div className="users-form-group">
                 <label htmlFor="password">
                   Mật Khẩu <span className="required">*</span>
                 </label>
@@ -669,7 +656,7 @@ const UserManagementPage = () => {
                 )}
               </div>
 
-              <div className="form-group">
+              <div className="users-form-group">
                 <label htmlFor="confirmPassword">
                   Xác Nhận Mật Khẩu <span className="required">*</span>
                 </label>
@@ -689,7 +676,7 @@ const UserManagementPage = () => {
                 )}
               </div>
 
-              <div className="form-group">
+              <div className="users-form-group">
                 <label htmlFor="roleId">
                   Vai Trò <span className="required">*</span>
                 </label>
@@ -712,7 +699,7 @@ const UserManagementPage = () => {
                 )}
               </div>
 
-              <div className="modal-actions">
+              <div className="users-modal-actions">
                 <button
                   type="button"
                   className="btn-cancel"
@@ -736,21 +723,30 @@ const UserManagementPage = () => {
 
       {/* Delete Confirm Modal */}
       {isDeleteOpen && (
-        <div className="modal-overlay" onClick={closeDeleteModal}>
-          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+        <div className="users-modal-overlay" onClick={closeDeleteModal}>
+          <div
+            className="users-modal-container"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div
-              className="modal-header"
+              className="users-modal-header"
               style={{ padding: "16px 20px", borderBottom: "1px solid #eee" }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <FiAlertTriangle style={{ color: "#e74c3c" }} />
                 <h2 style={{ margin: 0 }}>Xác nhận xóa người dùng</h2>
               </div>
-              <button className="modal-close-btn" onClick={closeDeleteModal}>
+              <button
+                className="users-modal-close-btn"
+                onClick={closeDeleteModal}
+              >
                 <FiX />
               </button>
             </div>
-            <div className="modal-content" style={{ padding: "16px 20px" }}>
+            <div
+              className="users-modal-content"
+              style={{ padding: "16px 20px" }}
+            >
               <p style={{ marginTop: 4, marginBottom: 0, lineHeight: 1.5 }}>
                 Bạn có chắc chắn muốn xóa người dùng{" "}
                 <strong>
@@ -760,7 +756,7 @@ const UserManagementPage = () => {
               </p>
             </div>
             <div
-              className="modal-actions"
+              className="users-modal-actions"
               style={{
                 display: "flex",
                 gap: 8,
@@ -794,4 +790,4 @@ const UserManagementPage = () => {
   );
 };
 
-export default UserManagementPage;
+export default UsersManagement;

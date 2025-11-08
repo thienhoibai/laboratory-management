@@ -334,8 +334,6 @@ function CreateProfile() {
           </div>
         </div>
       )}
-
-      <Footer />
     </div>
   );
 }
