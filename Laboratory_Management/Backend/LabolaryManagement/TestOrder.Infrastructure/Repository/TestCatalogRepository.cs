@@ -12,6 +12,25 @@ namespace TestOrder.Infrastructure.Repository
         public TestCatalogRepository(Data.TestOrderDBContext context) : base(context)
         {
         }
+        public async Task<(IEnumerable<TestCatalog> items, int totalItems)> GetAllPagedAsync(int page, int pageSize,string? search = null)
+        {
+            var query = _context.TestCatalogs.AsQueryable();
+
+            if (!string.IsNullOrEmpty(search))
+            {
+                query = query.Where(c => c.TestName.Contains(search));
+            }
+
+            var totalItems = await query.CountAsync();
+
+            var items = await query
+                .OrderBy(x => x.TestName)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (items, totalItems);
+        }
 
         public async Task<IEnumerable<TestCatalog>> GetActiveCataLogAsync()
         {

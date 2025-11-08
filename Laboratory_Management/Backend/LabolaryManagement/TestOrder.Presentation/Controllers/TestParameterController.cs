@@ -18,11 +18,15 @@ namespace TestOrder.Presentation.Controllers
             _service = service;
         }
         [HttpGet]
-        public async Task<IActionResult> GetAllParametersAsync()
+        public async Task<IActionResult> GetAllParametersAsync(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 2,
+            [FromQuery] string? search = null)
         {
-            var parameters = await _service.GetAllParametersAsync();
-            return Ok(parameters);
+            var result = await _service.GetAllParameterAsync(page, pageSize,search);
+            return Ok(result);
         }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetByIdAsync(int id)
         {

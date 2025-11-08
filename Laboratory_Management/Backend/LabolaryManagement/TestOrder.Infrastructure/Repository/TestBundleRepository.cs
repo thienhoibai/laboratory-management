@@ -13,12 +13,23 @@ namespace TestOrder.Infrastructure.Repository
         {
         }
 
-        public async Task<IEnumerable<TestBundle>> GetActiveBundlesAsync()
+        public async Task<(IEnumerable<TestBundle> items, int totalItems)> GetAllPagedAsync(int page, int pageSize,string ? search = null)
         {
-            return await _context.Set<TestBundle>()
-                .Where(b => b.Price > 0)
-                .OrderBy(b => b.BundleName)
+            var query = _context.TestBundles.AsQueryable();
+            if (!string.IsNullOrEmpty(search))
+            {
+                query = query.Where(c => c.BundleName.Contains(search));
+            }
+
+            var totalItems = await query.CountAsync();
+
+            var items = await query
+                .OrderBy(x => x.BundleName)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
+
+            return (items, totalItems);
         }
 
         public async Task UpdateBundleAsync(int id, string name, string description, double price)

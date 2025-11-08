@@ -15,9 +15,20 @@ namespace TestOrder.Application.Services
             _repository = repository;
         }
 
-        public async Task<IEnumerable<TestParameter>> GetAllParametersAsync()
+
+        public async Task<object> GetAllParameterAsync(int page = 1, int pageSize = 10, string? search = null)
         {
-            return await _repository.GetAllParametersAsync();
+            var (items, totalItems) = await _repository.GetAllPagedAsync(page, pageSize, search);
+
+            return new
+            {
+                totalItems,
+                page,
+                pageSize,
+                totalPages = (int)Math.Ceiling(totalItems / (double)pageSize),
+                items
+            };
+        
         }
 
         public async Task<TestParameter> GetByIdAsync(int id)
