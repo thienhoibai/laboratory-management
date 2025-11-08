@@ -32,6 +32,7 @@ namespace IAM.Infrastructure
                 b.Property(x => x.PasswordHash).IsRequired().HasMaxLength(255);
                 b.Property(x => x.FullName).HasMaxLength(128);
                 b.Property(x => x.IsActive).HasDefaultValue(true);
+                b.Property(x => x.IsLocked).HasDefaultValue(false); // map cột IsLocked
                 b.Property(x => x.LastLoginAt);
                 b.Property(x => x.CreatedAt);
                 b.Property(x => x.UpdatedAt);
