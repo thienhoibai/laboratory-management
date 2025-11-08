@@ -18,6 +18,8 @@ public partial class TestOrderDBContext : DbContext
 
     public virtual DbSet<AppointmentSlot> AppointmentSlots { get; set; }
 
+    public virtual DbSet<AuditLog> AuditLogs { get; set; }
+
     public virtual DbSet<Booking> Bookings { get; set; }
 
     public virtual DbSet<BookingTest> BookingTests { get; set; }
@@ -40,6 +42,9 @@ public partial class TestOrderDBContext : DbContext
 
     public virtual DbSet<TimeBlock> TimeBlocks { get; set; }
 
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseSqlServer("server=LAPTOP-SHE2A3S2\\SQLEXPRESS;database=TestOrderDB;uid=sa;pwd=12345;TrustServerCertificate=True;");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -58,6 +63,16 @@ public partial class TestOrderDBContext : DbContext
                 .HasForeignKey(d => d.TimeBlockId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Appointme__TimeB__4F7CD00D");
+        });
+
+        modelBuilder.Entity<AuditLog>(entity =>
+        {
+            entity.HasKey(e => e.AuditLogId).HasName("PK__AuditLog__EB5F6CBD2DA0B57C");
+
+            entity.ToTable("AuditLog");
+
+            entity.Property(e => e.AuditLogId).ValueGeneratedNever();
+            entity.Property(e => e.Action).HasMaxLength(255);
         });
 
         modelBuilder.Entity<Booking>(entity =>
@@ -142,7 +157,6 @@ public partial class TestOrderDBContext : DbContext
                 .HasColumnType("datetime");
             entity.Property(e => e.Method).HasMaxLength(50);
             entity.Property(e => e.PaidAt).HasColumnType("datetime");
-            entity.Property(e => e.Status).HasMaxLength(50);
             entity.Property(e => e.Token).HasMaxLength(100);
 
             entity.HasOne(d => d.Booking).WithMany(p => p.PaymentEnvoices)
