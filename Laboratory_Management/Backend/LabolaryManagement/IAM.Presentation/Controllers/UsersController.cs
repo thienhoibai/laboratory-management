@@ -63,6 +63,16 @@ namespace IAM.Presentation.Controllers
             return CreatedAtAction(nameof(Get), new { id = res.Data!.UserId }, res.Data);
         }
 
+        [HttpPut("{id}")]
+        [Authorize(Policy = "perm:User.Update")]
+        public async Task<ActionResult<UserDetailDto>> Update(Guid id, [FromBody] UpdateUserRequest request, CancellationToken ct)
+        {
+            var actorId = GetActorId(User);
+            var res = await _users.UpdateAsync(id, request, actorId, ct);
+            if (!res.Succeeded) throw new ApiException(res.Error ?? ErrorCodes.ValidationError);
+            return Ok(res.Data);
+        }
+
         [HttpDelete("{id}")]
         [Authorize(Policy = "perm:User.Delete")]
         public async Task<IActionResult> Delete(Guid id, CancellationToken ct)

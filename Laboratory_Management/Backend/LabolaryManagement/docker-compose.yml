@@ -99,3 +99,18 @@
       rabbitmq:
         condition: service_healthy
     ports: ["5601:5601"]
+
+  testorder.api:
+    build:
+      context: .
+      dockerfile: testorder.Dockerfile
+    container_name: testorder.api
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Docker"
+      ConnectionStrings__DefaultConnection: "Server=host.docker.internal,1433;Database=TestOder;User Id=sa;Password=12345;TrustServerCertificate=True;Encrypt=False"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    ports: ["5003:5003"]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

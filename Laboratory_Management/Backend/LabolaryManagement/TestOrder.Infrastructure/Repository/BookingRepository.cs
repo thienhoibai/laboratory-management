@@ -18,17 +18,19 @@ namespace TestOrder.Infrastructure.Repository
         {
         }
 
-        public async Task<IEnumerable<Booking>?> GetBookingsByPatientIdAsync(long patientId)
+        public async Task<IEnumerable<Booking>?> GetBookingsByPatientIdAsync(Guid patientId, int pageNumber, int pageSize)
         {
             return await _context.Set<Booking>()
                 .Where(b => b.PatientId == patientId)
+                .Skip((pageNumber - 1)* pageSize)
+                .Take(pageSize)
                 .ToListAsync();
         }
 
         public async Task<string?> GetLastBookingCodeAsync()
         {
             var lastBooking = await Task.Run(() => _context.Set<Booking>()
-                .OrderByDescending(b => b.CreateDate)
+                .OrderDescending()
                 .FirstOrDefault());
             return lastBooking?.BookingCode;
         }
