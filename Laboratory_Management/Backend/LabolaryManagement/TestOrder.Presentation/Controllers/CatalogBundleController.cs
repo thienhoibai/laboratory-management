@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using TestOrder.Application.DTOs;
 using TestOrder.Application.Services;
+using TestOrder.Infrastructure.Repository;
 
 namespace TestOrder.API.Controllers
 {
@@ -17,10 +18,19 @@ namespace TestOrder.API.Controllers
             _service = service;
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
+        {
+            var result = await _service.GetAllAsync();
+            return Ok(result);
+        }
+
         [HttpGet("{bundleId}")]
         public async Task<IActionResult> GetCatalogsByBundle(int bundleId)
         {
             var result = await _service.GetCatalogsByBundleAsync(bundleId);
+            if (result == null)
+                return NotFound();
             return Ok(result);
         }
 
