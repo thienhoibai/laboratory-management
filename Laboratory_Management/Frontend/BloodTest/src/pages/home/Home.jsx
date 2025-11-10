@@ -6,6 +6,7 @@ import EquipmentSection from "../../components/home/EquipmentSection";
 import BlogSection from "../../components/home/BlogSection";
 import CallToActionSection from "../../components/home/CallToActionSection";
 import Footer from "../../components/footer/Footer";
+import "./Home.css";
 // import "./HomeAnimation.css";
 
 function Home() {
@@ -35,7 +36,7 @@ function Home() {
       <section id="services" className="section-animate">
         <ServiceSection />
       </section>
-      <section id="doctors" className="section-animate">
+      <section id="equipments" className="section-animate">
         <EquipmentSection />
       </section>
       <section id="blog" className="section-animate">

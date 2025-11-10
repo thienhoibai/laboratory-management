@@ -7,7 +7,7 @@ public partial class BookingTest
 {
     public long TestBookingNo { get; set; }
 
-    public long? BookingId { get; set; }
+    public Guid? BookingId { get; set; }
 
     public int? CatalogId { get; set; }
 

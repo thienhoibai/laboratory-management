@@ -1,9 +1,15 @@
 .cta-section-bg {
-  background: radial-gradient(ellipse at center, #e6f0ff 0%, #f0f7ff 50%, #ffffff 100%);
+  background: radial-gradient(
+    ellipse at center,
+    #e6f0ff 0%,
+    #f0f7ff 50%,
+    #ffffff 100%
+  );
   padding: 48px 0 0 0;
   min-height: 400px;
   display: flex;
   align-items: center;
+  margin-bottom: 20px;
 }
 .cta-section-content {
   width: calc(100vw - 48px);
@@ -14,11 +20,14 @@
   align-items: center;
   justify-content: space-between;
   border-radius: 24px;
-  box-shadow: 0 8px 32px rgba(59,130,246,0.12);
+  box-shadow: 0 8px 32px rgba(59, 130, 246, 0.12);
   background: #ffffff;
   padding: 48px 40px;
   position: relative;
   overflow: hidden;
+  opacity: 0;
+  transform: translateY(30px);
+  animation: fadeInUp 0.8s ease-out forwards;
 }
 .cta-left {
   flex: 1;
@@ -33,8 +42,8 @@
   font-size: 1.1rem;
   color: #4b5563;
   margin-bottom: 28px;
-  font-weight: 500; 
-  font-family: 'Geist', 'Inter', Arial, sans-serif;
+  font-weight: 500;
+  font-family: "Geist", "Inter", Arial, sans-serif;
 }
 .cta-btns {
   display: flex;
@@ -51,7 +60,7 @@
   font-size: 1rem;
   cursor: pointer;
   transition: all 0.2s;
-  font-family: 'Geist', 'Inter', Arial, sans-serif;
+  font-family: "Geist", "Inter", Arial, sans-serif;
   text-decoration: none;
   display: inline-flex;
   align-items: center;
@@ -60,8 +69,8 @@
 }
 .cta-btn-primary:hover {
   background: #1d4ed8;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35);
+  color: #000000;
 }
 
 .cta-btn-icon {
@@ -79,12 +88,13 @@
   font-size: 1rem;
   cursor: pointer;
   transition: all 0.2s;
-  font-family: 'Geist', 'Inter', Arial, sans-serif;
+  font-family: "Geist", "Inter", Arial, sans-serif;
 }
 .cta-btn-outline:hover {
   background: #f9fafb;
   border-color: #d1d5db;
   transform: translateY(-1px);
+  color: #000000;
 }
 .cta-right {
   flex: 1;
@@ -108,10 +118,29 @@
   min-width: 160px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   transition: all 0.3s ease;
+  opacity: 0;
+  transform: scale(0.95);
+  animation: scaleIn 0.5s ease-out forwards;
+}
+
+.cta-card:nth-child(1) {
+  animation-delay: 0.2s;
+}
+
+.cta-card:nth-child(2) {
+  animation-delay: 0.3s;
+}
+
+.cta-card:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+.cta-card:nth-child(4) {
+  animation-delay: 0.5s;
 }
 .cta-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 28px rgba(59,130,246,0.15);
+  transform: translateY(-4px) scale(1) !important;
+  box-shadow: 0 12px 28px rgba(59, 130, 246, 0.15);
   border-color: #dbeafe;
 }
 .cta-card-icon {
@@ -126,40 +155,62 @@
   font-weight: 700;
   font-size: 1.15rem;
   color: #22223b;
-  font-family: 'Geist', 'Inter', Arial, sans-serif;
+  font-family: "Geist", "Inter", Arial, sans-serif;
 }
 .cta-card-desc {
   color: #6b7280;
   font-size: 1rem;
-  font-family: 'Geist', 'Inter', Arial, sans-serif;
+  font-family: "Geist", "Inter", Arial, sans-serif;
 }
 @media (max-width: 900px) {
   .cta-section-bg {
     padding: 24px 0;
     min-height: auto;
   }
-  
+
   .cta-section-content {
     flex-direction: column;
     gap: 32px;
     padding: 32px 24px;
     width: calc(100vw - 32px);
   }
-  
+
   .cta-grid {
     grid-template-columns: 1fr 1fr;
     gap: 16px;
     padding-right: 0;
   }
-  
+
   .cta-card {
     min-width: auto;
     padding: 16px 20px;
   }
 }
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 @media (max-width: 600px) {
   .cta-grid {
     grid-template-columns: 1fr;
-    font-family: 'Geist', 'Inter', Arial, sans-serif;
+    font-family: "Geist", "Inter", Arial, sans-serif;
   }
 }

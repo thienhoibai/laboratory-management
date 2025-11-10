@@ -1,6 +1,6 @@
-
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using TestOrder.Application.Services;
+using TestOrder.Application.Services.Booking;
 using TestOrder.Infrastructure.Base;
 using TestOrder.Infrastructure.Data;
 using TestOrder.Infrastructure.Repository;
@@ -29,26 +29,72 @@ namespace TestOrder.Presentation
             builder.Services.AddScoped<TestParameterService>();
             builder.Services.AddScoped<CatalogBundleRepository>();
             builder.Services.AddScoped<CatalogBundleService>();
-            builder.Services.AddScoped<CatalogParameterService>();
-            builder.Services.AddScoped<CatalogParameterRepository>();
             builder.Services.AddScoped<AppointmentSlotRepository>();
             builder.Services.AddScoped<AppointmentSlotService>();
+            builder.Services.AddScoped<BookingRepository>();
+            builder.Services.AddScoped<BookingService>();
+            builder.Services.AddScoped<BookingTestService>();
+            builder.Services.AddScoped<BookingTestRepository>();
+            builder.Services.AddScoped<TimeBlockRepository>();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+            builder.Services.AddControllers()
+    .AddJsonOptions(x =>
+        x.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
+
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowFrontend", policy =>
+                {
+                    policy
+                        .WithOrigins(
+                            "http://localhost:5174",
+                            "http://127.0.0.1:5174"
+                        )
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .AllowCredentials();
+                });
+            });
+
+
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowFrontend", policy =>
+                {
+                    policy
+                        .WithOrigins(
+                            "http://localhost:5174",
+                            "http://127.0.0.1:5174"
+                        )
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .AllowCredentials();
+                });
+            });
+
 
             var app = builder.Build();
 
+            var isDocker = string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Docker", StringComparison.OrdinalIgnoreCase);
+
             // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
+            if (app.Environment.IsDevelopment() || isDocker)
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
 
-            app.UseHttpsRedirection();
 
+            // Do not redirect to HTTPS inside container (no dev certs)
+            if (!isDocker)
+            {
+                app.UseHttpsRedirection();
+            }
+            app.UseRouting();
+
+            app.UseCors("AllowFrontend");
             app.UseAuthorization();
-
 
             app.MapControllers();
 

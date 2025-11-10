@@ -2,11 +2,13 @@
 using System.Threading.Tasks;
 using TestOrder.Application.DTOs;
 using TestOrder.Application.Services;
+using TestOrder.Infrastructure.Repository;
 
 namespace TestOrder.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Tags("Danh mục gói xét nghiệm")]
     public class CatalogBundleController : ControllerBase
     {
         private readonly CatalogBundleService _service;
@@ -16,10 +18,19 @@ namespace TestOrder.API.Controllers
             _service = service;
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
+        {
+            var result = await _service.GetAllAsync();
+            return Ok(result);
+        }
+
         [HttpGet("{bundleId}")]
         public async Task<IActionResult> GetCatalogsByBundle(int bundleId)
         {
             var result = await _service.GetCatalogsByBundleAsync(bundleId);
+            if (result == null)
+                return NotFound();
             return Ok(result);
         }
 
@@ -30,8 +41,8 @@ namespace TestOrder.API.Controllers
             return Ok("Catalog added to bundle successfully");
         }
 
-        [HttpDelete("{bundleId}/{catalogId}")]
-        public async Task<IActionResult> RemoveCatalogFromBundle(int bundleId, int catalogId)
+        [HttpDelete("{bundleId}")]
+        public async Task<IActionResult> RemoveCatalogFromBundle(int bundleId, List<int> catalogId)
         {
             await _service.RemoveCatalogFromBundleAsync(bundleId, catalogId);
             return Ok("Catalog removed from bundle successfully");

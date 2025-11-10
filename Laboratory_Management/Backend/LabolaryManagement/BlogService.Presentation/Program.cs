@@ -1,0 +1,54 @@
+﻿using BlogService.Infrastructure.Data;
+using BlogService.Infrastructure.Repository;
+using Microsoft.EntityFrameworkCore;
+using BlogService.Application.Services;
+
+namespace BlogService.Presentation
+{
+    public class Program
+    {
+        public static void Main(string[] args)
+        {
+            var builder = WebApplication.CreateBuilder(args);
+
+            // Add services to the container.
+
+            builder.Services.AddControllers();
+            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+            builder.Services.AddDbContext<DBContext>(options =>
+            options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+            // Dependency Injection for Repositories and Services
+            builder.Services.AddScoped<TagRepository>();
+            builder.Services.AddScoped<TagService>();
+            builder.Services.AddScoped<BlogPostService>();
+            builder.Services.AddScoped<CategoryService>();
+            builder.Services.AddScoped<BlogPostRepository>();
+            builder.Services.AddScoped<CategoryRepository>();
+            builder.Services.AddScoped<BlogTagService>();
+            builder.Services.AddScoped<BlogPostTagRepository>();
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen();
+
+            
+
+            var app = builder.Build();
+
+            // Configure the HTTP request pipeline.
+            if (app.Environment.IsDevelopment())
+            {
+                app.UseSwagger();
+                app.UseSwaggerUI();
+            }
+
+            app.UseHttpsRedirection();
+
+            app.UseAuthorization();
+
+
+            app.MapControllers();
+
+            app.Run();
+        }
+    }
+}

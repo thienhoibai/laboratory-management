@@ -20,6 +20,8 @@ using Contracts.Notifications;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using RabbitMQ.Client;
+using IAM.Application.Roles;
+using IAM.Application.Permissions;
 
 AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 var builder = WebApplication.CreateBuilder(args);
@@ -45,6 +47,9 @@ builder.Services.AddSingleton<IPasswordPolicy, PasswordPolicy>();
 builder.Services.AddSingleton<IPasswordService, PasswordService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IRoleService, RoleService>();
+builder.Services.AddScoped<IRolePermissionService, RolePermissionService>();
+builder.Services.AddScoped<IPermissionQuery, PermissionQuery>();
 
 // Notifications via MassTransit -> RabbitMQ (no Outbox)
 builder.Services.AddScoped<INotificationPublisher, MassTransitNotificationPublisher>();
@@ -77,14 +82,14 @@ builder.Services.AddDbContext<IamDbContext>(opt =>
     opt.UseSqlServer(conn, sql =>
     {
         sql.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(10), errorNumbersToAdd: null);
-        sql.CommandTimeout(30);
+        sql.CommandTimeout(180); // increase for migrations
     });
 });
 
 // AuthN & AuthZ
 var issuer = builder.Configuration["Jwt:Issuer"] ?? "lab-iam";
 var audience = builder.Configuration["Jwt:Audience"] ?? "lab-services";
-var signingKey = builder.Configuration["Jwt:SigningKey"] ?? "DevSecretKey_MustBe_AtLeast_32Chars!!!";
+var signingKey = builder.Configuration["Jwt:SigningKey"] ?? "DevSecretKey_MustBe_At_Least_32Chars!!!";
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(o =>
@@ -107,7 +112,9 @@ builder.Services.AddAuthorization(options =>
     // Register explicit permission policies expected by controllers
     string[] perms = new[]
     {
-        "User.List","User.View","User.Create","User.Delete","User.Update","Role.Update"
+        "User.List","User.View","User.Create","User.Delete","User.Update",
+        "Role.Update","Role.Create","Role.Delete",
+        "User.Manage" // for RBAC admin
     };
     foreach (var p in perms)
     {
@@ -143,14 +150,26 @@ var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
     var db = scope.ServiceProvider.GetRequiredService<IamDbContext>();
-    db.Database.Migrate();
+    db.Database.SetCommandTimeout(TimeSpan.FromMinutes(5));
+    try
+    {
+        db.Database.Migrate();
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Database migration failed. Connection: {Conn}", conn);
+        throw; // fail fast; if you want to continue in dev, replace with EnsureCreated
+        // db.Database.EnsureCreated();
+    }
 }
 
 app.UseMiddleware<ProblemDetailsMiddleware>();
-app.UseSwagger();
-app.UseSwaggerUI();
+app.UseRouting();
 app.UseCors("AllowFrontend");
+app.UseSwagger();
+app.UseSwaggerUI()  ;
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

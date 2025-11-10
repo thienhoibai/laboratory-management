@@ -18,28 +18,8 @@ function DateTimeSelection({ onBack, onContinue }) {
     return arr;
   }, []);
 
-  const morningSlots = [
-    "07:00",
-    "07:30",
-    "08:00",
-    "08:30",
-    "09:00",
-    "09:30",
-    "10:00",
-    "10:30",
-    "11:00",
-  ];
-  const afternoonSlots = [
-    "13:00",
-    "13:30",
-    "14:00",
-    "14:30",
-    "15:00",
-    "15:30",
-    "16:00",
-    "16:30",
-    "17:00",
-  ];
+  const morningSlots = ["07:00", "08:00", "09:00", "10:00", "11:00"];
+  const afternoonSlots = ["13:00", "14:00", "15:00", "16:00", "12:00"];
 
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);

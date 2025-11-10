@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using TestOrder.Infrastructure.Repository;
 using TestOrder.Infrastructure.Models;
 using TestOrder.Application.DTOs.AppointmentSlots;
+using System.ComponentModel;
 namespace TestOrder.Application.Services
 {
     public class AppointmentSlotService
@@ -13,10 +14,12 @@ namespace TestOrder.Application.Services
         private readonly AppointmentSlotRepository _repository;
         private readonly TimeBlockRepository _timeBlockRepository;
 
-        public AppointmentSlotService(AppointmentSlotRepository repository)
+        public AppointmentSlotService(
+            AppointmentSlotRepository repository,
+            TimeBlockRepository timeBlockRepository)
         {
             _repository = repository;
-            _timeBlockRepository = new TimeBlockRepository();
+            _timeBlockRepository = timeBlockRepository;
         }
 
         public async Task<IEnumerable<AppointmentSlot>> GetAllAppointmentSlot(int pageNumber)
@@ -29,24 +32,97 @@ namespace TestOrder.Application.Services
             return await _repository.GetByDateAsync(appointmentDate);
         }
 
-        public async Task AddAppointmentSlotAsync(AppointmentSlotDTO appointmentSlot)
+        public async Task<AppointmentSlot> GetAppointmentSlotByIdAsync(Guid appointmentSlotId)
         {
-            var timeBlock = await _timeBlockRepository.GetByTime(appointmentSlot.TimeBlock);
-            if (timeBlock == null)
+            return await _repository.GetByIdAsync(appointmentSlotId);
+        }
+
+        public async Task<AppointmentSlotDTO> GetAppointmentSlotInfo (Guid slotId)
+        {
+            var slotEntity = await _repository.GetByIdAsync(slotId);
+            if (slotEntity == null)
+            {
+                throw new Exception("Appointment Slot not found");
+            }
+            var timeBlockEntity = await _timeBlockRepository.GetByIdAsync(slotEntity.TimeBlockId);
+            return new AppointmentSlotDTO
+            {
+                AppointmentDate = slotEntity.AppointmentDate,
+                TimeBlock = timeBlockEntity.TimeBlock1
+            };
+        }
+
+        public async Task<AppointmentSlot> GetAppointmentSlotByDateAndTimeAsync(DateOnly appointmentDate, TimeOnly timeBlock)
+        {
+            var timeBlockEntity = await _timeBlockRepository.GetByTime(timeBlock);
+            if (timeBlockEntity == null)
             {
                 throw new Exception("Invalid Time Block");
             }
+            return await _repository.GetByDateAndTimeAsync(appointmentDate, timeBlockEntity.TimeBlockId);
+        }
 
-            var existingSlot = await _repository.GetByDateAndTimeAsync(appointmentSlot.AppointmentDate, timeBlock.TimeBlockId);
-            if (existingSlot != null)
+        public bool IsAppointmentSlotMaxedOut(AppointmentSlotDTO appointmentSlot)
+        {
+            var timeBlockEntity = _timeBlockRepository.GetByTime(appointmentSlot.TimeBlock).Result;
+            var existingSlot = _repository.GetByDateAndTimeAsync(appointmentSlot.AppointmentDate, timeBlockEntity.TimeBlockId).Result;
+
+            var bookingsCount = _repository.GetBookingsCountForSlot(existingSlot.SlotId).Result;
+            return bookingsCount >= existingSlot.MaxBooking;
+        }
+
+        public List<bool> CheckAvailabilityForMultipleSlotsAsync(List<AppointmentSlotDTO> appointmentSlots)
+        {
+            var availabilityResults = new List<bool>();
+            foreach (var slot in appointmentSlots)
             {
-                throw new Exception("Appointment Slot already exists for the given date and time block.");
+                var isMaxedOut = IsAppointmentSlotMaxedOut(slot);
+                availabilityResults.Add(!isMaxedOut);
             }
+            return  availabilityResults;
+        }
+
+        public async Task<int> GetBookingsCountForSlotAsync(Guid slotId)
+        {
+            return await _repository.GetBookingsCountForSlot(slotId);
+        }
+
+        public async Task<List<int>> GetBookingsCountForMultipleSlotsAsync(List<Guid> slotIds)
+        {
+            var bookingsCounts = new List<int>();
+            foreach (var slotId in slotIds)
+            {
+                var count = await _repository.GetBookingsCountForSlot(slotId);
+                bookingsCounts.Add(count);
+            }
+            return bookingsCounts;
+        }
+
+
+        public bool IsAppointmentsDateValid(DateOnly appointmentDate)
+        {
+            return appointmentDate > DateOnly.FromDateTime(DateTime.Now);
+        }
+        public bool IsAppointmentSlotExists(DateOnly appointmentDate, TimeOnly timeBlock)
+        {
+            var timeBlockEntity = _timeBlockRepository.GetByTime(timeBlock).Result;
+            if (timeBlockEntity == null)
+            {
+                throw new Exception("Invalid Time Block");
+            }
+            var existingSlot = _repository.GetByDateAndTimeAsync(appointmentDate, timeBlockEntity.TimeBlockId).Result;
+            return existingSlot != null;
+        }
+
+        public async Task AddAppointmentSlotAsync(AppointmentSlotDTO appointmentSlot)
+        {
+            var timeBlockEntity = await _timeBlockRepository.GetByTime(appointmentSlot.TimeBlock);
 
             var entity = new AppointmentSlot
             {
+                SlotId = Guid.NewGuid(),
                 AppointmentDate = appointmentSlot.AppointmentDate,
-                TimeBlockId = timeBlock.TimeBlockId,
+                TimeBlockId = timeBlockEntity.TimeBlockId,
             };
             await _repository.AddAsync(entity);
         }

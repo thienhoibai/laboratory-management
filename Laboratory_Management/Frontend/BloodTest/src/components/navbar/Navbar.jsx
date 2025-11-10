@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { getUserData, logoutUser } from "../../utils/auth";
 // import api from "../../configs/axios";
 import "./Navbar.css";
 import api from "../../configs/axios";
 import { setAuthToken } from "../../utils/auth";
+// import { usePermission } from "../../utils/permission";
 
 function Navbar() {
+  // const { can } = usePermission();
+
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const userData = getUserData();
@@ -40,10 +44,64 @@ function Navbar() {
     }
   };
 
+  const handleNavClick = (e, sectionId) => {
+    e.preventDefault();
+
+    // Nếu đang ở trang chủ, scroll đến section
+    if (location.pathname === "/") {
+      const element = document.getElementById(sectionId);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    } else {
+      // Nếu không ở trang chủ, điều hướng về trang chủ với hash
+      navigate(`/#${sectionId}`, { replace: false });
+      // Sau khi navigate, scroll đến section
+      setTimeout(() => {
+        const element = document.getElementById(sectionId);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 100);
+    }
+  };
+
+  const handleLogoClick = (e) => {
+    e.preventDefault();
+    navigate("/");
+    // Scroll to top when going to home
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }, 100);
+  };
+
+  // Handle scroll to section when navigating from another page with hash
+  useEffect(() => {
+    if (location.pathname === "/" && location.hash) {
+      const sectionId = location.hash.substring(1);
+      setTimeout(() => {
+        const element = document.getElementById(sectionId);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 100);
+    }
+  }, [location]);
+
   return (
     <header className="navbar">
       <div className="navbar-inner">
-        <div className="navbar-logo">
+        <Link
+          to="/"
+          className="navbar-logo"
+          onClick={handleLogoClick}
+          style={{
+            textDecoration: "none",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+          }}
+        >
           <span className="navbar-logo-icon">
             <img
               src="/logo.png"
@@ -52,14 +110,27 @@ function Navbar() {
             />
           </span>
           <span className="navbar-logo-text">HemaLink</span>
-        </div>
+        </Link>
         <nav className="navbar-menu">
-          <a href="#hero" className="active">
+          <a
+            href="#hero"
+            className={location.pathname === "/" ? "active" : ""}
+            onClick={(e) => handleNavClick(e, "hero")}
+          >
             Trang chủ
           </a>
-          <a href="#services">Dịch vụ</a>
-          <a href="#equipments">Thiết bị</a>
-          <a href="#blog">Blog</a>
+          <a href="#services" onClick={(e) => handleNavClick(e, "services")}>
+            Dịch vụ
+          </a>
+          <a
+            href="#equipments"
+            onClick={(e) => handleNavClick(e, "equipments")}
+          >
+            Thiết bị
+          </a>
+          <a href="#blog" onClick={(e) => handleNavClick(e, "blog")}>
+            Blog
+          </a>
           <Link to="/booking" className="navbar-link">
             Đặt Lịch
           </Link>
@@ -110,6 +181,7 @@ function Navbar() {
                   <circle cx="12" cy="7" r="4" />
                 </svg>
               </div>
+
               <button className="navbar-logout" onClick={handleLogout}>
                 Đăng Xuất
               </button>
