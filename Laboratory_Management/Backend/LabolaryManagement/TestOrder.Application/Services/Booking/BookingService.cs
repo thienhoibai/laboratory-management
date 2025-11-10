@@ -46,13 +46,14 @@ namespace TestOrder.Application.Services.Booking
                 RanBy = booking.RanBy ?? string.Empty,
                 Status = booking.Status.HasValue
                     ? ((BookingStatusEnum)booking.Status.Value).ToString()
-                    : "Unknown"
+                    : "Unknown",
+                slotInfo = await _appointmentSlotService.GetAppointmentSlotInfo((Guid)booking.AppointmentSlotId!)
             };
         }
 
-        public async Task<List<BookingResponseDTO>> GetBookingsByPatientIdAsync(Guid patientId)
+        public async Task<List<BookingResponseDTO>> GetBookingsByPatientIdAsync(Guid patientId, int pageNumber, int pageSize)
         {
-            var bookings = await _bookingRepository.GetBookingsByPatientIdAsync(patientId);
+            var bookings = await _bookingRepository.GetBookingsByPatientIdAsync(patientId, pageNumber, pageSize);
             var bookingResponses = new List<BookingResponseDTO>();
 
             if (bookings != null)
@@ -144,5 +145,29 @@ namespace TestOrder.Application.Services.Booking
 
         }
         #endregion
+
+        public async Task<int> CheckInBooking (Guid bookingId)
+        {
+            var booking =  await _bookingRepository.GetByIdAsync(bookingId);
+            if (booking == null)
+                return -1;
+            if (booking.Status != (byte?) BookingStatusEnum.Confirmed) return -2;
+            booking.Status = (byte?)BookingStatusEnum.CheckedIn;
+            booking.RunDate = DateOnly.FromDateTime(DateTime.Now);
+            await _bookingRepository.UpdateAsync(booking);
+            return 0;
+
+        }
+
+        public async Task<int> CheckOutBooking(Guid bookingId)
+        {
+            var booking = await _bookingRepository.GetByIdAsync(bookingId);
+            if (booking == null)
+                return -1;
+            if (booking.Status != (byte?)BookingStatusEnum.InProgress) return -2;
+            booking.Status = (byte?)BookingStatusEnum.Completed;
+            await _bookingRepository.UpdateAsync(booking);
+            return 0;
+        }
     }
 }
