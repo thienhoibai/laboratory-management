@@ -1,9 +1,29 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./PackageSelection.css";
-import { catalog } from "../../data/catalog"; // <-- sử dụng dữ liệu chung
+import api from "../../configs/axios";
+// import { catalog } from "../../data/catalog"; // <-- sử dụng dữ liệu chung
+
+const endPoint = "testorder/api/TestCatalog";
 
 function CatalogSelection({ setPackageMode, onContinue }) {
   const [selectedIds, setSelectedIds] = useState(new Set());
+  const [catalog, setCatalog] = useState([]);
+
+  useEffect(() => {
+    const fetchAPI = async () => {
+      try {
+        const response = await api.get(endPoint);
+        const data = response.data;
+        if (response.status >= 200 && response.status < 300) {
+          setCatalog(data || []);
+        }
+      } catch (error) {
+        console.log(error);
+        setCatalog([]);
+      }
+    };
+    fetchAPI();
+  }, []);
 
   const toggle = (id) => {
     const next = new Set(selectedIds);
@@ -12,15 +32,26 @@ function CatalogSelection({ setPackageMode, onContinue }) {
     setSelectedIds(next);
   };
 
-  const parsePrice = (s) => Number(String(s).replace(/[^\d]/g, "")) || 0;
-  const total = Array.from(selectedIds).reduce((sum, id) => {
-    const item = catalog.find((c) => c.id === id);
-    return sum + (item ? parsePrice(item.price) : 0);
+  const parsePrice = (price) => price.toLocaleString("Vi-VN") + "đ" || 0;
+
+  const total = Array.from(selectedIds).reduce((sum, catalogId) => {
+    const item = catalog.find((c) => c.catalogId === catalogId);
+    return sum + (item ? item.price : 0); // cộng số, không format
   }, 0);
 
-  const selectedItemsArray = Array.from(selectedIds).map((id) =>
-    catalog.find((c) => c.id === id)
-  );
+  const selectedItemsArray = Array.from(selectedIds)
+    .map((id) => {
+      const item = catalog.find((c) => c.catalogId === id);
+      return item
+        ? {
+            catalogId: item.catalogId,
+            testName: item.testName,
+            price: item.price,
+            description: item.description,
+          }
+        : null;
+    })
+    .filter(Boolean);
 
   return (
     <div className="package-selection">
@@ -47,7 +78,7 @@ function CatalogSelection({ setPackageMode, onContinue }) {
       <div className="packages-grid" style={{ marginTop: 8 }}>
         {catalog.map((item) => (
           <div
-            key={item.id}
+            key={item.catalogId}
             className="package-card"
             style={{ minHeight: 110, padding: 14 }}
           >
@@ -61,8 +92,8 @@ function CatalogSelection({ setPackageMode, onContinue }) {
             >
               <input
                 type="checkbox"
-                checked={selectedIds.has(item.id)}
-                onChange={() => toggle(item.id)}
+                checked={selectedIds.has(item.catalogId)}
+                onChange={() => toggle(item.catalogId)}
                 style={{ marginTop: 6 }}
               />
               <div style={{ width: "100%" }}>
@@ -74,10 +105,10 @@ function CatalogSelection({ setPackageMode, onContinue }) {
                   }}
                 >
                   <div style={{ fontWeight: 700, color: "#0f172a" }}>
-                    {item.name}
+                    {item.testName}
                   </div>
                   <div style={{ color: "#3b82f6", fontWeight: 800 }}>
-                    {item.price}đ
+                    {parsePrice(item.price)}
                   </div>
                 </div>
                 <div

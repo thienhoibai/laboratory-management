@@ -1,25 +1,56 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import AdminLayout from "../../admin/layout/AdminLayout";
 import { FiSearch, FiEdit2, FiTrash2, FiPlus, FiX } from "react-icons/fi";
-import { mockParameters } from "../../../data/parameter";
+import api from "../../../configs/axios";
+import { setAuthToken } from "../../../utils/auth";
+import { toast } from "react-toastify";
 import "./ParameterManagement.css";
+
+const endPoint = "testorder/api/TestParameter";
 
 const ParameterManagement = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [parameters, setParameters] = useState(mockParameters);
+  const [parameters, setParameters] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState("create"); // 'create' or 'edit'
+  // eslint-disable-next-line no-unused-vars
   const [selectedParameter, setSelectedParameter] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
-    code: "",
-    name: "",
-    normalRangeMin: "",
-    normalRangeMax: "",
+    parameterName: "",
+    referenceRange: "",
     unit: "",
-    description: "",
   });
+
+  // Fetch parameters from API
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    if (token) setAuthToken(token);
+    fetchParameters();
+  }, []);
+
+  const fetchParameters = async () => {
+    setIsLoading(true);
+    try {
+      const response = await api.get(endPoint);
+      if (response.status === 200) {
+        const data = response.data;
+        // Handle different response structures
+        const parametersList = Array.isArray(data)
+          ? data
+          : data.data || data.items || [];
+        setParameters(parametersList);
+      }
+    } catch (error) {
+      console.error("Error fetching parameters:", error);
+      toast.error("Không thể tải danh sách chỉ số xét nghiệm");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Filter parameters
   const filteredParameters = useMemo(() => {
@@ -27,8 +58,8 @@ const ParameterManagement = () => {
     const query = searchQuery.toLowerCase();
     return parameters.filter(
       (param) =>
-        param.code.toLowerCase().includes(query) ||
-        param.name.toLowerCase().includes(query)
+        param.parameterName?.toLowerCase().includes(query) ||
+        param.unit?.toLowerCase().includes(query)
     );
   }, [parameters, searchQuery]);
 
@@ -36,12 +67,9 @@ const ParameterManagement = () => {
   const handleOpenCreateModal = () => {
     setModalMode("create");
     setFormData({
-      code: "",
-      name: "",
-      normalRangeMin: "",
-      normalRangeMax: "",
+      parameterName: "",
+      referenceRange: "",
       unit: "",
-      description: "",
     });
     setSelectedParameter(null);
     setIsModalOpen(true);
@@ -51,12 +79,9 @@ const ParameterManagement = () => {
   const handleOpenEditModal = (param) => {
     setModalMode("edit");
     setFormData({
-      code: param.code,
-      name: param.name,
-      normalRangeMin: param.normalRangeMin,
-      normalRangeMax: param.normalRangeMax,
-      unit: param.unit,
-      description: param.description,
+      parameterName: param.parameterName || "",
+      referenceRange: param.referenceRange || "",
+      unit: param.unit || "",
     });
     setSelectedParameter(param);
     setIsModalOpen(true);
@@ -66,12 +91,9 @@ const ParameterManagement = () => {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setFormData({
-      code: "",
-      name: "",
-      normalRangeMin: "",
-      normalRangeMax: "",
+      parameterName: "",
+      referenceRange: "",
       unit: "",
-      description: "",
     });
     setSelectedParameter(null);
   };
@@ -86,68 +108,73 @@ const ParameterManagement = () => {
   };
 
   // Handle save parameter
-  const handleSaveParameter = () => {
-    if (
-      !formData.code ||
-      !formData.name ||
-      !formData.normalRangeMin ||
-      !formData.normalRangeMax ||
-      !formData.unit
-    ) {
-      alert("Vui lòng điền đầy đủ thông tin!");
+  const handleSaveParameter = async () => {
+    if (!formData.parameterName || !formData.referenceRange || !formData.unit) {
+      toast.error("Vui lòng điền đầy đủ thông tin!");
       return;
     }
 
-    if (
-      parseFloat(formData.normalRangeMin) >= parseFloat(formData.normalRangeMax)
-    ) {
-      alert("Giá trị tối thiểu phải nhỏ hơn giá trị tối đa!");
+    // Validate referenceRange format (should be like "7 - 56" or "7-56")
+    const rangePattern = /^\s*(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)\s*$/;
+    const match = formData.referenceRange.trim().match(rangePattern);
+    if (!match) {
+      toast.error("Khoảng tham chiếu không đúng định dạng! (VD: 7 - 56)");
       return;
     }
 
-    if (modalMode === "create") {
-      // Check if code already exists
-      if (parameters.find((p) => p.code === formData.code)) {
-        alert("Mã chỉ số đã tồn tại!");
-        return;
+    const min = parseFloat(match[1]);
+    const max = parseFloat(match[2]);
+    if (min >= max) {
+      toast.error("Giá trị tối thiểu phải nhỏ hơn giá trị tối đa!");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      if (modalMode === "create") {
+        // Check if parameterName already exists
+        if (
+          parameters.find((p) => p.parameterName === formData.parameterName)
+        ) {
+          toast.error("Tên chỉ số đã tồn tại!");
+          setIsSubmitting(false);
+          return;
+        }
+
+        const payload = {
+          parameterName: formData.parameterName.trim(),
+          referenceRange: formData.referenceRange.trim(),
+          unit: formData.unit.trim(),
+        };
+
+        const response = await api.post(endPoint, payload);
+
+        if (response.status === 200 || response.status === 201) {
+          toast.success("Thêm chỉ số xét nghiệm thành công!");
+          await fetchParameters(); // Refresh the list
+          handleCloseModal();
+        }
+      } else {
+        // Edit mode - will be implemented later if needed
+        toast.info("Chức năng chỉnh sửa đang được phát triển");
+        setIsSubmitting(false);
       }
-
-      const newParameter = {
-        id: parameters.length + 1,
-        code: formData.code,
-        name: formData.name,
-        normalRangeMin: parseFloat(formData.normalRangeMin),
-        normalRangeMax: parseFloat(formData.normalRangeMax),
-        unit: formData.unit,
-        description: formData.description,
-        createdAt: new Date().toISOString().split("T")[0],
-      };
-      setParameters([...parameters, newParameter]);
-    } else {
-      setParameters(
-        parameters.map((param) =>
-          param.id === selectedParameter.id
-            ? {
-                ...param,
-                code: formData.code,
-                name: formData.name,
-                normalRangeMin: parseFloat(formData.normalRangeMin),
-                normalRangeMax: parseFloat(formData.normalRangeMax),
-                unit: formData.unit,
-                description: formData.description,
-              }
-            : param
-        )
-      );
+    } catch (error) {
+      console.error("Error saving parameter:", error);
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Không thể lưu chỉ số xét nghiệm";
+      toast.error(errorMessage);
+      setIsSubmitting(false);
     }
-
-    handleCloseModal();
   };
 
   // Handle delete parameter
   const handleDeleteParameter = (id) => {
     if (window.confirm("Bạn có chắc chắn muốn xóa chỉ số xét nghiệm này?")) {
-      setParameters(parameters.filter((param) => param.id !== id));
+      setParameters(parameters.filter((param) => param.parameterId !== id));
     }
   };
 
@@ -181,7 +208,7 @@ const ParameterManagement = () => {
               <FiSearch size={18} />
               <input
                 type="text"
-                placeholder="Tìm kiếm theo mã hoặc tên chỉ số..."
+                placeholder="Tìm kiếm theo tên chỉ số hoặc đơn vị..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -190,66 +217,73 @@ const ParameterManagement = () => {
 
           {/* Parameters Table */}
           <div className="parameters-table-container">
-            <table className="parameters-table">
-              <thead>
-                <tr>
-                  <th>Mã</th>
-                  <th>Tên chỉ số</th>
-                  <th>Khoảng bình thường</th>
-                  <th>Đơn vị</th>
-                  <th>Mô tả</th>
-                  <th>Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredParameters.length > 0 ? (
-                  filteredParameters.map((param) => (
-                    <tr key={param.id}>
-                      <td>
-                        <span className="parameter-code">{param.code}</span>
-                      </td>
-                      <td>
-                        <span className="parameter-name">{param.name}</span>
-                      </td>
-                      <td>
-                        <span className="normal-range">
-                          {param.normalRangeMin}-{param.normalRangeMax}
-                        </span>
-                      </td>
-                      <td>{param.unit}</td>
-                      <td>{param.description}</td>
-                      <td>
-                        <div className="action-buttons">
-                          <button
-                            className="action-button edit"
-                            onClick={() => handleOpenEditModal(param)}
-                            title="Chỉnh sửa"
-                          >
-                            <FiEdit2 size={18} />
-                          </button>
-                          <button
-                            className="action-button delete"
-                            onClick={() => handleDeleteParameter(param.id)}
-                            title="Xóa"
-                          >
-                            <FiTrash2 size={18} />
-                          </button>
-                        </div>
+            {isLoading ? (
+              <div className="loading-container">
+                <div className="loading-spinner"></div>
+                <p>Đang tải dữ liệu...</p>
+              </div>
+            ) : (
+              <table className="parameters-table">
+                <thead>
+                  <tr>
+                    <th>Tên chỉ số</th>
+                    <th>Khoảng tham chiếu</th>
+                    <th>Đơn vị</th>
+                    <th>Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredParameters.length > 0 ? (
+                    filteredParameters.map((param) => (
+                      <tr key={param.parameterId}>
+                        <td>
+                          <span className="parameter-name">
+                            {param.parameterName}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="normal-range">
+                            {param.referenceRange}
+                          </span>
+                        </td>
+                        <td>{param.unit}</td>
+                        <td>
+                          <div className="action-buttons">
+                            <button
+                              className="action-button edit"
+                              onClick={() => handleOpenEditModal(param)}
+                              title="Chỉnh sửa"
+                            >
+                              <FiEdit2 size={18} />
+                            </button>
+                            <button
+                              className="action-button delete"
+                              onClick={() =>
+                                handleDeleteParameter(param.parameterId)
+                              }
+                              title="Xóa"
+                            >
+                              <FiTrash2 size={18} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan="4"
+                        style={{ textAlign: "center", padding: "40px" }}
+                      >
+                        {searchQuery
+                          ? "Không tìm thấy chỉ số xét nghiệm nào"
+                          : "Chưa có chỉ số xét nghiệm nào"}
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td
-                      colSpan="6"
-                      style={{ textAlign: "center", padding: "40px" }}
-                    >
-                      Không tìm thấy chỉ số xét nghiệm nào
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  )}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       </div>
@@ -270,24 +304,41 @@ const ParameterManagement = () => {
             </div>
 
             <div className="modal-body">
-              {/* Row 1: Code and Unit - 2 columns */}
+              {/* Row 1: Parameter Name - full width */}
+              <div className="form-group">
+                <label className="form-label">Tên chỉ số</label>
+                <input
+                  type="text"
+                  name="parameterName"
+                  className="form-input"
+                  placeholder="VD: ALT (SGPT)"
+                  value={formData.parameterName}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              {/* Row 2: Reference Range and Unit - 2 columns */}
               <div className="form-row">
                 <div className="form-group">
-                  <label className="form-label">Mã chỉ số</label>
+                  <label className="form-label">Khoảng tham chiếu</label>
                   <input
                     type="text"
-                    name="code"
+                    name="referenceRange"
                     className="form-input"
-                    placeholder="VD: WBC"
-                    value={formData.code}
+                    placeholder="VD: 7 - 56"
+                    value={formData.referenceRange}
                     onChange={handleInputChange}
-                    disabled={modalMode === "edit"}
-                    style={
-                      modalMode === "edit"
-                        ? { background: "#f5f5f5", cursor: "not-allowed" }
-                        : {}
-                    }
                   />
+                  <small
+                    style={{
+                      color: "#6b7280",
+                      fontSize: "12px",
+                      marginTop: "4px",
+                      display: "block",
+                    }}
+                  >
+                    Định dạng: số - số (VD: 7 - 56)
+                  </small>
                 </div>
 
                 <div className="form-group">
@@ -296,65 +347,11 @@ const ParameterManagement = () => {
                     type="text"
                     name="unit"
                     className="form-input"
-                    placeholder="VD: 10^3/μL"
+                    placeholder="VD: U/L"
                     value={formData.unit}
                     onChange={handleInputChange}
                   />
                 </div>
-              </div>
-
-              {/* Row 2: Name - full width */}
-              <div className="form-group">
-                <label className="form-label">Tên chỉ số</label>
-                <input
-                  type="text"
-                  name="name"
-                  className="form-input"
-                  placeholder="VD: White Blood Cell"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                />
-              </div>
-
-              {/* Row 3: Normal Range - 2 columns */}
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label">Giá trị tối thiểu</label>
-                  <input
-                    type="number"
-                    name="normalRangeMin"
-                    className="form-input"
-                    placeholder="VD: 4.5"
-                    step="0.1"
-                    value={formData.normalRangeMin}
-                    onChange={handleInputChange}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Giá trị tối đa</label>
-                  <input
-                    type="number"
-                    name="normalRangeMax"
-                    className="form-input"
-                    placeholder="VD: 11"
-                    step="0.1"
-                    value={formData.normalRangeMax}
-                    onChange={handleInputChange}
-                  />
-                </div>
-              </div>
-
-              {/* Row 4: Description - full width */}
-              <div className="form-group">
-                <label className="form-label">Mô tả</label>
-                <textarea
-                  name="description"
-                  className="form-textarea"
-                  placeholder="VD: Số lượng tế bào máu trắng"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                />
               </div>
             </div>
 
@@ -368,8 +365,13 @@ const ParameterManagement = () => {
               <button
                 className="modal-button primary"
                 onClick={handleSaveParameter}
+                disabled={isSubmitting}
               >
-                {modalMode === "create" ? "Thêm mới" : "Cập nhật"}
+                {isSubmitting
+                  ? "Đang xử lý..."
+                  : modalMode === "create"
+                  ? "Thêm mới"
+                  : "Cập nhật"}
               </button>
             </div>
           </div>
