@@ -57,7 +57,7 @@ namespace BlogService.Presentation
             app.UseRouting();
             app.UseHttpsRedirection();
             app.UseCors("AllowFrontend");
-            app.UseAuthorization();s
+            app.UseAuthorization();
 
 
             app.MapControllers();
