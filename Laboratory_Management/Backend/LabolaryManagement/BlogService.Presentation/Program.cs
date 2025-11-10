@@ -30,7 +30,21 @@ namespace BlogService.Presentation
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
-            
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowFrontend", policy =>
+                {
+                    policy
+                        .WithOrigins(
+                            "http://localhost:5174",
+                            "http://127.0.0.1:5174"
+                        )
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .AllowCredentials();
+                });
+            });
+
 
             var app = builder.Build();
 
@@ -40,10 +54,10 @@ namespace BlogService.Presentation
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-
+            app.UseRouting();
             app.UseHttpsRedirection();
-
-            app.UseAuthorization();
+            app.UseCors("AllowFrontend");
+            app.UseAuthorization();s
 
 
             app.MapControllers();
