@@ -1,38 +1,15 @@
-import React, { useState } from "react";
+import React from "react";
 import { Card, Form, Input, Button } from "antd";
 import { Link } from "react-router-dom";
-import { toast } from "react-toastify";
-import api from "../../configs/axios";
+import { useForgotPassword } from "../../services/IAMService";
+import { setAuthToken } from "../../utils/auth";
 import "./ForgotPassword.css";
 
-const URL = "iam/api/Auth/forgot-password";
 const ForgotPassword = () => {
-  const [loading, setLoading] = useState(false);
+  const accessToken = localStorage.getItem("accessToken");
+  setAuthToken(accessToken);
 
-  const onFinish = async (values) => {
-    setLoading(true);
-    try {
-      const response = await api.post(URL, {
-        usernameOrEmail: values.email,
-      });
-
-      if (response.status >= 200 && response.status < 300) {
-        toast.success(
-          response?.message ||
-            "Yêu cầu đổi mật khẩu đã được gửi về Email, vui lòng kiểm tra lại Email!!"
-        );
-      }
-    } catch (err) {
-      const serverMsg =
-        (typeof err?.response?.data === "string" && err.response.data) ||
-        err?.response?.data?.message ||
-        err?.response?.data?.error ||
-        "Gửi yêu cầu thất bại. Vui lòng thử lại.";
-      toast.error(serverMsg);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { onFinish, loading } = useForgotPassword();
 
   return (
     <div className="fp-container">
