@@ -11,7 +11,7 @@ namespace TestOrder.Application.DTOs
 
     {
         public int BundleId { get; set; }
-        public int CatalogId { get; set; }
+        public List<int> CatalogId { get; set; }
     }
     
 }

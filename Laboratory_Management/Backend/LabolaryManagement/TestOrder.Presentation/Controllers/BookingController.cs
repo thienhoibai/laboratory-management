@@ -25,9 +25,9 @@ namespace TestOrder.Presentation.Controllers
             return Ok(response);
         }
         [HttpGet("patient")]
-        public async Task<IActionResult> GetBookingsByPatientId([FromQuery] Guid patientId)
+        public async Task<IActionResult> GetBookingsByPatientId([FromQuery] Guid patientId, [FromQuery] int pageNumber, [FromQuery] int pageSize)
         {
-            var response = await _bookingService.GetBookingsByPatientIdAsync(patientId);
+            var response = await _bookingService.GetBookingsByPatientIdAsync(patientId, pageNumber, pageSize);
             return Ok(response);
         }
 
@@ -37,6 +37,38 @@ namespace TestOrder.Presentation.Controllers
         {
             var response = await _bookingService.CreateNewBooking(createBookingDto);
             return Ok(response);
+        }
+
+        [HttpPut]
+        [Route("check-in")]
+        public async Task<IActionResult> CheckInBooking([FromQuery] Guid bookingId)
+        {
+            var response = await _bookingService.CheckInBooking(bookingId);
+            switch (response)
+            {
+                case -1:
+                    return NotFound("Booking not found");
+                case -2:
+                    return BadRequest("Booking is not in a state that allows check-in");
+                default:
+                    return Ok("Check-in successful");
+            }
+        }
+
+        [HttpPut]
+        [Route("check-out")]
+        public async Task<IActionResult> CheckOutBooking([FromQuery] Guid bookingId)
+        {
+            var response = await _bookingService.CheckOutBooking(bookingId);
+            switch (response)
+            {
+                case -1:
+                    return NotFound("Booking not found");
+                case -2:
+                    return BadRequest("Booking is not in a state that allows check-out");
+                default:
+                    return Ok("Check-out successful");
+            }
         }
 
     }

@@ -1,10 +1,10 @@
 import React, { useState } from "react";
+import { useSelector } from "react-redux";
 import "./Payment.css";
 
 export default function Payment({
   selectedItems,
   selectedDateTime,
-  onBack,
   onProceed, // legacy prop
   onConfirmRequested, // new prop Booking passes to open modal
 }) {
@@ -13,11 +13,10 @@ export default function Payment({
     fullName: "Tuấn Lê",
     email: "email@example.com",
     phone: "0123321132",
-    paymentMethod: "credit",
-    cardNumber: "",
-    exp: "",
-    cvv: "",
+    paymentMethod: "VnPay",
   });
+
+  const { fullName, phone, email } = useSelector((state) => state.patient);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -53,7 +52,7 @@ export default function Payment({
                 Họ và tên<span>*</span>
                 <input
                   name="fullName"
-                  value={form.fullName}
+                  value={fullName}
                   onChange={handleChange}
                 />
               </label>
@@ -63,17 +62,13 @@ export default function Payment({
                   <input
                     type="email"
                     name="email"
-                    value={form.email}
+                    value={email}
                     onChange={handleChange}
                   />
                 </label>
                 <label>
                   Số điện thoại<span>*</span>
-                  <input
-                    name="phone"
-                    value={form.phone}
-                    onChange={handleChange}
-                  />
+                  <input name="phone" value={phone} onChange={handleChange} />
                 </label>
               </div>
             </div>
@@ -92,7 +87,19 @@ export default function Payment({
                   onChange={handleChange}
                 />
                 <img src="src\assets\icon\ATM.svg" />
-                <span>Thẻ tín dụng/ghi nợ</span>
+                <span>Thẻ Visa</span>
+              </label>
+
+              <label className="method-item">
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value="VnPay"
+                  checked={form.paymentMethod === "VnPay"}
+                  onChange={handleChange}
+                />
+                <img src="src\assets\icon\Momo.svg" />
+                <span>VnPay</span>
               </label>
 
               <label className="method-item">
@@ -103,20 +110,8 @@ export default function Payment({
                   checked={form.paymentMethod === "momo"}
                   onChange={handleChange}
                 />
-                <img src="src\assets\icon\Momo.svg" />
-                <span>Ví MoMo</span>
-              </label>
-
-              <label className="method-item">
-                <input
-                  type="radio"
-                  name="paymentMethod"
-                  value="bank"
-                  checked={form.paymentMethod === "bank"}
-                  onChange={handleChange}
-                />
                 <img src="src\assets\icon\bank.svg" />
-                <span>Chuyển khoản ngân hàng</span>
+                <span>Ví Momo</span>
               </label>
             </div>
 
@@ -156,9 +151,9 @@ export default function Payment({
             )}
           </div>
 
-          <button className="btn-back" onClick={onBack}>
+          {/* <button className="btn-back" onClick={onBack}>
             Quay lại
-          </button>
+          </button> */}
         </div>
 
         {/* RIGHT COLUMN */}
@@ -168,7 +163,15 @@ export default function Payment({
             <div className="summary-line">
               <span>Gói xét nghiệm:</span>
               <strong>
-                {selectedItems?.package?.name || "Xét nghiệm tổng quát"}
+                {/* Hiển thị tên gói nếu có, nếu không thì liệt kê các xét nghiệm đơn lẻ */}
+                {selectedItems?.source === "package"
+                  ? selectedItems?.package?.bundleName ||
+                    selectedItems?.package?.title ||
+                    "Gói không rõ tên"
+                  : selectedItems?.source === "catalog" &&
+                    Array.isArray(selectedItems.items)
+                  ? selectedItems.items.map((item) => item.testName).join(", ")
+                  : "Xét nghiệm tổng quát"}
               </strong>
             </div>
             <div className="summary-line">

@@ -31,7 +31,6 @@ const LoginForm = ({ errorMessage }) => {
         localStorage.setItem("expiresAt", data.expiresAt);
         localStorage.setItem("permissions", JSON.stringify(perm) || []);
         setUserData(data);
-
         if (role === "Customer" || role === "Patient") {
           toast.success("Đăng nhập thành công!");
           navigate("/");
@@ -40,7 +39,6 @@ const LoginForm = ({ errorMessage }) => {
           navigate("/dashboard");
         }
       }
-      // XÓA else if (response.status === 423) {...}
     } catch (error) {
       if (error.response?.status === 423) {
         toast.error("Tài Khoản Của Bạn Đã Bị Khóa!!");
