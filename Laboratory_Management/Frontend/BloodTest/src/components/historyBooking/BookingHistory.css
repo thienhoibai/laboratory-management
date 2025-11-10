@@ -42,7 +42,8 @@
   margin-right: 10px;
 }
 .filter-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 3fr 1fr;
   gap: 16px;
   align-items: flex-end;
   margin-top: 20px;
@@ -61,6 +62,7 @@
 }
 .filter-date-input,
 .filter-status-select {
+  width: 100%;
   padding: 9px 14px;
   border-radius: 8px;
   border: 1px solid #d1d5db;
