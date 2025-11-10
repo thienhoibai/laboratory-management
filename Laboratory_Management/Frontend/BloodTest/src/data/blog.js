@@ -2,7 +2,7 @@
 export const blogPosts = [
   {
     id: 1,
-    tag: "Hướng dẫn",
+    tag: "Hướng dẫn 1",
     category: "Hướng dẫn",
     time: "5 ngày trước",
     date: "15 Tháng 10, 2025",
@@ -33,7 +33,7 @@ export const blogPosts = [
         <li>Tiết kiệm thời gian và chi phí</li>
         <li>Giúp bác sĩ chẩn đoán bệnh chính xác hơn</li>
       </ul>
-    `
+    `,
   },
   {
     id: 2,
@@ -84,7 +84,7 @@ export const blogPosts = [
         <li>Người trung niên (40-60 tuổi): 1 năm/lần</li>
         <li>Người cao tuổi (> 60 tuổi): 6 tháng/lần</li>
       </ul>
-    `
+    `,
   },
   {
     id: 3,
@@ -140,7 +140,7 @@ export const blogPosts = [
         <li>Điều chỉnh chế độ ăn uống và lối sống</li>
         <li>Theo dõi định kỳ</li>
       </ul>
-    `
+    `,
   },
   {
     id: 4,
@@ -172,7 +172,7 @@ export const blogPosts = [
         <li><strong>Carbohydrate:</strong> Cung cấp năng lượng</li>
         <li><strong>Chất béo tốt:</strong> Hỗ trợ hấp thu vitamin</li>
       </ul>
-    `
+    `,
   },
   {
     id: 5,
@@ -207,7 +207,7 @@ export const blogPosts = [
         <li>Đã qua tuổi 40</li>
         <li>Chưa kiểm tra sức khỏe trong 1-2 năm</li>
       </ul>
-    `
+    `,
   },
   {
     id: 6,
@@ -239,9 +239,14 @@ export const blogPosts = [
         <li>Uống đủ nước lọc</li>
         <li>Thông báo cho bác sĩ về chế độ ăn đặc biệt</li>
       </ul>
-    `
-  }
+    `,
+  },
 ];
 
-export const categories = ["Tất cả", "Sức khỏe", "Dinh dưỡng", "Y tế", "Hướng dẫn"];
-
+export const categories = [
+  "Tất cả",
+  "Sức khỏe",
+  "Dinh dưỡng",
+  "Y tế",
+  "Hướng dẫn",
+];
