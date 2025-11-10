@@ -41,8 +41,8 @@ namespace TestOrder.API.Controllers
             return Ok("Catalog added to bundle successfully");
         }
 
-        [HttpDelete("{bundleId}/{catalogId}")]
-        public async Task<IActionResult> RemoveCatalogFromBundle(int bundleId, int catalogId)
+        [HttpDelete("{bundleId}")]
+        public async Task<IActionResult> RemoveCatalogFromBundle(int bundleId, List<int> catalogId)
         {
             await _service.RemoveCatalogFromBundleAsync(bundleId, catalogId);
             return Ok("Catalog removed from bundle successfully");
