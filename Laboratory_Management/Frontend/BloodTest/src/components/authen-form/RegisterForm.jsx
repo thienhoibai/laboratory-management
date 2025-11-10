@@ -1,17 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { Button, Form, Input, Card } from "antd";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import "./register.css";
-import api from "../../configs/axios";
-import { toast } from "react-toastify";
-
+import { useRegister } from "../../services/IAMService";
 const URL = "iam/api/Auth/register";
 
 function RegisterForm() {
-  const navigate = useNavigate();
-  const [apiErrors, setApiErrors] = useState({});
-  const [form] = Form.useForm();
-
+  const { onFinish, apiErrors, form, setApiErrors } = useRegister();
   // Auto-hide errors after 5 seconds
   useEffect(() => {
     if (Object.keys(apiErrors).length > 0) {
@@ -21,118 +16,6 @@ function RegisterForm() {
       return () => clearTimeout(timer);
     }
   }, [apiErrors]);
-
-  const onFinish = async (values) => {
-    setApiErrors({}); // Clear previous errors
-
-    try {
-      const payload = {
-        username: values.UserName,
-        email: values.email,
-        password: values.password,
-        confirmPassword: values.confirmPassword,
-        fullName: values.fullname,
-      };
-
-      const response = await api.post(URL, payload);
-      if (response && response.status >= 200 && response.status < 300) {
-        toast.success("Đăng ký thành công!");
-        navigate("/login");
-      } else {
-        toast.error("Đăng ký không thành công!");
-      }
-    } catch (error) {
-      console.error("Registration error:", error);
-
-      // Handle API error response
-      if (error.response?.data) {
-        const errorData = error.response.data;
-        const newErrors = {};
-
-        // Check if error has detail field (like DUPLICATE_EMAIL)
-        if (errorData.detail) {
-          const detail = errorData.detail.toLowerCase();
-
-          // Map error to specific field based on detail content or code
-          if (
-            errorData.code === "DUPLICATE_EMAIL" ||
-            detail.includes("email")
-          ) {
-            newErrors.email = errorData.detail;
-          } else if (
-            detail.includes("username") ||
-            detail.includes("tên đăng nhập")
-          ) {
-            newErrors.UserName = errorData.detail;
-          } else if (
-            detail.includes("password") ||
-            detail.includes("mật khẩu")
-          ) {
-            newErrors.password = errorData.detail;
-          } else if (detail.includes("fullname") || detail.includes("họ tên")) {
-            newErrors.fullname = errorData.detail;
-          } else {
-            // Default to email field if can't determine
-            newErrors.email = errorData.detail;
-          }
-        }
-        // Check for errors array
-        else if (errorData.errors && Array.isArray(errorData.errors)) {
-          errorData.errors.forEach((err) => {
-            if (err.field) {
-              const fieldName = err.field.toLowerCase();
-              // Map backend field names to form field names
-              const fieldMap = {
-                username: "UserName",
-                email: "email",
-                password: "password",
-                confirmpassword: "confirmPassword",
-                fullname: "fullname",
-              };
-              const mappedField = fieldMap[fieldName] || err.field;
-              newErrors[mappedField] = err.message || err;
-            }
-          });
-        }
-        // Check for validation errors object
-        else if (errorData.errors && typeof errorData.errors === "object") {
-          Object.keys(errorData.errors).forEach((field) => {
-            const fieldName = field.toLowerCase();
-            const errorMessages = errorData.errors[field];
-            const fieldMap = {
-              username: "UserName",
-              email: "email",
-              password: "password",
-              confirmpassword: "confirmPassword",
-              fullname: "fullname",
-            };
-            const mappedField = fieldMap[fieldName] || field;
-            newErrors[mappedField] = Array.isArray(errorMessages)
-              ? errorMessages.join(", ")
-              : errorMessages;
-          });
-        }
-        // Fallback to message
-        else if (errorData.message) {
-          newErrors.email = errorData.message;
-        }
-
-        if (Object.keys(newErrors).length > 0) {
-          setApiErrors(newErrors);
-          // Set form fields errors programmatically
-          const formErrors = Object.keys(newErrors).map((field) => ({
-            name: field,
-            errors: [newErrors[field]],
-          }));
-          form.setFields(formErrors);
-        } else {
-          toast.error("Đăng ký không thành công, vui lòng thử lại sau!");
-        }
-      } else {
-        toast.error("Đăng ký không thành công, vui lòng thử lại sau!");
-      }
-    }
-  };
 
   return (
     <div className="auth-register-container">

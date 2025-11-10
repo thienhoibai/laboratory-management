@@ -1,18 +1,21 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import AdminLayout from "../../admin/layout/AdminLayout";
 import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiX } from "react-icons/fi";
-import {
-  mockCatalogs,
-  availableParameters,
-} from "../../../data/catalogTest.js";
+import { availableParameters } from "../../../data/catalogTest.js";
+import api from "../../../configs/axios";
+import { setAuthToken } from "../../../utils/auth";
+import { toast } from "react-toastify";
 import "./CatalogsManagement.css";
+
+const endPoint = "testorder/api/TestCatalog";
 
 const CatalogsManagement = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [catalogs, setCatalogs] = useState(mockCatalogs);
+  const [catalogs, setCatalogs] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState("create");
   const [selectedCatalog, setSelectedCatalog] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -23,13 +26,40 @@ const CatalogsManagement = () => {
     description: "",
   });
 
+  // Fetch catalogs from API
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    if (token) setAuthToken(token);
+    fetchCatalogs();
+  }, []);
+
+  const fetchCatalogs = async () => {
+    setIsLoading(true);
+    try {
+      const response = await api.get(endPoint);
+      if (response.status === 200) {
+        const data = response.data;
+        // Handle different response structures
+        const catalogsList = Array.isArray(data)
+          ? data
+          : data.data || data.items || [];
+        setCatalogs(catalogsList);
+      }
+    } catch (error) {
+      console.error("Error fetching catalogs:", error);
+      toast.error("Không thể tải danh sách mục xét nghiệm");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const filteredCatalogs = useMemo(() => {
     if (!searchQuery) return catalogs;
     const query = searchQuery.toLowerCase();
     return catalogs.filter(
       (catalog) =>
-        catalog.name.toLowerCase().includes(query) ||
-        catalog.category.toLowerCase().includes(query)
+        catalog.testName?.toLowerCase().includes(query) ||
+        catalog.description?.toLowerCase().includes(query)
     );
   }, [catalogs, searchQuery]);
 
@@ -50,12 +80,12 @@ const CatalogsManagement = () => {
   const handleOpenEditModal = (catalog) => {
     setModalMode("edit");
     setFormData({
-      name: catalog.name,
-      category: catalog.category,
-      price: catalog.price,
-      status: catalog.status,
-      parameters: [...catalog.parameters],
-      description: catalog.description,
+      name: catalog.testName || "",
+      category: catalog.category || "",
+      price: catalog.price || "",
+      status: catalog.status || "Hoạt động",
+      parameters: [...(catalog.parameters || [])],
+      description: catalog.description || "",
     });
     setSelectedCatalog(catalog);
     setIsModalOpen(true);
@@ -141,7 +171,7 @@ const CatalogsManagement = () => {
 
   const handleDeleteCatalog = (id) => {
     if (window.confirm("Bạn có chắc chắn muốn xóa mục xét nghiệm này?")) {
-      setCatalogs(catalogs.filter((catalog) => catalog.id !== id));
+      setCatalogs(catalogs.filter((catalog) => catalog.catalogId !== id));
     }
   };
 
@@ -174,7 +204,7 @@ const CatalogsManagement = () => {
               <FiSearch size={18} />
               <input
                 type="text"
-                placeholder="Tìm kiếm theo tên hoặc danh mục..."
+                placeholder="Tìm kiếm theo tên hoặc mô tả..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -186,7 +216,6 @@ const CatalogsManagement = () => {
               <thead>
                 <tr>
                   <th>Tên mục xét nghiệm</th>
-                  <th>Danh mục</th>
                   <th>Chỉ số xét nghiệm</th>
                   <th>Giá</th>
                   <th>Trạng thái</th>
@@ -194,36 +223,74 @@ const CatalogsManagement = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredCatalogs.length > 0 ? (
+                {isLoading ? (
+                  <tr>
+                    <td
+                      colSpan="5"
+                      style={{ textAlign: "center", padding: "40px" }}
+                    >
+                      <div className="loading-container">
+                        <div className="loading-spinner"></div>
+                        <p>Đang tải dữ liệu...</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : filteredCatalogs.length > 0 ? (
                   filteredCatalogs.map((catalog) => (
-                    <tr key={catalog.id}>
+                    <tr key={catalog.catalogId}>
                       <td>
-                        <span className="catalog-name">{catalog.name}</span>
+                        <span className="catalog-name">{catalog.testName}</span>
+                        {catalog.description && (
+                          <div
+                            style={{
+                              fontSize: "12px",
+                              color: "#6b7280",
+                              marginTop: "4px",
+                            }}
+                          >
+                            {catalog.description}
+                          </div>
+                        )}
                       </td>
-                      <td>{catalog.category}</td>
                       <td>
                         <div className="parameters-tags">
-                          {catalog.parameters.map((param) => (
-                            <span key={param.id} className="parameter-tag">
-                              {param.code}
+                          {catalog.parameters &&
+                          catalog.parameters.length > 0 ? (
+                            catalog.parameters.map((param) => (
+                              <span
+                                key={param.parameterId || param.id}
+                                className="parameter-tag"
+                              >
+                                {param.parameterName ||
+                                  param.name ||
+                                  param.code}
+                              </span>
+                            ))
+                          ) : (
+                            <span
+                              style={{ color: "#9ca3af", fontStyle: "italic" }}
+                            >
+                              Chưa có chỉ số
                             </span>
-                          ))}
+                          )}
                         </div>
                       </td>
                       <td>
                         <span className="catalog-price">
-                          {catalog.price.toLocaleString()} đ
+                          {catalog.price?.toLocaleString("vi-VN")} đ
                         </span>
                       </td>
                       <td>
                         <span
                           className={`status-badge ${
-                            catalog.status === "Hoạt động"
+                            catalog.status === "Hoạt động" ||
+                            catalog.status === "Active" ||
+                            !catalog.status
                               ? "active"
                               : "inactive"
                           }`}
                         >
-                          {catalog.status}
+                          {catalog.status || "Hoạt động"}
                         </span>
                       </td>
                       <td>
@@ -237,7 +304,9 @@ const CatalogsManagement = () => {
                           </button>
                           <button
                             className="action-button delete"
-                            onClick={() => handleDeleteCatalog(catalog.id)}
+                            onClick={() =>
+                              handleDeleteCatalog(catalog.catalogId)
+                            }
                             title="Xóa"
                           >
                             <FiTrash2 size={18} />
@@ -249,10 +318,12 @@ const CatalogsManagement = () => {
                 ) : (
                   <tr>
                     <td
-                      colSpan="6"
+                      colSpan="5"
                       style={{ textAlign: "center", padding: "40px" }}
                     >
-                      Không tìm thấy mục xét nghiệm nào
+                      {searchQuery
+                        ? "Không tìm thấy mục xét nghiệm nào"
+                        : "Chưa có mục xét nghiệm nào"}
                     </td>
                   </tr>
                 )}

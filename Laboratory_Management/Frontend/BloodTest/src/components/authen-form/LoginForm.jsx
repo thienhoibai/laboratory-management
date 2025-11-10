@@ -1,94 +1,18 @@
 import React from "react";
 import { Button, Checkbox, Form, Input, Card } from "antd";
 import "./login.css";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
-import api from "../../configs/axios";
-import { setUserData } from "../../utils/auth";
 import { GoogleLogin } from "@react-oauth/google";
-import { jwtDecode } from "jwt-decode";
+import {
+  useLoginWithGoogle,
+  useLoginWithPassword,
+} from "../../services/IAMService";
 
 const LoginForm = ({ errorMessage }) => {
-  const navigate = useNavigate();
-
-  // Xử lý login bằng username/password
-  const onFinish = async (values) => {
-    try {
-      const response = await api.post("iam/api/Auth/login", {
-        username: values.username,
-        password: values.password,
-      });
-
-      const data = response?.data.data || {};
-      const decode = jwtDecode(data.accessToken);
-      const role =
-        decode["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
-      const perm = decode["perm"];
-
-      if (response.status === 200) {
-        localStorage.setItem("accessToken", data.accessToken);
-        localStorage.setItem("refreshToken", data.refreshToken);
-        localStorage.setItem("expiresAt", data.expiresAt);
-        localStorage.setItem("permissions", JSON.stringify(perm) || []);
-        setUserData(data);
-
-        if (role === "Customer" || role === "Patient") {
-          toast.success("Đăng nhập thành công!");
-          navigate("/");
-        } else if (role === "Admin" || role === "Manager" || role === "Staff") {
-          toast.success("Đăng nhập thành công!");
-          navigate("/dashboard");
-        }
-      }
-      // XÓA else if (response.status === 423) {...}
-    } catch (error) {
-      if (error.response?.status === 423) {
-        toast.error("Tài Khoản Của Bạn Đã Bị Khóa!!");
-        return;
-      }
-      const serverMsg =
-        (typeof error?.response?.data === "string" && error.response.data) ||
-        error?.response?.data?.message ||
-        error?.response?.data?.error ||
-        "";
-      toast.error(
-        typeof serverMsg === "string" && serverMsg.trim()
-          ? serverMsg
-          : "Tên đăng nhập hoặc mật khẩu không chính xác!"
-      );
-    }
-  };
-
+  const { onFinish } = useLoginWithPassword();
+  const { handleGoogleLoginSuccess } = useLoginWithGoogle();
   // ✅ Đăng nhập bằng Google
-  const handleGoogleLoginSuccess = async (credentialResponse) => {
-    try {
-      const idToken = credentialResponse.credential;
-      console.log(idToken);
-      if (!idToken) {
-        toast.error("Không nhận được token từ Google");
-        return;
-      }
-
-      // Gửi idToken sang backend để xác thực
-      const response = await api.post("iam/v1/auth/google", { idToken });
-
-      const data = response?.data || {};
-      if (response.status <= 200 && response.status < 300) {
-        localStorage.setItem("accessToken", data.accessToken);
-        localStorage.setItem("refreshToken", data.refreshToken);
-        localStorage.setItem("expiresAt", data.expiresAt);
-
-        setUserData(data);
-        toast.success("Đăng nhập bằng Google thành công!");
-        navigate("/");
-      } else {
-        toast.error("Không nhận được access token từ server");
-      }
-    } catch (error) {
-      console.error("Google login error:", error);
-      toast.error("Đăng nhập bằng Google thất bại!");
-    }
-  };
 
   return (
     <div className="auth-login-container">
