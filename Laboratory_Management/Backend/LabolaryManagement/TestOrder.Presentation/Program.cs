@@ -19,6 +19,10 @@ namespace TestOrder.Presentation
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddDbContext<TestOrderDBContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+            // Đăng ký HttpClient factory (bắt buộc để resolve IHttpClientFactory)
+            builder.Services.AddHttpClient();
+
             // Dependency Injection for Repositories and Services
             builder.Services.AddScoped(typeof(GenericRepository<>));
             builder.Services.AddScoped<TestCatalogRepository>();
@@ -36,6 +40,15 @@ namespace TestOrder.Presentation
             builder.Services.AddScoped<BookingTestRepository>();
             builder.Services.AddScoped<BookingTestService>();
             builder.Services.AddScoped<TimeBlockRepository>();
+            builder.Services.AddScoped<TestOrder.Application.InstrumentBridge.InstrumentBridgeService>();
+
+            // Named client patient (tuỳ chọn)
+            var patientBase = builder.Configuration["PatientServiceBaseUrl"];
+            if (!string.IsNullOrWhiteSpace(patientBase))
+            {
+                builder.Services.AddHttpClient("patient", c => c.BaseAddress = new Uri(patientBase));
+            }
+
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
             builder.Services.AddControllers()
