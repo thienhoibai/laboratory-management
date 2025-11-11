@@ -6,22 +6,18 @@ import "./ProfilePage.css";
 import { setAuthToken } from "../../utils/auth";
 import api from "../../configs/axios";
 import { toast } from "react-toastify";
-import {
-  Pagination,
-  Modal,
-  Form,
-  Input,
-  Select,
-  DatePicker,
-  Button,
-} from "antd";
+import { Pagination, Modal, Form, Input, Select, DatePicker } from "antd";
 import dayjs from "dayjs";
-import ChangePasswordModal from "./ChangePassword";
 import {
   parseDateToInput,
   calculateAge,
   formatDateTime,
 } from "../../utils/formatDate";
+
+// Change password feature removed:
+// This ProfilePage does not include any "change password" UI, state or API calls.
+// If a change-password feature is added later, keep it in a separate component/modal
+// and do not couple password changes with profile data updates.
 
 // ===== CONSTANTS & UTILS =====
 const initialFormData = {
@@ -44,14 +40,11 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("personal");
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState(initialFormData);
-  const [loading, setLoading] = useState(true);
   const [errors, setErrors] = useState({});
   const [medicalRecords, setMedicalRecords] = useState([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createForm] = Form.useForm();
   const [isCreating, setIsCreating] = useState(false);
-
-  const [openChange, setOpenChange] = useState(false);
 
   const [totalRecords, setTotalRecords] = useState(0);
   const [page, setPage] = useState(1);
@@ -104,8 +97,6 @@ export default function ProfilePage() {
     } catch (error) {
       toast.error(error);
       navigate("/create-profile");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -279,15 +270,6 @@ export default function ProfilePage() {
     }
   };
 
-  // ===== RENDER LOADING =====
-  if (loading) {
-    return (
-      <div className="profile-page">
-        <div className="profile-loading">Đang tải...</div>
-      </div>
-    );
-  }
-
   // ===== RENDER MAIN UI =====
   return (
     <div className="profile-page">
@@ -404,15 +386,6 @@ export default function ProfilePage() {
                   <p className="profile-section-subtitle">
                     Thông tin chi tiết về bệnh nhân
                   </p>
-                </div>
-                <div>
-                  <Button
-                    type="default"
-                    onClick={() => setOpenChange(true)}
-                    className="btn-change-password"
-                  >
-                    Đổi mật khẩu
-                  </Button>
                 </div>
               </div>
 
@@ -1157,12 +1130,6 @@ export default function ProfilePage() {
           </div>
         </Form>
       </Modal>
-
-      {/* ===== CHANGE PASSWORD MODAL ===== */}
-      <ChangePasswordModal
-        open={openChange}
-        onClose={() => setOpenChange(false)}
-      />
     </div>
   );
 }
