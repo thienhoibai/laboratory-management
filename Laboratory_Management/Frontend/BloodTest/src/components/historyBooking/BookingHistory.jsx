@@ -1,6 +1,11 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 import "./BookingHistory.css";
+import api from "../../configs/axios";
+import { formatDate } from "../../utils/formatDate";
 
+const endPoint = "testorder/api/Booking/patient";
+const endPoint1 = "testorder/api/TestBundle";
 const MOCK_BOOKINGS = [
   {
     id: "APT004",
@@ -66,13 +71,41 @@ const MOCK_BOOKINGS = [
 
 export default function BookingHistory() {
   const [expanded, setExpanded] = useState({});
+  const [BookingHistory, setBookingHistory] = useState([]);
+  const [Package, setPackage] = useState([]);
+  const { patientId } = useSelector((state) => state.patient);
 
-  const toggle = (id) => {
-    setExpanded((s) => ({ ...s, [id]: !s[id] }));
+  useEffect(() => {
+    const fetchAPi = async () => {
+      try {
+        const response = await api.get(`${endPoint}?patientId=${patientId}`);
+        const data = response.data;
+
+        if (response.status >= 200 && response.status < 300) {
+          setBookingHistory(data);
+        }
+
+        const bundleId = data?.[0]?.bundleId || data?.bundleId;
+
+        const response2 = await api.get(`${endPoint1}/${bundleId}`);
+        const pkg = response2.data;
+        if (response2.status >= 200 && response2.status < 300) {
+          setPackage(pkg);
+        }
+      } catch (err) {
+        console.error("Lỗi khi fetch API:", err);
+      }
+    };
+
+    if (patientId) fetchAPi();
+  }, [patientId]);
+
+  const toggle = (bookingCode) => {
+    setExpanded((s) => ({ ...s, [bookingCode]: !s[bookingCode] }));
   };
 
   const statusLabel = (status) => {
-    switch (status) {
+    switch (String(status).toLowerCase()) {
       case "pending":
         return { text: "Chờ xác nhận", className: "badge-yellow" };
       case "confirmed":
@@ -102,17 +135,19 @@ export default function BookingHistory() {
           Lọc lịch hẹn theo ngày và trạng thái
         </span>
         <div className="filter-row">
-          <div className="filter-item">
-            <label htmlFor="from-date" className="filter-label">
-              Từ ngày
-            </label>
-            <input type="date" id="from-date" className="filter-date-input" />
-          </div>
-          <div className="filter-item">
-            <label htmlFor="to-date" className="filter-label">
-              Đến ngày
-            </label>
-            <input type="date" id="to-date" className="filter-date-input" />
+          <div style={{ display: "flex", gap: "16px" }}>
+            <div className="filter-item">
+              <label htmlFor="from-date" className="filter-label">
+                Từ ngày
+              </label>
+              <input type="date" id="from-date" className="filter-date-input" />
+            </div>
+            <div className="filter-item">
+              <label htmlFor="to-date" className="filter-label">
+                Đến ngày
+              </label>
+              <input type="date" id="to-date" className="filter-date-input" />
+            </div>
           </div>
           <div className="filter-item">
             <label htmlFor="status" className="filter-label">
@@ -130,28 +165,33 @@ export default function BookingHistory() {
       </div>
 
       <div className="booking-list">
-        {MOCK_BOOKINGS.map((b) => {
+        {BookingHistory.map((b) => {
           const s = statusLabel(b.status);
-          const isExpanded = !!expanded[b.id];
+          const isExpanded = !!expanded[b.bookingCode];
           return (
-            <div key={b.id} className={`booking-card booking-${b.status}`}>
+            <div
+              key={b.bookingCode}
+              className={`booking-card booking-${String(
+                b.status
+              ).toLowerCase()}`}
+            >
               <div className="booking-card-header">
-                <div className="booking-code">Mã đặt lịch: {b.id}</div>
+                <div className="booking-code">Mã đặt lịch: {b.bookingCode}</div>
                 <div className="booking-main">
                   <img src="src\assets\icon\Calender.svg" alt="Calender" />
                   <div className="booking-date&time">
-                    <div className="booking-date">{b.dateLabel}</div>
-                    <div className="booking-time">Giờ hẹn: {b.time}</div>
+                    <div className="booking-date">{b.RunDate}</div>
+                    <div className="booking-time">Giờ hẹn:</div>
                   </div>
                   <div className={`booking-badge ${s.className}`}>{s.text}</div>
                 </div>
                 <div className="booking-created">
-                  Đặt lịch ngày: lúc {b.createdAt}
+                  Đặt lịch ngày: {formatDate(b.createdDate)}
                 </div>
                 <div className="booking-actions">
                   <button
                     className="btn-dropdown"
-                    onClick={() => toggle(b.id)}
+                    onClick={() => toggle(b.bookingCode)}
                     aria-expanded={isExpanded}
                   >
                     {isExpanded ? "Ẩn chi tiết" : "Xem chi tiết"}
@@ -159,14 +199,12 @@ export default function BookingHistory() {
                 </div>
               </div>
 
-              {/* always render body, toggle classes for animation */}
               <div
                 className={`booking-card-body ${
                   isExpanded ? "open" : "closed"
                 }`}
                 aria-hidden={!isExpanded}
               >
-                {/* unified expanded grid: always show Personal / Details / Payment */}
                 <div className="completed-layout expanded-grid">
                   <div className="left-col">
                     <div className="section">
@@ -176,21 +214,21 @@ export default function BookingHistory() {
                           <img src="src\assets\icon\User.svg" alt="User" />
                           <span className="label">Họ và tên</span>
                         </div>
-                        <span className="value">{b.patient.name}</span>
+                        <span className="value">{b.patientName}</span>
                       </div>
                       <div className="info-row">
                         <div className="info-row-1">
                           <img src="src\assets\icon\Mail.svg" alt="Email" />
                           <span className="label">Email</span>
                         </div>
-                        <span className="value">{b.patient.email}</span>
+                        <span className="value">{b.patientEmail}</span>
                       </div>
                       <div className="info-row">
                         <div className="info-row-1">
                           <img src="src\assets\icon\Phone.svg" alt="Phone" />{" "}
                           <span className="label">Điện thoại</span>
                         </div>
-                        <span className="value">{b.patient.phone}</span>
+                        <span className="value">{b.patientPhoneNumber}</span>
                       </div>
                     </div>
                   </div>
@@ -206,18 +244,13 @@ export default function BookingHistory() {
                           />
                           <span className="label">Gói</span>
                         </div>
-                        <span className="value">{b.service}</span>
+                        <span className="value">
+                          {b.bundleId
+                            ? Package?.bundleName || `Gói #${b.bundleId}`
+                            : "Không có gói"}
+                        </span>
                       </div>
-                      {/* <div className="info-row">
-                            <span className="label">Ngày hẹn</span>
-                            <span className="value">
-                              {b.dateLabel} — {b.time}
-                            </span>
-                          </div>
-                          <div className="info-row small">
-                            <span className="label">Đặt lúc</span>
-                            <span className="value">{b.createdAt}</span>
-                          </div> */}
+                      {/* Nếu có thêm thông tin về dịch vụ hoặc catalog, có thể hiển thị ở đây */}
                     </div>
                   </div>
 
@@ -231,23 +264,26 @@ export default function BookingHistory() {
                         </div>
                         <span className="value">Tiền mặt</span>
                       </div>
-                      <div className="info-row">
-                        <div className="info-row-1">
-                          <img src="src\assets\icon\Pay.svg" alt="Pay" />
-                          <span className="label">Tổng tiền</span>
+                      {/* Nếu có trường price thì hiển thị, nếu không thì bỏ qua */}
+                      {typeof b.price === "number" && (
+                        <div className="info-row">
+                          <div className="info-row-1">
+                            <img src="src\assets\icon\Pay.svg" alt="Pay" />
+                            <span className="label">Tổng tiền</span>
+                          </div>
+                          <span className="value">
+                            {b.price.toLocaleString("vi-VN")} ₫
+                          </span>
                         </div>
-                        <span className="value">
-                          {b.price.toLocaleString("vi-VN")} ₫
-                        </span>
-                      </div>
+                      )}
                     </div>
                   </div>
                 </div>
 
-                {/* result area: only this differs by status */}
+                {/* result area: chỉ hiển thị nếu có status completed/cancelled */}
                 <h3>Kết quả xét nghiệm</h3>
                 <div className="result-area" style={{ marginTop: 20 }}>
-                  {b.status === "completed" && b.resultReady ? (
+                  {String(b.status).toLowerCase() === "completed" ? (
                     <div className="result-box ready">
                       <img
                         src="src\assets\icon\Document_Border.svg"
@@ -264,14 +300,14 @@ export default function BookingHistory() {
                           color: "#737373",
                         }}
                       >
-                        Có 27 chỉ số xét nghiệm trong gói này
+                        Vui lòng liên hệ phòng khám để nhận kết quả.
                       </p>
                       <button className="btn-primary-history-booking">
                         <img src="src\assets\icon\Document_white.svg" alt="" />
                         Xem chi tiết kết quả xét nghiệm
                       </button>
                     </div>
-                  ) : b.status === "cancelled" ? (
+                  ) : String(b.status).toLowerCase() === "cancelled" ? (
                     <div className="result-box cancelled">
                       <strong>Không có kết quả xét nghiệm</strong>
                       <p>Lịch hẹn đã bị hủy, không có kết quả.</p>
@@ -279,13 +315,15 @@ export default function BookingHistory() {
                   ) : (
                     <div
                       className={`result-box ${
-                        b.status === "pending" || b.status === "confirmed"
+                        String(b.status).toLowerCase() === "pending" ||
+                        String(b.status).toLowerCase() === "confirmed"
                           ? "yellow"
                           : "normal"
                       }`}
                     >
                       <p>Chưa có kết quả xét nghiệm</p>
-                      {(b.status === "pending" || b.status === "confirmed") && (
+                      {(String(b.status).toLowerCase() === "pending" ||
+                        String(b.status).toLowerCase() === "confirmed") && (
                         <small>
                           Kết quả sẽ được cập nhật sau khi hoàn tất lấy mẫu.
                         </small>
