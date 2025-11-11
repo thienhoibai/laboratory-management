@@ -1,23 +1,25 @@
 import React, { useState, useEffect } from "react";
+import { useDispatch } from "react-redux";
+import { setPatient } from "../../data/patientSlice";
 import { useNavigate } from "react-router-dom";
 import "./ProfilePage.css";
 import { setAuthToken } from "../../utils/auth";
 import api from "../../configs/axios";
 import { toast } from "react-toastify";
-import {
-  Pagination,
-  Modal,
-  Form,
-  Input,
-  Select,
-  DatePicker,
-  Button,
-} from "antd";
+import { Pagination, Modal, Form, Input, Select, DatePicker } from "antd";
 import dayjs from "dayjs";
-import ChangePasswordModal from "./ChangePassword";
+import {
+  parseDateToInput,
+  calculateAge,
+  formatDateTime,
+} from "../../utils/formatDate";
+
+// Change password feature removed:
+// This ProfilePage does not include any "change password" UI, state or API calls.
+// If a change-password feature is added later, keep it in a separate component/modal
+// and do not couple password changes with profile data updates.
 
 // ===== CONSTANTS & UTILS =====
-const URL = "iam/api/Auth/change-password";
 const initialFormData = {
   fullName: "",
   gender: "",
@@ -31,19 +33,18 @@ const initialFormData = {
 
 // ===== MAIN PROFILE PAGE COMPONENT =====
 export default function ProfilePage() {
+  const dispatch = useDispatch();
+
   // ===== STATE =====
   const [userData, setUserData] = useState([]);
   const [activeTab, setActiveTab] = useState("personal");
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState(initialFormData);
-  const [loading, setLoading] = useState(true);
   const [errors, setErrors] = useState({});
   const [medicalRecords, setMedicalRecords] = useState([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createForm] = Form.useForm();
   const [isCreating, setIsCreating] = useState(false);
-
-  const [openChange, setOpenChange] = useState(false);
 
   const [totalRecords, setTotalRecords] = useState(0);
   const [page, setPage] = useState(1);
@@ -64,7 +65,6 @@ export default function ProfilePage() {
       setAuthToken(token);
 
       const check = await api.get(`patient/v1/patients/me`);
-
       if (!check.data || check.data.succeeded === false || !check.data.data) {
         navigate("/create-profile");
         return;
@@ -79,17 +79,24 @@ export default function ProfilePage() {
       }
 
       const response = await api.get(`patient/v1/patients/${patientId}`);
-
+      const data = response.data;
       if (response.status === 200 && response.data) {
-        setUserData(response.data);
+        setUserData(data);
+
+        dispatch(
+          setPatient({
+            patientId: data.patientId,
+            fullName: data.fullName,
+            phone: data.phone,
+            email: data.email,
+          })
+        );
       } else {
-        navigate("/create-pro file");
+        navigate("/create-profile");
       }
     } catch (error) {
       toast.error(error);
       navigate("/create-profile");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -114,32 +121,6 @@ export default function ProfilePage() {
   };
 
   // ===== FORM UTILS =====
-  // Parse date string to input value (YYYY-MM-DD)
-  const parseDateToInput = (dateStr) => {
-    if (!dateStr) return "";
-    // Accept ISO or "DD tháng MM, YYYY"
-    if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) return dateStr;
-    const match = dateStr.match(/(\d+)\s+tháng\s+(\d+),\s*(\d+)/);
-    if (match) {
-      const [, day, month, year] = match;
-      return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
-    }
-    return "";
-  };
-
-  // Tính tuổi theo (YYYY-MM-DD)
-  const calculateAge = (dateStr) => {
-    if (!dateStr) return 0;
-    const [year, month, day] = dateStr.split("-");
-    const birthDate = new Date(year, month - 1, day);
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const m = today.getMonth() - birthDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age;
-  };
 
   const getInitials = (name) => {
     if (!name) return "";
@@ -148,25 +129,6 @@ export default function ProfilePage() {
       .map((word) => word[0])
       .join("")
       .toUpperCase();
-  };
-  // format ngày va giờ
-  const formatDateTime = (isoString) => {
-    if (!isoString) return "";
-    const date = new Date(isoString);
-    const pad = (n) => n.toString().padStart(2, "0");
-    return (
-      date.getFullYear() +
-      "-" +
-      pad(date.getMonth() + 1) +
-      "-" +
-      pad(date.getDate()) +
-      " " +
-      pad(date.getHours()) +
-      ":" +
-      pad(date.getMinutes()) +
-      ":" +
-      pad(date.getSeconds())
-    );
   };
 
   // ===== HANDLERS =====
@@ -308,15 +270,6 @@ export default function ProfilePage() {
     }
   };
 
-  // ===== RENDER LOADING =====
-  if (loading) {
-    return (
-      <div className="profile-page">
-        <div className="profile-loading">Đang tải...</div>
-      </div>
-    );
-  }
-
   // ===== RENDER MAIN UI =====
   return (
     <div className="profile-page">
@@ -433,15 +386,6 @@ export default function ProfilePage() {
                   <p className="profile-section-subtitle">
                     Thông tin chi tiết về bệnh nhân
                   </p>
-                </div>
-                <div>
-                  <Button
-                    type="default"
-                    onClick={() => setOpenChange(true)}
-                    className="btn-change-password"
-                  >
-                    Đổi mật khẩu
-                  </Button>
                 </div>
               </div>
 
@@ -912,7 +856,7 @@ export default function ProfilePage() {
       {showModal && (
         <div className="modal-overlay" onClick={handleCloseModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+            <div className="modal-header-1">
               <h2 className="modal-title">Cập nhật thông tin bệnh nhân</h2>
               <p className="modal-subtitle">
                 Chỉnh sửa thông tin cá nhân của bệnh nhân
@@ -930,8 +874,8 @@ export default function ProfilePage() {
               </button>
             </div>
 
-            <div className="modal-body">
-              <div className="form-row">
+            <div className="modal-body-1">
+              <div className="form-row-1">
                 <div className="form-group">
                   <label>Họ và tên</label>
                   <input
@@ -960,7 +904,7 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              <div className="form-row">
+              <div className="form-row-1">
                 <div className="form-group">
                   <label>Ngày sinh</label>
                   <input
@@ -989,36 +933,35 @@ export default function ProfilePage() {
                   )}
                 </div>
               </div>
+              <div className="form-row-1">
+                <div className="form-group">
+                  <label>Email</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    className={errors.email ? "error" : ""}
+                  />
+                  {errors.email && (
+                    <span className="error-text">{errors.email}</span>
+                  )}
+                </div>
 
-              <div className="form-group">
-                <label>Email</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className={errors.email ? "error" : ""}
-                />
-                {errors.email && (
-                  <span className="error-text">{errors.email}</span>
-                )}
-              </div>
+                <div className="form-group">
+                  <label>Địa chỉ</label>
+                  <input
+                    type="text"
+                    name="address"
+                    value={formData.address}
+                    onChange={handleInputChange}
+                    className={errors.address ? "error" : ""}
+                  />
+                  {errors.address && (
+                    <span className="error-text">{errors.address}</span>
+                  )}
+                </div>
 
-              <div className="form-group">
-                <label>Địa chỉ</label>
-                <input
-                  type="text"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  className={errors.address ? "error" : ""}
-                />
-                {errors.address && (
-                  <span className="error-text">{errors.address}</span>
-                )}
-              </div>
-
-              <div className="form-row">
                 <div className="form-group">
                   <label>Số CMND/CCCD</label>
                   <input
@@ -1187,12 +1130,6 @@ export default function ProfilePage() {
           </div>
         </Form>
       </Modal>
-
-      {/* ===== CHANGE PASSWORD MODAL ===== */}
-      <ChangePasswordModal
-        open={openChange}
-        onClose={() => setOpenChange(false)}
-      />
     </div>
   );
 }

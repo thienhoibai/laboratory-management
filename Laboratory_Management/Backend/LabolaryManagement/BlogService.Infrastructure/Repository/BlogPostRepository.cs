@@ -4,6 +4,7 @@ using BlogService.Infrastructure.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -25,10 +26,23 @@ namespace BlogService.Infrastructure.Repository
         public async Task<List<BlogPost>> GetPendingApprovalAsync()
         {
             return await _context.BlogPosts
-                .Include(p => p.Category)
-                .Where(p => p.IsApproved == false)
+                .Where(p => p.Status == 0)
+                .Include(p => p.Category)            
                 .ToListAsync();
         }
+
+        public async Task UpdateStatusAsync(int postId, UpdateStatus status)
+        {
+            var post = await _context.BlogPosts.FindAsync(postId);
+            if (post != null)
+            {
+                post.Status = (int)status; // lưu enum dưới dạng int
+               
+                post.UpdatedDate = DateTime.Now;
+                await _context.SaveChangesAsync();
+            }
+        }
+
     }
-    }
+}
 
