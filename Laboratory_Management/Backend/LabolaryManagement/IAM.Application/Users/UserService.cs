@@ -1,7 +1,7 @@
 ﻿using Common.Errors;
 using Common.Pagination;
 using Common.Results;
-using IAM.Application.Auth; // add for IPasswordService
+using IAM.Application.Auth; // for IPasswordService
 using IAM.Application.Security;
 using IAM.Application.Users.DTOs;
 using IAM.Domain.Entities;
@@ -16,14 +16,11 @@ namespace IAM.Application.Users
         private readonly IamDbContext _db;
         private readonly IPasswordService _passwords;
         private readonly IPasswordPolicy _policy;
-        private readonly Messaging.Notifications.INotificationPublisher _publisher; // use messaging publisher
+        private readonly Messaging.Notifications.INotificationPublisher _publisher;
 
         public UserService(IamDbContext db, IPasswordService passwords, IPasswordPolicy policy, Messaging.Notifications.INotificationPublisher publisher)
         {
-            _db = db;
-            _passwords = passwords;
-            _policy = policy;
-            _publisher = publisher;
+            _db = db; _passwords = passwords; _policy = policy; _publisher = publisher;
         }
 
         public async Task<OperationResult<UserDetailDto>> CreateAsync(CreateUserRequest request, Guid actorId, CancellationToken ct = default)
@@ -39,7 +36,6 @@ namespace IAM.Application.Users
             var role = await _db.Roles.FirstOrDefaultAsync(r => r.RoleId == request.RoleId, ct);
             if (role == null) return OperationResult<UserDetailDto>.Fail(ErrorCodes.ValidationError);
 
-            // Random strong password
             var plainPassword = GenerateStrongPassword();
             if (!_policy.Validate(plainPassword, out _))
                 return OperationResult<UserDetailDto>.Fail(ErrorCodes.ValidationError);
@@ -52,13 +48,12 @@ namespace IAM.Application.Users
                 FullName = null,
                 PasswordHash = _passwords.Hash(plainPassword),
                 IsActive = true,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now,
                 AuthProvider = "Password"
             };
-
             _db.Users.Add(user);
-            _db.UserRoles.Add(new UserRole { UserId = user.UserId, RoleId = role.RoleId, AssignedAt = DateTime.UtcNow });
+            _db.UserRoles.Add(new UserRole { UserId = user.UserId, RoleId = role.RoleId, AssignedAt = DateTime.Now });
 
             _db.AuditLogs.Add(new AuditLog
             {
@@ -66,20 +61,14 @@ namespace IAM.Application.Users
                 UserId = actorId,
                 Resource = $"User:{user.UserId}",
                 Description = $"Created user {user.Username} with role #{role.RoleId}",
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.Now
             });
 
             await _db.SaveChangesAsync(ct);
 
-            // Send email with credentials (best-effort)
             try
             {
-                await _publisher.PublishAsync("InviteUser", new
-                {
-                    to = user.Email,
-                    Username = user.Username,
-                    Password = plainPassword
-                }, ct);
+                await _publisher.PublishAsync("InviteUser", new { to = user.Email, Username = user.Username, Password = plainPassword }, ct);
             }
             catch (Exception ex)
             {
@@ -89,7 +78,7 @@ namespace IAM.Application.Users
                     UserId = actorId,
                     Resource = $"User:{user.UserId}",
                     Description = ex.Message,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.Now
                 });
                 await _db.SaveChangesAsync(ct);
             }
@@ -100,7 +89,6 @@ namespace IAM.Application.Users
 
         private static string GenerateStrongPassword()
         {
-            // 12 chars: upper, lower, digits, symbols
             const string upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
             const string lower = "abcdefghijkmnopqrstuvwxyz";
             const string digit = "23456789";
@@ -109,20 +97,12 @@ namespace IAM.Application.Users
 
             static string Pick(string chars, int n, RandomNumberGenerator rnd)
             {
-                var bytes = new byte[n];
-                rnd.GetBytes(bytes);
-                var result = new char[n];
+                var bytes = new byte[n]; rnd.GetBytes(bytes); var result = new char[n];
                 for (int i = 0; i < n; i++) result[i] = chars[bytes[i] % chars.Length];
                 return new string(result);
             }
 
-            var parts = new[]
-            {
-                Pick(upper, 3, rnd),
-                Pick(lower, 5, rnd),
-                Pick(digit, 2, rnd),
-                Pick(symbol, 2, rnd)
-            };
+            var parts = new[] { Pick(upper, 3, rnd), Pick(lower, 5, rnd), Pick(digit, 2, rnd), Pick(symbol, 2, rnd) };
             return string.Concat(parts.OrderBy(_ => Guid.NewGuid()));
         }
 
@@ -138,9 +118,7 @@ namespace IAM.Application.Users
                 user.Email = request.Email!;
             }
             if (!string.IsNullOrWhiteSpace(request.FullName)) user.FullName = request.FullName;
-            // Phone not stored in User entity in current schema; ignore
-
-            user.UpdatedAt = DateTime.UtcNow;
+            user.UpdatedAt = DateTime.Now;
 
             _db.AuditLogs.Add(new AuditLog
             {
@@ -148,10 +126,12 @@ namespace IAM.Application.Users
                 UserId = actorId,
                 Resource = $"User:{user.UserId}",
                 Description = "Update user profile",
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.Now
             });
             await _db.SaveChangesAsync(ct);
-            var roles = await _db.UserRoles.Where(ur => ur.UserId == user.UserId).Join(_db.Roles, ur => ur.RoleId, r => r.RoleId, (ur, r) => r.Name).ToArrayAsync(ct);
+
+            var roles = await _db.UserRoles.Where(ur => ur.UserId == user.UserId)
+                .Join(_db.Roles, ur => ur.RoleId, r => r.RoleId, (ur, r) => r.Name).ToArrayAsync(ct);
             return OperationResult<UserDetailDto>.Success(new UserDetailDto(user.UserId, user.Username, user.Email, user.FullName, user.IsActive, user.LastLoginAt, user.CreatedAt, user.UpdatedAt, roles));
         }
 
@@ -161,14 +141,7 @@ namespace IAM.Application.Users
             if (user == null) return OperationResult.Fail(ErrorCodes.NotFound);
 
             _db.Users.Remove(user);
-            _db.AuditLogs.Add(new AuditLog
-            {
-                Action = "DELETE_USER",
-                UserId = actorId,
-                Resource = $"User:{id}",
-                Description = "Delete user",
-                CreatedAt = DateTime.UtcNow
-            });
+            _db.AuditLogs.Add(new AuditLog { Action = "DELETE_USER", UserId = actorId, Resource = $"User:{id}", Description = "Delete user", CreatedAt = DateTime.Now });
             await _db.SaveChangesAsync(ct);
             return OperationResult.Success();
         }
@@ -177,40 +150,36 @@ namespace IAM.Application.Users
         {
             var user = await _db.Users.FirstOrDefaultAsync(u => u.UserId == id, ct);
             if (user == null) return OperationResult<UserDetailDto>.Fail(ErrorCodes.NotFound);
-
-            var roles = await _db.UserRoles.Where(ur => ur.UserId == user.UserId).Join(_db.Roles, ur => ur.RoleId, r => r.RoleId, (ur, r) => r.Name).ToArrayAsync(ct);
+            var roles = await _db.UserRoles.Where(ur => ur.UserId == user.UserId)
+                .Join(_db.Roles, ur => ur.RoleId, r => r.RoleId, (ur, r) => r.Name).ToArrayAsync(ct);
             return OperationResult<UserDetailDto>.Success(new UserDetailDto(user.UserId, user.Username, user.Email, user.FullName, user.IsActive, user.LastLoginAt, user.CreatedAt, user.UpdatedAt, roles));
         }
 
         public async Task<PageResult<UserSummaryDto>> ListAsync(int page, int pageSize, string? search, string? role, string? type, string? status, string? sortBy, string? sort, CancellationToken ct = default)
         {
-            var query = _db.Users.AsNoTracking().AsQueryable();
+            var q = _db.Users.AsNoTracking();
             if (!string.IsNullOrWhiteSpace(search))
             {
-                var s = search.Trim();
-                query = query.Where(u => u.Username.Contains(s) || u.Email.Contains(s));
+                var s = search.Trim(); q = q.Where(u => u.Username.Contains(s) || u.Email.Contains(s));
             }
-
             if (!string.IsNullOrWhiteSpace(role))
             {
-                query = from u in query
-                        join ur in _db.UserRoles on u.UserId equals ur.UserId
-                        join r in _db.Roles on ur.RoleId equals r.RoleId
-                        where r.Name == role
-                        select u;
+                q = from u in q
+                    join ur in _db.UserRoles on u.UserId equals ur.UserId
+                    join r in _db.Roles on ur.RoleId equals r.RoleId
+                    where r.Name == role
+                    select u;
             }
-
-            query = sortBy?.ToLowerInvariant() switch
+            q = sortBy?.ToLowerInvariant() switch
             {
-                "createdat" => (sort?.ToLowerInvariant() == "asc" ? query.OrderBy(x => x.CreatedAt) : query.OrderByDescending(x => x.CreatedAt)),
-                "username" => (sort?.ToLowerInvariant() == "desc" ? query.OrderByDescending(x => x.Username) : query.OrderBy(x => x.Username)),
-                "email" => (sort?.ToLowerInvariant() == "desc" ? query.OrderByDescending(x => x.Email) : query.OrderBy(x => x.Email)),
-                _ => query.OrderByDescending(x => x.CreatedAt)
+                "createdat" => (sort?.ToLowerInvariant() == "asc" ? q.OrderBy(x => x.CreatedAt) : q.OrderByDescending(x => x.CreatedAt)),
+                "username" => (sort?.ToLowerInvariant() == "desc" ? q.OrderByDescending(x => x.Username) : q.OrderBy(x => x.Username)),
+                "email" => (sort?.ToLowerInvariant() == "desc" ? q.OrderByDescending(x => x.Email) : q.OrderBy(x => x.Email)),
+                _ => q.OrderByDescending(x => x.CreatedAt)
             };
 
-            var total = await query.LongCountAsync(ct);
-
-            var items = await query.Skip((page - 1) * pageSize).Take(pageSize)
+            var total = await q.LongCountAsync(ct);
+            var items = await q.Skip((page - 1) * pageSize).Take(pageSize)
                 .Select(u => new
                 {
                     u.UserId,
@@ -220,13 +189,8 @@ namespace IAM.Application.Users
                     u.IsActive,
                     u.CreatedAt,
                     u.LastLoginAt,
-                    Roles = (from ur in _db.UserRoles
-                             join r in _db.Roles on ur.RoleId equals r.RoleId
-                             where ur.UserId == u.UserId
-                             select r.Name).ToArray()
-                })
-                .ToListAsync(ct);
-
+                    Roles = (from ur in _db.UserRoles join r in _db.Roles on ur.RoleId equals r.RoleId where ur.UserId == u.UserId select r.Name).ToArray()
+                }).ToListAsync(ct);
             var mapped = items.Select(i => new UserSummaryDto(i.UserId, i.Username, i.Email, i.FullName, i.IsActive, i.CreatedAt, i.LastLoginAt, i.Roles)).ToList();
             return PageResult<UserSummaryDto>.From(mapped, page, pageSize, total);
         }
@@ -235,14 +199,11 @@ namespace IAM.Application.Users
         {
             var user = await _db.Users.FirstOrDefaultAsync(u => u.UserId == id, ct);
             if (user == null) return OperationResult.Fail(ErrorCodes.NotFound);
-
             var roles = await _db.Roles.Where(r => request.RoleIds.Contains(r.RoleId)).ToListAsync(ct);
             var existing = await _db.UserRoles.Where(ur => ur.UserId == id).ToListAsync(ct);
             _db.UserRoles.RemoveRange(existing);
-            foreach (var r in roles)
-                _db.UserRoles.Add(new UserRole { UserId = id, RoleId = r.RoleId, AssignedAt = DateTime.UtcNow });
-
-            _db.AuditLogs.Add(new AuditLog { Action = "ASSIGN_ROLES", UserId = actorId, Resource = $"User:{id}", Description = $"Assign roles: {string.Join(',', roles.Select(x=>x.RoleId))}", CreatedAt = DateTime.UtcNow });
+            foreach (var r in roles) _db.UserRoles.Add(new UserRole { UserId = id, RoleId = r.RoleId, AssignedAt = DateTime.Now });
+            _db.AuditLogs.Add(new AuditLog { Action = "ASSIGN_ROLES", UserId = actorId, Resource = $"User:{id}", Description = $"Assign roles: {string.Join(',', roles.Select(x => x.RoleId))}", CreatedAt = DateTime.Now });
             await _db.SaveChangesAsync(ct);
             return OperationResult.Success();
         }
@@ -252,12 +213,10 @@ namespace IAM.Application.Users
             var sec = await _db.UserSecurities.FirstOrDefaultAsync(x => x.UserId == id, ct);
             if (sec == null)
             {
-                sec = new UserSecurity { UserId = id, FailedAccessCount = 0 };
-                _db.UserSecurities.Add(sec);
+                sec = new UserSecurity { UserId = id, FailedAccessCount = 0 }; _db.UserSecurities.Add(sec);
             }
-            // Lock until far future to represent locked status
-            sec.LockoutEnd = DateTime.UtcNow.AddYears(100);
-            _db.AuditLogs.Add(new AuditLog { Action = "LOCK_USER", UserId = actorId, Resource = $"User:{id}", Description = "Lock user", CreatedAt = DateTime.UtcNow });
+            sec.LockoutEnd = DateTime.Now.AddYears(100);
+            _db.AuditLogs.Add(new AuditLog { Action = "LOCK_USER", UserId = actorId, Resource = $"User:{id}", Description = "Lock user", CreatedAt = DateTime.Now });
             await _db.SaveChangesAsync(ct);
             return OperationResult.Success();
         }
@@ -266,9 +225,8 @@ namespace IAM.Application.Users
         {
             var sec = await _db.UserSecurities.FirstOrDefaultAsync(x => x.UserId == id, ct);
             if (sec == null) return OperationResult.Fail(ErrorCodes.NotFound);
-            sec.LockoutEnd = null;
-            sec.FailedAccessCount = 0;
-            _db.AuditLogs.Add(new AuditLog { Action = "UNLOCK_USER", UserId = actorId, Resource = $"User:{id}", Description = "Unlock user", CreatedAt = DateTime.UtcNow });
+            sec.LockoutEnd = null; sec.FailedAccessCount = 0;
+            _db.AuditLogs.Add(new AuditLog { Action = "UNLOCK_USER", UserId = actorId, Resource = $"User:{id}", Description = "Unlock user", CreatedAt = DateTime.Now });
             await _db.SaveChangesAsync(ct);
             return OperationResult.Success();
         }
