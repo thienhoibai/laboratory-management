@@ -1,23 +1,25 @@
 import React, { useState, useEffect } from "react";
+import { useDispatch } from "react-redux";
+import { setPatient } from "../../data/patientSlice";
 import { useNavigate } from "react-router-dom";
 import "./ProfilePage.css";
 import { setAuthToken } from "../../utils/auth";
 import api from "../../configs/axios";
 import { toast } from "react-toastify";
-import {
-  Pagination,
-  Modal,
-  Form,
-  Input,
-  Select,
-  DatePicker,
-  Button,
-} from "antd";
+import { Pagination, Modal, Form, Input, Select, DatePicker } from "antd";
 import dayjs from "dayjs";
-import "./ChangePassword.css";
+import {
+  parseDateToInput,
+  calculateAge,
+  formatDateTime,
+} from "../../utils/formatDate";
 
-const URL = "iam/api/Auth/change-password";
+// Change password feature removed:
+// This ProfilePage does not include any "change password" UI, state or API calls.
+// If a change-password feature is added later, keep it in a separate component/modal
+// and do not couple password changes with profile data updates.
 
+// ===== CONSTANTS & UTILS =====
 const initialFormData = {
   fullName: "",
   gender: "",
@@ -29,141 +31,20 @@ const initialFormData = {
   healthInsurance: "",
 };
 
-const ChangePasswordModal = ({ open, onClose }) => {
-  const [form] = Form.useForm();
-  const [loading, setLoading] = useState(false);
-  const token = localStorage.getItem("accessToken");
-  const passwordPattern =
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
-
-  const handleSubmit = async (values) => {
-    setLoading(true);
-    setAuthToken(token);
-    try {
-      const response = await api.post(URL, {
-        currentPassword: values.oldPassword,
-        newPassword: values.newPassword,
-      });
-
-      if (response.status >= 200 && response.status < 300) {
-        toast.success(response?.data?.message || "Đổi mật khẩu thành công!");
-        form.resetFields();
-        onClose();
-      }
-    } catch (err) {
-      const serverMsg =
-        (typeof err?.response?.data === "string" && err.response.data) ||
-        err?.response?.data?.message ||
-        err?.response?.data?.error ||
-        err?.message ||
-        "Đổi mật khẩu thất bại.";
-      toast.error(serverMsg);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <Modal
-      title="Đổi mật khẩu"
-      open={open}
-      onCancel={() => {
-        form.resetFields();
-        onClose();
-      }}
-      footer={null}
-      className="cp-modal"
-    >
-      <Form form={form} layout="vertical" onFinish={handleSubmit}>
-        <Form.Item
-          label="Mật khẩu cũ"
-          name="oldPassword"
-          rules={[{ required: true, message: "Vui lòng nhập mật khẩu cũ" }]}
-        >
-          <Input.Password placeholder="Mật khẩu cũ" size="large" />
-        </Form.Item>
-
-        <Form.Item
-          label="Mật khẩu mới"
-          name="newPassword"
-          rules={[
-            { required: true, message: "Vui lòng nhập mật khẩu mới" },
-            {
-              validator: (_, value) => {
-                if (!value) return Promise.reject();
-                return passwordPattern.test(value)
-                  ? Promise.resolve()
-                  : Promise.reject(
-                      new Error(
-                        "Mật khẩu phải có ít nhất 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt"
-                      )
-                    );
-              },
-            },
-          ]}
-        >
-          <Input.Password placeholder="Mật khẩu mới" size="large" />
-        </Form.Item>
-        <div className="cp-password-hint">
-          Mật khẩu cần tối thiểu 8 ký tự và phải bao gồm chữ hoa, chữ thường,
-          chữ số và ký tự đặc biệt.
-        </div>
-
-        <Form.Item
-          label="Xác nhận mật khẩu mới"
-          name="confirmPassword"
-          dependencies={["newPassword"]}
-          rules={[
-            { required: true, message: "Vui lòng xác nhận mật khẩu mới" },
-            ({ getFieldValue }) => ({
-              validator(_, value) {
-                if (!value || getFieldValue("newPassword") === value) {
-                  return Promise.resolve();
-                }
-                return Promise.reject(
-                  new Error("Mật khẩu xác nhận không khớp")
-                );
-              },
-            }),
-          ]}
-        >
-          <Input.Password placeholder="Xác nhận mật khẩu mới" size="large" />
-        </Form.Item>
-
-        <Form.Item>
-          <div className="cp-actions">
-            <Button
-              onClick={() => {
-                form.resetFields();
-                onClose();
-              }}
-              style={{ marginRight: 8 }}
-            >
-              Hủy
-            </Button>
-            <Button type="primary" htmlType="submit" loading={loading}>
-              Lưu
-            </Button>
-          </div>
-        </Form.Item>
-      </Form>
-    </Modal>
-  );
-};
-
+// ===== MAIN PROFILE PAGE COMPONENT =====
 export default function ProfilePage() {
+  const dispatch = useDispatch();
+
+  // ===== STATE =====
   const [userData, setUserData] = useState([]);
   const [activeTab, setActiveTab] = useState("personal");
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState(initialFormData);
-  const [loading, setLoading] = useState(true);
   const [errors, setErrors] = useState({});
   const [medicalRecords, setMedicalRecords] = useState([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createForm] = Form.useForm();
   const [isCreating, setIsCreating] = useState(false);
-
-  const [openChange, setOpenChange] = useState(false);
 
   const [totalRecords, setTotalRecords] = useState(0);
   const [page, setPage] = useState(1);
@@ -171,20 +52,20 @@ export default function ProfilePage() {
 
   const navigate = useNavigate();
 
+  // ===== HOOKS =====
   useEffect(() => {
     fetchProfile();
     fetchMedicalRecords(page, pageSize);
   }, [page, pageSize]);
 
+  // ===== API CALLS =====
   const fetchProfile = async () => {
     try {
       const token = localStorage.getItem("accessToken");
       setAuthToken(token);
 
       const check = await api.get(`patient/v1/patients/me`);
-
       if (!check.data || check.data.succeeded === false || !check.data.data) {
-        console.warn("Không tìm thấy hồ sơ bệnh nhân -> tạo mới");
         navigate("/create-profile");
         return;
       }
@@ -193,25 +74,29 @@ export default function ProfilePage() {
       const patientId = patient.patientId;
 
       if (!patientId) {
-        console.warn("Không có patientId trong dữ liệu /me");
         navigate("/create-profile");
         return;
       }
 
       const response = await api.get(`patient/v1/patients/${patientId}`);
-
+      const data = response.data;
       if (response.status === 200 && response.data) {
-        setUserData(response.data);
-        console.log("Đã tải hồ sơ:", response.data);
+        setUserData(data);
+
+        dispatch(
+          setPatient({
+            patientId: data.patientId,
+            fullName: data.fullName,
+            phone: data.phone,
+            email: data.email,
+          })
+        );
       } else {
-        console.warn("Không tìm thấy hồ sơ trong DB, chuyển sang tạo mới");
-        navigate("/create-pro file");
+        navigate("/create-profile");
       }
     } catch (error) {
-      console.error("Lỗi khi tải hồ sơ:", error);
+      toast.error(error);
       navigate("/create-profile");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -235,40 +120,18 @@ export default function ProfilePage() {
     }
   };
 
-  // Parse date string to input value (YYYY-MM-DD)
-  const parseDateToInput = (dateStr) => {
-    if (!dateStr) return "";
-    // Accept ISO or "DD tháng MM, YYYY"
-    if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) return dateStr;
-    const match = dateStr.match(/(\d+)\s+tháng\s+(\d+),\s*(\d+)/);
-    if (match) {
-      const [, day, month, year] = match;
-      return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
-    }
-    return "";
+  // ===== FORM UTILS =====
+
+  const getInitials = (name) => {
+    if (!name) return "";
+    return name
+      .split(" ")
+      .map((word) => word[0])
+      .join("")
+      .toUpperCase();
   };
 
-  // // hiển thị ngày sinh
-  // const formatDateDisplay = (dateStr) => {
-  //   if (!dateStr) return "";
-  //   const [year, month, day] = dateStr.split("-");
-  //   return `${parseInt(day)} tháng ${parseInt(month)}, ${year}`;
-  // };
-
-  // Tính tuổi theo (YYYY-MM-DD)
-  const calculateAge = (dateStr) => {
-    if (!dateStr) return 0;
-    const [year, month, day] = dateStr.split("-");
-    const birthDate = new Date(year, month - 1, day);
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const m = today.getMonth() - birthDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age;
-  };
-
+  // ===== HANDLERS =====
   const handleOpenModal = () => {
     setFormData({
       fullName: userData.fullName || "",
@@ -407,60 +270,11 @@ export default function ProfilePage() {
     }
   };
 
-  const getInitials = (name) => {
-    if (!name) return "";
-    return name
-      .split(" ")
-      .map((word) => word[0])
-      .join("")
-      .toUpperCase();
-  };
-  // format ngày va giờ
-  const formatDateTime = (isoString) => {
-    if (!isoString) return "";
-    const date = new Date(isoString);
-    const pad = (n) => n.toString().padStart(2, "0");
-    return (
-      date.getFullYear() +
-      "-" +
-      pad(date.getMonth() + 1) +
-      "-" +
-      pad(date.getDate()) +
-      " " +
-      pad(date.getHours()) +
-      ":" +
-      pad(date.getMinutes()) +
-      ":" +
-      pad(date.getSeconds())
-    );
-  };
-
-  if (loading) {
-    return (
-      <div className="profile-page">
-        <div className="profile-loading">Đang tải...</div>
-      </div>
-    );
-  }
-
+  // ===== RENDER MAIN UI =====
   return (
     <div className="profile-page">
-      {/* Header Section */}
+      {/* ===== HEADER SECTION ===== */}
       <div className="profile-header">
-        <button className="profile-back-btn" onClick={() => navigate("/")}>
-          <svg
-            className="back-icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            style={{ position: "relative", top: "2px" }}
-          >
-            <path d="M19 12H5" />
-            <path d="M12 19l-7-7 7-7" />
-          </svg>
-          Quay về trang chủ
-        </button>
         <div className="profile-header-content">
           <div className="profile-avatar-section">
             <div className="profile-avatar">
@@ -485,6 +299,20 @@ export default function ProfilePage() {
             </div>
           </div>
           <div className="profile-header-actions">
+            <button className="profile-back-btn" onClick={() => navigate("/")}>
+              <svg
+                className="back-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                style={{ position: "relative", top: "2px" }}
+              >
+                <path d="M19 12H5" />
+                <path d="M12 19l-7-7 7-7" />
+              </svg>
+              Quay về trang chủ
+            </button>
             <button
               className="profile-history-btn"
               onClick={() => navigate("/history")}
@@ -505,8 +333,9 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* ===== MAIN CONTENT ===== */}
       <div className="profile-content">
+        {/* ===== TABS ===== */}
         <div className="profile-tabs">
           <button
             className={`profile-tab ${
@@ -547,6 +376,7 @@ export default function ProfilePage() {
           </button>
         </div>
 
+        {/* ===== TAB: PERSONAL INFO ===== */}
         {activeTab === "personal" && (
           <div className="profile-tab-content">
             <div className="profile-section">
@@ -556,15 +386,6 @@ export default function ProfilePage() {
                   <p className="profile-section-subtitle">
                     Thông tin chi tiết về bệnh nhân
                   </p>
-                </div>
-                <div>
-                  <Button
-                    type="default"
-                    onClick={() => setOpenChange(true)}
-                    className="btn-change-password"
-                  >
-                    Đổi mật khẩu
-                  </Button>
                 </div>
               </div>
 
@@ -734,6 +555,7 @@ export default function ProfilePage() {
           </div>
         )}
 
+        {/* ===== TAB: MEDICAL RECORDS ===== */}
         {activeTab === "medical" && (
           <div className="profile-tab-content">
             {/* Khu vực hồ sơ bệnh án cá nhân (chỉ hiển thị profile hiện tại) */}
@@ -1030,11 +852,11 @@ export default function ProfilePage() {
         )}
       </div>
 
-      {/* Update Modal */}
+      {/* ===== UPDATE MODAL ===== */}
       {showModal && (
         <div className="modal-overlay" onClick={handleCloseModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+            <div className="modal-header-1">
               <h2 className="modal-title">Cập nhật thông tin bệnh nhân</h2>
               <p className="modal-subtitle">
                 Chỉnh sửa thông tin cá nhân của bệnh nhân
@@ -1052,8 +874,8 @@ export default function ProfilePage() {
               </button>
             </div>
 
-            <div className="modal-body">
-              <div className="form-row">
+            <div className="modal-body-1">
+              <div className="form-row-1">
                 <div className="form-group">
                   <label>Họ và tên</label>
                   <input
@@ -1082,7 +904,7 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              <div className="form-row">
+              <div className="form-row-1">
                 <div className="form-group">
                   <label>Ngày sinh</label>
                   <input
@@ -1111,36 +933,35 @@ export default function ProfilePage() {
                   )}
                 </div>
               </div>
+              <div className="form-row-1">
+                <div className="form-group">
+                  <label>Email</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    className={errors.email ? "error" : ""}
+                  />
+                  {errors.email && (
+                    <span className="error-text">{errors.email}</span>
+                  )}
+                </div>
 
-              <div className="form-group">
-                <label>Email</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className={errors.email ? "error" : ""}
-                />
-                {errors.email && (
-                  <span className="error-text">{errors.email}</span>
-                )}
-              </div>
+                <div className="form-group">
+                  <label>Địa chỉ</label>
+                  <input
+                    type="text"
+                    name="address"
+                    value={formData.address}
+                    onChange={handleInputChange}
+                    className={errors.address ? "error" : ""}
+                  />
+                  {errors.address && (
+                    <span className="error-text">{errors.address}</span>
+                  )}
+                </div>
 
-              <div className="form-group">
-                <label>Địa chỉ</label>
-                <input
-                  type="text"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  className={errors.address ? "error" : ""}
-                />
-                {errors.address && (
-                  <span className="error-text">{errors.address}</span>
-                )}
-              </div>
-
-              <div className="form-row">
                 <div className="form-group">
                   <label>Số CMND/CCCD</label>
                   <input
@@ -1179,7 +1000,7 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* Modal tạo hồ sơ bệnh án mới */}
+      {/* ===== CREATE MEDICAL RECORD MODAL ===== */}
       <Modal
         open={showCreateModal}
         title="Thêm hồ sơ bệnh án"
@@ -1309,10 +1130,6 @@ export default function ProfilePage() {
           </div>
         </Form>
       </Modal>
-      <ChangePasswordModal
-        open={openChange}
-        onClose={() => setOpenChange(false)}
-      />
     </div>
   );
 }

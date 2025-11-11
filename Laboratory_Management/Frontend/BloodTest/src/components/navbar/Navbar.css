@@ -29,6 +29,13 @@
   font-weight: 700;
   color: #2563eb;
   gap: 8px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+
+.navbar-logo:hover {
+  opacity: 0.8;
 }
 
 .navbar-logo-icon {
@@ -158,8 +165,8 @@
 }
 
 .notification-icon {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   color: #6b7280;
 }
 
@@ -167,19 +174,65 @@
 
 .navbar-avatar-dropdown {
   cursor: pointer;
-  padding: 8px;
+  padding: 8px; /* tăng padding để mở rộng vùng hover, tránh rơi vào khoảng trống khi di chuột */
   border-radius: 8px;
   transition: background 0.2s;
+  position: relative;
+  display: inline-block;
 }
 
 .navbar-avatar-dropdown:hover {
   background: #f3f4f6;
 }
 
-.user-icon {
-  width: 20px;
-  height: 20px;
+/* avatar icon (keeps existing sizing) */
+.navbar-avatar-icon .user-icon {
+  width: 24px;
+  height: 24px;
+  display: block;
   color: #6b7280;
+}
+
+/* dropdown menu */
+.avatar-menu {
+  display: none;
+  position: absolute;
+  /* đặt sát parent (ngay bên dưới) để tránh khoảng trống khi di chuột */
+  top: 100%;
+  left: 0;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 6px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  min-width: 180px;
+  z-index: 1000;
+  padding: 10px;
+  pointer-events: auto;
+}
+
+/* show on hover or keyboard focus */
+.navbar-avatar-dropdown:hover .avatar-menu,
+.navbar-avatar-dropdown:focus-within .avatar-menu,
+.avatar-menu:hover {
+  display: block;
+}
+
+.avatar-menu-item {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  text-align: left;
+  font-size: 14px;
+  color: #222;
+  cursor: pointer;
+}
+
+.avatar-menu-item:hover,
+.avatar-menu-item:focus {
+  background: #f5f7fa;
+  outline: none;
 }
 
 .navbar-logout {
@@ -192,6 +245,8 @@
   font-size: 1rem;
   cursor: pointer;
   transition: background 0.2s, transform 0.2s;
+  margin-top: 10px;
+  width: 100%;
 }
 
 .navbar-logout:hover {

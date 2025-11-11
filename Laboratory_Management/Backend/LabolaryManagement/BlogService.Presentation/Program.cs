@@ -1,5 +1,7 @@
 ﻿using BlogService.Infrastructure.Data;
+using BlogService.Infrastructure.Repository;
 using Microsoft.EntityFrameworkCore;
+using BlogService.Application.Services;
 
 namespace BlogService.Presentation
 {
@@ -15,12 +17,34 @@ namespace BlogService.Presentation
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddDbContext<DBContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-            builder.Services.AddScoped<BlogService.Application.Services.BlogPostService>();
-            builder.Services.AddScoped<BlogService.Application.Services.CategoryService>();
-            builder.Services.AddScoped<BlogService.Infrastructure.Repository.BlogPostRepository>();
-            builder.Services.AddScoped<BlogService.Infrastructure.Repository.CategoryRepository>();
+
+            // Dependency Injection for Repositories and Services
+            builder.Services.AddScoped<TagRepository>();
+            builder.Services.AddScoped<TagService>();
+            builder.Services.AddScoped<BlogPostService>();
+            builder.Services.AddScoped<CategoryService>();
+            builder.Services.AddScoped<BlogPostRepository>();
+            builder.Services.AddScoped<CategoryRepository>();
+            builder.Services.AddScoped<BlogTagService>();
+            builder.Services.AddScoped<BlogPostTagRepository>();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowFrontend", policy =>
+                {
+                    policy
+                        .WithOrigins(
+                            "http://localhost:5174",
+                            "http://127.0.0.1:5174"
+                        )
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .AllowCredentials();
+                });
+            });
+
 
             var app = builder.Build();
 
@@ -30,9 +54,9 @@ namespace BlogService.Presentation
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-
+            app.UseRouting();
             app.UseHttpsRedirection();
-
+            app.UseCors("AllowFrontend");
             app.UseAuthorization();
 
 

@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using TestOrder.Application.Services;
 using TestOrder.Application.Services.Booking;
+using TestOrder.Application.Services.Payment;
 using TestOrder.Infrastructure.Base;
 using TestOrder.Infrastructure.Data;
 using TestOrder.Infrastructure.Repository;
@@ -37,9 +38,10 @@ namespace TestOrder.Presentation
             builder.Services.AddScoped<AppointmentSlotService>();
             builder.Services.AddScoped<BookingRepository>();
             builder.Services.AddScoped<BookingService>();
-            builder.Services.AddScoped<BookingTestRepository>();
             builder.Services.AddScoped<BookingTestService>();
+            builder.Services.AddScoped<BookingTestRepository>();
             builder.Services.AddScoped<TimeBlockRepository>();
+
             builder.Services.AddScoped<TestOrder.Application.InstrumentBridge.InstrumentBridgeService>();
 
             // Named client patient (tuỳ chọn)
@@ -49,11 +51,34 @@ namespace TestOrder.Presentation
                 builder.Services.AddHttpClient("patient", c => c.BaseAddress = new Uri(patientBase));
             }
 
+            builder.Services.AddScoped<IVnPayService,PaymentService>();
+            builder.Services.AddScoped<PaymentService>();
+            builder.Services.AddScoped<PaymentRepository>();
+
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
             builder.Services.AddControllers()
     .AddJsonOptions(x =>
         x.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
+
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowFrontend", policy =>
+                {
+                    policy
+                        .WithOrigins(
+                            "http://localhost:5174",
+                            "http://127.0.0.1:5174"
+                        )
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .AllowCredentials();
+                });
+            });
+
+
+
+
 
             var app = builder.Build();
 
@@ -66,12 +91,15 @@ namespace TestOrder.Presentation
                 app.UseSwaggerUI();
             }
 
+
             // Do not redirect to HTTPS inside container (no dev certs)
             if (!isDocker)
             {
                 app.UseHttpsRedirection();
             }
+            app.UseRouting();
 
+            app.UseCors("AllowFrontend");
             app.UseAuthorization();
 
             app.MapControllers();

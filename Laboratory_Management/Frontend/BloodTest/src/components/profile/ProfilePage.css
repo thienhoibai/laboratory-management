@@ -8,6 +8,7 @@
 /* Header Actions */
 .profile-header-actions {
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 12px;
 }
@@ -409,14 +410,14 @@
   background: white;
   border-radius: 12px;
   width: 100%;
-  max-width: 600px;
+  max-width: 800px;
   max-height: 90vh;
   overflow-y: hidden;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
     0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
-.modal-header {
+.modal-header-1 {
   padding: 20px 20px 10px 20px;
   border-bottom: 1px solid #e5e7eb;
   position: relative;
@@ -458,11 +459,11 @@
   height: 20px;
 }
 
-.modal-body {
+.modal-body-1 {
   padding: 24px;
 }
 
-.form-row {
+.form-row-1 {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
@@ -573,6 +574,9 @@
   display: flex;
   justify-content: space-between;
 }
+.btn-change-password {
+  font-weight: 600;
+}
 
 /* Responsive Design */
 @media (max-width: 768px) {
@@ -587,7 +591,7 @@
     gap: 24px;
   }
 
-  .form-row {
+  .form-row-1 {
     grid-template-columns: 1fr;
   }
 

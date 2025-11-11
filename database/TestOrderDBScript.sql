@@ -1,12 +1,18 @@
 ﻿USE master;
-ALTER DATABASE TestOder SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
-DROP DATABASE TestOder;
+ALTER DATABASE TestOrderDB SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+DROP DATABASE TestOrderDB;
 
-CREATE DATABASE TestOder
+CREATE DATABASE TestOrderDB
 
-use TestOder
+use TestOrderDB
 
-
+CREATE TABLE AuditLog
+(
+	AuditLogId UNIQUEIDENTIFIER Primary key,
+	Action nvarchar(255),
+	Description nvarchar(max),
+	UserId UNIQUEIDENTIFIER,
+);
 CREATE TABLE TestBundle (
     BundleId INT IDENTITY(1,1) PRIMARY KEY,
     BundleName NVARCHAR(50),
@@ -35,18 +41,21 @@ CREATE TABLE AppointmentSlot
 
 CREATE TABLE Booking
 (
-	BookingId UNIQUEIDENTIFIER not null PRIMARY KEY,
-	PatientId bigint,
-	Status tinyint,
-	PatientName nvarchar(255),
-	PatientPhone nvarchar(12),
-	AppointmentSlotId UNIQUEIDENTIFIER FOREIGN KEY REFERENCES AppointmentSlot(SlotId),
-	CreateDate Date DEFAULT GETDATE(),
-	CreatedBy nvarchar(30),
-	RunDate Date,
-	RanBy nvarchar(30),
-	BundleId int FOREIGN KEY REFERENCES TestBundle(BundleId)
+    BookingId UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
+    PatientId UNIQUEIDENTIFIER,
+    Status TINYINT,
+    PatientName NVARCHAR(255),
+    PatientPhone NVARCHAR(12),
+    PatientEmail NVARCHAR(255),
+    BookingCode NVARCHAR(50),
+    AppointmentSlotId UNIQUEIDENTIFIER FOREIGN KEY REFERENCES AppointmentSlot(SlotId),
+    CreateDate DATE DEFAULT GETDATE(),
+    CreatedBy NVARCHAR(255),
+    RunDate DATE,
+    RanBy NVARCHAR(30),
+    BundleId INT FOREIGN KEY REFERENCES TestBundle(BundleId)
 );
+
 
 
 CREATE TABLE PaymentEnvoice (
@@ -54,10 +63,10 @@ CREATE TABLE PaymentEnvoice (
     BookingId UNIQUEIDENTIFIER NOT NULL,
     Method NVARCHAR(50),
     Amount FLOAT,
-    Status NVARCHAR(50),
+    Status TINYINT,
     CreatedAt DATETIME DEFAULT GETDATE(),
     PaidAt DATETIME,
-    Token NVARCHAR(100),
+    Token NVARCHAR(max),
     FOREIGN KEY (BookingId) REFERENCES Booking(BookingId)
 );
 
@@ -90,7 +99,9 @@ CREATE TABLE TestParameter(
 	ParameterId Int Identity(1,1) PRIMARY KEY,
 	ParameterName nvarchar(100) not null,
 	Unit nvarchar(50),
-	ReferenceRange nvarchar(100)
+	ReferenceRange nvarchar(100),
+	MinRange float,
+	MaxRange float,
 )
 
 CREATE TABLE CatalogParameter (
@@ -141,16 +152,20 @@ Insert into TestCatalog (TestName, Description, Price)
 Values	('Complete Blood Count', 'Descriptions',500000),
 		('Lipid Panels', 'Descriptions2', 400000)
 
-Insert into TestParameter(ParameterName, ReferenceRange, Unit)
-Values (N'Hồng cầu (RBC)', 'Nam: 4.2 - 6.0| Nữ: 3.8-5.0', '*10^12/L'),
-		(N'Hemoglobin (Hb)', 'Nam: 13.5-17.5|  Nữ: 13.5-17.5', 'g/dL'),
-		(N'Hematocrit (HCT)', 'Nam: 40-52| Nữ: 37-48', '%')
+Insert into TestParameter(ParameterName, ReferenceRange, Unit, MaxRange, MinRange)
+Values (N'Hồng cầu (RBC)', 'Nam: 4.2 - 6.0| Nữ: 3.8-5.0', '*10^12/L', 6.0, 3.8),
+		(N'Hemoglobin (Hb)', 'Nam: 13.5-17.5|  Nữ: 13.5-17.5', 'g/dL', 17.5, 13.5),
+		(N'Hematocrit (HCT)', 'Nam: 40-52| Nữ: 37-48', '%', 37, 52)
 
 ALTER TABLE Booking
 ADD BookingCode NVARCHAR(10);
+ALTER TABLE Booking
+ADD PatientEmail nvarchar(255);
+
 
 
 		select * from Booking
 		select * from CatalogBundle
 		select * from TestCatalog
 		select * from TestBundle
+		select * from TestParameter
