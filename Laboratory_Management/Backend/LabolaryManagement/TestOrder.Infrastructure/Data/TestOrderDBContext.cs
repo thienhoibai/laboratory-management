@@ -154,7 +154,6 @@ public partial class TestOrderDBContext : DbContext
                 .HasColumnType("datetime");
             entity.Property(e => e.Method).HasMaxLength(50);
             entity.Property(e => e.PaidAt).HasColumnType("datetime");
-            entity.Property(e => e.Token).HasMaxLength(100);
 
             entity.HasOne(d => d.Booking).WithMany(p => p.PaymentEnvoices)
                 .HasForeignKey(d => d.BookingId)

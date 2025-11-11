@@ -73,7 +73,7 @@ namespace TestOrder.Presentation.Controllers
                         Method = vnPayResponse.PaymentMethod,
                         Status = (byte?)PaymentStatusEnum.Completed,
                         PaidAt = DateTime.Now,
-                        Token = vnPayResponse.PaymentMethod + "_" + "TETSTSTTSTS"
+                        Token = vnPayResponse.PaymentMethod + "_" + vnPayResponse.OrderId
                     };
                     await paymentService.UpdatePaymentAsync(paymentNo, updatePaymentDto);
 
