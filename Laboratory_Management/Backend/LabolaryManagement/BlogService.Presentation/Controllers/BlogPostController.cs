@@ -3,6 +3,7 @@ using BlogService.Infrastructure.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using BlogService.Application.DTOs;
+using BlogService.Application.Enums;
 
 namespace BlogService.Presentation.Controllers
 {
@@ -34,9 +35,9 @@ namespace BlogService.Presentation.Controllers
             return Ok("Post created successfully.");
         }
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id,[FromBody] UpdateBlogPostDTO dto)
+        public async Task<IActionResult> Update(int id, [FromBody] UpdateBlogPostDTO dto)
         {
-            
+
             await _service.UpdateAsync(dto, id);
             return Ok(new { message = "Cập nhật bài viết thành công" });
         }
@@ -53,5 +54,12 @@ namespace BlogService.Presentation.Controllers
         [HttpGet("pending")]
         public async Task<IActionResult> GetPendingApproval() =>
             Ok(await _service.GetPendingApprovalAsync());
+
+        [HttpPut("status/{postId}")]
+        public async Task<IActionResult> UpdateStatus(int postId, [FromBody] UpdateBlogStatusDTO dto)
+        {
+            await _service.UpdatePostStatusAsync(postId, dto.Status);
+            return Ok(new { Status = (int)dto.Status });
+        }
     }
 }
