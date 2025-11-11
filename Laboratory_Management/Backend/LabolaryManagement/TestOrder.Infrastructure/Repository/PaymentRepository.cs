@@ -11,7 +11,6 @@ namespace TestOrder.Infrastructure.Repository
 {
     public class PaymentRepository : GenericRepository<PaymentEnvoice>
     {
-        private readonly TestOrderDBContext _context;
         public PaymentRepository(TestOrderDBContext context) : base(context)
         {
         }

@@ -89,6 +89,11 @@ namespace TestOrder.Application.Services
         #region Processing Payment
         private async Task<PaymentEnvoice> CreatePaymentAsync(PaymentRequestDTO model)
         {
+            var envoice = await _paymentRepository.GetByBookingIdAsync(model.BookingId);
+            if (envoice != null)
+            {
+                await _paymentRepository.DeleteAsync(envoice);
+            }
             var payment = new PaymentEnvoice
             {
                 BookingId = model.BookingId,
