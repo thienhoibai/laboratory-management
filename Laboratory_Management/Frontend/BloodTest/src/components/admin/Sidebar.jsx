@@ -11,6 +11,8 @@ import {
   FiActivity,
   FiBox,
   FiCalendar,
+  FiList,
+  FiSettings,
 } from "react-icons/fi";
 import "./layout/AdminLayout.css"; // Sidebar cũng dùng chung CSS này
 
@@ -29,7 +31,6 @@ const menuItems = [
 
 const Sidebar = () => {
   const location = useLocation();
-  const menuItems = getMenuItems();
 
   return (
     <aside className="sidebar">
@@ -52,7 +53,7 @@ const Sidebar = () => {
                   location.pathname.startsWith(item.path) ? "active" : ""
                 }
               >
-                {iconMap[item.icon] || <FiPackage />}
+                {item.icon}
                 <span>{item.name}</span>
               </Link>
             </li>
@@ -63,4 +64,4 @@ const Sidebar = () => {
   );
 };
 
-export default Sidebar; // Dòng này rất quan trọng
+export default Sidebar;

@@ -15,9 +15,8 @@ import {
 } from "react-icons/fi";
 import { Pagination } from "antd";
 import { toast } from "react-toastify";
-import { blogPosts } from "../../../data/blog";
 import { categories } from "../../../data/blog";
-import api from "../../../configs/axios";
+import BlogService from "../../../services/BlogService";
 import { setAuthToken } from "../../../utils/auth";
 import "./BlogsManagement.css";
 
@@ -62,15 +61,20 @@ const BlogsManagement = () => {
     loadBlogs();
   }, []);
 
-  const loadBlogs = () => {
-    // Mock data - sẽ thay bằng API
-    const allBlogs = blogPosts.map((post, index) => ({
-      ...post,
-      status: index === 2 ? "pending" : index === 3 ? "draft" : "approved",
-      views: index === 0 ? 245 : index === 1 ? 189 : 0,
-      comments: Math.floor(Math.random() * 50),
-    }));
-    setBlogs(allBlogs);
+  const loadBlogs = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (token) setAuthToken(token);
+
+      const blogsData = await BlogService.getAllBlogs();
+      setBlogs(blogsData);
+    } catch (error) {
+      console.error("Error loading blogs:", error);
+      toast.error("Không thể tải danh sách bài viết. Vui lòng thử lại!");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const filteredBlogs = blogs.filter((blog) => {
@@ -245,57 +249,13 @@ const BlogsManagement = () => {
         tag: formData.category.trim(),
       };
 
-      let response;
       if (isEditMode) {
         // Update blog
-        // TODO: Replace with actual API endpoint
-        // response = await api.put(`blogs/${editingBlogId}`, submitData);
-        console.log("Updating blog:", editingBlogId, submitData);
-
-        // Mock update
-        setBlogs((prev) =>
-          prev.map((blog) =>
-            blog.id === editingBlogId
-              ? {
-                  ...blog,
-                  ...submitData,
-                  date: new Date().toLocaleDateString("vi-VN", {
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                  }),
-                }
-              : blog
-          )
-        );
+        await BlogService.updateBlog(editingBlogId, submitData);
         toast.success("Cập nhật bài viết thành công!");
       } else {
         // Create blog
-        // TODO: Replace with actual API endpoint
-        // response = await api.post("blogs", submitData);
-        console.log("Creating blog:", submitData);
-
-        // Mock create
-        const newBlog = {
-          id: blogs.length > 0 ? Math.max(...blogs.map((b) => b.id)) + 1 : 1,
-          ...submitData,
-          date: new Date().toLocaleDateString("vi-VN", {
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-          }),
-          fullDate: new Date().toLocaleDateString("vi-VN", {
-            weekday: "long",
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-          }),
-          time: "Vừa xong",
-          views: 0,
-          comments: 0,
-          desc: formData.content.trim().substring(0, 100) + "...",
-        };
-        setBlogs((prev) => [newBlog, ...prev]);
+        await BlogService.createBlog(submitData);
         toast.success("Tạo bài viết mới thành công!");
       }
 
@@ -332,14 +292,10 @@ const BlogsManagement = () => {
       const token = localStorage.getItem("accessToken");
       if (token) setAuthToken(token);
 
-      // TODO: Replace with actual API endpoint
-      // await api.delete(`blogs/${blogToDelete.id}`);
-      console.log("Deleting blog:", blogToDelete.id);
-
-      // Mock delete
-      setBlogs((prev) => prev.filter((blog) => blog.id !== blogToDelete.id));
+      await BlogService.deleteBlog(blogToDelete.id);
       toast.success("Xóa bài viết thành công!");
       closeDeleteModal();
+      loadBlogs();
     } catch (error) {
       console.error("Error deleting blog:", error);
       toast.error(
@@ -475,34 +431,38 @@ const BlogsManagement = () => {
               <span>Lượt xem</span>
               <span>Thao tác</span>
             </div>
-            {displayedBlogs.map((blog) => (
-              <div className="blogs-table-row" key={blog.id}>
-                <span className="blogs-table-title">{blog.title}</span>
-                <span>{blog.author}</span>
-                <span>{blog.date}</span>
-                <span>{getStatusTag(blog.status)}</span>
-                <span>{blog.views}</span>
-                <span className="blogs-table-actions">
-                  <FiEdit2
-                    onClick={() => openEditModal(blog)}
-                    style={{ cursor: "pointer" }}
-                    title="Chỉnh sửa"
-                  />
-                  <FiTrash2
-                    onClick={() => openDeleteModal(blog)}
-                    style={{ cursor: "pointer" }}
-                    title="Xóa"
-                  />
-                </span>
+            {loading ? (
+              <div style={{ textAlign: "center", padding: "40px" }}>
+                <p>Đang tải dữ liệu...</p>
               </div>
-            ))}
+            ) : displayedBlogs.length > 0 ? (
+              displayedBlogs.map((blog) => (
+                <div className="blogs-table-row" key={blog.id}>
+                  <span className="blogs-table-title">{blog.title}</span>
+                  <span>{blog.author}</span>
+                  <span>{blog.date}</span>
+                  <span>{getStatusTag(blog.status)}</span>
+                  <span>{blog.views}</span>
+                  <span className="blogs-table-actions">
+                    <FiEdit2
+                      onClick={() => openEditModal(blog)}
+                      style={{ cursor: "pointer" }}
+                      title="Chỉnh sửa"
+                    />
+                    <FiTrash2
+                      onClick={() => openDeleteModal(blog)}
+                      style={{ cursor: "pointer" }}
+                      title="Xóa"
+                    />
+                  </span>
+                </div>
+              ))
+            ) : (
+              <div className="blogs-no-data">
+                <p>Không tìm thấy bài viết nào</p>
+              </div>
+            )}
           </div>
-
-          {displayedBlogs.length === 0 && (
-            <div className="blogs-no-data">
-              <p>Không tìm thấy bài viết nào</p>
-            </div>
-          )}
 
           <div className="blogs-pagination">
             <Pagination

@@ -11,7 +11,6 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Booking from "./pages/booking/Booking";
 import CatalogSelection from "./components/booking/CatalogSelection";
 
-import UserManagementPage from "./pages/admin/user/UserManagementPage";
 import DashboardPage from "./pages/admin/dashboard/DashboardPage";
 import PatientManagement from "./pages/admin/patient/PatientManagement";
 import AdminDashboardPage from "./pages/admin/dashboard/AdminDashboardPage";
