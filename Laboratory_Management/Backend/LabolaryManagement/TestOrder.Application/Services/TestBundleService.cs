@@ -15,9 +15,18 @@ namespace TestOrder.Application.Services
             _repository = repository;
         }
 
-        public async Task<IEnumerable<TestBundle>> GetAllBundlesAsync()
+        public async Task<object> GetAllBundleAsync(int page = 1, int pageSize = 10, string? search = null)
         {
-            return await _repository.GetAllAsync();
+            var (items, totalItems) = await _repository.GetAllPagedAsync(page, pageSize, search);
+
+            return new
+            {
+                totalItems,
+                page,
+                pageSize,
+                totalPages = (int)Math.Ceiling(totalItems / (double)pageSize),
+                items
+            };
         }
 
         public async Task<TestBundle> GetByIdAsync(int id)
@@ -43,10 +52,7 @@ namespace TestOrder.Application.Services
             await _repository.UpdateBundleAsync(id, name, description, price);
         }
 
-        public async Task<IEnumerable<TestBundle>> GetActiveBundlesAsync()
-        {
-            return await _repository.GetActiveBundlesAsync();
-        }
+
         public async Task DeleteBundleAsync(int id)
         {
             await _repository.DeleteBundleAsync(id);

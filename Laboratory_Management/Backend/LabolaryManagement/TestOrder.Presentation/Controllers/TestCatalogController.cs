@@ -20,9 +20,14 @@ namespace TestOrder.Presentation.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllCatalogAsync()
+
+        public async Task<IActionResult> GetAllCatalogAsync(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? search = null)
+
         {
-            var catalogs = await _service.GetAllCatalogAsync();
+            var catalogs = await _service.GetAllCatalogAsync(page, pageSize, search);
             return Ok(catalogs);
         }
 

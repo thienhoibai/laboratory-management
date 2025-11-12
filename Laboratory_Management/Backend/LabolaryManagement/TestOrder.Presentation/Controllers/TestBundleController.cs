@@ -18,11 +18,15 @@ namespace TestOrder.Presentation.Controllers
             _service = service;
         }
         [HttpGet]
-        public async Task<IActionResult> GetAllBundlesAsync()
+        public async Task<IActionResult> GetAllBundleAsync(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? search = null)
         {
-            var bundles = await _service.GetAllBundlesAsync();
-            return Ok(bundles);
+            var result = await _service.GetAllBundleAsync(page, pageSize, search);
+            return Ok(result);
         }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetByIdAsync(int id)
         {
