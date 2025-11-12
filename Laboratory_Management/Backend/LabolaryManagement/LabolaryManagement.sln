@@ -38,6 +38,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Contracts", "Contracts\Cont
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{B899BBAC-481C-46FC-B94C-E5E392101203}"
 	ProjectSection(SolutionItems) = preProject
+		deployments\docker\BlogService.Dockerfile = deployments\docker\BlogService.Dockerfile
 		docker-compose.yml = docker-compose.yml
 		gateway.Dockerfile = gateway.Dockerfile
 		iam.Dockerfile = iam.Dockerfile
