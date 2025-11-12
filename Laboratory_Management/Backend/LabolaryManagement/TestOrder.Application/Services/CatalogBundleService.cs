@@ -27,10 +27,9 @@ namespace TestOrder.Application.Services
 
         public async Task AddCatalogToBundleAsync(CatalogBundleDTO dto)
         {
-            // Xóa catalog cũ của bundle
-            await _repository.DeleteAllByBundleIdAsync(dto.BundleId);
+            if (dto.CatalogId == null || !dto.CatalogId.Any())
+                throw new InvalidOperationException("Danh sách CatalogId không được trống.");
 
-            // Materialize IEnumerable trước khi add
             var newEntities = dto.CatalogId
                 .Select(id => new CatalogBundle
                 {
@@ -41,6 +40,7 @@ namespace TestOrder.Application.Services
 
             await _repository.AddRangeAsync(newEntities);
         }
+
 
 
         public async Task RemoveCatalogFromBundleAsync(int bundleId, List<int> catalogIds)

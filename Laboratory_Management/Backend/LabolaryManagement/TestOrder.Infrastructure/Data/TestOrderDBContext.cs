@@ -99,6 +99,10 @@ public partial class TestOrderDBContext : DbContext
                 .HasConstraintName("FK__BookingTe__Catal__6B24EA82");
         });
 
+        modelBuilder.Entity<CatalogBundle>()
+                .HasIndex(cb => new { cb.BundleId, cb.CatalogId })
+                .IsUnique();
+
         modelBuilder.Entity<CatalogBundle>(entity =>
         {
             entity.HasKey(e => new { e.BundleId, e.CatalogId }).HasName("PK__CatalogB__DE2527E772CF0586");
