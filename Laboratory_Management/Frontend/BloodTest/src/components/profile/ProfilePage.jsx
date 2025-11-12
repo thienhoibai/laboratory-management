@@ -6,22 +6,18 @@ import "./ProfilePage.css";
 import { setAuthToken } from "../../utils/auth";
 import api from "../../configs/axios";
 import { toast } from "react-toastify";
-import {
-  Pagination,
-  Modal,
-  Form,
-  Input,
-  Select,
-  DatePicker,
-  Button,
-} from "antd";
+import { Pagination, Modal, Form, Input, Select, DatePicker } from "antd";
 import dayjs from "dayjs";
-import ChangePasswordModal from "./ChangePassword";
 import {
   parseDateToInput,
   calculateAge,
   formatDateTime,
 } from "../../utils/formatDate";
+
+// Change password feature removed:
+// This ProfilePage does not include any "change password" UI, state or API calls.
+// If a change-password feature is added later, keep it in a separate component/modal
+// and do not couple password changes with profile data updates.
 
 // ===== CONSTANTS & UTILS =====
 const initialFormData = {
@@ -45,14 +41,11 @@ export default function ProfilePage() {
   const [showModal, setShowModal] = useState(false);
   const [showMedicalRecordModal, setShowMedicalRecordModal] = useState(false);
   const [formData, setFormData] = useState(initialFormData);
-  const [loading, setLoading] = useState(true);
   const [errors, setErrors] = useState({});
   const [medicalRecords, setMedicalRecords] = useState([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createForm] = Form.useForm();
   const [isCreating, setIsCreating] = useState(false);
-
-  const [openChange, setOpenChange] = useState(false);
 
   const [totalRecords, setTotalRecords] = useState(0);
   const [page, setPage] = useState(1);
@@ -105,8 +98,6 @@ export default function ProfilePage() {
     } catch (error) {
       toast.error(error);
       navigate("/create-profile");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -280,15 +271,6 @@ export default function ProfilePage() {
     }
   };
 
-  // ===== RENDER LOADING =====
-  if (loading) {
-    return (
-      <div className="profile-page">
-        <div className="profile-loading">Đang tải...</div>
-      </div>
-    );
-  }
-
   // ===== RENDER MAIN UI =====
   return (
     <div className="profile-page">
@@ -405,15 +387,6 @@ export default function ProfilePage() {
                   <p className="profile-section-subtitle">
                     Thông tin chi tiết về bệnh nhân
                   </p>
-                </div>
-                <div>
-                  <Button
-                    type="default"
-                    onClick={() => setOpenChange(true)}
-                    className="btn-change-password"
-                  >
-                    Đổi mật khẩu
-                  </Button>
                 </div>
               </div>
 
@@ -1313,138 +1286,6 @@ export default function ProfilePage() {
           </div>
         </Form>
       </Modal>
-
-      {/* ===== CHANGE PASSWORD MODAL ===== */}
-      <ChangePasswordModal
-        open={openChange}
-        onClose={() => setOpenChange(false)}
-      />
-
-      {/* Create Medical Record Modal */}
-      {showMedicalRecordModal && (
-        <div
-          className="modal-overlay"
-          onClick={() => setShowMedicalRecordModal(false)}
-        >
-          <div
-            className="modal-content medical-record-modal"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="modal-header">
-              <h2 className="modal-title">Tạo hồ sơ bệnh án mới</h2>
-              <p className="modal-subtitle">
-                Điền thông tin để tạo hồ sơ bệnh án mới
-              </p>
-              <button
-                className="modal-close"
-                onClick={() => setShowMedicalRecordModal(false)}
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="modal-body">
-              <div className="form-group">
-                <label>Họ và tên bệnh nhân</label>
-                <input
-                  type="text"
-                  value={userData.fullname}
-                  disabled
-                  className="disabled-input"
-                />
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Mã bệnh nhân</label>
-                  <input
-                    type="text"
-                    value={userData.patientId}
-                    disabled
-                    className="disabled-input"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Giới tính</label>
-                  <input
-                    type="text"
-                    value={userData.gender}
-                    disabled
-                    className="disabled-input"
-                  />
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Ngày sinh</label>
-                  <input
-                    type="text"
-                    value={userData.birthday}
-                    disabled
-                    className="disabled-input"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Số điện thoại</label>
-                  <input
-                    type="text"
-                    value={userData.phone}
-                    disabled
-                    className="disabled-input"
-                  />
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label>Lý do tạo hồ sơ</label>
-                <textarea
-                  rows="4"
-                  placeholder="Nhập lý do tạo hồ sơ bệnh án..."
-                  className="form-textarea"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Ghi chú (tùy chọn)</label>
-                <textarea
-                  rows="3"
-                  placeholder="Thêm ghi chú nếu cần..."
-                  className="form-textarea"
-                />
-              </div>
-            </div>
-
-            <div className="modal-footer">
-              <button
-                className="btn-cancel"
-                onClick={() => setShowMedicalRecordModal(false)}
-              >
-                Hủy
-              </button>
-              <button
-                className="btn-save"
-                onClick={() => {
-                  toast.success("Tạo hồ sơ bệnh án thành công!");
-                  setShowMedicalRecordModal(false);
-                }}
-              >
-                Tạo hồ sơ
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

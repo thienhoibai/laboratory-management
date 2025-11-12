@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace TestOrder.Presentation.Models;
+namespace TestOrder.Infrastructure.Models;
 
 public partial class AuditLog
 {

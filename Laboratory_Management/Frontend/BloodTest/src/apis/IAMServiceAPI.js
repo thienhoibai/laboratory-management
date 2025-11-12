@@ -30,4 +30,11 @@ export const IAMServiceAPI = {
   Register: async (payLoad) => {
     return await api.post(`${URL}register`, payLoad);
   },
+
+  ChangePassword: async (currentPassword, newPassword) => {
+    return await api.post(`${URL}change-password`, {
+      currentPassword: currentPassword,
+      newPassword: newPassword,
+    });
+  },
 };
