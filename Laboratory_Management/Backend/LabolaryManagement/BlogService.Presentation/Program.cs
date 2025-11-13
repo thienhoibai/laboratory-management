@@ -48,14 +48,22 @@ namespace BlogService.Presentation
 
             var app = builder.Build();
 
+            var isDocker = string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Docker", StringComparison.OrdinalIgnoreCase);
+
             // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
+            if (app.Environment.IsDevelopment() || isDocker)
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
+
+            // Do not redirect to HTTPS inside container (no dev certs)
+            if (!isDocker)
+            {
+                app.UseHttpsRedirection();
+            }
+
             app.UseRouting();
-            app.UseHttpsRedirection();
             app.UseCors("AllowFrontend");
             app.UseAuthorization();
 

@@ -236,8 +236,6 @@ GO
 INSERT INTO
 
 ALTER TABLE Booking
-ADD BookingCode NVARCHAR(10);
-ALTER TABLE Booking
 ADD PatientEmail nvarchar(255);
 
 

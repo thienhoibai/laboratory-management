@@ -114,3 +114,18 @@
     ports: ["5003:5003"]
     extra_hosts:
       - "host.docker.internal:host-gateway"
+
+  blogservice.api:
+    build:
+      context: .
+      dockerfile: deployments/docker/BlogService.Dockerfile
+    container_name: blogservice.api
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Docker"
+      ConnectionStrings__DefaultConnection: "Server=host.docker.internal,1433;Database=BlogServiceDB;User Id=sa;Password=12345;TrustServerCertificate=True;Encrypt=False"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    ports: ["5004:5004"]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
