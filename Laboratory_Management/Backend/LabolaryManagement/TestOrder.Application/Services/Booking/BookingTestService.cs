@@ -27,6 +27,14 @@ namespace TestOrder.Application.Services.Booking
             return await _bookingTestRepository.GetByBookingIdAsync(bookingId);
         }
 
+        public async Task<IEnumerable<int>> GetCatalogIdsByBookingIdAsync(Guid bookingId)
+        {
+            var bookingTests = await _bookingTestRepository.GetByBookingIdAsync(bookingId);
+            return bookingTests.Where(bt => bt.CatalogId.HasValue)
+                               .Select(bt => bt.CatalogId.Value)
+                               .ToList();
+        }
+
         public async Task AddBookingTestAsync(Guid bookingId, int catalogId)
         {
             var bookingTest = new BookingTest

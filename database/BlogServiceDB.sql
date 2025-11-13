@@ -1,4 +1,7 @@
-﻿
+﻿USE master;
+ALTER DATABASE BlogServiceDB SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+DROP DATABASE BlogServiceDB;
+use BlogServiceDB
 CREATE TABLE Category (
   CategoryId INT IDENTITY(1,1) PRIMARY KEY,
   CategoryName NVARCHAR(100) NOT NULL,
@@ -9,17 +12,17 @@ CREATE TABLE BlogPost(
  PostId INT IDENTITY(1,1) PRIMARY KEY,
  Title NVARCHAR(255),
  Content NVARCHAR (max),
- AuthorId BIGINT,
+ AuthorId Uniqueidentifier,
  CategoryId INT FOREIGN KEY REFERENCES Category(CategoryId),
  CreatedDate DATETIME DEFAULT GETDATE(),
  UpdatedDate DATETIME NULL,
  IsPublished BIT DEFAULT 0,
  IsApproved BIT DEFAULT 0,
  ThumbnailUrl NVARCHAR(500),
+);
  ALTER TABLE BlogPost
 ADD Status INT DEFAULT 0;  -- 0 = Chờ duyệt, 1 = Đã duyệt, 2 = Đã hủy
 
-);
 CREATE TABLE Tag(
 TagId INT IDENTITY(1,1) PRIMARY KEY,
 TagName NVARCHAR(50),
@@ -47,4 +50,3 @@ select * from BlogPost
 CREATE DATABASE BlogServiceDB;
 GO
 
-USE BlogServiceDB;
