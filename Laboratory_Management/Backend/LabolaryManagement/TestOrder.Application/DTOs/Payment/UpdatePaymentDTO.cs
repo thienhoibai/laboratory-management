@@ -12,6 +12,5 @@ namespace TestOrder.Application.DTOs.Payment
         public string? Method { get; set; }
         public byte? Status { get; set; }
         public DateTime? PaidAt { get; set; }
-        public string? Token { get; set; } = string.Empty;
     }
 }

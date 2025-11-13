@@ -78,3 +78,43 @@ export const parseDateToInput = (dateStr) => {
   }
   return "";
 };
+
+export const validateForm = (formData) => {
+  const newErrors = {};
+  if (!formData.fullName.trim()) newErrors.fullName = "Vui lòng nhập họ và tên";
+  if (!formData.phoneNumber.trim())
+    newErrors.phoneNumber = "Vui lòng nhập số điện thoại";
+  else if (!/^0[3-9]\d{8}$/.test(formData.phoneNumber))
+    newErrors.phoneNumber = "Số điện thoại không hợp lệ";
+  if (!formData.email.trim()) newErrors.email = "Vui lòng nhập email";
+  else if (!/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(formData.email))
+    newErrors.email = "Email không hợp lệ";
+  if (!formData.address.trim()) newErrors.address = "Vui lòng nhập địa chỉ";
+  if (!formData.identityCard.trim())
+    newErrors.identityCard = "Vui lòng nhập số CMND/CCCD";
+  if (!formData.dateOfBirth.trim())
+    newErrors.dateOfBirth = "Vui lòng nhập ngày sinh";
+  else {
+    // Validate date format YYYY-MM-DD
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(formData.dateOfBirth)) {
+      newErrors.dateOfBirth = "Ngày sinh phải có định dạng YYYY-MM-DD";
+    } else {
+      const [year, month, day] = formData.dateOfBirth.split("-");
+      const date = new Date(year, month - 1, day);
+      if (
+        date.getMonth() !== month - 1 ||
+        date.getDate() !== parseInt(day) ||
+        date.getFullYear() !== parseInt(year)
+      ) {
+        newErrors.dateOfBirth = "Ngày sinh không hợp lệ";
+      } else {
+        const today = new Date();
+        if (date > today) {
+          newErrors.dateOfBirth = "Ngày sinh không thể là ngày trong tương lai";
+        }
+      }
+    }
+  }
+  return newErrors;
+};
