@@ -129,10 +129,10 @@ namespace TestOrder.Application.Services.Booking
         }
 
         #region Create New Booking
-        public async Task<int> CreateNewBooking(BookingRequestDTO bookingRequest)
+        public async Task<BookingResultDTO> CreateNewBooking(BookingRequestDTO bookingRequest)
         {
             if (!_appointmentSlotService.IsAppointmentsDateValid(bookingRequest.slotDTO.AppointmentDate))
-                return -1;
+                return new BookingResultDTO { Message = "Invalid Date"};
 
 
 
@@ -141,11 +141,11 @@ namespace TestOrder.Application.Services.Booking
                     bookingRequest.slotDTO.TimeBlock))
             {
                 await _appointmentSlotService.AddAppointmentSlotAsync(bookingRequest.slotDTO);
-                
+
             }
             if (_appointmentSlotService.IsAppointmentSlotMaxedOut(bookingRequest.slotDTO))
             {
-                return -2;
+                return new BookingResultDTO { Message = "Slot Full" };
             }
 
             var appointmentSlot = await _appointmentSlotService.GetAppointmentSlotByDateAndTimeAsync(
@@ -183,7 +183,11 @@ namespace TestOrder.Application.Services.Booking
                     _bookingTestService.AddBookingTestAsync(newBooking.BookingId, catalogId).Wait();
                 }
             }
-            return 0;
+            return new BookingResultDTO
+            {
+                BookingId = newBooking.BookingId,
+                Message = "Booking SuccessFully"
+            };
 
         }
         #endregion
