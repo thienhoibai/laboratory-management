@@ -21,9 +21,45 @@ namespace TestOrder.Application.Services.Booking
             _appointmentSlotService = appointmentSlotService;
         }
 
+        public async Task<IEnumerable<BookingResponseDTO>> GetAllBookingsAsync(int pageNumber)
+        {
+            var bookings = await _bookingRepository.GetAllPagedAsync(pageNumber);
+            var bookingResponses = new List<BookingResponseDTO>();
+            foreach (var booking in bookings)
+            {
+                bookingResponses.Add(new BookingResponseDTO
+                {
+                    BookingCode = booking.BookingCode ??= "",
+                    PatientId = (Guid)booking.PatientId,
+                    PatientName = booking.PatientName ?? string.Empty,
+                    PatientPhoneNumber = booking.PatientPhone,
+                    PatientEmail = booking.PatientEmail,
+                    CreatedBy = booking.CreatedBy,
+                    BundleId = booking.BundleId,
+                    CreatedDate = booking.CreateDate.HasValue
+                        ? booking.CreateDate.Value.ToDateTime(new TimeOnly(0, 0))
+                        : DateTime.MinValue,
+                    RunDate = booking.RunDate.HasValue
+                        ? booking.RunDate.Value.ToDateTime(new TimeOnly(0, 0))
+                        : (DateTime?)null,
+                    RanBy = booking.RanBy ?? string.Empty,
+                    Status = booking.Status.HasValue
+                        ? ((BookingStatusEnum)booking.Status.Value).ToString()
+                        : "Unknown",
+                    SlotInfo = await _appointmentSlotService.GetAppointmentSlotInfo((Guid)booking.AppointmentSlotId),
+                    TestCatalogs = await _bookingTestService.GetCatalogIdsByBookingIdAsync(booking.BookingId)
+                });
+            }
+            return bookingResponses;
+        }
+
         public async Task<BookingResponseDTO> GetBookingByIdAsync(Guid bookingId)
         {
             var booking = await _bookingRepository.GetByIdAsync(bookingId);
+            var slotInfo = await _appointmentSlotService.GetAppointmentSlotInfo((Guid)booking.AppointmentSlotId);
+            if (slotInfo == null)
+                slotInfo = null;
+
 
             if (booking == null)
                 throw new Exception("Booking not found");
@@ -32,6 +68,7 @@ namespace TestOrder.Application.Services.Booking
             {
                 BookingCode = booking.BookingCode ??="",
                 PatientId = (Guid)booking.PatientId,
+                BookingId = booking.BookingId,
                 PatientName = booking.PatientName ?? string.Empty,
                 PatientPhoneNumber = booking.PatientPhone,
                 PatientEmail = booking.PatientEmail,
@@ -47,7 +84,8 @@ namespace TestOrder.Application.Services.Booking
                 Status = booking.Status.HasValue
                     ? ((BookingStatusEnum)booking.Status.Value).ToString()
                     : "Unknown",
-                slotInfo = await _appointmentSlotService.GetAppointmentSlotInfo((Guid)booking.AppointmentSlotId!)
+                SlotInfo = slotInfo,
+                TestCatalogs = await _bookingTestService.GetCatalogIdsByBookingIdAsync(booking.BookingId)
             };
         }
 
@@ -64,6 +102,7 @@ namespace TestOrder.Application.Services.Booking
                     {
                         BookingCode = booking.BookingCode ??= "",
                         PatientId = (Guid)booking.PatientId,
+                        BookingId = booking.BookingId,
                         PatientName = booking.PatientName ?? string.Empty,
                         PatientPhoneNumber = booking.PatientPhone,
                         PatientEmail = booking.PatientEmail,
@@ -78,7 +117,10 @@ namespace TestOrder.Application.Services.Booking
                         RanBy = booking.RanBy ?? string.Empty,
                         Status = booking.Status.HasValue
                             ? ((BookingStatusEnum)booking.Status.Value).ToString()
-                            : "Unknown"
+                            : "Unknown",
+                        SlotInfo = await _appointmentSlotService.GetAppointmentSlotInfo((Guid)booking.AppointmentSlotId),
+                        TestCatalogs = await _bookingTestService.GetCatalogIdsByBookingIdAsync(booking.BookingId)
+
                     });
                 }
             }

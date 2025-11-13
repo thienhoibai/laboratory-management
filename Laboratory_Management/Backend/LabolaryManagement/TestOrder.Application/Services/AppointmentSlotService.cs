@@ -27,9 +27,9 @@ namespace TestOrder.Application.Services
             return await _repository.GetAllPagedAsync(pageNumber);
         }
 
-        public async Task<IEnumerable<AppointmentSlot>> GetAppointmentSlotsByDateAsync(DateOnly appointmentDate)
+        public async Task<IEnumerable<AppointmentSlot>> GetAppointmentSlotsByDateAsync(DateOnly appointmentDate, int pageNumber, int pageSize)
         {
-            return await _repository.GetByDateAsync(appointmentDate);
+            return await _repository.GetByDateAsync(appointmentDate, pageNumber, pageSize);
         }
 
         public async Task<AppointmentSlot> GetAppointmentSlotByIdAsync(Guid appointmentSlotId)
@@ -96,6 +96,23 @@ namespace TestOrder.Application.Services
                 bookingsCounts.Add(count);
             }
             return bookingsCounts;
+        }
+
+        public async Task<List<int>?> GetBookingCountForAllSlotAsync(int pageNumber)
+        {
+            var slots = await _repository.GetAllPagedAsync(pageNumber);
+            if (slots == null || !slots.Any())
+            {
+                return null;
+            }
+            var bookingCounts = new List<int>();
+            foreach (var slot in slots)
+            {
+                var count = await _repository.GetBookingsCountForSlot(slot.SlotId);
+                bookingCounts.Add(count);
+            }
+            return bookingCounts;
+
         }
 
 
