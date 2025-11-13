@@ -75,6 +75,7 @@
     depends_on:
       - iam.api
       - patient.api
+      - blogservice.api
     ports: ["8080:8080"]
 
   notify.api:

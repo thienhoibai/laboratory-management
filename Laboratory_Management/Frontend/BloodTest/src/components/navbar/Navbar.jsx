@@ -33,8 +33,6 @@ function Navbar() {
       setAuthToken(token);
       const response = await api.get(`patient/v1/patients/me`);
 
-      console.log("Profile response:", response.data);
-
       if (response.data && response.data.succeeded === true) {
         navigate("/profile");
       } else {

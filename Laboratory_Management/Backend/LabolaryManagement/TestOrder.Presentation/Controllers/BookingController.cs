@@ -19,6 +19,14 @@ namespace TestOrder.Presentation.Controllers
         }
 
         [HttpGet]
+        [Route("info")]
+        public async Task<IActionResult> GetAllBookings([FromQuery] int pageNumber)
+        {
+            var response = await _bookingService.GetAllBookingsAsync(pageNumber);
+            return Ok(response);
+        }
+
+        [HttpGet]
         public IActionResult GetBookingInfo([FromQuery] Guid bookingId)
         {
             var response = _bookingService.GetBookingByIdAsync(bookingId).Result;

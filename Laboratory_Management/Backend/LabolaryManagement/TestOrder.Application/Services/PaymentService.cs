@@ -90,6 +90,7 @@ namespace TestOrder.Application.Services
         private async Task<PaymentEnvoice> CreatePaymentAsync(PaymentRequestDTO model)
         {
             var envoice = await _paymentRepository.GetByBookingIdAsync(model.BookingId);
+            var tick = DateTime.Now.Ticks.ToString();
             if (envoice != null)
             {
                 await _paymentRepository.DeleteAsync(envoice);
@@ -100,7 +101,8 @@ namespace TestOrder.Application.Services
                 Amount = model.Amount,
                 Method = "",
                 Status = (byte?)PaymentStatusEnum.Pending,
-                CreatedAt = DateTime.Now
+                CreatedAt = DateTime.Now,
+                Token = tick,
             };
             await _paymentRepository.AddAsync(payment);
             return payment;
@@ -110,7 +112,7 @@ namespace TestOrder.Application.Services
         {
             var timeZoneById = TimeZoneInfo.FindSystemTimeZoneById(configuration["TimeZoneId"]);
             var timeNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, timeZoneById);
-            var tick = DateTime.Now.Ticks.ToString();
+            
             var vnPay = new VnPayRepository();
             var urlCallBack = configuration["VnPay:PaymentReturnUrl"];
 
@@ -127,7 +129,7 @@ namespace TestOrder.Application.Services
             vnPay.AddRequestData("vnp_OrderInfo", $"Thanh toan qua VNPay ma lich dat {model.BookingId} Tong tien {model.Amount}");
             vnPay.AddRequestData("vnp_OrderType", "other");
             vnPay.AddRequestData("vnp_ReturnUrl", urlCallBack);
-            vnPay.AddRequestData("vnp_TxnRef", payment.PaymentNo.ToString());
+            vnPay.AddRequestData("vnp_TxnRef", payment.Token);
 
             var paymentUrl = vnPay.CreateRequestUrl(configuration["VnPay:BaseUrl"], configuration["VnPay:HashSecret"]);
             return paymentUrl;
@@ -143,9 +145,9 @@ namespace TestOrder.Application.Services
             return responseData;
         }
 
-        public async Task<bool> UpdatePaymentAsync(int paymentNo, UpdatePaymentDTO dto)
+        public async Task<bool> UpdatePaymentAsync(string token, UpdatePaymentDTO dto)
         {
-            var payment = await _paymentRepository.GetByIdAsync(paymentNo);
+            var payment = await _paymentRepository.GetByTokenAsync(token);
             if (payment == null)
             {
                 return false;
@@ -153,7 +155,6 @@ namespace TestOrder.Application.Services
             payment.Method = dto.Method ?? payment.Method;
             payment.Status = dto.Status ?? payment.Status;
             payment.PaidAt = dto.PaidAt ?? payment.PaidAt;
-            payment.Token = dto.Token ?? payment.Token;
             await _paymentRepository.UpdateAsync(payment);
             return true;
         }
