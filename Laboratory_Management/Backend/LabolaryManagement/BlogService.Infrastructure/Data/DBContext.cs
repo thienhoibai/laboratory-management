@@ -28,7 +28,7 @@ public partial class DBContext : DbContext
     {
         modelBuilder.Entity<BlogPost>(entity =>
         {
-            entity.HasKey(e => e.PostId).HasName("PK__BlogPost__AA12601820DD6B56");
+            entity.HasKey(e => e.PostId).HasName("PK__BlogPost__AA126018DAAF8A1A");
 
             entity.ToTable("BlogPost");
 
@@ -37,6 +37,7 @@ public partial class DBContext : DbContext
                 .HasColumnType("datetime");
             entity.Property(e => e.IsApproved).HasDefaultValue(false);
             entity.Property(e => e.IsPublished).HasDefaultValue(false);
+            entity.Property(e => e.Status).HasDefaultValue(0);
             entity.Property(e => e.ThumbnailUrl).HasMaxLength(500);
             entity.Property(e => e.Title).HasMaxLength(255);
             entity.Property(e => e.UpdatedDate).HasColumnType("datetime");
@@ -51,21 +52,21 @@ public partial class DBContext : DbContext
                     r => r.HasOne<Tag>().WithMany()
                         .HasForeignKey("TagId")
                         .OnDelete(DeleteBehavior.ClientSetNull)
-                        .HasConstraintName("FK__BlogPostT__TagId__5441852A"),
+                        .HasConstraintName("FK__BlogPostT__TagId__5535A963"),
                     l => l.HasOne<BlogPost>().WithMany()
                         .HasForeignKey("PostId")
                         .OnDelete(DeleteBehavior.ClientSetNull)
-                        .HasConstraintName("FK__BlogPostT__PostI__534D60F1"),
+                        .HasConstraintName("FK__BlogPostT__PostI__5441852A"),
                     j =>
                     {
-                        j.HasKey("PostId", "TagId").HasName("PK__BlogPost__7C45AF8237FE0883");
+                        j.HasKey("PostId", "TagId").HasName("PK__BlogPost__7C45AF82FC168970");
                         j.ToTable("BlogPostTag");
                     });
         });
 
         modelBuilder.Entity<Category>(entity =>
         {
-            entity.HasKey(e => e.CategoryId).HasName("PK__Category__19093A0B647D211F");
+            entity.HasKey(e => e.CategoryId).HasName("PK__Category__19093A0B8BEB7295");
 
             entity.ToTable("Category");
 
@@ -76,7 +77,7 @@ public partial class DBContext : DbContext
 
         modelBuilder.Entity<Comment>(entity =>
         {
-            entity.HasKey(e => e.CommentId).HasName("PK__Comment__C3B4DFCACD7609A9");
+            entity.HasKey(e => e.CommentId).HasName("PK__Comment__C3B4DFCA17B2DE15");
 
             entity.ToTable("Comment");
 
@@ -84,12 +85,12 @@ public partial class DBContext : DbContext
 
             entity.HasOne(d => d.Post).WithMany(p => p.Comments)
                 .HasForeignKey(d => d.PostId)
-                .HasConstraintName("FK__Comment__PostId__571DF1D5");
+                .HasConstraintName("FK__Comment__PostId__5812160E");
         });
 
         modelBuilder.Entity<Tag>(entity =>
         {
-            entity.HasKey(e => e.TagId).HasName("PK__Tag__657CF9AC49C3CEA6");
+            entity.HasKey(e => e.TagId).HasName("PK__Tag__657CF9AC17309B94");
 
             entity.ToTable("Tag");
 

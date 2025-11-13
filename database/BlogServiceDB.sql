@@ -9,7 +9,7 @@ CREATE TABLE BlogPost(
  PostId INT IDENTITY(1,1) PRIMARY KEY,
  Title NVARCHAR(255),
  Content NVARCHAR (max),
- AuthorId BIGINT,
+ AuthorId Uniqueidentifier,
  CategoryId INT FOREIGN KEY REFERENCES Category(CategoryId),
  CreatedDate DATETIME DEFAULT GETDATE(),
  UpdatedDate DATETIME NULL,
@@ -47,4 +47,3 @@ select * from BlogPost
 CREATE DATABASE BlogServiceDB;
 GO
 
-USE BlogServiceDB;
