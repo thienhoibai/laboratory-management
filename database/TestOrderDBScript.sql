@@ -158,8 +158,6 @@ Values (N'Hồng cầu (RBC)', 'Nam: 4.2 - 6.0| Nữ: 3.8-5.0', '*10^12/L', 6.0,
 		(N'Hematocrit (HCT)', 'Nam: 40-52| Nữ: 37-48', '%', 37, 52)
 
 ALTER TABLE Booking
-ADD BookingCode NVARCHAR(10);
-ALTER TABLE Booking
 ADD PatientEmail nvarchar(255);
 
 
