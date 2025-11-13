@@ -18,5 +18,7 @@ namespace BlogService.Application.DTOs
         public bool? IsPublished { get; set; }
         public bool? IsApproved { get; set; }
         public string? ThumbnailUrl { get; set; }
+
+        public int? Status { get; set; } = 0;   
     }
 }

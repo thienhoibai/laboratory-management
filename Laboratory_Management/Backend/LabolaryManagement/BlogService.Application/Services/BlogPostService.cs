@@ -20,23 +20,12 @@ namespace BlogService.Application.Services
         }
 
         // Lấy tất cả bài viết (kèm Category)
-        public async Task<List<BlogPostDTO>> GetAllAsync()
+        public Task<List<BlogPost>> GetAllWithCategoryAsync(
+            int? authorId, int? status, int page, int pageSize)
         {
-            var posts = await _repository.GetAllWithCategoryAsync();
-
-            return posts.Select(p => new BlogPostDTO
-            {
-                Title = p.Title,
-                Content = p.Content,
-                CategoryId = p.CategoryId,
-                CategoryName = p.Category?.CategoryName,
-                CreatedDate = p.CreatedDate,
-                UpdatedDate = p.UpdatedDate,
-                IsPublished = p.IsPublished,
-                IsApproved = p.IsApproved,
-                ThumbnailUrl = p.ThumbnailUrl
-            }).ToList();
+            return _repository.GetAllWithCategoryAsync(authorId, status, page, pageSize);
         }
+
 
         public Task<BlogPost?> GetByIdAsync(int id) =>
             _repository.GetByIdAsync(id);
@@ -78,12 +67,13 @@ namespace BlogService.Application.Services
         public Task DeleteAsync(BlogPost post) =>
             _repository.DeleteAsync(post);
 
-        // Lấy danh sách bài chờ duyệt
-        public async Task<List<BlogPostDTO>> GetPendingApprovalAsync()
+        // Lấy danh sách bài đã duyệt
+        public async Task<List<BlogPostDTO>> GetApprovalAsync()
         {
-            var posts = await _repository.GetPendingApprovalAsync();
+            var posts = await _repository.GetApprovalAsync();
 
-            return posts.Select(p => new BlogPostDTO
+            return posts
+            .Select(p => new BlogPostDTO
             {
                 Title = p.Title,
                 Content = p.Content,
