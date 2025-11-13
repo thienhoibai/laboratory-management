@@ -39,6 +39,7 @@ namespace TestOrder.Application.DTOs.Bookings
         public AppointmentSlotDTO? SlotInfo { get; set; }
         public IEnumerable<int>? TestCatalogs { get; set; }
 
+        
 
     }
 }
