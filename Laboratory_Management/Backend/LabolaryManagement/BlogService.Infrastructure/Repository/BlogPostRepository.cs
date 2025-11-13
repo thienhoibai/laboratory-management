@@ -4,6 +4,7 @@ using BlogService.Infrastructure.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,21 +15,45 @@ namespace BlogService.Infrastructure.Repository
     {
         public BlogPostRepository(DBContext context) : base(context) { }
 
-        public async Task<List<BlogPost>> GetAllWithCategoryAsync()
+        public async Task<List<BlogPost>> GetAllWithCategoryAsync(
+            int? authorId, int? status, int page, int pageSize)
+        {
+            var query = _context.BlogPosts
+                .Include(p => p.Category)
+                .AsQueryable();
+
+            if (authorId.HasValue)
+                query = query.Where(p => p.AuthorId == authorId.Value);
+
+            if (status.HasValue)
+                query = query.Where(p => p.Status == status.Value);
+
+            return await query
+                .OrderByDescending(p => p.CreatedDate)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+        }
+        public async Task<List<BlogPost>> GetApprovalAsync()
         {
             return await _context.BlogPosts
-                .Include(p => p.Category)
-                .OrderByDescending(p => p.CreatedDate)
+                .Where(p => p.IsApproved == true || p.Status ==1)
+                .Include(p => p.Category)            
                 .ToListAsync();
         }
 
-        public async Task<List<BlogPost>> GetPendingApprovalAsync()
+        public async Task UpdateStatusAsync(int postId, UpdateStatus status)
         {
-            return await _context.BlogPosts
-                .Include(p => p.Category)
-                .Where(p => p.IsApproved == false)
-                .ToListAsync();
+            var post = await _context.BlogPosts.FindAsync(postId);
+            if (post != null)
+            {
+                post.Status = (int)status; // lưu enum dưới dạng int
+               
+                post.UpdatedDate = DateTime.Now;
+                await _context.SaveChangesAsync();
+            }
         }
+
     }
-    }
+}
 

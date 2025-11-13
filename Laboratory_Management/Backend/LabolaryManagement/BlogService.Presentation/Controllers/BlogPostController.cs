@@ -3,6 +3,7 @@ using BlogService.Infrastructure.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using BlogService.Application.DTOs;
+using BlogService.Application.Enums;
 
 namespace BlogService.Presentation.Controllers
 {
@@ -18,7 +19,26 @@ namespace BlogService.Presentation.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll() => Ok(await _service.GetAllAsync());
+        public async Task<IActionResult> GetAllBlogs(
+    [FromQuery] int? authorId,
+    [FromQuery] int? status,
+    [FromQuery] int page = 1,
+    [FromQuery] int pageSize = 10)
+        {
+            var totalItems = await _service.GetAllWithCategoryAsync(authorId, status, 1, int.MaxValue)
+                .ContinueWith(t => t.Result.Count);
+
+            var data = await _service.GetAllWithCategoryAsync(authorId, status, page, pageSize);
+
+            return Ok(new
+            {
+                page,
+                pageSize,
+                totalItems,
+                totalPages = (int)Math.Ceiling(totalItems / (double)pageSize),
+                data
+            });
+        }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
@@ -34,9 +54,9 @@ namespace BlogService.Presentation.Controllers
             return Ok("Post created successfully.");
         }
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id,[FromBody] UpdateBlogPostDTO dto)
+        public async Task<IActionResult> Update(int id, [FromBody] UpdateBlogPostDTO dto)
         {
-            
+
             await _service.UpdateAsync(dto, id);
             return Ok(new { message = "Cập nhật bài viết thành công" });
         }
@@ -50,8 +70,15 @@ namespace BlogService.Presentation.Controllers
             return Ok("Post deleted successfully.");
         }
 
-        [HttpGet("pending")]
-        public async Task<IActionResult> GetPendingApproval() =>
-            Ok(await _service.GetPendingApprovalAsync());
+        [HttpGet("Approve")]
+        public async Task<IActionResult> GetApproval() =>
+            Ok(await _service.GetApprovalAsync());
+
+        [HttpPut("status/{postId}")]
+        public async Task<IActionResult> UpdateStatus(int postId, [FromBody] UpdateBlogStatusDTO dto)
+        {
+            await _service.UpdatePostStatusAsync(postId, dto.Status);
+            return Ok(new { Status = (int)dto.Status });
+        }
     }
 }

@@ -1,6 +1,7 @@
 import React from "react";
 import "./SuccessBooking.css";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 export default function SuccessBooking({
   paymentResult,
@@ -9,6 +10,8 @@ export default function SuccessBooking({
   onNewBooking,
 }) {
   const navigate = useNavigate();
+
+  const { fullName, phone, email } = useSelector((state) => state.patient);
 
   const orderCode = paymentResult?.orderCode || "XN2025010001";
   const total =
@@ -139,21 +142,15 @@ export default function SuccessBooking({
             <div className="sb-cust-grid">
               <div>
                 <div className="c-l">Họ và tên</div>
-                <div className="c-v">
-                  {paymentResult?.name || "Nguyễn Văn A"}
-                </div>
+                <div className="c-v">{fullName || "Nguyễn Văn A"}</div>
               </div>
               <div>
                 <div className="c-l">Email</div>
-                <div className="c-v">
-                  {paymentResult?.email || "email@example.com"}
-                </div>
+                <div className="c-v">{email || "email@example.com"}</div>
               </div>
               <div>
                 <div className="c-l">Số điện thoại</div>
-                <div className="c-v">
-                  {paymentResult?.phone || "0912345678"}
-                </div>
+                <div className="c-v">{phone || "0912345678"}</div>
               </div>
             </div>
           </div>

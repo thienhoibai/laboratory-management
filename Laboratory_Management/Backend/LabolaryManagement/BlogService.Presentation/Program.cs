@@ -29,8 +29,14 @@ namespace BlogService.Presentation
             builder.Services.AddScoped<BlogPostTagRepository>();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+            builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+    });
 
-            
+
+
 
             var app = builder.Build();
 
@@ -40,9 +46,9 @@ namespace BlogService.Presentation
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-
+            app.UseRouting();
             app.UseHttpsRedirection();
-
+            app.UseCors("AllowFrontend");
             app.UseAuthorization();
 
 
