@@ -132,6 +132,7 @@ if (app.Environment.IsDevelopment())
 }
 
 // No HTTPS redirection for docker h2c
+app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseCors("AllowFrontend");
