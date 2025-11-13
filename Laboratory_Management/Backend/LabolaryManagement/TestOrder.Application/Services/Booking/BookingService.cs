@@ -1,6 +1,10 @@
-﻿    using System;
+
+using Azure;
+using System;
+
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using TestOrder.Application.DTOs;
 using TestOrder.Application.DTOs.Bookings;
 using TestOrder.Infrastructure.Repository;
 
@@ -129,10 +133,16 @@ namespace TestOrder.Application.Services.Booking
         }
 
         #region Create New Booking
-        public async Task<BookingResultDTO> CreateNewBooking(BookingRequestDTO bookingRequest)
+
+        public async Task<ResponseMessage> CreateBookingAsync (BookingRequestDTO bookingRequest)
         {
+            ResponseMessage response = new ResponseMessage();
             if (!_appointmentSlotService.IsAppointmentsDateValid(bookingRequest.slotDTO.AppointmentDate))
-                return new BookingResultDTO { Message = "Invalid Date"};
+            {
+                response.ResponseCode = ResponseCode.BadInstanceState;
+                response.Message = "Date must be 1 day in the future";
+                return response;
+            }
 
 
 
@@ -145,7 +155,9 @@ namespace TestOrder.Application.Services.Booking
             }
             if (_appointmentSlotService.IsAppointmentSlotMaxedOut(bookingRequest.slotDTO))
             {
-                return new BookingResultDTO { Message = "Slot Full" };
+                response.ResponseCode = ResponseCode.BadInstanceState;
+                response.Message = "This slot is currently full";
+                return response;
             }
 
             var appointmentSlot = await _appointmentSlotService.GetAppointmentSlotByDateAndTimeAsync(
@@ -183,37 +195,73 @@ namespace TestOrder.Application.Services.Booking
                     _bookingTestService.AddBookingTestAsync(newBooking.BookingId, catalogId).Wait();
                 }
             }
-            return new BookingResultDTO
-            {
-                BookingId = newBooking.BookingId,
-                Message = "Booking SuccessFully"
-            };
 
-        }
+            response.ResponseCode = ResponseCode.Success;
+            response.Message = "Booking Successfully";
+            response.InstancesCode = newBooking.BookingId;
+
+            return response;
+
+        } 
+
         #endregion
 
-        public async Task<int> CheckInBooking (Guid bookingId)
+        public async Task<ResponseMessage> CheckInBooking (Guid bookingId)
         {
             var booking =  await _bookingRepository.GetByIdAsync(bookingId);
+            ResponseMessage response = new ResponseMessage();
             if (booking == null)
-                return -1;
-            if (booking.Status != (byte?) BookingStatusEnum.Confirmed) return -2;
+            {
+                response.ResponseCode = ResponseCode.NotFound;
+                response.Message = "Booking not found";
+                response.InstancesCode = bookingId;
+                return response;
+            }
+                
+            if (booking.Status != (byte?)BookingStatusEnum.Confirmed)
+            {
+                response.ResponseCode = ResponseCode.BadInstanceState;
+                response.Message = "Booking is not in a state that allows check-in";
+                response.InstancesCode = bookingId;
+                return response;
+            }
             booking.Status = (byte?)BookingStatusEnum.CheckedIn;
             booking.RunDate = DateOnly.FromDateTime(DateTime.Now);
             await _bookingRepository.UpdateAsync(booking);
-            return 0;
+
+            response.ResponseCode = ResponseCode.Success;
+            response.Message = "Check-in successful";
+            response.InstancesCode = bookingId;
+
+            return response;
 
         }
 
-        public async Task<int> CheckOutBooking(Guid bookingId)
+        public async Task<ResponseMessage> CheckOutBooking(Guid bookingId)
         {
             var booking = await _bookingRepository.GetByIdAsync(bookingId);
+            ResponseMessage response = new ResponseMessage();
             if (booking == null)
-                return -1;
-            if (booking.Status != (byte?)BookingStatusEnum.InProgress) return -2;
-            booking.Status = (byte?)BookingStatusEnum.Completed;
+            {
+                response.ResponseCode = ResponseCode.NotFound;
+                response.Message = "Booking not found";
+                response.InstancesCode = bookingId;
+                return response;
+            }
+
+            if (booking.Status != (byte?)BookingStatusEnum.InProgress)
+            {
+                response.ResponseCode = ResponseCode.BadInstanceState;
+                response.Message = "Booking is not in a state that allows check-out";
+                response.InstancesCode = bookingId;
+                return response;
+            }
+        booking.Status = (byte?)BookingStatusEnum.Completed;
             await _bookingRepository.UpdateAsync(booking);
-            return 0;
+            response.ResponseCode = ResponseCode.Success;
+            response.Message = "Check-out successful";
+            response.InstancesCode = bookingId;
+            return response;
         }
     }
 }

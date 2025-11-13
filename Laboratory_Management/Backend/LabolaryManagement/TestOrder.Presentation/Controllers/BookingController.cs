@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using TestOrder.Application.Services.Booking;
 using TestOrder.Application.DTOs.Bookings;
 using System.Threading.Tasks;
+using TestOrder.Application.DTOs;
 
 namespace TestOrder.Presentation.Controllers
 {
@@ -43,8 +44,18 @@ namespace TestOrder.Presentation.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateBooking([FromBody] BookingRequestDTO createBookingDto)
         {
-            var response = await _bookingService.CreateNewBooking(createBookingDto);
-            return Ok(response);
+            var response = await _bookingService.CreateBookingAsync(createBookingDto);
+            switch (response.ResponseCode)
+            {
+                default:
+                    return Ok(response);
+                    
+                case ResponseCode.NotFound:
+                    return NotFound(response);
+
+                case ResponseCode.BadInstanceState:
+                    return BadRequest(response);
+            }
         }
 
         [HttpPut]
@@ -52,14 +63,14 @@ namespace TestOrder.Presentation.Controllers
         public async Task<IActionResult> CheckInBooking([FromQuery] Guid bookingId)
         {
             var response = await _bookingService.CheckInBooking(bookingId);
-            switch (response)
+            switch (response.ResponseCode)
             {
-                case -1:
-                    return NotFound("Booking not found");
-                case -2:
-                    return BadRequest("Booking is not in a state that allows check-in");
+                case ResponseCode.NotFound:
+                    return NotFound(response);
+                case ResponseCode.BadInstanceState:
+                    return BadRequest(response);
                 default:
-                    return Ok("Check-in successful");
+                    return Ok(response);
             }
         }
 
@@ -68,14 +79,16 @@ namespace TestOrder.Presentation.Controllers
         public async Task<IActionResult> CheckOutBooking([FromQuery] Guid bookingId)
         {
             var response = await _bookingService.CheckOutBooking(bookingId);
-            switch (response)
+            
+            switch (response.ResponseCode)
             {
-                case -1:
-                    return NotFound("Booking not found");
-                case -2:
-                    return BadRequest("Booking is not in a state that allows check-out");
+                case ResponseCode.NotFound:
+                    return NotFound(response);
+                case ResponseCode.BadInstanceState:
+                    return BadRequest(response);
                 default:
-                    return Ok("Check-out successful");
+                    return Ok(response);
+
             }
         }
 
