@@ -27,9 +27,7 @@ export default function SuccessBookingPage() {
 
         let testInfo = null;
         if (booking.bundleId) {
-
           testInfo = await bookingService.getTestBundle(booking.bundleId);
-
         } else if (booking.testCatalogs && booking.testCatalogs.length > 0) {
           const catalogPromises = booking.testCatalogs.map((catalogId) =>
             bookingService.getTestCatalog(catalogId)
@@ -42,7 +40,7 @@ export default function SuccessBookingPage() {
           testInfo,
         });
       } catch (error) {
-        toast.error("Không thể tải thông tin đơn hàng");
+        toast.error(error || "Không thể tải thông tin đơn hàng");
         navigate("/booking");
       } finally {
         setLoading(false);
@@ -97,14 +95,14 @@ export default function SuccessBookingPage() {
   };
 
   return (
-     <div className="booking-container">
-      <Navbar/>
-       <SuccessBooking
-      paymentResult={paymentResult}
-      selectedItems={selectedItems}
-      selectedDateTime={selectedDateTime}
-      onNewBooking={handleNewBooking}
-      bookingData={bookingData}
+    <div className="booking-container">
+      <Navbar />
+      <SuccessBooking
+        paymentResult={paymentResult}
+        selectedItems={selectedItems}
+        selectedDateTime={selectedDateTime}
+        onNewBooking={handleNewBooking}
+        bookingData={bookingData}
       />
     </div>
   );

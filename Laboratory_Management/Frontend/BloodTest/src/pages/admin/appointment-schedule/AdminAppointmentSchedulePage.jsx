@@ -18,7 +18,7 @@ import {
 } from "../../../data/appointment";
 import "./AdminAppointmentSchedulePage.css";
 import api from "../../../configs/axios";
-import { CgLayoutGrid } from "react-icons/cg";
+// import { CgLayoutGrid } from "react-icons/cg";
 
 const AdminAppointmentSchedulePage = () => {
   const [selectedDate, setSelectedDate] = useState(new Date()); // Ngày hiện tại
@@ -33,7 +33,8 @@ const AdminAppointmentSchedulePage = () => {
   const itemsPerPage = 7;
 
   const [Booking, SetBookings] = useState([]);
-  const [checkingInId, setCheckingInId] = useState(null); // track in-flight checkin
+  const [checkingInId, setCheckingInId] = useState(null);
+  const [checkingOutId, setCheckingOutId] = useState(null); // track check-out
 
   // Format date to YYYY-MM-DD
   const formatDate = (date) => {
@@ -265,7 +266,7 @@ const AdminAppointmentSchedulePage = () => {
   };
 
   const fetchAPI = async () => {
-    const response = await api.get(`testorder/api/Booking/info?pageNumber=3`);
+    const response = await api.get(`testorder/api/Booking/info?pageNumber=2`);
     const data = response.data;
     if (response.status >= 200 && response.status < 300) {
       SetBookings(data);
@@ -283,12 +284,28 @@ const AdminAppointmentSchedulePage = () => {
         `testorder/api/Booking/check-in?bookingId=${bookingId}`
       );
       if (response.status >= 200 && response.status < 300) {
-        await fetchAPI(); // refresh list after success
+        await fetchAPI();
       }
     } catch (err) {
       console.error("Check-in failed:", err);
     } finally {
       setCheckingInId(null);
+    }
+  };
+
+  const handleCheckout = async (bookingId) => {
+    try {
+      setCheckingOutId(bookingId);
+      const response = await api.put(
+        `testorder/api/Booking/check-out?bookingId=${bookingId}`
+      );
+      if (response.status >= 200 && response.status < 300) {
+        await fetchAPI();
+      }
+    } catch (err) {
+      console.error("Check-out failed:", err);
+    } finally {
+      setCheckingOutId(null);
     }
   };
 
@@ -444,6 +461,14 @@ const AdminAppointmentSchedulePage = () => {
               <tbody>
                 {Booking.length > 0 ? (
                   Booking.map((appointment) => {
+                    const status = String(appointment.status).toLowerCase();
+                    const isConfirmed = status === "confirmed";
+                    const isCheckedIn =
+                      status === "checked-in" || status === "checkedin";
+                    const isCheckingIn = checkingInId === appointment.bookingId;
+                    const isCheckingOut =
+                      checkingOutId === appointment.bookingId;
+
                     return (
                       <tr key={appointment.bookingId}>
                         <td>{appointment.patientName}</td>
@@ -454,14 +479,30 @@ const AdminAppointmentSchedulePage = () => {
                         <td>{appointment.slotInfo.timeBlock}</td>
                         <td>{appointment.status}</td>
                         <td>
-                          <button
-                            onClick={() => handleCheckin(appointment.bookingId)}
-                            disabled={checkingInId === appointment.bookingId}
-                          >
-                            {checkingInId === appointment.bookingId
-                              ? "Đang check in..."
-                              : "Check In"}
-                          </button>
+                          {isConfirmed && (
+                            <button
+                              onClick={() =>
+                                handleCheckin(appointment.bookingId)
+                              }
+                              disabled={isCheckingIn}
+                              className="CheckIn-Button"
+                            >
+                              {isCheckingIn ? "Đang check in..." : "Check In"}
+                            </button>
+                          )}
+                          {isCheckedIn && (
+                            <button
+                              onClick={() =>
+                                handleCheckout(appointment.bookingId)
+                              }
+                              disabled={isCheckingOut}
+                              className="CheckIn-Button"
+                            >
+                              {isCheckingOut
+                                ? "Đang check out..."
+                                : "Check Out"}
+                            </button>
+                          )}
                         </td>
                         <td>
                           <button

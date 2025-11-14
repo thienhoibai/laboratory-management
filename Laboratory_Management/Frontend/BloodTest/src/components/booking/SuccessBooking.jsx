@@ -1,6 +1,6 @@
 import React from "react";
 import "./SuccessBooking.css";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import packageIcon from "../../assets/icon/SVG_margin.svg";
 import locationIcon from "../../assets/icon/Location.svg";
 import calendarIcon from "../../assets/icon/Calender.svg";
@@ -13,13 +13,14 @@ export default function SuccessBooking({
   onNewBooking,
   bookingData, // Thêm prop để nhận dữ liệu từ API
 }) {
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const Amount = Number(searchParams.get("Amount"));
 
   // Sử dụng dữ liệu từ API nếu có, nếu không dùng dữ liệu mặc định
   const orderCode =
     bookingData?.bookingCode || paymentResult?.orderCode || "XN2025010001";
-  const total = selectedItems?.total || 300000;
-  const formattedTotal = (total || 0).toLocaleString("vi-VN") + "đ";
+  const formattedTotal = (price) => price.toLocaleString("vi-VN") + "đ";
 
   // Lấy tên gói/test từ API
   const pkgName = bookingData?.bundleId
@@ -87,7 +88,7 @@ export default function SuccessBooking({
               </div>
               <div className="sb-code">
                 Tổng Thanh Toán <br />
-                <span className="sb-total">{formattedTotal}</span>
+                <span className="sb-total">{formattedTotal(Amount)}</span>
               </div>
             </div>
 

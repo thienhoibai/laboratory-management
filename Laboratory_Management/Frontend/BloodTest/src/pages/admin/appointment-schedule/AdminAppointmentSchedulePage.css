@@ -814,6 +814,11 @@
   background: #1565c0;
 }
 
+.CheckIn-Button {
+  background-color: rgb(161, 243, 39);
+  padding: 10px;
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
   .calendar-grid {
