@@ -1,4 +1,4 @@
-
+﻿
 using Azure;
 using System;
 
@@ -225,7 +225,7 @@ namespace TestOrder.Application.Services.Booking
                 response.InstancesCode = bookingId;
                 return response;
             }
-            booking.Status = (byte?)BookingStatusEnum.CheckedIn;
+            booking.Status = (byte?)BookingStatusEnum.InProgress;
             booking.RunDate = DateOnly.FromDateTime(DateTime.Now);
             await _bookingRepository.UpdateAsync(booking);
 
@@ -256,12 +256,27 @@ namespace TestOrder.Application.Services.Booking
                 response.InstancesCode = bookingId;
                 return response;
             }
-        booking.Status = (byte?)BookingStatusEnum.Completed;
+            booking.Status = (byte?)BookingStatusEnum.Completed;
             await _bookingRepository.UpdateAsync(booking);
             response.ResponseCode = ResponseCode.Success;
             response.Message = "Check-out successful";
             response.InstancesCode = bookingId;
             return response;
         }
+
+        internal async Task PaymentConfirmBooking (Guid bookingId)
+        {
+            ResponseMessage response = new ResponseMessage();
+
+            var booking = await _bookingRepository.GetByIdAsync(bookingId);
+            if (booking == null)
+            {
+                throw new Exception("Booking not found");
+            }
+
+            booking.Status = (byte?)BookingStatusEnum.Confirmed;
+            await _bookingRepository.UpdateAsync(booking);
+        }
+
     }
 }

@@ -30,7 +30,7 @@ namespace TestOrder.Infrastructure.Repository
         public async Task<string?> GetLastBookingCodeAsync()
         {
             var lastBooking = await Task.Run(() => _context.Set<Booking>()
-                .OrderDescending()
+                .OrderByDescending(b => b.BookingCode)
                 .FirstOrDefault());
             return lastBooking?.BookingCode;
         }
