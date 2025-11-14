@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import {
   FiCalendar,
@@ -17,6 +17,8 @@ import {
   getStatusInfo,
 } from "../../../data/appointment";
 import "./AdminAppointmentSchedulePage.css";
+import api from "../../../configs/axios";
+import { CgLayoutGrid } from "react-icons/cg";
 
 const AdminAppointmentSchedulePage = () => {
   const [selectedDate, setSelectedDate] = useState(new Date()); // Ngày hiện tại
@@ -29,6 +31,8 @@ const AdminAppointmentSchedulePage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const itemsPerPage = 7;
+
+  const [Booking, SetBookings] = useState([]);
 
   // Format date to YYYY-MM-DD
   const formatDate = (date) => {
@@ -60,7 +64,7 @@ const AdminAppointmentSchedulePage = () => {
     const month = currentMonth.getMonth();
 
     const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
+    // const lastDay = new Date(year, month + 1, 0);
     const startDate = new Date(firstDay);
 
     // Start from Monday of the week containing the 1st
@@ -103,10 +107,10 @@ const AdminAppointmentSchedulePage = () => {
 
   // Pagination
   const totalPages = Math.ceil(filteredAppointments.length / itemsPerPage);
-  const paginatedAppointments = filteredAppointments.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  // const paginatedAppointments = filteredAppointments.slice(
+  //   (currentPage - 1) * itemsPerPage,
+  //   currentPage * itemsPerPage
+  // );
 
   // Handle date selection
   const handleDateSelect = (date) => {
@@ -259,6 +263,18 @@ const AdminAppointmentSchedulePage = () => {
     return nextDate <= maxDate;
   };
 
+  useEffect(() => {
+    const fetchAPI = async () => {
+      const response = await api.get(`testorder/api/Booking/info?pageNumber=1`);
+      const data = response.data;
+      if (response.status >= 200 && response.status < 300) {
+        SetBookings(data);
+        console.log(data);
+      }
+    };
+    fetchAPI();
+  }, []);
+
   return (
     <AdminLayout
       pageTitle="Quản lý lịch xét nghiệm"
@@ -401,22 +417,25 @@ const AdminAppointmentSchedulePage = () => {
                   <th>Email</th>
                   <th>Số điện thoại</th>
                   <th>Mã đặt lịch</th>
-                  <th>Giờ</th>
+                  <th>Ngày Khám</th>
+                  <th>Giờ Khám</th>
                   <th>Trạng thái</th>
+                  <th>Thao Tác</th>
                   <th>Hành động</th>
                 </tr>
               </thead>
               <tbody>
-                {paginatedAppointments.length > 0 ? (
-                  paginatedAppointments.map((appointment) => {
+                {Booking.length > 0 ? (
+                  Booking.map((appointment) => {
                     const statusInfo = getStatusInfo(appointment.status);
                     return (
-                      <tr key={appointment.id}>
+                      <tr key={appointment.bookingId}>
                         <td>{appointment.patientName}</td>
-                        <td>{appointment.email}</td>
-                        <td>{appointment.phone}</td>
+                        <td>{appointment.patientEmail}</td>
+                        <td>{appointment.patientPhoneNumber}</td>
                         <td>{appointment.bookingCode}</td>
-                        <td>{appointment.appointmentTime}</td>
+                        <td>{appointment.slotInfo.appointmentDate}</td>
+                        <td>{appointment.slotInfo.timeBlock}</td>
                         <td>
                           <span
                             className={`status-badge ${appointment.status}`}
@@ -424,6 +443,7 @@ const AdminAppointmentSchedulePage = () => {
                             {statusInfo.label}
                           </span>
                         </td>
+                        <td>Check In</td>
                         <td>
                           <button
                             className="action-button"
@@ -517,59 +537,61 @@ const AdminAppointmentSchedulePage = () => {
             </div>
 
             <div className="modal-body">
-              <div className="modal-info-grid">
-                <div className="modal-info-item">
-                  <span className="modal-info-label">Mã đặt lịch</span>
-                  <span className="modal-info-value">
-                    {selectedAppointment.bookingCode}
-                  </span>
+              <div className="modal-info-1">
+                <div className="modal-info-grid">
+                  <div className="modal-info-item">
+                    <span className="modal-info-label">Mã đặt lịch</span>
+                    <span className="modal-info-value">
+                      {selectedAppointment.bookingCode}
+                    </span>
+                  </div>
+                  <div className="modal-info-item">
+                    <span className="modal-info-label">Giờ hẹn hiện tại</span>
+                    <span className="modal-info-value">
+                      {selectedAppointment.slotInfo.timeBlock}
+                    </span>
+                  </div>
                 </div>
-                <div className="modal-info-item">
-                  <span className="modal-info-label">Giờ hẹn hiện tại</span>
-                  <span className="modal-info-value">
-                    {selectedAppointment.appointmentTime}
-                  </span>
-                </div>
-              </div>
 
-              <div className="modal-section">
-                <h3 className="modal-section-title">Trạng thái</h3>
-                <div className="status-dropdown">
-                  <button
-                    className="status-dropdown-button"
-                    onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
-                  >
-                    <span>{getStatusInfo(editingStatus).label}</span>
-                    <FiChevronRight
-                      style={{
-                        transform: statusDropdownOpen
-                          ? "rotate(90deg)"
-                          : "rotate(0deg)",
-                        transition: "transform 0.2s",
-                      }}
-                    />
-                  </button>
-                  {statusDropdownOpen && (
-                    <div className="status-dropdown-menu">
-                      {appointmentStatuses.map((status) => (
-                        <div
-                          key={status.value}
-                          className={`status-dropdown-item ${
-                            editingStatus === status.value ? "selected" : ""
-                          }`}
-                          onClick={() => {
-                            setEditingStatus(status.value);
-                            setStatusDropdownOpen(false);
-                          }}
-                        >
-                          {editingStatus === status.value && (
-                            <FiCheck size={16} />
-                          )}
-                          <span>{status.label}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                <div className="modal-section">
+                  <h3 className="modal-section-title">Trạng thái</h3>
+                  <div className="status-dropdown">
+                    <button
+                      className="status-dropdown-button"
+                      onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
+                    >
+                      <span>{getStatusInfo(editingStatus).label}</span>
+                      <FiChevronRight
+                        style={{
+                          transform: statusDropdownOpen
+                            ? "rotate(90deg)"
+                            : "rotate(0deg)",
+                          transition: "transform 0.2s",
+                        }}
+                      />
+                    </button>
+                    {statusDropdownOpen && (
+                      <div className="status-dropdown-menu">
+                        {appointmentStatuses.map((status) => (
+                          <div
+                            key={status.value}
+                            className={`status-dropdown-item ${
+                              editingStatus === status.value ? "selected" : ""
+                            }`}
+                            onClick={() => {
+                              setEditingStatus(status.value);
+                              setStatusDropdownOpen(false);
+                            }}
+                          >
+                            {editingStatus === status.value && (
+                              <FiCheck size={16} />
+                            )}
+                            <span>{status.label}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 

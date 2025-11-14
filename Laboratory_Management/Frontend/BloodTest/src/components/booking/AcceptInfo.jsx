@@ -12,13 +12,11 @@ import { setPatient } from "../../data/patientSlice";
 import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import { formatDate1 } from "../../utils/formatDate";
-import { useNavigate } from "react-router-dom";
 // import { toast } from "react-toastify";
 
 const endPoint = "testorder/api/Booking";
 
 function AcceptInfo({ selectedItems, selectedDateTime, onBack, onProceed }) {
-  const navigate = useNavigate();
   // selectedItems: { source:'package', package: {...}, total } OR { source:'catalog', items:[{name,price}], total }
   const dispatch = useDispatch();
   const parsePrice = (price) => price.toLocaleString("Vi-VN") + "đ" || 0;
@@ -180,16 +178,15 @@ function AcceptInfo({ selectedItems, selectedDateTime, onBack, onProceed }) {
         slotDTO: slotDTO,
       });
       if (response.status >= 200 && response.status < 300) {
-        if (response.data === -2) {
-          toast.error("Lần Đặt đã giới hạn");
-          navigate("/");
-        } else {
-          toast.success(
-            "Đặt lịch thành công, vui lòng thanh toán sau khi đặt lịch"
-          );
-        }
-        console.log(response.data);
+        toast.success(
+          "Đặt lịch thành công, vui lòng thanh toán sau khi đặt lịch"
+        );
+        // Lấy bookingId từ response (API có thể trả response.data.bookingId hoặc response.data)
+        const newBookingId = response.data?.bookingId || response.data || "";
+        // Gọi onProceed và truyền bookingId ngay (không đợi state update)
+        if (onProceed) onProceed(newBookingId);
       }
+      // setBookingId(response.data.bookingId);
     } catch (error) {
       if (error.response) {
         toast.error(
@@ -318,13 +315,7 @@ function AcceptInfo({ selectedItems, selectedDateTime, onBack, onProceed }) {
         <button className="btn-back" onClick={() => onBack && onBack()}>
           Quay lại
         </button>
-        <button
-          className="btn-proceed"
-          onClick={() => {
-            handleBooking();
-            onProceed && onProceed();
-          }}
-        >
+        <button className="btn-proceed" onClick={handleBooking}>
           Tiếp tục thanh toán
         </button>
       </div>

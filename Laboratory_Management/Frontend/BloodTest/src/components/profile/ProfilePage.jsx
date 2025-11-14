@@ -141,7 +141,7 @@ export default function ProfilePage() {
             </button>
             <button
               className="profile-history-btn"
-              onClick={() => navigate("/history")}
+              onClick={() => navigate(`/history?patientId=${userData.patientId}`)}
             >
               <svg
                 className="clock-icon"
@@ -451,7 +451,7 @@ export default function ProfilePage() {
                             Ngày sinh:
                           </span>
                           <span className="medical-record-patient-value">
-                            {userData.dateOfBirth}
+                            {userData.dateOfBirth} 
                           </span>
                         </div>
                       </div>
@@ -477,7 +477,7 @@ export default function ProfilePage() {
                   </div>
                   <button
                     className="medical-record-view-btn"
-                    onClick={() => navigate(`/medical-record`)}
+                    onClick={() => navigate(`/medical-record?patientId=${userData.patientId}`)}
                   >
                     <svg
                       className="view-icon"

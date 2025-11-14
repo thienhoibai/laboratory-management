@@ -3,7 +3,9 @@ import { useSelector } from "react-redux";
 import { Pagination, Spin } from "antd";
 import "./BookingHistory.css";
 import api from "../../configs/axios";
-import { formatDate } from "../../utils/formatDate";
+import { formatDate,formatTime } from "../../utils/formatDate";
+import { useSearchParams } from "react-router-dom";
+import { bookingService } from "../../services/bookingService";
 
 const endPoint = "testorder/api/Booking/patient";
 const endPoint1 = "testorder/api/TestBundle";
@@ -74,7 +76,9 @@ export default function BookingHistory() {
   const [expanded, setExpanded] = useState({});
   const [BookingHistory, setBookingHistory] = useState([]);
   const [Package, setPackage] = useState([]);
-  const { patientId } = useSelector((state) => state.patient);
+  const [Catalog, setCatalog] = useState([]);
+  const [searchParams] = useSearchParams();
+  const patientId = searchParams.get("patientId");
 
   // pagination & loading
   const [page, setPage] = useState(1);
@@ -94,6 +98,7 @@ export default function BookingHistory() {
           if (Array.isArray(data)) {
             setBookingHistory(data);
             setTotal(data.length);
+            console.log(data);
           } else if (data?.items) {
             setBookingHistory(data.items);
             setTotal(
@@ -217,7 +222,7 @@ export default function BookingHistory() {
                     <img src="src\assets\icon\Calender.svg" alt="Calender" />
                     <div className="booking-date&time">
                       <div className="booking-date">{b.RunDate}</div>
-                      <div className="booking-time">Giờ hẹn:</div>
+                      <div className="booking-time">Ngày/Giờ hẹn: {formatDate(b.slotInfo.appointmentDate)} /  {formatTime(b.slotInfo.timeBlock)}</div>
                     </div>
                     <div className={`booking-badge ${s.className}`}>
                       {s.text}

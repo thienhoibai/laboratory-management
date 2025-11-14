@@ -10,6 +10,7 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 // import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Booking from "./pages/booking/Booking";
 import CatalogSelection from "./components/booking/CatalogSelection";
+import SuccessBookingPage from "./pages/booking/SuccessBookingPage";
 
 import AdminDashboardPage from "./pages/admin/dashboard/AdminDashboardPage";
 import AdminUsersPage from "./pages/admin/user/AdminUsersPage";
@@ -34,6 +35,8 @@ import CreatePatient from "./components/profile/CreateProfile";
 import BlogPage from "./pages/blog/BlogPage";
 import BlogDetailPage from "./pages/blog/BlogDetailPage";
 import ChangePasswordModal from "./components/profile/ChangePassword";
+
+import SuccessBooking from "./components/booking/SuccessBooking";
 
 function App() {
   const router = createBrowserRouter([
@@ -68,6 +71,10 @@ function App() {
     {
       path: "/booking",
       element: <Booking />,
+    },
+    {
+      path: "/booking/successBooking",
+      element: <SuccessBookingPage />,
     },
     {
       path: "/booking/catalog",
