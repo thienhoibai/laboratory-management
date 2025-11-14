@@ -37,17 +37,21 @@ export default function Payment({
 
   const handleModalCancel = () => setShowWarningModal(false);
   const amount = selectedItems?.total;
-
+  console.log(amount);
+  console.log(bookingId.instancesCode);
   const handleModalConfirm = async () => {
     setShowWarningModal(false);
 
-    if (!bookingId || !amount) {
+    if (!bookingId.instancesCode || !amount) {
       console.error("Missing bookingId or amount to create VNPAY URL");
       return;
     }
 
     try {
-      const res = await bookingService.createVnPayUrl(bookingId, amount);
+      const res = await bookingService.createVnPayUrl(
+        bookingId.instancesCode,
+        amount
+      );
       // Lấy URL từ nhiều khả năng trả về
       const url =
         typeof res === "string"

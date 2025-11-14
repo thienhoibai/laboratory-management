@@ -1,19 +1,22 @@
 import React, { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { isAuthenticated, demoLogout } from "../../utils/auth";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { isAuthenticated, logoutUser } from "../../utils/auth";
 import "./BookingNavbar.css";
 
 function BookingNavbar() {
   const [loggedIn, setLoggedIn] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     setLoggedIn(isAuthenticated());
   }, []);
 
-  const handleLogout = () => {
-    demoLogout();
-    setLoggedIn(false);
+  const handleLogout = async () => {
+    await logoutUser();
+    setUser(null);
+    navigate("/login");
   };
 
   const isActive = (path) => {

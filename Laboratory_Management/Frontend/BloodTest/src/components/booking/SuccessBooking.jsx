@@ -72,7 +72,7 @@ export default function SuccessBooking({
               />
             </svg>
           </div>
-          <h1 className="sb-title">Đặt lịch thành công!</h1>
+          <h1 className="sb-title">Thanh Toán thành công!</h1>
           <p className="sb-desc">
             Cảm ơn bạn đã đặt lịch. Chúng tôi đã gửi xác nhận đến email của bạn.
           </p>

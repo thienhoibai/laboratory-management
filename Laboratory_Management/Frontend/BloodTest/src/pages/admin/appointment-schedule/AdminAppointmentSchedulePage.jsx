@@ -33,6 +33,7 @@ const AdminAppointmentSchedulePage = () => {
   const itemsPerPage = 7;
 
   const [Booking, SetBookings] = useState([]);
+  const [checkingInId, setCheckingInId] = useState(null); // track in-flight checkin
 
   // Format date to YYYY-MM-DD
   const formatDate = (date) => {
@@ -263,17 +264,33 @@ const AdminAppointmentSchedulePage = () => {
     return nextDate <= maxDate;
   };
 
+  const fetchAPI = async () => {
+    const response = await api.get(`testorder/api/Booking/info?pageNumber=3`);
+    const data = response.data;
+    if (response.status >= 200 && response.status < 300) {
+      SetBookings(data);
+      console.log(data);
+    }
+  };
   useEffect(() => {
-    const fetchAPI = async () => {
-      const response = await api.get(`testorder/api/Booking/info?pageNumber=1`);
-      const data = response.data;
-      if (response.status >= 200 && response.status < 300) {
-        SetBookings(data);
-        console.log(data);
-      }
-    };
     fetchAPI();
   }, []);
+
+  const handleCheckin = async (bookingId) => {
+    try {
+      setCheckingInId(bookingId);
+      const response = await api.put(
+        `testorder/api/Booking/check-in?bookingId=${bookingId}`
+      );
+      if (response.status >= 200 && response.status < 300) {
+        await fetchAPI(); // refresh list after success
+      }
+    } catch (err) {
+      console.error("Check-in failed:", err);
+    } finally {
+      setCheckingInId(null);
+    }
+  };
 
   return (
     <AdminLayout
@@ -427,7 +444,6 @@ const AdminAppointmentSchedulePage = () => {
               <tbody>
                 {Booking.length > 0 ? (
                   Booking.map((appointment) => {
-                    const statusInfo = getStatusInfo(appointment.status);
                     return (
                       <tr key={appointment.bookingId}>
                         <td>{appointment.patientName}</td>
@@ -436,14 +452,17 @@ const AdminAppointmentSchedulePage = () => {
                         <td>{appointment.bookingCode}</td>
                         <td>{appointment.slotInfo.appointmentDate}</td>
                         <td>{appointment.slotInfo.timeBlock}</td>
+                        <td>{appointment.status}</td>
                         <td>
-                          <span
-                            className={`status-badge ${appointment.status}`}
+                          <button
+                            onClick={() => handleCheckin(appointment.bookingId)}
+                            disabled={checkingInId === appointment.bookingId}
                           >
-                            {statusInfo.label}
-                          </span>
+                            {checkingInId === appointment.bookingId
+                              ? "Đang check in..."
+                              : "Check In"}
+                          </button>
                         </td>
-                        <td>Check In</td>
                         <td>
                           <button
                             className="action-button"
