@@ -32,9 +32,19 @@ namespace TestOrder.Application.Services
             return await _repository.GetByDateAsync(appointmentDate, pageNumber, pageSize);
         }
 
-        public async Task<AppointmentSlot> GetAppointmentSlotByIdAsync(Guid appointmentSlotId)
+        public async Task<AppointmentSlotDTO> GetAppointmentSlotByIdAsync(Guid appointmentSlotId)
         {
-            return await _repository.GetByIdAsync(appointmentSlotId);
+            var timeslot = await _repository.GetByIdAsync(appointmentSlotId);
+            if (timeslot != null)
+            {
+                var timeBlockEntity = await _timeBlockRepository.GetByIdAsync(timeslot.TimeBlockId);
+                return new AppointmentSlotDTO
+                {
+                    AppointmentDate = timeslot.AppointmentDate,
+                    TimeBlock = timeBlockEntity.TimeBlock1
+                };
+            }
+            return null;
         }
 
         public async Task<AppointmentSlotDTO> GetAppointmentSlotInfo (Guid slotId)
