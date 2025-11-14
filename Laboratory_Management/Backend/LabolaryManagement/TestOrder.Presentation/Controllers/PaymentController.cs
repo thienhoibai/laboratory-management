@@ -14,6 +14,7 @@ namespace TestOrder.Presentation.Controllers
     {
         private readonly IVnPayService vnPayService;
         private readonly PaymentService paymentService;
+        private const string paymentSuccess = "http://localhost:5174/booking/successBooking?bookingId=";
 
         public PaymentController(IVnPayService vnPayService, PaymentService paymentService)
         {
@@ -74,9 +75,8 @@ namespace TestOrder.Presentation.Controllers
                         Status = (byte?)PaymentStatusEnum.Completed,
                         PaidAt = DateTime.Now,
                     };
-                    await paymentService.UpdatePaymentAsync(token, updatePaymentDto);
-
-                    return Ok("Payment successful");
+                    string id = await paymentService.UpdatePaymentAsync(token, updatePaymentDto, vnPayResponse.IsSuccess);
+                    return Redirect($"{paymentSuccess}{id}");
                 }
                 else
                 {
@@ -85,7 +85,7 @@ namespace TestOrder.Presentation.Controllers
                     {
                         Status = (byte?)PaymentStatusEnum.Failed,            
                     };
-                    await paymentService.UpdatePaymentAsync(token, updatePaymentDto);
+                    string id = await paymentService.UpdatePaymentAsync(token, updatePaymentDto, vnPayResponse.IsSuccess);
                     return BadRequest("Payment failed");
                 }
             }
