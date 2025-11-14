@@ -12,6 +12,9 @@ namespace TestOrder.Application.DTOs.Bookings
     {
         [Required]
         public string BookingCode { get; set; } = string.Empty;
+
+        public Guid BookingId { get; set; }
+
         [Required]
         public Guid PatientId { get; set; }
 
@@ -33,8 +36,10 @@ namespace TestOrder.Application.DTOs.Bookings
         public string RanBy { get; set; } = string.Empty;
 
         public string Status { get; set; } = string.Empty;
-        public AppointmentSlotDTO slotInfo { get; set; } = new AppointmentSlotDTO();
+        public AppointmentSlotDTO? SlotInfo { get; set; }
+        public IEnumerable<int>? TestCatalogs { get; set; }
 
+        
 
     }
 }

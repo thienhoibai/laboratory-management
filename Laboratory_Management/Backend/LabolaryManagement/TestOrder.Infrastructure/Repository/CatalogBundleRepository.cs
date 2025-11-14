@@ -79,9 +79,18 @@ namespace TestOrder.Infrastructure.Repository
 
         public async Task AddAsync(CatalogBundle entity)
         {
+            bool exists = await _context.CatalogBundles
+                .AnyAsync(cb => cb.BundleId == entity.BundleId && cb.CatalogId == entity.CatalogId);
+
+            if (exists)
+            {
+                throw new InvalidOperationException("Catalog đã tồn tại trong Bundle này.");
+            }
+
             _context.CatalogBundles.Add(entity);
             await _context.SaveChangesAsync();
         }
+
 
         public async Task DeleteAsync(int bundleId, int catalogId)
         {
@@ -101,6 +110,19 @@ namespace TestOrder.Infrastructure.Repository
         }
         public async Task AddRangeAsync(IEnumerable<CatalogBundle> entities)
         {
+            foreach (var entity in entities)
+            {
+                bool exists = await _context.CatalogBundles
+                    .AnyAsync(cb => cb.BundleId == entity.BundleId && cb.CatalogId == entity.CatalogId);
+
+                if (exists)
+                {
+                    throw new InvalidOperationException(
+                        $"CatalogId {entity.CatalogId} đã tồn tại trong BundleId {entity.BundleId}"
+                    );
+                }
+            }
+
             _context.CatalogBundles.AddRange(entities);
             await _context.SaveChangesAsync();
         }

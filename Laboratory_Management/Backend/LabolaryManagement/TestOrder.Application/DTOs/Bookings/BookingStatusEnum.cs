@@ -12,7 +12,9 @@ namespace TestOrder.Application.DTOs.Bookings
         Confirmed = 2,
         CheckedIn = 3,
         InProgress = 4,
+
         ReadyForInstrument = 5,
+
         Completed = 6,
         Cancelled = 7
     }

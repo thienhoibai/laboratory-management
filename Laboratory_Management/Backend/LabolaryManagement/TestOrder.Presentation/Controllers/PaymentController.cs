@@ -67,26 +67,25 @@ namespace TestOrder.Presentation.Controllers
                 var vnPayResponse = vnPayService.PaymentExecute(Request.Query);
                 if (vnPayResponse.IsSuccess)
                 {
-                    int paymentNo = int.Parse(vnPayResponse.OrderId);
+                    string token = vnPayResponse.OrderId;
                     var updatePaymentDto = new UpdatePaymentDTO
                     {
                         Method = vnPayResponse.PaymentMethod,
                         Status = (byte?)PaymentStatusEnum.Completed,
                         PaidAt = DateTime.Now,
-                        Token = vnPayResponse.PaymentMethod + "_" + vnPayResponse.OrderId
                     };
-                    await paymentService.UpdatePaymentAsync(paymentNo, updatePaymentDto);
+                    await paymentService.UpdatePaymentAsync(token, updatePaymentDto);
 
                     return Ok("Payment successful");
                 }
                 else
                 {
-                    int paymentNo = int.Parse(vnPayResponse.OrderId);
+                    string token = vnPayResponse.OrderId;
                     var updatePaymentDto = new UpdatePaymentDTO
                     {
                         Status = (byte?)PaymentStatusEnum.Failed,            
                     };
-                    await paymentService.UpdatePaymentAsync(paymentNo, updatePaymentDto);
+                    await paymentService.UpdatePaymentAsync(token, updatePaymentDto);
                     return BadRequest("Payment failed");
                 }
             }

@@ -23,5 +23,11 @@ namespace TestOrder.Infrastructure.Repository
             return await Task.Run(() => _context.Set<PaymentEnvoice>()
                 .FirstOrDefault(p => p.BookingId == bookingId));
         }
+
+        public async Task<PaymentEnvoice?> GetByTokenAsync (string token)
+        {
+            return await Task.Run(() => _context.Set<PaymentEnvoice>()
+                .FirstOrDefault(p => p.Token == token));
+        }
     }
 }
