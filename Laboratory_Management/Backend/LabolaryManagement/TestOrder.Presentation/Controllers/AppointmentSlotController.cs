@@ -30,7 +30,7 @@ namespace TestOrder.Presentation.Controllers
         }
 
         [HttpGet("count")]
-        public async Task<IActionResult> GetBookingsCountForSlot([FromBody] List<Guid> appointmentSlotIds)
+        public async Task<IActionResult> GetBookingsCountForSlot([FromQuery] List<Guid> appointmentSlotIds)
         {
             var response = await _appointmentSlotService.GetBookingsCountForMultipleSlotsAsync(appointmentSlotIds);
             return Ok(response);

@@ -87,31 +87,53 @@ namespace TestOrder.Application.Services
             return await _repository.GetBookingsCountForSlot(slotId);
         }
 
-        public async Task<List<int>> GetBookingsCountForMultipleSlotsAsync(List<Guid> slotIds)
+        public async Task<List<SlotCountResponse>> GetBookingsCountForMultipleSlotsAsync(List<Guid> slotIds)
         {
             var bookingsCounts = new List<int>();
+            var slotCountResponses = new List<SlotCountResponse>();
             foreach (var slotId in slotIds)
             {
                 var count = await _repository.GetBookingsCountForSlot(slotId);
-                bookingsCounts.Add(count);
+
+                var slot =  await _repository.GetByIdAsync(slotId);
+                var timeBlockEntity = await _timeBlockRepository.GetByIdAsync(slot.TimeBlockId);
+                var slotCountResponse = new SlotCountResponse
+                {
+                    AppointmentDate = slot.AppointmentDate,
+                    TimeBlock = timeBlockEntity.TimeBlock1,
+                    TotalBookings = count,
+                    IsFullyBooked = count >= slot.MaxBooking
+                };
+                slotCountResponses.Add(slotCountResponse);
+
             }
-            return bookingsCounts;
+            return slotCountResponses;
         }
 
-        public async Task<List<int>?> GetBookingCountForAllSlotAsync(int pageNumber)
+        public async Task<List<SlotCountResponse>?> GetBookingCountForAllSlotAsync(int pageNumber)
         {
             var slots = await _repository.GetAllPagedAsync(pageNumber);
             if (slots == null || !slots.Any())
             {
                 return null;
             }
-            var bookingCounts = new List<int>();
+            var bookingsCounts = new List<int>();
+
+            var slotCountResponses = new List<SlotCountResponse>();
             foreach (var slot in slots)
             {
                 var count = await _repository.GetBookingsCountForSlot(slot.SlotId);
-                bookingCounts.Add(count);
+                var timeBlockEntity = await _timeBlockRepository.GetByIdAsync(slot.TimeBlockId);
+                var slotCountResponse = new SlotCountResponse
+                {
+                    AppointmentDate = slot.AppointmentDate,
+                    TimeBlock = timeBlockEntity.TimeBlock1,
+                    TotalBookings = count,
+                    IsFullyBooked = count >= slot.MaxBooking
+                };
+                slotCountResponses.Add(slotCountResponse);
             }
-            return bookingCounts;
+            return slotCountResponses;
 
         }
 
