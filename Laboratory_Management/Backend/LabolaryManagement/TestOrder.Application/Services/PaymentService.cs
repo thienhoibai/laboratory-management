@@ -18,11 +18,13 @@ namespace TestOrder.Application.Services
     public class PaymentService : IVnPayService
     {
         private readonly PaymentRepository _paymentRepository;
+        private readonly TestOrder.Infrastructure.Repository.BookingRepository _bookingRepository;
         private readonly IConfiguration configuration;
 
-        public PaymentService(IConfiguration configuration, PaymentRepository paymentRepository)
+        public PaymentService(IConfiguration configuration, PaymentRepository paymentRepository, TestOrder.Infrastructure.Repository.BookingRepository bookingRepository)
         {
             _paymentRepository = paymentRepository;
+            _bookingRepository = bookingRepository;
             this.configuration = configuration ?? throw new ArgumentNullException(nameof(configuration), "Configuration cannot be null.");
         }
 
@@ -155,6 +157,17 @@ namespace TestOrder.Application.Services
             payment.PaidAt = dto.PaidAt ?? payment.PaidAt;
             payment.Token = dto.Token ?? payment.Token;
             await _paymentRepository.UpdateAsync(payment);
+
+            // Nếu Paid thành công → đổi Booking.Status = ReadyForInstrument (5)
+            if (payment.Status == (byte?)PaymentStatusEnum.Completed && payment.BookingId != Guid.Empty)
+            {
+                var booking = await _bookingRepository.GetByIdAsync(payment.BookingId);
+                if (booking != null)
+                {
+                    booking.Status = (byte?)TestOrder.Application.DTOs.Bookings.BookingStatusEnum.ReadyForInstrument;
+                    await _bookingRepository.UpdateAsync(booking);
+                }
+            }
             return true;
         }
     }

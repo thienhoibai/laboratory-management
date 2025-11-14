@@ -6,15 +6,15 @@ using System.Threading.Tasks;
 
 namespace TestOrder.Application.DTOs.InstrumentBridge
 {
-    
-
+    // Item đã được gộp theo ParameterId, nhưng vẫn liệt kê đầy đủ các TestBookingNo/CatalogIds
     public record ForInstrumentItem(
-        long TestBookingNo,
-        int CatalogId,
         int ParameterId,
         string ParameterName,
         string? Unit,
-        string? ReferenceRange
+        decimal? RefMin,
+        decimal? RefMax,
+        List<long> TestBookingNos,
+        List<int> CatalogIds
     );
 
     public record ForInstrumentResponse(

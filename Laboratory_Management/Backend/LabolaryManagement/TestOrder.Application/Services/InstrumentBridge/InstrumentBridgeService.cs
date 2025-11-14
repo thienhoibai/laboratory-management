@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using System.Net.Http; // thêm để dùng IHttpClientFactory
 using System.Net.Http.Json;
 using TestOrder.Application.DTOs.InstrumentBridge;
+using TestOrder.Application.DTOs.Bookings;
 using TestOrder.Infrastructure.Data;
 using TestOrder.Infrastructure.Models;     // Booking/BookingTest/TestCatalog/TestResult
 
@@ -47,17 +48,42 @@ public class InstrumentBridgeService
             }
         }
 
-        var items = booking.BookingTests
-            .SelectMany(bt => bt.Catalog!.Parameters.Select(p =>
-                new ForInstrumentItem(
-                    bt.TestBookingNo,
-                    bt.CatalogId ?? 0,
-                    p.ParameterId,
-                    p.ParameterName,
-                    p.Unit,
-                    p.ReferenceRange
-                )))
-            .OrderBy(i => i.TestBookingNo).ThenBy(i => i.ParameterId)
+        // Group theo ParameterId, giữ danh sách TestBookingNo và CatalogId
+        var dict = new Dictionary<int, (string name, string? unit, decimal? min, decimal? max, HashSet<long> nos, HashSet<int> catalogs)>();
+
+        foreach (var bt in booking.BookingTests)
+        {
+            if (bt.Catalog?.Parameters == null) continue;
+            foreach (var p in bt.Catalog.Parameters)
+            {
+                if (!dict.TryGetValue(p.ParameterId, out var entry))
+                {
+                    decimal? min = p.MinRange.HasValue ? (decimal?)Convert.ToDecimal(p.MinRange.Value) : null;
+                    decimal? max = p.MaxRange.HasValue ? (decimal?)Convert.ToDecimal(p.MaxRange.Value) : null;
+                    entry = (p.ParameterName, p.Unit, min, max, new HashSet<long>(), new HashSet<int>());
+                }
+                entry.nos.Add(bt.TestBookingNo);
+                if (bt.CatalogId.HasValue) entry.catalogs.Add(bt.CatalogId.Value);
+                // Nếu chưa có min/max mà có MinRange/MaxRange thì gán
+                if (!entry.min.HasValue && p.MinRange.HasValue)
+                    entry.min = (decimal)Convert.ToDecimal(p.MinRange.Value);
+                if (!entry.max.HasValue && p.MaxRange.HasValue)
+                    entry.max = (decimal)Convert.ToDecimal(p.MaxRange.Value);
+                dict[p.ParameterId] = entry;
+            }
+        }
+
+        var items = dict
+            .OrderBy(kv => kv.Key)
+            .Select(kv => new ForInstrumentItem(
+                kv.Key,
+                kv.Value.name,
+                kv.Value.unit,
+                kv.Value.min,
+                kv.Value.max,
+                kv.Value.nos.OrderBy(x => x).ToList(),
+                kv.Value.catalogs.OrderBy(x => x).ToList()
+            ))
             .ToList();
 
         return new ForInstrumentResponse(booking.BookingId, booking.PatientName, patientSex, items);
@@ -98,7 +124,7 @@ public class InstrumentBridgeService
         }
         await _ctx.SaveChangesAsync();
 
-        // Đủ kết quả thì Completed (4)
+        // Đủ kết quả thì Completed
         var expected = await _ctx.Set<BookingTest>()
             .Where(bt => bt.BookingId == req.BookingId)
             .Join(_ctx.Set<TestCatalog>(), bt => bt.CatalogId, c => c.CatalogId, (bt, c) => new { bt, c })
@@ -115,7 +141,7 @@ public class InstrumentBridgeService
         if (expected > 0 && actual >= expected)
         {
             var b = await _ctx.Set<Booking>().SingleAsync(x => x.BookingId == req.BookingId);
-            b.Status = (byte)4; // Completed
+            b.Status = (byte)BookingStatusEnum.Completed; // 6
             await _ctx.SaveChangesAsync();
         }
     }

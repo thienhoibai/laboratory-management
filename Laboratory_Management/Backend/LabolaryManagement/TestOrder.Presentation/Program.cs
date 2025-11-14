@@ -20,9 +20,15 @@ namespace TestOrder.Presentation
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddDbContext<TestOrderDBContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+            builder.Services.AddDbContextFactory<TestOrderDBContext>(options =>
+            options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
             // Đăng ký HttpClient factory (bắt buộc để resolve IHttpClientFactory)
             builder.Services.AddHttpClient();
+
+            // CSV Ingest Worker options & hosted service
+            builder.Services.Configure<TestOrder.Presentation.Workers.CsvIngestOptions>(builder.Configuration.GetSection("CsvIngest"));
+            builder.Services.AddHostedService<TestOrder.Presentation.Workers.CsvIngestWorker>();
 
             // Dependency Injection for Repositories and Services
             builder.Services.AddScoped(typeof(GenericRepository<>));
