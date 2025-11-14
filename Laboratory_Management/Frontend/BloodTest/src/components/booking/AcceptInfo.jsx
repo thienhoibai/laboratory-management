@@ -191,15 +191,12 @@ function AcceptInfo({ selectedItems, selectedDateTime, onBack, onProceed }) {
         console.log(response.data);
       }
     } catch (error) {
-      // Log chi tiết lỗi trả về từ backend
       if (error.response) {
-        console.log("Booking error response:", error.response.data);
-        alert(
+        toast.error(
           "Lỗi API: " + (error.response.data?.message || "Không rõ nguyên nhân")
         );
       } else {
-        console.log("Booking error:", error);
-        alert("Lỗi kết nối API!");
+        toast.error("Lỗi kết nối API!");
       }
     }
   };
