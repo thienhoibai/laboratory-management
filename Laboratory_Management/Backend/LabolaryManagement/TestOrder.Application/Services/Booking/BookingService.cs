@@ -3,6 +3,8 @@ using Azure;
 using System;
 
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Security.AccessControl;
 using System.Threading.Tasks;
 using TestOrder.Application.DTOs;
 using TestOrder.Application.DTOs.Bookings;
@@ -25,9 +27,20 @@ namespace TestOrder.Application.Services.Booking
             _appointmentSlotService = appointmentSlotService;
         }
 
-        public async Task<IEnumerable<BookingResponseDTO>> GetAllBookingsAsync(int pageNumber)
+        public async Task<IEnumerable<BookingResponseDTO>> GetAllBookingsByDateAsync
+            (DateOnly date, string? keyword, string? sortBy, string? sortDirection, int pageSize, int pageNumber)
         {
-            var bookings = await _bookingRepository.GetAllPagedAsync(pageNumber);
+            var appointmentSlots = await _appointmentSlotService.GetAppointmentSlotsByDateAsync(date, 1, int.MaxValue);
+            var bookings = new List<Infrastructure.Models.Booking>();
+            foreach (var slot in appointmentSlots)
+            {
+                var slotBookings = await _bookingRepository.GetBookingsByAppointmentSlotSearchableAsync(
+                    slot.SlotId, pageNumber, pageSize, keyword, sortBy, sortDirection);
+                if (slotBookings != null)
+                {
+                    bookings.AddRange(slotBookings);
+                }
+            }
             var bookingResponses = new List<BookingResponseDTO>();
             foreach (var booking in bookings)
             {
@@ -132,6 +145,8 @@ namespace TestOrder.Application.Services.Booking
             return bookingResponses;
         }
 
+
+
         #region Create New Booking
 
         public async Task<ResponseMessage> CreateBookingAsync (BookingRequestDTO bookingRequest)
@@ -209,6 +224,9 @@ namespace TestOrder.Application.Services.Booking
         public async Task<ResponseMessage> CheckInBooking (Guid bookingId)
         {
             var booking =  await _bookingRepository.GetByIdAsync(bookingId);
+            var timeSlot = await _appointmentSlotService.GetAppointmentSlotByIdAsync((Guid)booking.AppointmentSlotId);
+            TimeOnly lowerLimit = timeSlot.TimeBlock.Add(-TimeSpan.FromMinutes(30));
+            TimeOnly upperLimit = timeSlot.TimeBlock.Add(TimeSpan.FromMinutes(30));
             ResponseMessage response = new ResponseMessage();
             if (booking == null)
             {
@@ -225,16 +243,29 @@ namespace TestOrder.Application.Services.Booking
                 response.InstancesCode = bookingId;
                 return response;
             }
-            booking.Status = (byte?)BookingStatusEnum.InProgress;
-            booking.RunDate = DateOnly.FromDateTime(DateTime.Now);
-            await _bookingRepository.UpdateAsync(booking);
+            if (DateOnly.FromDateTime(DateTime.Now) == timeSlot.AppointmentDate)
+            {
+                if ( TimeOnly.FromDateTime(DateTime.Now) >= lowerLimit && 
+                    TimeOnly.FromDateTime(DateTime.Now) <= upperLimit ) 
+                {
+                    booking.Status = (byte?)BookingStatusEnum.InProgress;
+                    booking.RunDate = DateOnly.FromDateTime(DateTime.Now);
+                    await _bookingRepository.UpdateAsync(booking);
 
-            response.ResponseCode = ResponseCode.Success;
-            response.Message = "Check-in successful";
-            response.InstancesCode = bookingId;
-
+                    response.ResponseCode = ResponseCode.Success;
+                    response.Message = "Check-in successful";
+                    response.InstancesCode = bookingId;
+                }
+            }
+            else 
+            {
+                response.ResponseCode = ResponseCode.BadInstanceState;
+                response.Message = "Check-in is only allowed on the appointment date";
+                response.InstancesCode = bookingId;
+                return response;
+            }
             return response;
-
+            
         }
 
         public async Task<ResponseMessage> CheckOutBooking(Guid bookingId)

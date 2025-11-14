@@ -21,9 +21,16 @@ namespace TestOrder.Presentation.Controllers
 
         [HttpGet]
         [Route("info")]
-        public async Task<IActionResult> GetAllBookings([FromQuery] int pageNumber)
+        public async Task<IActionResult> GetAllBookingsInfoByDateAsync
+            ([FromQuery] DateOnly date,
+             [FromQuery] string? keyword,
+             [FromQuery] string? sortBy,
+             [FromQuery] string? sortDirection,
+             [FromQuery] int pageSize,
+             [FromQuery] int pageNumber)
         {
-            var response = await _bookingService.GetAllBookingsAsync(pageNumber);
+            var response = await _bookingService.GetAllBookingsByDateAsync
+                (date, keyword, sortBy, sortDirection, pageSize, pageNumber);
             return Ok(response);
         }
 
