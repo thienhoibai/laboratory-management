@@ -266,7 +266,9 @@ const AdminAppointmentSchedulePage = () => {
   };
 
   const fetchAPI = async () => {
-    const response = await api.get(`testorder/api/Booking/info?pageNumber=2`);
+    const response = await api.get(
+      `testorder/api/Booking/info?date=11-17&pageSize=5&pageNumber=1`
+    );
     const data = response.data;
     if (response.status >= 200 && response.status < 300) {
       SetBookings(data);
