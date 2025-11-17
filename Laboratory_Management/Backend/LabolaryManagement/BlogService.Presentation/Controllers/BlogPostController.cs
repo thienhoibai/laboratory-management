@@ -20,7 +20,7 @@ namespace BlogService.Presentation.Controllers
 
         [HttpGet]
         public async Task<IActionResult> GetAllBlogs(
-    [FromQuery] int? authorId,
+    [FromQuery] Guid? authorId,
     [FromQuery] int? status,
     [FromQuery] int page = 1,
     [FromQuery] int pageSize = 10)
