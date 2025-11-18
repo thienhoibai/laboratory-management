@@ -30,6 +30,25 @@ const getCatalogId = (catalog) =>
 const getBundleId = (bundle) =>
   bundle?.bundleId ?? bundle?.id ?? bundle?.Id ?? null;
 
+// Helper function để chuẩn hóa giá trị isActive
+const normalizeIsActive = (bundle) => {
+  // Kiểm tra nhiều field name có thể có
+  const activeValue = bundle?.isActive ?? bundle?.active ?? bundle?.status;
+
+  // Xử lý các trường hợp: boolean, string, number
+  if (typeof activeValue === "boolean") {
+    return activeValue;
+  }
+  if (typeof activeValue === "string") {
+    return activeValue.toLowerCase() === "true" || activeValue === "1";
+  }
+  if (typeof activeValue === "number") {
+    return activeValue === 1 || activeValue > 0;
+  }
+  // Mặc định là true nếu không có giá trị
+  return true;
+};
+
 const BundleManager = () => {
   const [bundles, setBundles] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -95,7 +114,24 @@ const BundleManager = () => {
       const query = { page, pageSize };
       if (searchDebounce) query.search = searchDebounce;
       const { items, meta } = await getAllBundles(query);
-      setBundles(items || []);
+      // Chuẩn hóa isActive cho tất cả bundles
+      const normalizedBundles = (items || []).map((bundle) => {
+        const normalized = {
+          ...bundle,
+          isActive: normalizeIsActive(bundle),
+        };
+        // Debug: log để kiểm tra giá trị (có thể xóa sau khi fix)
+        console.log(
+          "Bundle:",
+          bundle.bundleName,
+          "Original isActive:",
+          bundle.isActive,
+          "Normalized:",
+          normalized.isActive
+        );
+        return normalized;
+      });
+      setBundles(normalizedBundles);
       setTotal(meta?.totalItems ?? items?.length ?? 0);
     } catch (error) {
       console.error("Error fetching bundles:", error);

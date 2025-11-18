@@ -28,8 +28,40 @@ const extractItemsAndMeta = (response, fallbackQuery = {}) => {
 };
 
 export const getAllBundles = async (params = {}) => {
-  const response = await api.get(BUNDLE_BASE, { params });
-  return extractItemsAndMeta(response, params);
+  // Sử dụng CatalogBundle API để lấy bundles kèm catalogs
+  const catalogBundleResponse = await api.get(CATALOG_BUNDLE_BASE, { params });
+  const catalogBundles = extractItemsAndMeta(catalogBundleResponse, params);
+
+  // Lấy thông tin isActive từ TestBundle API để merge
+  try {
+    const testBundleResponse = await api.get(BUNDLE_BASE, { params });
+    const testBundles = extractItemsAndMeta(testBundleResponse, params);
+
+    // Merge: lấy catalogs từ CatalogBundle và isActive từ TestBundle
+    const mergedBundles = catalogBundles.items.map((catalogBundle) => {
+      const testBundle = testBundles.items.find(
+        (tb) =>
+          (tb.bundleId ?? tb.id) ===
+          (catalogBundle.bundleId ?? catalogBundle.id)
+      );
+      return {
+        ...catalogBundle,
+        isActive: testBundle?.isActive ?? catalogBundle.isActive ?? true,
+      };
+    });
+
+    return {
+      items: mergedBundles,
+      meta: catalogBundles.meta,
+    };
+  } catch (error) {
+    // Nếu TestBundle API lỗi, chỉ trả về dữ liệu từ CatalogBundle
+    console.warn(
+      "Could not fetch isActive from TestBundle, using CatalogBundle data only:",
+      error
+    );
+    return catalogBundles;
+  }
 };
 
 export const getBundleById = async (id) => {

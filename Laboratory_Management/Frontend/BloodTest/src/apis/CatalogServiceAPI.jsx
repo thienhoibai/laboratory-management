@@ -66,3 +66,4 @@ const CatalogServiceAPI = {
 };
 
 export default CatalogServiceAPI;
+
