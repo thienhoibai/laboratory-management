@@ -15,8 +15,8 @@ namespace BlogService.Infrastructure.Repository
     {
         public BlogPostRepository(DBContext context) : base(context) { }
 
-        public async Task<List<BlogPost>> GetAllWithCategoryAsync(
-            Guid? authorId, int? status, int page, int pageSize)
+        public async Task<List<BlogPost>> GetAllWithCategoryAsync(Guid? authorId, int? status, int page, int pageSize)
+
         {
             var query = _context.BlogPosts
                 .Include(p => p.Category)
@@ -24,6 +24,7 @@ namespace BlogService.Infrastructure.Repository
 
             if (authorId.HasValue)
                 query = query.Where(p => p.AuthorId == authorId.Value);
+
 
             if (status.HasValue)
                 query = query.Where(p => p.Status == status.Value);
