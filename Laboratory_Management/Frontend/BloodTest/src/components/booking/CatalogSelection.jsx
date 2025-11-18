@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import "./PackageSelection.css";
 import api from "../../configs/axios";
-// import { catalog } from "../../data/catalog"; // <-- sử dụng dữ liệu chung
 
 const endPoint = "testorder/api/TestCatalog";
 

@@ -4,7 +4,6 @@ import { CiCalendar } from "react-icons/ci";
 import { useSelector } from "react-redux";
 import { IoMdTime } from "react-icons/io";
 import { HiOutlineLocationMarker } from "react-icons/hi";
-import { catalog } from "../../data/catalog"; // <-- import catalog chung
 import api from "../../configs/axios";
 import { jwtDecode } from "jwt-decode";
 import { setAuthToken } from "../../utils/auth";
@@ -34,28 +33,22 @@ function AcceptInfo({ selectedItems, selectedDateTime, onBack, onProceed }) {
     const pkg = selectedItems.package || null;
     headerTitle = pkg ? pkg.title : headerTitle;
 
-    // nếu pkg.includes là mảng id (số) -> map từ catalog để lấy name + price
+    // pkg.includes có thể là mảng object (catalog) hoặc mảng id
     if (pkg && Array.isArray(pkg.includes)) {
       const first = pkg.includes[0];
-      if (typeof first === "number") {
-        // includes là mảng id (số)
-        itemList = pkg.includes
-          .map((id) => {
-            const c = catalog.find((it) => it.catalogId === id);
-            if (!c) return { testName: String(id), price: null };
-            return {
-              testName: c.testName,
-              price: c.price || null,
-              description: c.description,
-            };
-          })
-          .filter(Boolean);
-      } else if (typeof first === "object" && first !== null) {
-        // includes là mảng object (catalog)
+      if (typeof first === "object" && first !== null) {
+        // includes là mảng object (catalog) - dữ liệu đã đầy đủ
         itemList = pkg.includes.map((obj) => ({
           testName: obj.testName || obj.name || "Không rõ",
           price: obj.price || null,
           description: obj.description || "",
+        }));
+      } else if (typeof first === "number") {
+        // includes là mảng id (số) - chỉ hiển thị id, không có thông tin chi tiết
+        itemList = pkg.includes.map((id) => ({
+          testName: `Catalog ID: ${id}`,
+          price: null,
+          description: "",
         }));
       } else {
         // includes là tên chuỗi
@@ -65,26 +58,25 @@ function AcceptInfo({ selectedItems, selectedDateTime, onBack, onProceed }) {
       itemList = [];
     }
 
-    // tổng ưu tiên dùng selectedItems.total, fallback tính từ catalog nếu có id, else parse chuỗi price gói
+    // tổng ưu tiên dùng selectedItems.total, fallback tính từ includes nếu là objects
     if (
       typeof selectedItems.total === "number" &&
       !Number.isNaN(selectedItems.total)
     ) {
       total = selectedItems.total;
+    } else if (
+      pkg &&
+      Array.isArray(pkg.includes) &&
+      typeof pkg.includes[0] === "object" &&
+      pkg.includes[0] !== null
+    ) {
+      // Tính tổng từ includes nếu là objects
+      total = pkg.includes.reduce((s, obj) => {
+        return s + (obj && typeof obj.price === "number" ? obj.price : 0);
+      }, 0);
     } else {
-      // try sum catalog prices when includes are ids
-      if (
-        pkg &&
-        Array.isArray(pkg.includes) &&
-        typeof pkg.includes[0] === "number"
-      ) {
-        total = pkg.includes.reduce((s, id) => {
-          const c = catalog.find((it) => it.id === id);
-          return s + (c && typeof c.price === "number" ? c.price : 0);
-        }, 0);
-      } else {
-        total = selectedItems.total || parsePrice(pkg?.price || "0");
-      }
+      total =
+        selectedItems.total || (typeof pkg?.price === "number" ? pkg.price : 0);
     }
   } else if (selectedItems.source === "catalog") {
     itemList = selectedItems.items || [];
