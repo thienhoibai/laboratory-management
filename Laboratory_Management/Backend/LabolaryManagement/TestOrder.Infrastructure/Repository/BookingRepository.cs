@@ -60,6 +60,11 @@ namespace TestOrder.Infrastructure.Repository
                 "status" => desc ? query.OrderByDescending(b => b.Status) : query.OrderBy(b => b.Status),
                 _ => query.OrderBy(b => b.BookingCode),
             };
+
+            query = query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize);
+
             return query;
         }
        
