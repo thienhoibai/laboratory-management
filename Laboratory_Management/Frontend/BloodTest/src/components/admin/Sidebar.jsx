@@ -11,30 +11,26 @@ import {
   FiActivity,
   FiBox,
   FiCalendar,
+  FiList,
+  FiSettings,
 } from "react-icons/fi";
-import "./layout/AdminLayout.css";
-import { getMenuItems } from "../../utils/role";
+import "./layout/AdminLayout.css"; // Sidebar cũng dùng chung CSS này
 
-// Icon mapping
-const iconMap = {
-  dashboard: <FiHome />,
-  "appointment-schedule": <FiCalendar />,
-  users: <FiUsers />,
-  roles: <FiBriefcase />,
-  instruments: <FiPackage />,
-  reagents: <FiPackage />,
-  blogs: <FiBook />,
-  patients: <FiUsers />,
-  "test-orders": <FiFileText />,
-  packages: <FiBox />,
-  catalogs: <FiPackage />,
-  parameter: <FiActivity />,
-  reports: <FiBarChart2 />,
-};
+const menuItems = [
+  { path: "/admin/dashboard", icon: <FiHome />, name: "Dashboard" },
+  { path: "/admin/users", icon: <FiUsers />, name: "Users" },
+  { path: "/admin/roles", icon: <FiBriefcase />, name: "Roles" },
+  { path: "/admin/instruments", icon: <FiPackage />, name: "Instruments" },
+  { path: "/admin/reagents", icon: <FiPackage />, name: "Reagents" },
+  { path: "/admin/patients", icon: <FiUsers />, name: "Patients" },
+  { path: "/admin/test-orders", icon: <FiFileText />, name: "Test Orders" },
+  { path: "/admin/event-log", icon: <FiList />, name: "Event Log" },
+  { path: "/admin/reports", icon: <FiBarChart2 />, name: "Reports" },
+  { path: "/admin/settings", icon: <FiSettings />, name: "Settings" },
+];
 
 const Sidebar = () => {
   const location = useLocation();
-  const menuItems = getMenuItems();
 
   return (
     <aside className="sidebar">
@@ -57,7 +53,7 @@ const Sidebar = () => {
                   location.pathname.startsWith(item.path) ? "active" : ""
                 }
               >
-                {iconMap[item.icon] || <FiPackage />}
+                {item.icon}
                 <span>{item.name}</span>
               </Link>
             </li>
@@ -68,4 +64,4 @@ const Sidebar = () => {
   );
 };
 
-export default Sidebar; // Dòng này rất quan trọng
+export default Sidebar;

@@ -134,6 +134,12 @@ function Navbar() {
           <Link to="/booking" className="navbar-link">
             Đặt Lịch
           </Link>
+          <Link
+            to="/lab-staff/dashboard"
+            className="navbar-link navbar-lab-staff"
+          >
+            🔬 Lab Staff
+          </Link>
         </nav>
         <div className="navbar-actions">
           {!user ? (

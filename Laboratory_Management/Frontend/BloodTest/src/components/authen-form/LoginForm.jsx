@@ -139,6 +139,47 @@ const LoginForm = ({ errorMessage }) => {
                   onError={() => toast.error("Đăng nhập Google thất bại!")}
                 />
               </div>
+
+              {/* ✅ Link Lab Staff */}
+              <div
+                style={{
+                  marginTop: 20,
+                  textAlign: "center",
+                  padding: "16px",
+                  background: "#f0f9ff",
+                  borderRadius: "8px",
+                  border: "1px solid #bfdbfe",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "14px",
+                    color: "#1e40af",
+                    marginBottom: "8px",
+                    fontWeight: "500",
+                  }}
+                >
+                  🔬 Dành cho nhân viên phòng Lab
+                </div>
+                <Link
+                  to="/lab-staff/dashboard"
+                  style={{
+                    display: "inline-block",
+                    padding: "10px 24px",
+                    background: "#2563eb",
+                    color: "white",
+                    borderRadius: "6px",
+                    textDecoration: "none",
+                    fontWeight: "600",
+                    fontSize: "14px",
+                    transition: "all 0.2s",
+                  }}
+                  onMouseEnter={(e) => (e.target.style.background = "#1d4ed8")}
+                  onMouseLeave={(e) => (e.target.style.background = "#2563eb")}
+                >
+                  Truy cập Lab Staff Dashboard
+                </Link>
+              </div>
             </Form>
           </Card>
         </div>

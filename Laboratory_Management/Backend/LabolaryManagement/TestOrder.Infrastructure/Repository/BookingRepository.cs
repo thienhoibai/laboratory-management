@@ -47,9 +47,7 @@ namespace TestOrder.Infrastructure.Repository
             (b.BookingCode.Contains(keyword) ||
             b.PatientName.Contains(keyword) ||
             b.PatientEmail.Contains(keyword) ||
-            b.PatientPhone.Contains(keyword)))
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize); 
+            b.PatientPhone.Contains(keyword))); 
 
             bool desc = sortDirection?.ToLower() == "desc";
 

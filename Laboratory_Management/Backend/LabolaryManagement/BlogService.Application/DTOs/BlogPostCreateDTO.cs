@@ -8,7 +8,7 @@ namespace BlogService.Application.DTOs
 {
     public class BlogPostCreateDTO
     {
-       
+
         public string Title { get; set; } = null!;
         public string Content { get; set; } = null!;
         public Guid? AuthorId { get; set; }
