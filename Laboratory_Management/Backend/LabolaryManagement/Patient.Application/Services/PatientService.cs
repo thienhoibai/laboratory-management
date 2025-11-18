@@ -257,6 +257,25 @@ public class PatientService : IPatientService
 
         return OperationResult<PatientDto>.Success(patient);
     }
+    public async Task<IReadOnlyList<PatientSummaryDto>> GetAllAsync(CancellationToken ct = default)
+    {
+        var patients = await _db.Patients
+            .AsNoTracking()
+            .OrderByDescending(p => p.CreatedAt)
+            .Select(p => new PatientSummaryDto(
+                p.PatientId,
+                p.FullName,
+                p.DateOfBirth,
+                p.Gender,
+                Last4(p.Phone),
+                p.IsDeleted,
+                p.CreatedAt,
+                p.UpdatedAt
+            ))
+            .ToListAsync(ct);
+
+        return patients;
+    }
 
     // ========== Guest linking flows ==========
     public async Task<OperationResult> StartLinkAsync(Guid patientId, Guid actorUserId, string mode, string baseLinkUrl, CancellationToken ct = default)
