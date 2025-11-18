@@ -1,27 +1,27 @@
 import React, { useState, useEffect } from "react";
-import { useDispatch } from "react-redux";
-import { setPatient } from "../../data/patientSlice";
 import { useNavigate } from "react-router-dom";
 import "./ProfilePage.css";
 import { setAuthToken } from "../../utils/auth";
 import api from "../../configs/axios";
 import { toast } from "react-toastify";
-import {
-  Pagination,
-  Modal,
-  Form,
-  Input,
-  Select,
-  DatePicker,
-  Button,
-} from "antd";
+import { Pagination, Modal, Form, Input, Select, DatePicker } from "antd";
 import dayjs from "dayjs";
-import ChangePasswordModal from "./ChangePassword";
 import {
   parseDateToInput,
   calculateAge,
   formatDateTime,
 } from "../../utils/formatDate";
+import {
+  useFetchProfile,
+  useMedicalRecord,
+  useUpdateProfile,
+  useAddMedicalRecords,
+} from "../../services/PatientService";
+
+// Change password feature removed:
+// This ProfilePage does not include any "change password" UI, state or API calls.
+// If a change-password feature is added later, keep it in a separate component/modal
+// and do not couple password changes with profile data updates.
 
 // ===== CONSTANTS & UTILS =====
 const initialFormData = {
@@ -34,27 +34,15 @@ const initialFormData = {
   identityCard: "",
   healthInsurance: "",
 };
+// Add: expose Option from Select
+const { Option } = Select;
 
-// ===== MAIN PROFILE PAGE COMPONENT =====
 export default function ProfilePage() {
-  const dispatch = useDispatch();
-
   // ===== STATE =====
-  const [userData, setUserData] = useState([]);
   const [activeTab, setActiveTab] = useState("personal");
-  const [showModal, setShowModal] = useState(false);
-  const [showMedicalRecordModal, setShowMedicalRecordModal] = useState(false);
   const [formData, setFormData] = useState(initialFormData);
-  const [loading, setLoading] = useState(true);
-  const [errors, setErrors] = useState({});
-  const [medicalRecords, setMedicalRecords] = useState([]);
-  const [showCreateModal, setShowCreateModal] = useState(false);
   const [createForm] = Form.useForm();
-  const [isCreating, setIsCreating] = useState(false);
 
-  const [openChange, setOpenChange] = useState(false);
-
-  const [totalRecords, setTotalRecords] = useState(0);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(2);
 
@@ -67,70 +55,22 @@ export default function ProfilePage() {
   }, [page, pageSize]);
 
   // ===== API CALLS =====
-  const fetchProfile = async () => {
-    try {
-      const token = localStorage.getItem("accessToken");
-      setAuthToken(token);
-
-      const check = await api.get(`patient/v1/patients/me`);
-      if (!check.data || check.data.succeeded === false || !check.data.data) {
-        navigate("/create-profile");
-        return;
-      }
-
-      const patient = check.data.data;
-      const patientId = patient.patientId;
-
-      if (!patientId) {
-        navigate("/create-profile");
-        return;
-      }
-
-      const response = await api.get(`patient/v1/patients/${patientId}`);
-      const data = response.data;
-      if (response.status === 200 && response.data) {
-        setUserData(data);
-
-        dispatch(
-          setPatient({
-            patientId: data.patientId,
-            fullName: data.fullName,
-            phone: data.phone,
-            email: data.email,
-          })
-        );
-      } else {
-        navigate("/create-profile");
-      }
-    } catch (error) {
-      toast.error(error);
-      navigate("/create-profile");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { fetchProfile, userData } = useFetchProfile();
 
   // Lấy danh sách hồ sơ bệnh án cá nhân (phân trang)
-  const fetchMedicalRecords = async (page, pageSize) => {
-    try {
-      const token = localStorage.getItem("accessToken");
-      setAuthToken(token);
-      const response = await api.get(
-        `patient/v1/patients/mine?page=${page}&pageSize=${pageSize}`
-      );
-      if (response.status >= 200 && response.status < 300) {
-        // Đúng cấu trúc response: lấy từ response.data.items và response.data.total
-        setMedicalRecords(response.data.items || [null]);
-        setTotalRecords(response.data.total || 0);
-      }
-    } catch (error) {
-      toast.error(error);
-      setMedicalRecords([]);
-      setTotalRecords(0);
-    }
-  };
+  const { fetchMedicalRecords, medicalRecords, totalRecords } =
+    useMedicalRecord();
 
   // ===== FORM UTILS =====
+
+  const {
+    handleSave,
+    handleOpenModal,
+    handleCloseModal,
+    errors,
+    setErrors,
+    showModal,
+  } = useUpdateProfile(userData, formData, setFormData, fetchProfile);
 
   const getInitials = (name) => {
     if (!name) return "";
@@ -141,27 +81,6 @@ export default function ProfilePage() {
       .toUpperCase();
   };
 
-  // ===== HANDLERS =====
-  const handleOpenModal = () => {
-    setFormData({
-      fullName: userData.fullName || "",
-      // Sửa lại để form hiển thị đúng giá trị value của select
-      gender: userData.gender === 1 ? "1" : userData.gender === 0 ? "0" : "",
-      dateOfBirth: parseDateToInput(userData.dateOfBirth),
-      phoneNumber: userData.phone || "",
-      email: userData.email || "",
-      address: userData.address || "",
-      identityCard: userData.idNumber || "",
-      healthInsurance: userData.insuranceNumber || "",
-    });
-    setShowModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setShowModal(false);
-    setErrors({});
-  };
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -170,125 +89,13 @@ export default function ProfilePage() {
     }
   };
 
-  const validateForm = () => {
-    const newErrors = {};
-    if (!formData.fullName.trim())
-      newErrors.fullName = "Vui lòng nhập họ và tên";
-    if (!formData.phoneNumber.trim())
-      newErrors.phoneNumber = "Vui lòng nhập số điện thoại";
-    else if (!/^0[3-9]\d{8}$/.test(formData.phoneNumber))
-      newErrors.phoneNumber = "Số điện thoại không hợp lệ";
-    if (!formData.email.trim()) newErrors.email = "Vui lòng nhập email";
-    else if (!/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(formData.email))
-      newErrors.email = "Email không hợp lệ";
-    if (!formData.address.trim()) newErrors.address = "Vui lòng nhập địa chỉ";
-    if (!formData.identityCard.trim())
-      newErrors.identityCard = "Vui lòng nhập số CMND/CCCD";
-    if (!formData.dateOfBirth.trim())
-      newErrors.dateOfBirth = "Vui lòng nhập ngày sinh";
-    else {
-      // Validate date format YYYY-MM-DD
-      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-      if (!dateRegex.test(formData.dateOfBirth)) {
-        newErrors.dateOfBirth = "Ngày sinh phải có định dạng YYYY-MM-DD";
-      } else {
-        const [year, month, day] = formData.dateOfBirth.split("-");
-        const date = new Date(year, month - 1, day);
-        if (
-          date.getMonth() !== month - 1 ||
-          date.getDate() !== parseInt(day) ||
-          date.getFullYear() !== parseInt(year)
-        ) {
-          newErrors.dateOfBirth = "Ngày sinh không hợp lệ";
-        } else {
-          const today = new Date();
-          if (date > today) {
-            newErrors.dateOfBirth =
-              "Ngày sinh không thể là ngày trong tương lai";
-          }
-        }
-      }
-    }
-    return newErrors;
-  };
-
-  const handleSave = async () => {
-    const newErrors = validateForm();
-    setErrors(newErrors);
-
-    if (Object.keys(newErrors).length === 0) {
-      const data = {
-        fullName: formData.fullName,
-        dateOfBirth: formData.dateOfBirth,
-        gender: formData.gender === "1" ? 1 : formData.gender === "0" ? 0 : 2,
-        phone: formData.phoneNumber,
-        email: formData.email,
-        address: formData.address,
-        idNumber: formData.identityCard,
-        insuranceNumber: formData.healthInsurance,
-      };
-
-      try {
-        const token = localStorage.getItem("accessToken");
-        setAuthToken(token);
-
-        await api.put(`patient/v1/patients/${userData.patientId}`, data);
-
-        // Fetch lại profile từ API để cập nhật giao diện
-        await fetchProfile();
-
-        setShowModal(false);
-        toast.success("Cập nhật thông tin thành công!");
-      } catch (error) {
-        toast.error(error.data || "Cập nhật thất bại!");
-      }
-    }
-  };
-
   // Thêm hồ sơ bệnh án mới
-  const handleCreateMedicalRecord = async (values) => {
-    setIsCreating(true);
-    try {
-      const token = localStorage.getItem("accessToken");
-      setAuthToken(token);
-      const data = {
-        fullName: values.fullName,
-        dateOfBirth: dayjs(values.dateOfBirth).format("YYYY-MM-DD"),
-        gender: values.gender,
-        phone: values.phoneNumber,
-        email: values.email,
-        address: values.address,
-        idNumber: values.identityCard,
-        insuranceNumber: values.healthInsurance,
-        createdBy: "user",
-        createdAt: new Date().toISOString(),
-      };
-      const response = await api.post("patient/v1/patients", data);
-      if (response.status >= 200 && response.status < 300) {
-        toast.success("Thêm hồ sơ bệnh án thành công!");
-        setShowCreateModal(false);
-        createForm.resetFields();
-        fetchMedicalRecords(page, pageSize);
-      }
-    } catch (error) {
-      toast.error(
-        error.response?.data?.message ||
-          "Có lỗi xảy ra khi thêm hồ sơ. Vui lòng thử lại!"
-      );
-    } finally {
-      setIsCreating(false);
-    }
-  };
-
-  // ===== RENDER LOADING =====
-  if (loading) {
-    return (
-      <div className="profile-page">
-        <div className="profile-loading">Đang tải...</div>
-      </div>
-    );
-  }
-
+  const {
+    handleCreateMedicalRecord,
+    showCreateModal,
+    isCreating,
+    setShowCreateModal,
+  } = useAddMedicalRecords(page, pageSize, fetchMedicalRecords, createForm);
   // ===== RENDER MAIN UI =====
   return (
     <div className="profile-page">
@@ -405,15 +212,6 @@ export default function ProfilePage() {
                   <p className="profile-section-subtitle">
                     Thông tin chi tiết về bệnh nhân
                   </p>
-                </div>
-                <div>
-                  <Button
-                    type="default"
-                    onClick={() => setOpenChange(true)}
-                    className="btn-change-password"
-                  >
-                    Đổi mật khẩu
-                  </Button>
                 </div>
               </div>
 
@@ -606,7 +404,10 @@ export default function ProfilePage() {
                 </div>
                 <button
                   className="profile-update-btn"
-                  onClick={() => setShowCreateModal(true)}
+                  onClick={() => {
+                    createForm.resetFields();
+                    setShowCreateModal(true);
+                  }}
                   style={{ marginBottom: 0 }}
                 >
                   + Thêm hồ sơ bệnh án
@@ -1187,7 +988,10 @@ export default function ProfilePage() {
       <Modal
         open={showCreateModal}
         title="Thêm hồ sơ bệnh án"
-        onCancel={() => setShowCreateModal(false)}
+        onCancel={() => {
+          setShowCreateModal(false);
+          createForm.resetFields();
+        }}
         footer={null}
         destroyOnClose
       >
@@ -1302,7 +1106,10 @@ export default function ProfilePage() {
             <button
               type="button"
               className="btn-cancel"
-              onClick={() => setShowCreateModal(false)}
+              onClick={() => {
+                setShowCreateModal(false);
+                createForm.resetFields();
+              }}
               disabled={isCreating}
             >
               Hủy
@@ -1313,138 +1120,6 @@ export default function ProfilePage() {
           </div>
         </Form>
       </Modal>
-
-      {/* ===== CHANGE PASSWORD MODAL ===== */}
-      <ChangePasswordModal
-        open={openChange}
-        onClose={() => setOpenChange(false)}
-      />
-
-      {/* Create Medical Record Modal */}
-      {showMedicalRecordModal && (
-        <div
-          className="modal-overlay"
-          onClick={() => setShowMedicalRecordModal(false)}
-        >
-          <div
-            className="modal-content medical-record-modal"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="modal-header">
-              <h2 className="modal-title">Tạo hồ sơ bệnh án mới</h2>
-              <p className="modal-subtitle">
-                Điền thông tin để tạo hồ sơ bệnh án mới
-              </p>
-              <button
-                className="modal-close"
-                onClick={() => setShowMedicalRecordModal(false)}
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="modal-body">
-              <div className="form-group">
-                <label>Họ và tên bệnh nhân</label>
-                <input
-                  type="text"
-                  value={userData.fullname}
-                  disabled
-                  className="disabled-input"
-                />
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Mã bệnh nhân</label>
-                  <input
-                    type="text"
-                    value={userData.patientId}
-                    disabled
-                    className="disabled-input"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Giới tính</label>
-                  <input
-                    type="text"
-                    value={userData.gender}
-                    disabled
-                    className="disabled-input"
-                  />
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Ngày sinh</label>
-                  <input
-                    type="text"
-                    value={userData.birthday}
-                    disabled
-                    className="disabled-input"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Số điện thoại</label>
-                  <input
-                    type="text"
-                    value={userData.phone}
-                    disabled
-                    className="disabled-input"
-                  />
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label>Lý do tạo hồ sơ</label>
-                <textarea
-                  rows="4"
-                  placeholder="Nhập lý do tạo hồ sơ bệnh án..."
-                  className="form-textarea"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Ghi chú (tùy chọn)</label>
-                <textarea
-                  rows="3"
-                  placeholder="Thêm ghi chú nếu cần..."
-                  className="form-textarea"
-                />
-              </div>
-            </div>
-
-            <div className="modal-footer">
-              <button
-                className="btn-cancel"
-                onClick={() => setShowMedicalRecordModal(false)}
-              >
-                Hủy
-              </button>
-              <button
-                className="btn-save"
-                onClick={() => {
-                  toast.success("Tạo hồ sơ bệnh án thành công!");
-                  setShowMedicalRecordModal(false);
-                }}
-              >
-                Tạo hồ sơ
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

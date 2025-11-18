@@ -121,14 +121,16 @@ function AcceptInfo({ selectedItems, selectedDateTime, onBack, onProceed }) {
   };
 
   // Lấy bundleId và catalogs
-  const bundleId = selectedItems.package.bundleId;
+  const source = selectedItems?.source || null;
+  const bundleId =
+    source === "package" ? selectedItems?.package?.bundleId ?? 0 : 0; // nếu chọn catalog thì luôn là 0
 
   const catalogs =
-    selectedItems.source === "catalog"
-      ? (selectedItems.items || []).map((it) => it.catalogId)
-      : selectedItems.package && Array.isArray(selectedItems.package.includes)
+    source === "catalog"
+      ? (selectedItems?.items || []).map((it) => it.catalogId)
+      : selectedItems?.package && Array.isArray(selectedItems.package.includes)
       ? selectedItems.package.includes.map((it) =>
-          typeof it === "object" ? it.catalogId : it
+          typeof it === "object" && it !== null ? it.catalogId : it
         )
       : [];
 
@@ -189,22 +191,19 @@ function AcceptInfo({ selectedItems, selectedDateTime, onBack, onProceed }) {
         console.log(response.data);
       }
     } catch (error) {
-      // Log chi tiết lỗi trả về từ backend
       if (error.response) {
-        console.log("Booking error response:", error.response.data);
-        alert(
+        toast.error(
           "Lỗi API: " + (error.response.data?.message || "Không rõ nguyên nhân")
         );
       } else {
-        console.log("Booking error:", error);
-        alert("Lỗi kết nối API!");
+        toast.error("Lỗi kết nối API!");
       }
     }
   };
 
   // Lấy danh sách catalogId nếu là package
   let catalogIdsStr = "";
-  if (selectedItems && selectedItems.source === "package") {
+  if (selectedItems && source === "package") {
     const pkg = selectedItems.package;
     if (pkg && Array.isArray(pkg.includes)) {
       // includes có thể là array of id hoặc array of object
@@ -247,10 +246,8 @@ function AcceptInfo({ selectedItems, selectedDateTime, onBack, onProceed }) {
                 )}
               </div>
               <div className="item-price">
-                {selectedItems.source === "catalog"
-                  ? it.price
-                    ? it.price.toLocaleString("vi-VN") + "₫"
-                    : ""
+                {source === "catalog" && it.price
+                  ? it.price.toLocaleString("vi-VN") + "₫"
                   : ""}
               </div>
             </li>

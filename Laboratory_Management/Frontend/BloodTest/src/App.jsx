@@ -38,6 +38,7 @@ import LabStaffLanding from "./pages/lab-staff/landing/LabStaffLanding";
 import CreatePatient from "./components/profile/CreateProfile";
 import BlogPage from "./pages/blog/BlogPage";
 import BlogDetailPage from "./pages/blog/BlogDetailPage";
+import ChangePasswordModal from "./components/profile/ChangePassword";
 
 function App() {
   const router = createBrowserRouter([
@@ -64,6 +65,10 @@ function App() {
     {
       path: "profile",
       element: <ProfilePage />,
+    },
+    {
+      path: "change-password",
+      element: <ChangePasswordModal />,
     },
     {
       path: "/booking",

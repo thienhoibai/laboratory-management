@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <EmbeddedResource Remove="Templates\Emails\InviteUser.en-US.html" />
+    <EmbeddedResource Remove="Templates\Emails\ResetPassword.html" />
   </ItemGroup>
 
 </Project>

@@ -10,6 +10,7 @@ namespace IAM.Domain.Entities
         public string PasswordHash { get; set; } = string.Empty;
         public string? FullName { get; set; }
         public bool IsActive { get; set; } = true;
+        public bool IsLocked { get; set; } = false; // Khóa thủ công bởi admin
         public DateTime? LastLoginAt { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
