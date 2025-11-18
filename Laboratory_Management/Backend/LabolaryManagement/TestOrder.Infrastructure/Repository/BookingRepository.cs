@@ -36,13 +36,13 @@ namespace TestOrder.Infrastructure.Repository
         }
 
         public async Task<IEnumerable<Booking>?> GetBookingsByAppointmentSlotSearchableAsync 
-            (Guid appointmentSlotId, int pageNumber, int pageSize, string? keyword, string? sortBy, string? sortDirection)
+            (Guid appointmentSlotId,string? keyword, string? sortBy, string? sortDirection)
         {
             if (string.IsNullOrEmpty(keyword))
             {
                 keyword = string.Empty;
             }
-            var query = _context.Set<Booking>()
+            var query =  _context.Set<Booking>()
                 .Where(b => b.AppointmentSlotId == appointmentSlotId &&
             (b.BookingCode.Contains(keyword) ||
             b.PatientName.Contains(keyword) ||
@@ -60,11 +60,6 @@ namespace TestOrder.Infrastructure.Repository
                 "status" => desc ? query.OrderByDescending(b => b.Status) : query.OrderBy(b => b.Status),
                 _ => query.OrderBy(b => b.BookingCode),
             };
-
-            query = query
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize);
-
             return query;
         }
        
