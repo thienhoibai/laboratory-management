@@ -21,7 +21,7 @@ namespace BlogService.Application.Services
 
         // Lấy tất cả bài viết (kèm Category)
         public Task<List<BlogPost>> GetAllWithCategoryAsync(
-            int? authorId, int? status, int page, int pageSize)
+            Guid? authorId, int? status, int page, int pageSize)
         {
             return _repository.GetAllWithCategoryAsync(authorId, status, page, pageSize);
         }
@@ -58,8 +58,11 @@ namespace BlogService.Application.Services
             post.Title = dto.Title ?? post.Title;
             post.ThumbnailUrl = dto.ThumbnailUrl ?? post.ThumbnailUrl;
             post.Content = dto.Content ?? post.Content;
-            post.CategoryId = dto.CategoryId ?? post.CategoryId;    
-            post.AuthorId = dto.AuthorId ?? post.AuthorId;
+            post.CategoryId = dto.CategoryId ?? post.CategoryId;
+            if (dto.AuthorId.HasValue)
+                post.AuthorId = dto.AuthorId.Value;
+
+            post.UpdatedDate = DateTime.Now;
 
             post.UpdatedDate = DateTime.Now;
 
