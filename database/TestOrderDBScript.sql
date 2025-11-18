@@ -165,3 +165,6 @@ ADD PatientEmail nvarchar(255);
 		select * from CatalogBundle
 		select * from TestCatalog
 		select * from TestBundle
+		select * from TestResult
+		select * from TestParameter
+		select * from BookingTest
