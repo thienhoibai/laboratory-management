@@ -47,6 +47,7 @@ namespace TestOrder.Application.Services.Booking
                 bookingResponses.Add(new BookingResponseDTO
                 {
                     BookingCode = booking.BookingCode ??= "",
+                    BookingId = booking.BookingId,
                     PatientId = (Guid)booking.PatientId,
                     PatientName = booking.PatientName ?? string.Empty,
                     PatientPhoneNumber = booking.PatientPhone,

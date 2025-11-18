@@ -12,7 +12,7 @@ const BlogAPI = {
    */
   getAllBlogs: async () => {
     try {
-      const response = await api.get("blog/api/BlogPost");
+      const response = await api.get("blog/api/BlogPost?page=1&pageSize=10");
       return response.data;
     } catch (error) {
       console.error("Error fetching blogs:", error);

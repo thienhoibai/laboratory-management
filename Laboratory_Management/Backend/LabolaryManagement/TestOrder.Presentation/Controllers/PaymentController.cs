@@ -66,6 +66,13 @@ namespace TestOrder.Presentation.Controllers
             try
             {
                 var vnPayResponse = vnPayService.PaymentExecute(Request.Query);
+
+                long amount = 0;
+                if (Request.Query.ContainsKey("vnp_Amount"))
+                {
+                    amount = Convert.ToInt64(Request.Query["vnp_Amount"]) / 100;
+                }
+
                 if (vnPayResponse.IsSuccess)
                 {
                     string token = vnPayResponse.OrderId;
@@ -74,9 +81,10 @@ namespace TestOrder.Presentation.Controllers
                         Method = vnPayResponse.PaymentMethod,
                         Status = (byte?)PaymentStatusEnum.Completed,
                         PaidAt = DateTime.Now,
+                        Amount = amount
                     };
                     string id = await paymentService.UpdatePaymentAsync(token, updatePaymentDto, vnPayResponse.IsSuccess);
-                    return Redirect($"{paymentSuccess}{id}");
+                    return Redirect($"{paymentSuccess}{id}&Amount={amount}");
                 }
                 else
                 {
