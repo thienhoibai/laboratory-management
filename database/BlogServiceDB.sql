@@ -45,10 +45,8 @@ IsUpdated BIT
 
 
 select * from BlogPost
+select * from Category
+select * from BlogPostTag
 
 
 
-CREATE DATABASE BlogServiceDB;
-GO
-
-USE BlogServiceDB;
