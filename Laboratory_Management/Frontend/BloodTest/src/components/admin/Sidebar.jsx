@@ -15,7 +15,7 @@ import {
   FiSettings,
 } from "react-icons/fi";
 import "./layout/AdminLayout.css"; // Sidebar cũng dùng chung CSS này
-
+import { getMenuItems } from "../../utils/role";
 const menuItems = [
   { path: "/admin/dashboard", icon: <FiHome />, name: "Dashboard" },
   { path: "/admin/users", icon: <FiUsers />, name: "Users" },
@@ -31,7 +31,7 @@ const menuItems = [
 
 const Sidebar = () => {
   const location = useLocation();
-
+  const menu = getMenuItems();
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
