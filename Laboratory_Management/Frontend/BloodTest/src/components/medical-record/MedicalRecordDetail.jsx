@@ -7,7 +7,7 @@ import { PatientServiceAPI } from "../../apis/PatientServiceAPI";
 import { setAuthToken } from "../../utils/auth";
 import { calculateAge } from "../../utils/formatDate";
 import api from "../../configs/axios";
-import { bookingService } from "../../services/bookingService";
+import { bookingService } from "../../apis/TestOrderServiceAPI";
 
 export default function MedicalRecordDetail() {
   const navigate = useNavigate();

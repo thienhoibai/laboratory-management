@@ -72,7 +72,6 @@ namespace BlogService.Presentation
             app.UseCors("AllowFrontend");
             app.UseAuthorization();
 
-
             app.MapControllers();
 
             app.Run();
