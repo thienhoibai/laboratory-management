@@ -44,10 +44,10 @@ namespace TestOrder.Infrastructure.Repository
             }
             var query = _context.Set<Booking>()
                 .Where(b => b.AppointmentSlotId == appointmentSlotId &&
-                            b.BookingCode.Contains(keyword) || 
-                            b.PatientName.Contains(keyword) ||
-                            b.PatientEmail.Contains(keyword) ||
-                            b.PatientPhone.Contains(keyword));
+            (b.BookingCode.Contains(keyword) ||
+            b.PatientName.Contains(keyword) ||
+            b.PatientEmail.Contains(keyword) ||
+            b.PatientPhone.Contains(keyword)));
 
             bool desc = sortDirection?.ToLower() == "desc";
 
