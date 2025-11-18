@@ -49,7 +49,6 @@ namespace TestOrder.Application.Services.Booking
                     BookingCode = booking.BookingCode ??= "",
                     BookingId = booking.BookingId,
                     PatientId = (Guid)booking.PatientId,
-                    BookingId = booking.BookingId,
                     PatientName = booking.PatientName ?? string.Empty,
                     PatientPhoneNumber = booking.PatientPhone,
                     PatientEmail = booking.PatientEmail,

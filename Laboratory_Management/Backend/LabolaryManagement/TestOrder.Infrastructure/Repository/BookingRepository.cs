@@ -47,7 +47,9 @@ namespace TestOrder.Infrastructure.Repository
             (b.BookingCode.Contains(keyword) ||
             b.PatientName.Contains(keyword) ||
             b.PatientEmail.Contains(keyword) ||
-            b.PatientPhone.Contains(keyword)));
+            b.PatientPhone.Contains(keyword)))
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize); 
 
             bool desc = sortDirection?.ToLower() == "desc";
 
@@ -60,10 +62,7 @@ namespace TestOrder.Infrastructure.Repository
                 "status" => desc ? query.OrderByDescending(b => b.Status) : query.OrderBy(b => b.Status),
                 _ => query.OrderBy(b => b.BookingCode),
             };
-
-            query = query
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize);
+                
 
             return query;
         }
