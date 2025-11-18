@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { toast } from "react-toastify";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import {
@@ -22,7 +22,6 @@ import api from "../../../configs/axios";
 // import { CgLayoutGrid } from "react-icons/cg";
 
 const AdminAppointmentSchedulePage = () => {
-  const didFetch = useRef(false);
   const [selectedDate, setSelectedDate] = useState(new Date()); // Ngày hiện tại
   const [currentMonth, setCurrentMonth] = useState(new Date()); // Tháng hiện tại cho calendar picker
   const [searchQuery, setSearchQuery] = useState("");
@@ -267,7 +266,6 @@ const AdminAppointmentSchedulePage = () => {
     return nextDate <= maxDate;
   };
 
-
   const fetchAPI = async () => {
     const response = await api.get(
       `testorder/api/Booking/info?date=2025-12-07&pageSize=2&pageNumber=2`
@@ -275,57 +273,54 @@ const AdminAppointmentSchedulePage = () => {
     const data = response.data;
     if (response.status >= 200 && response.status < 300) {
       SetBookings(data);
-      
-      }
-    };
+    }
+  };
   useEffect(() => {
     fetchAPI();
   }, []);
 
-    const handleCheckin = async (bookingId) => {
-      try {
-         setCheckingInId(bookingId);
-         const response = await api.put(
-           `testorder/api/Booking/check-in?bookingId=${bookingId}`
-          );
-         const data = response.data || {};
+  const handleCheckin = async (bookingId) => {
+    try {
+      setCheckingInId(bookingId);
+      const response = await api.put(
+        `testorder/api/Booking/check-in?bookingId=${bookingId}`
+      );
+      const data = response.data || {};
 
-         if (data.responseCode &&data.responseCode < 0) {
-            toast.error(data.message || "Không thể check-in.");
-            return;
-          }
-
-         toast.success("Check in thành công!");
-         await fetchAPI();
-      } catch (err) {
-             const message =
-                   err.response?.data?.message || "Check-in thất bại. Vui lòng thử lại.";
-                   toast.error(message);
-                   console.error("Check-in failed:", err);
-      } finally {
-         setCheckingInId(null);
+      if (data.responseCode && data.responseCode < 0) {
+        toast.error(data.message || "Không thể check-in.");
+        return;
       }
-    };
-  
 
-    const handleCheckout = async (bookingId) => {
-      try {
-        setCheckingOutId(bookingId);
-        const response = await api.put(
-          `testorder/api/Booking/check-out?bookingId=${bookingId}`
-        );
+      toast.success("Check in thành công!");
+      await fetchAPI();
+    } catch (err) {
+      const message =
+        err.response?.data?.message || "Check-in thất bại. Vui lòng thử lại.";
+      toast.error(message);
+      console.error("Check-in failed:", err);
+    } finally {
+      setCheckingInId(null);
+    }
+  };
 
-        if (response.status >= 200 && response.status < 300) {
-        toast.success("Check In thành công!!")
+  const handleCheckout = async (bookingId) => {
+    try {
+      setCheckingOutId(bookingId);
+      const response = await api.put(
+        `testorder/api/Booking/check-out?bookingId=${bookingId}`
+      );
+
+      if (response.status >= 200 && response.status < 300) {
+        toast.success("Check In thành công!!");
         await fetchAPI();
-        } 
-
-      } catch (err) {
-        console.error("Check-out failed:", err);
-      } finally {
-        setCheckingOutId(null);
       }
-    };
+    } catch (err) {
+      console.error("Check-out failed:", err);
+    } finally {
+      setCheckingOutId(null);
+    }
+  };
 
   return (
     <AdminLayout
