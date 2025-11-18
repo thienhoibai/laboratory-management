@@ -23,31 +23,31 @@ namespace TestOrder.Infrastructure.Base
             _context ??= new TestOrderDBContext();
         }
 
-        public Task<List<T>> GetAllPagedAsync(int pageNumber)
+        public async Task<List<T>> GetAllPagedAsync(int pageNumber)
         {
-            return Task.Run(() => _context.Set<T>()
+            return await _context.Set<T>()
                 .Skip((pageNumber - 1) * PageSize)
                 .Take(PageSize)
-                .ToList());
+                .ToListAsync();
         }
 
-        public Task<List<T>> GetByIdPagesAsync(object id, int pageNumber)
+        public async Task<List<T>> GetByIdPagesAsync(object id, int pageNumber)
         {
-            return Task.Run(() => _context.Set<T>()
+            return await _context.Set<T>()
                 .Where(e => EF.Property<object>(e, "Id") == id)
                 .Skip((pageNumber - 1) * PageSize)
                 .Take(PageSize)
-                .ToList());
+                .ToListAsync();
         }
 
-        public Task<List<T>> GetAllAsync()
+        public async Task<List<T>> GetAllAsync()
         {
-            return Task.Run(() => _context.Set<T>().ToList());
+            return await _context.Set<T>().ToListAsync();
         }
 
-        public Task<T?> GetByIdAsync(object id)
+        public async Task<T?> GetByIdAsync(object id)
         {
-            return Task.Run(() => _context.Set<T>().Find(id));
+            return await _context.Set<T>().FindAsync(id);
         }
 
         public Task AddAsync(T entity)

@@ -31,16 +31,19 @@ namespace TestOrder.Application.Services.Booking
             (DateOnly date, string? keyword, string? sortBy, string? sortDirection, int pageSize, int pageNumber)
         {
             var appointmentSlots = await _appointmentSlotService.GetAppointmentSlotsByDateAsync(date, 1, int.MaxValue);
-            var bookings = new List<Infrastructure.Models.Booking>();
+            IEnumerable<Infrastructure.Models.Booking> bookings = new List<Infrastructure.Models.Booking>();
+            
             foreach (var slot in appointmentSlots)
             {
-                var slotBookings = await _bookingRepository.GetBookingsByAppointmentSlotSearchableAsync(
-                    slot.SlotId, pageNumber, pageSize, keyword, sortBy, sortDirection);
-                if (slotBookings != null)
-                {
-                    bookings.AddRange(slotBookings);
-                }
+                var slotBookings = await _bookingRepository.GetBookingsByAppointmentSlotSearchableAsync
+                    (slot.SlotId, keyword, sortBy, sortDirection);
+                bookings = bookings.Concat(slotBookings!);
             }
+
+            bookings = bookings.Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize).ToList();
+
+
             var bookingResponses = new List<BookingResponseDTO>();
             foreach (var booking in bookings)
             {
