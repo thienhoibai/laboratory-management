@@ -232,9 +232,59 @@ const BlogsManagement = () => {
         tag: formData.category.trim(),
       };
 
-      // Create blog
-      await BlogService.createBlog(submitData);
-      toast.success("Tạo bài viết mới thành công!");
+      let response;
+      if (isEditMode) {
+        // Update blog
+        // TODO: Replace with actual API endpoint
+        // response = await api.put(`blogs/${editingBlogId}`, submitData);
+        console.log("Updating blog:", editingBlogId, submitData);
+
+        // Mock update
+        setBlogs((prev) =>
+          prev.map((blog) =>
+            blog.id === editingBlogId
+              ? {
+                  ...blog,
+                  ...submitData,
+                  date: new Date().toLocaleDateString("vi-VN", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  }),
+                }
+              : blog
+          )
+        );
+        toast.success("Cập nhật bài viết thành công!");
+      } else {
+        // Create blog
+        // TODO: Replace with actual API endpoint
+        // response = await api.post("blogs", submitData);
+        console.log("Creating blog:", submitData);
+
+        // Mock create
+        const newBlog = {
+          id: blogs.length > 0 ? Math.max(...blogs.map((b) => b.id)) + 1 : 1,
+          ...submitData,
+          date: new Date().toLocaleDateString("vi-VN", {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          }),
+          fullDate: new Date().toLocaleDateString("vi-VN", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          }),
+          time: "Vừa xong",
+          views: 0,
+          comments: 0,
+          desc: formData.content.trim().substring(0, 100) + "...",
+        };
+        setBlogs((prev) => [newBlog, ...prev]);
+        toast.success("Tạo bài viết mới thành công!");
+      }
 
       closeModal();
       loadBlogs();
@@ -456,63 +506,34 @@ const BlogsManagement = () => {
               <span>Trạng thái</span>
               <span>Thao tác</span>
             </div>
-            {loading ? (
-              <div style={{ textAlign: "center", padding: "40px" }}>
-                <p>Đang tải dữ liệu...</p>
+            {displayedBlogs.map((blog) => (
+              <div className="blogs-table-row" key={blog.id}>
+                <span className="blogs-table-title">{blog.title}</span>
+                <span>{blog.author}</span>
+                <span>{blog.date}</span>
+                <span>{getStatusTag(blog.status)}</span>
+                <span>{blog.views}</span>
+                <span className="blogs-table-actions">
+                  <FiEdit2
+                    onClick={() => openEditModal(blog)}
+                    style={{ cursor: "pointer" }}
+                    title="Chỉnh sửa"
+                  />
+                  <FiTrash2
+                    onClick={() => openDeleteModal(blog)}
+                    style={{ cursor: "pointer" }}
+                    title="Xóa"
+                  />
+                </span>
               </div>
-            ) : displayedBlogs.length > 0 ? (
-              displayedBlogs.map((blog) => (
-                <div className="blogs-table-row" key={blog.id}>
-                  <span className="blogs-table-title">{blog.title}</span>
-                  <span>{blog.author}</span>
-                  <span>{blog.category}</span>
-                  <span>{blog.createdDate || "Chưa có"}</span>
-                  <span>{blog.updatedDate || "Chưa cập nhật"}</span>
-                  <span>{getStatusTag(blog.status)}</span>
-                  <span className="blogs-table-actions">
-                    <button
-                      className={`blogs-action-btn approve-btn ${
-                        blog.status === "approved" ? "disabled" : ""
-                      }`}
-                      onClick={() => handleApproveBlog(blog.id)}
-                      title="Duyệt bài"
-                      disabled={blog.status === "approved"}
-                    >
-                      <FiCheck />
-                    </button>
-                    <button
-                      className={`blogs-action-btn reject-btn ${
-                        blog.status === "rejected" ? "disabled" : ""
-                      }`}
-                      onClick={() => handleRejectBlog(blog.id)}
-                      title="Hủy bài"
-                      disabled={blog.status === "rejected"}
-                    >
-                      <FiXCircle />
-                    </button>
-                    <button
-                      className="blogs-action-btn view-btn"
-                      onClick={() => openViewDetailModal(blog)}
-                      title="Xem chi tiết"
-                    >
-                      <FiEye />
-                    </button>
-                    <button
-                      className="blogs-action-btn delete-btn"
-                      onClick={() => openDeleteModal(blog)}
-                      title="Xóa"
-                    >
-                      <FiTrash2 />
-                    </button>
-                  </span>
-                </div>
-              ))
-            ) : (
-              <div className="blogs-no-data">
-                <p>Không tìm thấy bài viết nào</p>
-              </div>
-            )}
+            ))}
           </div>
+
+          {displayedBlogs.length === 0 && (
+            <div className="blogs-no-data">
+              <p>Không tìm thấy bài viết nào</p>
+            </div>
+          )}
 
           <div className="blogs-pagination">
             <Pagination
