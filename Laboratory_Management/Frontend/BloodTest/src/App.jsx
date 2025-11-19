@@ -12,6 +12,8 @@ import Booking from "./pages/booking/Booking";
 import CatalogSelection from "./components/booking/CatalogSelection";
 import SuccessBookingPage from "./pages/booking/SuccessBookingPage";
 
+import DashboardPage from "./pages/admin/dashboard/DashboardPage";
+import PatientManagement from "./pages/admin/patient/PatientManagement";
 import AdminDashboardPage from "./pages/admin/dashboard/AdminDashboardPage";
 import AdminUsersPage from "./pages/admin/user/AdminUsersPage";
 import AdminRolesPage from "./pages/admin/roles/AdminRolesPage";
@@ -31,6 +33,9 @@ import "react-toastify/dist/ReactToastify.css"; // Import CSS
 import MedicalRecord from "./pages/medical-record/MedicalRecord";
 import ForgotPass from "./components/authen-form/ForgotPassword";
 import ResetPass from "./components/authen-form/ResetPassword/ResetPassword";
+import AppointmentSchedule from "./pages/lab-staff/appointment-schedule/appointment-schedule";
+import LabStaffDashboard from "./pages/lab-staff/dashboard/dashboard";
+import LabStaffLanding from "./pages/lab-staff/landing/LabStaffLanding";
 import CreatePatient from "./components/profile/CreateProfile";
 import BlogPage from "./pages/blog/BlogPage";
 import BlogDetailPage from "./pages/blog/BlogDetailPage";
@@ -133,6 +138,10 @@ function App() {
       element: <AdminReportsPage />,
     },
     {
+      path: "admin/patients",
+      element: <PatientManagement />,
+    },
+    {
       path: "medical-record",
       element: <MedicalRecord />,
     },
@@ -143,6 +152,18 @@ function App() {
     {
       path: "reset-password",
       element: <ResetPass />,
+    },
+    {
+      path: "lab-staff",
+      element: <LabStaffLanding />,
+    },
+    {
+      path: "lab-staff/dashboard",
+      element: <LabStaffDashboard />,
+    },
+    {
+      path: "lab-staff/appointment-schedule",
+      element: <AppointmentSchedule />,
     },
     {
       path: "create-profile",

@@ -13,39 +13,15 @@ const BlogService = {
    * @returns {Object} Transformed blog object for UI
    */
   transformBlogFromAPI: (apiBlog) => {
-    // Map status: 0 = Chờ duyệt, 1 = Đã duyệt, 2 = Đã hủy
-    let statusText = "pending";
-    if (apiBlog.status === 0) statusText = "pending";
-    else if (apiBlog.status === 1) statusText = "approved";
-    else if (apiBlog.status === 2) statusText = "rejected";
-
     return {
-      id: apiBlog.postId,
+      id: apiBlog.blogPostId || apiBlog.id,
       title: apiBlog.title || "",
-      author: apiBlog.authorId || "Unknown",
-      category: apiBlog.category?.categoryName || "",
-      categoryId: apiBlog.categoryId,
-      status: statusText,
-      statusCode: apiBlog.status,
-      isPublished: apiBlog.isPublished,
-      isApproved: apiBlog.isApproved,
+      author: apiBlog.author || "Unknown",
+      category: apiBlog.category || apiBlog.tag || "",
+      tag: apiBlog.tag || apiBlog.category || "",
+      status: apiBlog.status || "draft",
       content: apiBlog.content || "",
-      img: apiBlog.thumbnailUrl || "",
-      thumbnailUrl: apiBlog.thumbnailUrl || "",
-      createdDate: apiBlog.createdDate
-        ? new Date(apiBlog.createdDate).toLocaleDateString("vi-VN", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-          })
-        : "",
-      updatedDate: apiBlog.updatedDate
-        ? new Date(apiBlog.updatedDate).toLocaleDateString("vi-VN", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-          })
-        : "",
+      img: apiBlog.imageUrl || apiBlog.img || "",
       date: apiBlog.createdDate
         ? new Date(apiBlog.createdDate).toLocaleDateString("vi-VN", {
             day: "numeric",
@@ -68,6 +44,11 @@ const BlogService = {
       time: apiBlog.createdDate
         ? formatTimeAgo(new Date(apiBlog.createdDate))
         : "Vừa xong",
+      views: apiBlog.views || 0,
+      comments: apiBlog.comments || 0,
+      desc:
+        apiBlog.description ||
+        (apiBlog.content ? apiBlog.content.substring(0, 100) + "..." : ""),
     };
   },
 
@@ -95,25 +76,7 @@ const BlogService = {
   getAllBlogs: async () => {
     try {
       const apiBlogs = await BlogAPI.getAllBlogs();
-      
-      // Handle different response structures
-      let blogsArray = apiBlogs;
-      
-      // If response has $values property (C# serialization)
-      if (apiBlogs && apiBlogs.$values) {
-        blogsArray = apiBlogs.$values;
-      }
-      // If response has data property
-      else if (apiBlogs && apiBlogs.data) {
-        blogsArray = apiBlogs.data;
-      }
-      // If response is not an array, return empty array
-      else if (!Array.isArray(apiBlogs)) {
-        console.warn("API response is not an array:", apiBlogs);
-        return [];
-      }
-      
-      return blogsArray.map((blog) => BlogService.transformBlogFromAPI(blog));
+      return apiBlogs.map((blog) => BlogService.transformBlogFromAPI(blog));
     } catch (error) {
       console.error("BlogService - Error getting all blogs:", error);
       throw error;
@@ -178,36 +141,6 @@ const BlogService = {
       return await BlogAPI.deleteBlog(id);
     } catch (error) {
       console.error(`BlogService - Error deleting blog ${id}:`, error);
-      throw error;
-    }
-  },
-
-  /**
-   * Approve blog
-   * @param {number} id - Blog ID
-   * @returns {Promise<Object>} Approved blog in UI format
-   */
-  approveBlog: async (id) => {
-    try {
-      const approvedBlog = await BlogAPI.approveBlog(id, 1);
-      return BlogService.transformBlogFromAPI(approvedBlog);
-    } catch (error) {
-      console.error(`BlogService - Error approving blog ${id}:`, error);
-      throw error;
-    }
-  },
-
-  /**
-   * Reject blog
-   * @param {number} id - Blog ID
-   * @returns {Promise<Object>} Rejected blog in UI format
-   */
-  rejectBlog: async (id) => {
-    try {
-      const rejectedBlog = await BlogAPI.rejectBlog(id, 2);
-      return BlogService.transformBlogFromAPI(rejectedBlog);
-    } catch (error) {
-      console.error(`BlogService - Error rejecting blog ${id}:`, error);
       throw error;
     }
   },

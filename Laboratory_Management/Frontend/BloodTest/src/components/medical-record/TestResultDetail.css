@@ -48,25 +48,10 @@
   font-family: inherit;
 }
 
-.breadcrumb-link:hover {
-  text-decoration: underline;
-}
-
-.breadcrumb-link::before {
-  content: "←";
-  font-size: 16px;
-}
-
 .page-title {
   font-size: 32px;
   font-weight: 700;
   margin: 0 0 8px 0;
-}
-
-.page-subtitle {
-  font-size: 14px;
-  margin: 0;
-  opacity: 0.9;
 }
 
 /* Test Results Container */
@@ -303,10 +288,6 @@
 
   .page-title {
     font-size: 24px;
-  }
-
-  .page-subtitle {
-    font-size: 13px;
   }
 
   .test-results-container {
