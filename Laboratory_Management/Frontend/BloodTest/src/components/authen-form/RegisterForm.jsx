@@ -3,7 +3,6 @@ import { Button, Form, Input, Card } from "antd";
 import { Link } from "react-router-dom";
 import "./register.css";
 import { useRegister } from "../../services/IAMService";
-const URL = "iam/api/Auth/register";
 
 function RegisterForm() {
   const { onFinish, apiErrors, form, setApiErrors } = useRegister();

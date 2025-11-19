@@ -31,9 +31,9 @@ namespace TestOrder.Infrastructure.Base
                 .ToListAsync();
         }
 
-        public async Task<List<T>> GetByIdPagesAsync(object id, int pageNumber)
+        public Task<List<T>> GetByIdPagesAsync(object id, int pageNumber)
         {
-            return await _context.Set<T>()
+            return Task.Run(() => _context.Set<T>()
                 .Where(e => EF.Property<object>(e, "Id") == id)
                 .Skip((pageNumber - 1) * PageSize)
                 .Take(PageSize)
@@ -45,7 +45,7 @@ namespace TestOrder.Infrastructure.Base
             return await _context.Set<T>().ToListAsync();
         }
 
-        public async Task<T?> GetByIdAsync(object id)
+        public Task<T?> GetByIdAsync(object id)
         {
             return await _context.Set<T>().FindAsync(id);
         }
