@@ -14,37 +14,6 @@ const LoginForm = ({ errorMessage }) => {
   const { handleGoogleLoginSuccess } = useLoginWithGoogle();
   // ✅ Đăng nhập bằng Google
 
-  // ✅ Đăng nhập bằng Google
-  const handleGoogleLoginSuccess = async (credentialResponse) => {
-    try {
-      const idToken = credentialResponse.credential;
-      console.log(idToken);
-      if (!idToken) {
-        toast.error("Không nhận được token từ Google");
-        return;
-      }
-
-      // Gửi idToken sang backend để xác thực
-      const response = await api.post("iam/v1/auth/google", { idToken });
-
-      const data = response?.data || {};
-      if (response.status <= 200 && response.status < 300) {
-        localStorage.setItem("accessToken", data.accessToken);
-        localStorage.setItem("refreshToken", data.refreshToken);
-        localStorage.setItem("expiresAt", data.expiresAt);
-
-        setUserData(data);
-        toast.success("Đăng nhập bằng Google thành công!");
-        navigate("/");
-      } else {
-        toast.error("Không nhận được access token từ server");
-      }
-    } catch (error) {
-      console.error("Google login error:", error);
-      toast.error("Đăng nhập bằng Google thất bại!");
-    }
-  };
-
   return (
     <div className="auth-login-container">
       <div className="auth-login-welcome">
