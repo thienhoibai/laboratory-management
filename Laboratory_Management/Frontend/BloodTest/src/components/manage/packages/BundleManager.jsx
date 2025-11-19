@@ -20,8 +20,8 @@ import {
   addCatalogsToBundle,
   removeCatalogsFromBundle,
   getCatalogsOfBundle,
-} from "../../../apis/BundleServiceAPI";
-import { getAllCatalogs } from "../../../apis/CatalogServiceAPI";
+} from "../../../apis/TestOrderServiceAPI.jsx";
+import { getAllCatalogs } from "../../../apis/TestOrderServiceAPI.jsx";
 import "./BundleManager.css";
 
 const getCatalogId = (catalog) =>

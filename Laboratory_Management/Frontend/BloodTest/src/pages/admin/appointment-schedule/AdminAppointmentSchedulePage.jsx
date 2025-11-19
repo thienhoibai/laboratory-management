@@ -12,7 +12,6 @@ import {
   FiCheck,
 } from "react-icons/fi";
 import {
-  mockAppointments,
   appointmentStatuses,
   timeSlots,
   getAppointmentCountBySlot,
@@ -33,7 +32,7 @@ const AdminAppointmentSchedulePage = () => {
   const [editingStatus, setEditingStatus] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
-  const [pageSize, setPageSize] = useState(2);
+  const [pageSize, setPageSize] = useState(5);
   const [total, setTotal] = useState(0);
 
   const [Booking, SetBookings] = useState([]);
@@ -257,6 +256,7 @@ const AdminAppointmentSchedulePage = () => {
       }
       return 0;
     } catch (error) {
+      console.log(error || "Lỗi");
       return 0;
     }
   };
@@ -276,6 +276,7 @@ const AdminAppointmentSchedulePage = () => {
       }
       return [];
     } catch (error) {
+      console.log(error || "Lỗi");
       return [];
     }
   };
