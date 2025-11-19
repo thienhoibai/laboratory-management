@@ -1,6 +1,12 @@
-﻿using System;
+﻿
+using Azure;
+using System;
+
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Security.AccessControl;
 using System.Threading.Tasks;
+using TestOrder.Application.DTOs;
 using TestOrder.Application.DTOs.Bookings;
 using TestOrder.Infrastructure.Repository;
 
@@ -21,9 +27,60 @@ namespace TestOrder.Application.Services.Booking
             _appointmentSlotService = appointmentSlotService;
         }
 
+        public async Task<IEnumerable<BookingResponseDTO>> GetAllBookingsByDateAsync
+            (DateOnly date, string? keyword, string? sortBy, string? sortDirection, int pageSize, int pageNumber)
+        {
+            var appointmentSlots = await _appointmentSlotService.GetAppointmentSlotsByDateAsync(date, 1, int.MaxValue);
+            IEnumerable<Infrastructure.Models.Booking> bookings = new List<Infrastructure.Models.Booking>();
+            
+            foreach (var slot in appointmentSlots)
+            {
+                var slotBookings = await _bookingRepository.GetBookingsByAppointmentSlotSearchableAsync
+                    (slot.SlotId, keyword, sortBy, sortDirection);
+                bookings = bookings.Concat(slotBookings!);
+            }
+
+            bookings = bookings.Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize).ToList();
+
+
+            var bookingResponses = new List<BookingResponseDTO>();
+            foreach (var booking in bookings)
+            {
+                bookingResponses.Add(new BookingResponseDTO
+                {
+                    BookingCode = booking.BookingCode ??= "",
+                    BookingId = booking.BookingId,
+                    PatientId = (Guid)booking.PatientId,
+                    PatientName = booking.PatientName ?? string.Empty,
+                    PatientPhoneNumber = booking.PatientPhone,
+                    PatientEmail = booking.PatientEmail,
+                    CreatedBy = booking.CreatedBy,
+                    BundleId = booking.BundleId,
+                    CreatedDate = booking.CreateDate.HasValue
+                        ? booking.CreateDate.Value.ToDateTime(new TimeOnly(0, 0))
+                        : DateTime.MinValue,
+                    RunDate = booking.RunDate.HasValue
+                        ? booking.RunDate.Value.ToDateTime(new TimeOnly(0, 0))
+                        : (DateTime?)null,
+                    RanBy = booking.RanBy ?? string.Empty,
+                    Status = booking.Status.HasValue
+                        ? ((BookingStatusEnum)booking.Status.Value).ToString()
+                        : "Unknown",
+                    SlotInfo = await _appointmentSlotService.GetAppointmentSlotInfo((Guid)booking.AppointmentSlotId),
+                    TestCatalogs = await _bookingTestService.GetCatalogIdsByBookingIdAsync(booking.BookingId)
+                });
+            }
+            return bookingResponses;
+        }
+
         public async Task<BookingResponseDTO> GetBookingByIdAsync(Guid bookingId)
         {
             var booking = await _bookingRepository.GetByIdAsync(bookingId);
+            var slotInfo = await _appointmentSlotService.GetAppointmentSlotInfo((Guid)booking.AppointmentSlotId);
+            if (slotInfo == null)
+                slotInfo = null;
+
 
             if (booking == null)
                 throw new Exception("Booking not found");
@@ -32,6 +89,7 @@ namespace TestOrder.Application.Services.Booking
             {
                 BookingCode = booking.BookingCode ??="",
                 PatientId = (Guid)booking.PatientId,
+                BookingId = booking.BookingId,
                 PatientName = booking.PatientName ?? string.Empty,
                 PatientPhoneNumber = booking.PatientPhone,
                 PatientEmail = booking.PatientEmail,
@@ -47,7 +105,8 @@ namespace TestOrder.Application.Services.Booking
                 Status = booking.Status.HasValue
                     ? ((BookingStatusEnum)booking.Status.Value).ToString()
                     : "Unknown",
-                slotInfo = await _appointmentSlotService.GetAppointmentSlotInfo((Guid)booking.AppointmentSlotId!)
+                SlotInfo = slotInfo,
+                TestCatalogs = await _bookingTestService.GetCatalogIdsByBookingIdAsync(booking.BookingId)
             };
         }
 
@@ -64,6 +123,7 @@ namespace TestOrder.Application.Services.Booking
                     {
                         BookingCode = booking.BookingCode ??= "",
                         PatientId = (Guid)booking.PatientId,
+                        BookingId = booking.BookingId,
                         PatientName = booking.PatientName ?? string.Empty,
                         PatientPhoneNumber = booking.PatientPhone,
                         PatientEmail = booking.PatientEmail,
@@ -78,7 +138,10 @@ namespace TestOrder.Application.Services.Booking
                         RanBy = booking.RanBy ?? string.Empty,
                         Status = booking.Status.HasValue
                             ? ((BookingStatusEnum)booking.Status.Value).ToString()
-                            : "Unknown"
+                            : "Unknown",
+                        SlotInfo = await _appointmentSlotService.GetAppointmentSlotInfo((Guid)booking.AppointmentSlotId),
+                        TestCatalogs = await _bookingTestService.GetCatalogIdsByBookingIdAsync(booking.BookingId)
+
                     });
                 }
             }
@@ -86,11 +149,19 @@ namespace TestOrder.Application.Services.Booking
             return bookingResponses;
         }
 
+
+
         #region Create New Booking
-        public async Task<int> CreateNewBooking(BookingRequestDTO bookingRequest)
+
+        public async Task<ResponseMessage> CreateBookingAsync (BookingRequestDTO bookingRequest)
         {
+            ResponseMessage response = new ResponseMessage();
             if (!_appointmentSlotService.IsAppointmentsDateValid(bookingRequest.slotDTO.AppointmentDate))
-                return -1;
+            {
+                response.ResponseCode = ResponseCode.BadInstanceState;
+                response.Message = "Date must be 1 day in the future";
+                return response;
+            }
 
 
 
@@ -99,11 +170,13 @@ namespace TestOrder.Application.Services.Booking
                     bookingRequest.slotDTO.TimeBlock))
             {
                 await _appointmentSlotService.AddAppointmentSlotAsync(bookingRequest.slotDTO);
-                
+
             }
             if (_appointmentSlotService.IsAppointmentSlotMaxedOut(bookingRequest.slotDTO))
             {
-                return -2;
+                response.ResponseCode = ResponseCode.BadInstanceState;
+                response.Message = "This slot is currently full";
+                return response;
             }
 
             var appointmentSlot = await _appointmentSlotService.GetAppointmentSlotByDateAndTimeAsync(
@@ -141,33 +214,104 @@ namespace TestOrder.Application.Services.Booking
                     _bookingTestService.AddBookingTestAsync(newBooking.BookingId, catalogId).Wait();
                 }
             }
-            return 0;
 
-        }
+            response.ResponseCode = ResponseCode.Success;
+            response.Message = "Booking Successfully";
+            response.InstancesCode = newBooking.BookingId;
+
+            return response;
+
+        } 
+
         #endregion
 
-        public async Task<int> CheckInBooking (Guid bookingId)
+        public async Task<ResponseMessage> CheckInBooking (Guid bookingId)
         {
             var booking =  await _bookingRepository.GetByIdAsync(bookingId);
+            var timeSlot = await _appointmentSlotService.GetAppointmentSlotByIdAsync((Guid)booking.AppointmentSlotId);
+            TimeOnly lowerLimit = timeSlot.TimeBlock.Add(-TimeSpan.FromMinutes(30));
+            TimeOnly upperLimit = timeSlot.TimeBlock.Add(TimeSpan.FromMinutes(30));
+            ResponseMessage response = new ResponseMessage();
             if (booking == null)
-                return -1;
-            if (booking.Status != (byte?) BookingStatusEnum.Confirmed) return -2;
-            booking.Status = (byte?)BookingStatusEnum.CheckedIn;
-            booking.RunDate = DateOnly.FromDateTime(DateTime.Now);
-            await _bookingRepository.UpdateAsync(booking);
-            return 0;
+            {
+                response.ResponseCode = ResponseCode.NotFound;
+                response.Message = "Booking not found";
+                response.InstancesCode = bookingId;
+                return response;
+            }
+                
+            if (booking.Status != (byte?)BookingStatusEnum.Confirmed)
+            {
+                response.ResponseCode = ResponseCode.BadInstanceState;
+                response.Message = "Booking is not in a state that allows check-in";
+                response.InstancesCode = bookingId;
+                return response;
+            }
+            if (DateOnly.FromDateTime(DateTime.Now) == timeSlot.AppointmentDate)
+            {
+                if ( TimeOnly.FromDateTime(DateTime.Now) >= lowerLimit && 
+                    TimeOnly.FromDateTime(DateTime.Now) <= upperLimit ) 
+                {
+                    booking.Status = (byte?)BookingStatusEnum.InProgress;
+                    booking.RunDate = DateOnly.FromDateTime(DateTime.Now);
+                    await _bookingRepository.UpdateAsync(booking);
 
+                    response.ResponseCode = ResponseCode.Success;
+                    response.Message = "Check-in successful";
+                    response.InstancesCode = bookingId;
+                }
+            }
+            else 
+            {
+                response.ResponseCode = ResponseCode.BadInstanceState;
+                response.Message = "Check-in is only allowed on the appointment date";
+                response.InstancesCode = bookingId;
+                return response;
+            }
+            return response;
+            
         }
 
-        public async Task<int> CheckOutBooking(Guid bookingId)
+        public async Task<ResponseMessage> CheckOutBooking(Guid bookingId)
         {
             var booking = await _bookingRepository.GetByIdAsync(bookingId);
+            ResponseMessage response = new ResponseMessage();
             if (booking == null)
-                return -1;
-            if (booking.Status != (byte?)BookingStatusEnum.InProgress) return -2;
+            {
+                response.ResponseCode = ResponseCode.NotFound;
+                response.Message = "Booking not found";
+                response.InstancesCode = bookingId;
+                return response;
+            }
+
+            if (booking.Status != (byte?)BookingStatusEnum.InProgress)
+            {
+                response.ResponseCode = ResponseCode.BadInstanceState;
+                response.Message = "Booking is not in a state that allows check-out";
+                response.InstancesCode = bookingId;
+                return response;
+            }
             booking.Status = (byte?)BookingStatusEnum.Completed;
             await _bookingRepository.UpdateAsync(booking);
-            return 0;
+            response.ResponseCode = ResponseCode.Success;
+            response.Message = "Check-out successful";
+            response.InstancesCode = bookingId;
+            return response;
         }
+
+        internal async Task PaymentConfirmBooking (Guid bookingId)
+        {
+            ResponseMessage response = new ResponseMessage();
+
+            var booking = await _bookingRepository.GetByIdAsync(bookingId);
+            if (booking == null)
+            {
+                throw new Exception("Booking not found");
+            }
+
+            booking.Status = (byte?)BookingStatusEnum.Confirmed;
+            await _bookingRepository.UpdateAsync(booking);
+        }
+
     }
 }

@@ -64,7 +64,7 @@ else
 {
     var conn = builder.Configuration.GetConnectionString("PatientService3");
     if (string.IsNullOrWhiteSpace(conn))
-        conn = "Server=TUAN\\SQLEXPRESS01;Database=PatientService3;Trusted_Connection=True;uid=sa;pwd=12345;TrustServerCertificate=True;";
+        conn = "Server=localhost;Database=PatientService4;Trusted_Connection=True;uid=sa;pwd=12345;TrustServerCertificate=True;";
 
     builder.Services.AddDbContext<PatientDbContext>(opt =>
         opt.UseSqlServer(conn));
@@ -76,18 +76,18 @@ builder.Services.AddScoped<IPatientService, PatientService>();
 const string notifyExchange = "lab.notify.v1";
 builder.Services.AddMassTransit(x =>
 {
-x.UsingRabbitMq((context, cfg) =>
-{
-var host = builder.Configuration["RabbitMQ:Host"] ?? "rabbitmq";
-var user = builder.Configuration["RabbitMQ:User"] ?? "guest";
-var pass = builder.Configuration["RabbitMQ:Pass"] ?? "guest";
-    cfg.Host(host, h => { h.Username(user); h.Password(pass); });
-    cfg.Message<NotificationRequestedV1>(m => m.SetEntityName(notifyExchange));
-    cfg.Publish<NotificationRequestedV1>(p =>
+    x.UsingRabbitMq((context, cfg) =>
     {
-        p.ExchangeType = ExchangeType.Topic; p.Durable = true; p.AutoDelete = false;
+        var host = builder.Configuration["RabbitMQ:Host"] ?? "rabbitmq";
+        var user = builder.Configuration["RabbitMQ:User"] ?? "guest";
+        var pass = builder.Configuration["RabbitMQ:Pass"] ?? "guest";
+        cfg.Host(host, h => { h.Username(user); h.Password(pass); });
+        cfg.Message<NotificationRequestedV1>(m => m.SetEntityName(notifyExchange));
+        cfg.Publish<NotificationRequestedV1>(p =>
+        {
+            p.ExchangeType = ExchangeType.Topic; p.Durable = true; p.AutoDelete = false;
+        });
     });
-});
 });
 
 // Register UserService.UserServiceClient as a service
@@ -132,6 +132,7 @@ if (app.Environment.IsDevelopment())
 }
 
 // No HTTPS redirection for docker h2c
+app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseCors("AllowFrontend");

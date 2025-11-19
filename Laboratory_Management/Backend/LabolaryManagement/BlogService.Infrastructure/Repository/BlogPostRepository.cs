@@ -15,19 +15,31 @@ namespace BlogService.Infrastructure.Repository
     {
         public BlogPostRepository(DBContext context) : base(context) { }
 
-        public async Task<List<BlogPost>> GetAllWithCategoryAsync()
+        public async Task<List<BlogPost>> GetAllWithCategoryAsync(
+            Guid? authorId, int? status, int page, int pageSize)
         {
-            return await _context.BlogPosts
+            var query = _context.BlogPosts
                 .Include(p => p.Category)
+                .AsQueryable();
+
+            if (authorId.HasValue)
+                query = query.Where(p => p.AuthorId == authorId.Value);
+
+
+            if (status.HasValue)
+                query = query.Where(p => p.Status == status.Value);
+
+            return await query
                 .OrderByDescending(p => p.CreatedDate)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
         }
-
-        public async Task<List<BlogPost>> GetPendingApprovalAsync()
+        public async Task<List<BlogPost>> GetApprovalAsync()
         {
             return await _context.BlogPosts
-                .Where(p => p.Status == 0)
-                .Include(p => p.Category)            
+                .Where(p => p.IsApproved == true || p.Status == 1)
+                .Include(p => p.Category)
                 .ToListAsync();
         }
 
@@ -37,7 +49,7 @@ namespace BlogService.Infrastructure.Repository
             if (post != null)
             {
                 post.Status = (int)status; // lưu enum dưới dạng int
-               
+
                 post.UpdatedDate = DateTime.Now;
                 await _context.SaveChangesAsync();
             }

@@ -182,7 +182,7 @@
 .blogs-table-header,
 .blogs-table-row {
   display: grid;
-  grid-template-columns: 2.5fr 1.5fr 1.2fr 1fr 0.8fr 1fr;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr 0.8fr 1.5fr;
   align-items: center;
   padding: 16px 12px;
   border-bottom: 1px solid #e5e7eb;
@@ -236,15 +236,16 @@
   color: #92400e;
 }
 
-.blogs-status-tag.status-draft {
-  background: #f3f4f6;
-  color: #6b7280;
+.blogs-status-tag.status-rejected {
+  background: #fee2e2;
+  color: #991b1b;
 }
 
 .blogs-table-actions {
   display: flex;
   gap: 12px;
   color: #6b7280;
+  align-items: center;
 }
 
 .blogs-table-actions svg {
@@ -253,6 +254,86 @@
 
 .blogs-table-actions svg:hover {
   color: #1f2937;
+}
+
+/* Action buttons for approve/reject */
+.blogs-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.blogs-action-btn.approve-btn {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.blogs-action-btn.approve-btn:hover {
+  background: #a7f3d0;
+  color: #047857;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(6, 95, 70, 0.2);
+}
+
+.blogs-action-btn.reject-btn {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.blogs-action-btn.reject-btn:hover {
+  background: #fecaca;
+  color: #7f1d1d;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(153, 27, 27, 0.2);
+}
+
+.blogs-action-btn.view-btn {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.blogs-action-btn.view-btn:hover {
+  background: #bfdbfe;
+  color: #1e3a8a;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(30, 64, 175, 0.2);
+}
+
+.blogs-action-btn.delete-btn {
+  background: #f3f4f6;
+  color: #6b7280;
+  padding: 6px 8px;
+}
+
+.blogs-action-btn.delete-btn:hover {
+  background: #fee2e2;
+  color: #991b1b;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(107, 114, 128, 0.2);
+}
+
+.blogs-action-btn.disabled,
+.blogs-action-btn:disabled {
+  background: #f3f4f6;
+  color: #9ca3af;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.blogs-action-btn.disabled:hover,
+.blogs-action-btn:disabled:hover {
+  background: #f3f4f6;
+  color: #9ca3af;
+  transform: none;
+  box-shadow: none;
 }
 
 .blogs-no-data {
@@ -277,7 +358,7 @@
 @media (max-width: 1024px) {
   .blogs-table-header,
   .blogs-table-row {
-    grid-template-columns: 2fr 1.2fr 1fr 1fr 0.8fr 1fr;
+    grid-template-columns: 1.8fr 1fr 1fr 1fr 1fr 0.8fr 1fr;
     font-size: 0.85rem;
   }
 }
@@ -666,4 +747,83 @@
 .blogs-delete-confirm:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* View Detail Modal */
+.blogs-view-modal {
+  background: #fff;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.blogs-view-content {
+  padding: 24px;
+}
+
+.blogs-view-image {
+  width: 100%;
+  margin-bottom: 24px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
+
+.blogs-view-image img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.blogs-view-info {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.blogs-view-row {
+  display: flex;
+  gap: 12px;
+}
+
+.blogs-view-row label {
+  font-weight: 600;
+  color: #1f2937;
+  min-width: 130px;
+  font-size: 0.95rem;
+}
+
+.blogs-view-row span {
+  color: #374151;
+  font-size: 0.95rem;
+  flex: 1;
+}
+
+.blogs-view-content-section {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.blogs-view-content-text {
+  background: #f9fafb;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  width: 100%;
+  line-height: 1.6;
+  color: #374151;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.blogs-view-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px 24px;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
 }

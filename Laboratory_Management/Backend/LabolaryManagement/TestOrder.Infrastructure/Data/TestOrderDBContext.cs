@@ -18,6 +18,8 @@ public partial class TestOrderDBContext : DbContext
 
     public virtual DbSet<AppointmentSlot> AppointmentSlots { get; set; }
 
+    public virtual DbSet<AuditLog> AuditLogs { get; set; }
+
     public virtual DbSet<Booking> Bookings { get; set; }
 
     public virtual DbSet<BookingTest> BookingTests { get; set; }
@@ -60,6 +62,16 @@ public partial class TestOrderDBContext : DbContext
                 .HasConstraintName("FK__Appointme__TimeB__4F7CD00D");
         });
 
+        modelBuilder.Entity<AuditLog>(entity =>
+        {
+            entity.HasKey(e => e.AuditLogId).HasName("PK__AuditLog__EB5F6CBD2DA0B57C");
+
+            entity.ToTable("AuditLog");
+
+            entity.Property(e => e.AuditLogId).ValueGeneratedNever();
+            entity.Property(e => e.Action).HasMaxLength(255);
+        });
+
         modelBuilder.Entity<Booking>(entity =>
         {
             entity.HasKey(e => e.BookingId).HasName("PK__Booking__73951AED1D7754EF");
@@ -98,6 +110,10 @@ public partial class TestOrderDBContext : DbContext
                 .HasForeignKey(d => d.CatalogId)
                 .HasConstraintName("FK__BookingTe__Catal__6B24EA82");
         });
+
+        modelBuilder.Entity<CatalogBundle>()
+                .HasIndex(cb => new { cb.BundleId, cb.CatalogId })
+                .IsUnique();
 
         modelBuilder.Entity<CatalogBundle>(entity =>
         {
@@ -142,8 +158,6 @@ public partial class TestOrderDBContext : DbContext
                 .HasColumnType("datetime");
             entity.Property(e => e.Method).HasMaxLength(50);
             entity.Property(e => e.PaidAt).HasColumnType("datetime");
-            entity.Property(e => e.Status).HasMaxLength(50);
-            entity.Property(e => e.Token).HasMaxLength(100);
 
             entity.HasOne(d => d.Booking).WithMany(p => p.PaymentEnvoices)
                 .HasForeignKey(d => d.BookingId)

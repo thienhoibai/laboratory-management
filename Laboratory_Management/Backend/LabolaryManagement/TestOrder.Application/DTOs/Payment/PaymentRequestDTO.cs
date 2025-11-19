@@ -9,7 +9,6 @@ namespace TestOrder.Application.DTOs.Payment
     public class PaymentRequestDTO
     {
         public Guid BookingId { get; set; }
-        public string? Method { get; set; }
         public double? Amount { get; set; }
     }
 }

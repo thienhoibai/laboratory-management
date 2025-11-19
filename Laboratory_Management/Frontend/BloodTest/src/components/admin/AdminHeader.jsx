@@ -5,13 +5,16 @@ import "./layout/AdminLayout.css";
 import { useNavigate } from "react-router-dom";
 import { logoutUser } from "../../utils/auth";
 import { toast } from "react-toastify";
+import { setAuthToken } from "../../utils/auth";
 
 const AdminHeader = ({ pageTitle, breadcrumbs }) => {
   const navigate = useNavigate();
 
   const handleLogout = async () => {
+    const token = localStorage.getItem("accessToken");
+    setAuthToken(token);
     await logoutUser();
-    toast.success("Đăng Xuất Thành Công");
+    toast.success("Đăng Xuất Thành Công!");
     navigate("/login");
   };
 

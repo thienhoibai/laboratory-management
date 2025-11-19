@@ -18,12 +18,14 @@ namespace TestOrder.Infrastructure.Repository
         {
         }
 
-        public Task<List<AppointmentSlot>> GetByDateAsync(DateOnly appointmentDate)
+        public Task<List<AppointmentSlot>> GetByDateAsync(DateOnly appointmentDate,int pageNumber, int pageSize)
         {
             return Task.Run(() =>
             {
                 return _context.Set<AppointmentSlot>()
                     .Where(a => a.AppointmentDate == appointmentDate)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
                     .ToList();
             });
         }

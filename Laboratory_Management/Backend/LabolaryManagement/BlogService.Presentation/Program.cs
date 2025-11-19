@@ -29,36 +29,48 @@ namespace BlogService.Presentation
             builder.Services.AddScoped<BlogPostTagRepository>();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
-
+            builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+    });
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowFrontend", policy =>
                 {
-                    policy
-                        .WithOrigins(
-                            "http://localhost:5174",
-                            "http://127.0.0.1:5174"
-                        )
-                        .AllowAnyHeader()
-                        .AllowAnyMethod()
-                        .AllowCredentials();
+                    policy.WithOrigins(
+                        "http://localhost:5174",
+                        "http://127.0.0.1:5174"
+                    )
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .AllowCredentials();
                 });
             });
 
 
+
+
             var app = builder.Build();
 
+            var isDocker = string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Docker", StringComparison.OrdinalIgnoreCase);
+
             // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
+            if (app.Environment.IsDevelopment() || isDocker)
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
+
+            // Do not redirect to HTTPS inside container (no dev certs)
+            if (!isDocker)
+            {
+                app.UseHttpsRedirection();
+            }
+
             app.UseRouting();
-            app.UseHttpsRedirection();
             app.UseCors("AllowFrontend");
             app.UseAuthorization();
-
 
             app.MapControllers();
 

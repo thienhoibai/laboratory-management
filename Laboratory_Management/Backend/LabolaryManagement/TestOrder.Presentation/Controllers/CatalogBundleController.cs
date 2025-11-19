@@ -37,9 +37,17 @@ namespace TestOrder.API.Controllers
         [HttpPost]
         public async Task<IActionResult> AddCatalogToBundle([FromBody] CatalogBundleDTO dto)
         {
-            await _service.AddCatalogToBundleAsync(dto);
-            return Ok("Catalog added to bundle successfully");
+            try
+            {
+                await _service.AddCatalogToBundleAsync(dto);
+                return Ok(new { message = "Thêm Catalog vào Bundle thành công" });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
         }
+
 
         [HttpDelete("{bundleId}")]
         public async Task<IActionResult> RemoveCatalogFromBundle(int bundleId, List<int> catalogId)

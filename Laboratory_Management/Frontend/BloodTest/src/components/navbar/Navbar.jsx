@@ -6,11 +6,13 @@ import "./Navbar.css";
 import api from "../../configs/axios";
 import { setAuthToken } from "../../utils/auth";
 // import { usePermission } from "../../utils/permission";
+import ChangePasswordModal from "../profile/ChangePassword";
 
 function Navbar() {
   // const { can } = usePermission();
 
   const [user, setUser] = useState(null);
+  const [openChange, setOpenChange] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -30,8 +32,6 @@ function Navbar() {
       const token = localStorage.getItem("accessToken");
       setAuthToken(token);
       const response = await api.get(`patient/v1/patients/me`);
-
-      console.log("Profile response:", response.data);
 
       if (response.data && response.data.succeeded === true) {
         navigate("/profile");
@@ -159,30 +159,55 @@ function Navbar() {
                   <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                 </svg>
               </div>
-              <div
-                className="navbar-avatar-dropdown"
-                onClick={handleProfileClick}
-                style={{ cursor: "pointer" }}
-              >
-                <svg
-                  className="user-icon"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
+              <div className="navbar-avatar-dropdown" tabIndex={0}>
+                <div
+                  className="navbar-avatar-icon"
+                  role="button"
+                  aria-haspopup="true"
+                  style={{ cursor: "pointer" }}
                 >
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
-                </svg>
-              </div>
+                  <svg
+                    className="user-icon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                </div>
 
-              <button className="navbar-logout" onClick={handleLogout}>
-                Đăng Xuất
-              </button>
+                <div className="avatar-menu" role="menu">
+                  <button
+                    className="avatar-menu-item"
+                    onClick={handleProfileClick}
+                    type="button"
+                  >
+                    Thông tin cá nhân
+                  </button>
+                  <button
+                    className="avatar-menu-item"
+                    onClick={() => setOpenChange(true)}
+                    type="button"
+                  >
+                    Đổi mật khẩu
+                  </button>
+                  <button className="navbar-logout" onClick={handleLogout}>
+                    Đăng Xuất
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>
       </div>
+
+      {/* Render change-password modal */}
+      <ChangePasswordModal
+        open={openChange}
+        onClose={() => setOpenChange(false)}
+      />
     </header>
   );
 }
