@@ -17,7 +17,7 @@ const ResetPassword = () => {
         <Card title="Đặt lại mật khẩu" className="rp-card">
           {!token ? (
             <div className="rp-no-token">
-              <p>Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn</p>
+              <p>Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.</p>
               <Link to="/forgot-password">
                 Yêu cầu gửi lại email đặt lại mật khẩu
               </Link>

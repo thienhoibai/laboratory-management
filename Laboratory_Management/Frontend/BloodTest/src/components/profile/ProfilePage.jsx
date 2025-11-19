@@ -37,6 +37,7 @@ const initialFormData = {
 // Add: expose Option from Select
 const { Option } = Select;
 
+// ===== MAIN PROFILE PAGE COMPONENT =====
 export default function ProfilePage() {
   // ===== STATE =====
   const [activeTab, setActiveTab] = useState("personal");
@@ -505,7 +506,6 @@ export default function ProfilePage() {
                       Lưu trữ
                     </span>
                   </div>
-
                   <div className="medical-record-dates">
                     <span className="medical-record-date">
                       Ngày tạo: 10/10/2023
@@ -515,7 +515,6 @@ export default function ProfilePage() {
                       Cập nhật: 15/11/2023
                     </span>
                   </div>
-
                   <div className="medical-record-patient-info">
                     <div className="medical-record-patient-details">
                       <div className="medical-record-patient-column">
@@ -524,7 +523,7 @@ export default function ProfilePage() {
                             Họ tên:
                           </span>
                           <span className="medical-record-patient-value">
-                            {userData.fullname}
+                            {userData.fullName}
                           </span>
                         </div>
                         <div className="medical-record-patient-item">
@@ -550,16 +549,15 @@ export default function ProfilePage() {
                             Giới tính:
                           </span>
                           <span className="medical-record-patient-value">
-                            {userData.gender}
+                            {userData.gender === 1 ? "Nam" : "Nữ"}
                           </span>
                         </div>
                       </div>
                     </div>
                   </div>
-
                   <button
                     className="medical-record-view-btn"
-                    onClick={() => navigate("/medical-record")}
+                    onClick={() => navigate(`/medical-record`)}
                   >
                     <svg
                       className="view-icon"

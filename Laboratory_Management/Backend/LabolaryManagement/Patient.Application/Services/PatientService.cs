@@ -407,4 +407,31 @@ public class PatientService : IPatientService
         await _db.SaveChangesAsync(ct);
         return OperationResult.Success();
     }
+
+    public async Task<OperationResult<PatientDto>> GetByUserIdAsync(Guid userId, CancellationToken ct)
+    {
+        var patient = await _db.Patients
+            .AsNoTracking()
+            .Where(p => p.UserId == userId && !p.IsDeleted)
+            .Select(p => new PatientDto
+            {
+                PatientId = p.PatientId,
+                FullName = p.FullName,
+                DateOfBirth = p.DateOfBirth,
+                Gender = p.Gender,
+                Email = p.Email,
+                Phone = p.Phone,
+                Address = p.Address,
+                IdNumber = p.IdNumber,
+                InsuranceNumber = p.InsuranceNumber,
+                CreatedAt = p.CreatedAt
+            })
+            .FirstOrDefaultAsync(ct);
+
+        if (patient == null)
+            return OperationResult<PatientDto>.Fail(ErrorCodes.NotFound);
+
+        return OperationResult<PatientDto>.Success(patient);
+    }
+
 }
