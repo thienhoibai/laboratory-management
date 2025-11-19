@@ -68,6 +68,11 @@ const BlogService = {
       time: apiBlog.createdDate
         ? formatTimeAgo(new Date(apiBlog.createdDate))
         : "Vừa xong",
+      views: apiBlog.views || 0,
+      comments: apiBlog.comments || 0,
+      desc:
+        apiBlog.description ||
+        (apiBlog.content ? apiBlog.content.substring(0, 100) + "..." : ""),
     };
   },
 
@@ -95,10 +100,10 @@ const BlogService = {
   getAllBlogs: async () => {
     try {
       const apiBlogs = await BlogAPI.getAllBlogs();
-      
+
       // Handle different response structures
       let blogsArray = apiBlogs;
-      
+
       // If response has $values property (C# serialization)
       if (apiBlogs && apiBlogs.$values) {
         blogsArray = apiBlogs.$values;
@@ -112,7 +117,7 @@ const BlogService = {
         console.warn("API response is not an array:", apiBlogs);
         return [];
       }
-      
+
       return blogsArray.map((blog) => BlogService.transformBlogFromAPI(blog));
     } catch (error) {
       console.error("BlogService - Error getting all blogs:", error);
@@ -178,36 +183,6 @@ const BlogService = {
       return await BlogAPI.deleteBlog(id);
     } catch (error) {
       console.error(`BlogService - Error deleting blog ${id}:`, error);
-      throw error;
-    }
-  },
-
-  /**
-   * Approve blog
-   * @param {number} id - Blog ID
-   * @returns {Promise<Object>} Approved blog in UI format
-   */
-  approveBlog: async (id) => {
-    try {
-      const approvedBlog = await BlogAPI.approveBlog(id, 1);
-      return BlogService.transformBlogFromAPI(approvedBlog);
-    } catch (error) {
-      console.error(`BlogService - Error approving blog ${id}:`, error);
-      throw error;
-    }
-  },
-
-  /**
-   * Reject blog
-   * @param {number} id - Blog ID
-   * @returns {Promise<Object>} Rejected blog in UI format
-   */
-  rejectBlog: async (id) => {
-    try {
-      const rejectedBlog = await BlogAPI.rejectBlog(id, 2);
-      return BlogService.transformBlogFromAPI(rejectedBlog);
-    } catch (error) {
-      console.error(`BlogService - Error rejecting blog ${id}:`, error);
       throw error;
     }
   },
