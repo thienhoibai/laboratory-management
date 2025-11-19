@@ -1,9 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import api from "../configs/axios";
 
-const BUNDLE_BASE = "testorder/api/TestBundle";
-const CATALOG_BUNDLE_BASE = "testorder/api/CatalogBundle";
-
+// ==================== Helper Functions ====================
 const extractItemsAndMeta = (response, fallbackQuery = {}) => {
   const data = response?.data;
   let items = [];
@@ -15,7 +13,7 @@ const extractItemsAndMeta = (response, fallbackQuery = {}) => {
   } else if (Array.isArray(data?.items)) {
     items = data.items;
   } else if (data) {
-    items = data.items || [];
+    items = Array.isArray(data) ? data : data.items || [];
   }
 
   const meta = data?.meta || {
@@ -27,6 +25,13 @@ const extractItemsAndMeta = (response, fallbackQuery = {}) => {
   return { items, meta };
 };
 
+// ==================== API Base URLs ====================
+const BUNDLE_BASE = "testorder/api/TestBundle";
+const CATALOG_BUNDLE_BASE = "testorder/api/CatalogBundle";
+const CATALOG_BASE = "testorder/api/TestCatalog";
+const PARAMETER_BASE = "testorder/api/TestParameter";
+
+// ==================== Bundle Service APIs ====================
 export const getAllBundles = async (params = {}) => {
   // Sử dụng CatalogBundle API để lấy bundles kèm catalogs
   const catalogBundleResponse = await api.get(CATALOG_BUNDLE_BASE, { params });
@@ -115,7 +120,93 @@ export const removeCatalogsFromBundle = async (bundleId, catalogIds = []) => {
   return response?.data?.data || response?.data;
 };
 
-const BundleServiceAPI = {
+// ==================== Catalog Service APIs ====================
+export const getAllCatalogs = async (params = {}) => {
+  const response = await api.get(CATALOG_BASE, { params });
+  return extractItemsAndMeta(response, params);
+};
+
+export const getCatalogById = async (id) => {
+  if (!id) throw new Error("Catalog ID is required");
+  const response = await api.get(`${CATALOG_BASE}/${id}`);
+  return response?.data?.data || response?.data;
+};
+
+export const createCatalog = async (payload) => {
+  const response = await api.post(CATALOG_BASE, payload);
+  return response?.data?.data || response?.data;
+};
+
+export const updateCatalog = async (id, payload) => {
+  if (!id) throw new Error("Catalog ID is required");
+  const response = await api.put(`${CATALOG_BASE}/${id}`, payload);
+  return response?.data?.data || response?.data;
+};
+
+export const updateCatalogParameters = async (id, parameterIds = []) => {
+  if (!id) throw new Error("Catalog ID is required");
+  const response = await api.put(
+    `${CATALOG_BASE}/${id}/parameters`,
+    parameterIds
+  );
+  return response?.data?.data || response?.data;
+};
+
+// ==================== Parameter Service APIs ====================
+export const getAllParameters = async (params = {}) => {
+  const response = await api.get(PARAMETER_BASE, { params });
+  return extractItemsAndMeta(response, params);
+};
+
+export const getParameterById = async (id) => {
+  if (!id) throw new Error("Parameter ID is required");
+  const response = await api.get(`${PARAMETER_BASE}/${id}`);
+  const data = response?.data;
+  if (data?.data) return data.data;
+  return data;
+};
+
+export const createParameter = async (payload) => {
+  if (!payload) throw new Error("Payload is required");
+  const response = await api.post(PARAMETER_BASE, payload);
+  return response?.data;
+};
+
+// ==================== Booking Service APIs ====================
+export const bookingService = {
+  // Lấy thông tin booking theo ID
+  getBookingById: async (bookingId) => {
+    const response = await api.get(
+      `testorder/api/Booking?bookingId=${bookingId}`
+    );
+    return response.data;
+  },
+
+  // Lấy thông tin test catalog
+  getTestCatalog: async (catalogId) => {
+    const response = await api.get(`testorder/api/TestCatalog/${catalogId}`);
+    return response.data;
+  },
+
+  // Lấy thông tin test bundle
+  getTestBundle: async (bundleId) => {
+    const response = await api.get(`testorder/api/TestBundle/${bundleId}`);
+    return response.data;
+  },
+
+  // Tạo VNPay URL
+  createVnPayUrl: async (bookingId, amount) => {
+    const response = await api.post(`testorder/api/Payment/vnpay-url`, {
+      bookingId,
+      amount,
+    });
+    return response.data;
+  },
+};
+
+// ==================== Default Export ====================
+const TestOrderServiceAPI = {
+  // Bundle APIs
   getAllBundles,
   getBundleById,
   createBundle,
@@ -124,6 +215,18 @@ const BundleServiceAPI = {
   getCatalogsOfBundle,
   addCatalogsToBundle,
   removeCatalogsFromBundle,
+  // Catalog APIs
+  getAllCatalogs,
+  getCatalogById,
+  createCatalog,
+  updateCatalog,
+  updateCatalogParameters,
+  // Parameter APIs
+  getAllParameters,
+  getParameterById,
+  createParameter,
+  // Booking Service
+  bookingService,
 };
 
-export default BundleServiceAPI;
+export default TestOrderServiceAPI;
