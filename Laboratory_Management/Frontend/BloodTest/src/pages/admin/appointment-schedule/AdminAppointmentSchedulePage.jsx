@@ -197,7 +197,6 @@ const AdminAppointmentSchedulePage = () => {
     const today = new Date();
     return formatDate(date) === formatDate(today);
   };
-
   const formatMonthYear = (date) => {
     const days = [
       "Chủ Nhật",
@@ -248,12 +247,14 @@ const AdminAppointmentSchedulePage = () => {
   const fetchAPITotal = async () => {
     try {
       const response = await api.get(
-        `testorder/api/Booking/info?date=${formatDate1(selectedDate)}&pageSize=1000&pageNumber=1`
+        `testorder/api/Booking/info?date=${formatDate1(
+          selectedDate
+        )}&pageSize=1000&pageNumber=1`
       );
       const data = response.data;
       if (Array.isArray(data)) {
         return data.length;
-      } 
+      }
       return 0;
     } catch (error) {
       return 0;
@@ -263,7 +264,9 @@ const AdminAppointmentSchedulePage = () => {
   const fetchAPI = async () => {
     try {
       const response = await api.get(
-        `testorder/api/Booking/info?date=${formatDate1(selectedDate)}&pageSize=${pageSize}&pageNumber=${currentPage}`
+        `testorder/api/Booking/info?date=${formatDate1(
+          selectedDate
+        )}&pageSize=${pageSize}&pageNumber=${currentPage}`
       );
       const data = response.data;
       const total = await fetchAPITotal();
@@ -550,19 +553,21 @@ const AdminAppointmentSchedulePage = () => {
 
           {/* Pagination */}
           {Booking.length > 0 && (
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'center', 
-              marginTop: '24px',
-              padding: '16px 0'
-            }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                marginTop: "24px",
+                padding: "16px 0",
+              }}
+            >
               <Pagination
                 current={currentPage}
                 total={total}
                 pageSize={pageSize}
                 showSizeChanger
                 showQuickJumper
-                pageSizeOptions={['5', '10', '20', '50']}
+                pageSizeOptions={["5", "10", "20", "50"]}
                 onChange={(page) => {
                   setCurrentPage(page);
                 }}

@@ -31,6 +31,4 @@ export const bookingService = {
   },
 };
 
-export const ManagerAppointmentSchedule = {
-  
-}
+export const ManagerAppointmentSchedule = {};
