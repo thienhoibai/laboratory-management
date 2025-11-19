@@ -57,8 +57,8 @@ namespace IAM.Application.Auth
                 PasswordHash = _passwords.Hash(request.Password),
                 FullName = request.FullName,
                 IsActive = true,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
             };
             _db.Users.Add(user);
 
@@ -66,13 +66,13 @@ namespace IAM.Application.Auth
             var customerRoleId = await _db.Roles.Where(r => r.Name == "Customer").Select(r => r.RoleId).FirstOrDefaultAsync(ct);
             if (customerRoleId != 0)
             {
-                _db.UserRoles.Add(new UserRole { UserId = user.UserId, RoleId = customerRoleId, AssignedAt = DateTime.UtcNow });
+                _db.UserRoles.Add(new UserRole { UserId = user.UserId, RoleId = customerRoleId, AssignedAt = DateTime.Now });
             }
             else
             {
                 var defaultRoleIds = await _db.Roles.Where(r => r.IsDefault).Select(r => r.RoleId).ToListAsync(ct);
                 foreach (var rid in defaultRoleIds)
-                    _db.UserRoles.Add(new UserRole { UserId = user.UserId, RoleId = rid, AssignedAt = DateTime.UtcNow });
+                    _db.UserRoles.Add(new UserRole { UserId = user.UserId, RoleId = rid, AssignedAt = DateTime.Now });
             }
 
             _db.AuditLogs.Add(new AuditLog
@@ -81,7 +81,7 @@ namespace IAM.Application.Auth
                 UserId = user.UserId,
                 Resource = $"User:{user.UserId}",
                 Description = "Self register",
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.Now
             });
 
             await _db.SaveChangesAsync(ct);
@@ -99,7 +99,7 @@ namespace IAM.Application.Auth
 
             // check lockout
             var sec = await _db.UserSecurities.FirstOrDefaultAsync(x => x.UserId == user.UserId, ct);
-            if (sec != null && sec.LockoutEnd.HasValue && sec.LockoutEnd.Value > DateTime.UtcNow)
+            if (sec != null && sec.LockoutEnd.HasValue && sec.LockoutEnd.Value > DateTime.Now)
             {
                 return OperationResult<LoginResponse>.Fail(ErrorCodes.AccountLocked);
             }
@@ -119,14 +119,14 @@ namespace IAM.Application.Auth
                 if (sec.FailedAccessCount >= MaxFailedAccess)
                 {
                     sec.FailedAccessCount = 0;
-                    sec.LockoutEnd = DateTime.UtcNow.Add(LockoutDuration);
+                    sec.LockoutEnd = DateTime.Now.Add(LockoutDuration);
                     _db.AuditLogs.Add(new AuditLog
                     {
                         Action = "LOCK_USER_AUTO",
                         UserId = user.UserId,
                         Resource = $"User:{user.UserId}",
                         Description = $"Auto lock after {MaxFailedAccess} failed attempts",
-                        CreatedAt = DateTime.UtcNow
+                        CreatedAt = DateTime.Now
                     });
                 }
 
@@ -170,19 +170,19 @@ namespace IAM.Application.Auth
                 RefreshTokenId = Guid.NewGuid(),
                 UserId = user.UserId,
                 TokenHash = refreshHash,
-                IssuedAt = DateTime.UtcNow,
-                ExpiresAt = DateTime.UtcNow.AddDays(7),
+                IssuedAt = DateTime.Now,
+                ExpiresAt = DateTime.Now.AddDays(7),
                 Revoked = false
             });
 
-            user.LastLoginAt = DateTime.UtcNow;
+            user.LastLoginAt = DateTime.Now;
             _db.AuditLogs.Add(new AuditLog
             {
                 Action = "LOGIN",
                 UserId = user.UserId,
                 Resource = $"User:{user.UserId}",
                 Description = "User login",
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.Now
             });
 
             await _db.SaveChangesAsync(ct);
@@ -195,7 +195,7 @@ namespace IAM.Application.Auth
             var refreshHash = _jwt.HashRefreshToken(request.RefreshToken);
             var token = await _db.RefreshTokens.Include(t => t.User)
                 .FirstOrDefaultAsync(t => t.TokenHash == refreshHash, ct);
-            if (token == null || token.Revoked || token.ExpiresAt <= DateTime.UtcNow || token.User == null || !token.User.IsActive)
+            if (token == null || token.Revoked || token.ExpiresAt <= DateTime.Now || token.User == null || !token.User.IsActive)
                 return OperationResult<RefreshResponse>.Fail(ErrorCodes.InvalidRefreshToken);
 
             var roleIds = await _db.UserRoles
@@ -228,8 +228,8 @@ namespace IAM.Application.Auth
                 RefreshTokenId = Guid.NewGuid(),
                 UserId = token.UserId,
                 TokenHash = _jwt.HashRefreshToken(newRefresh),
-                IssuedAt = DateTime.UtcNow,
-                ExpiresAt = DateTime.UtcNow.AddDays(7),
+                IssuedAt = DateTime.Now,
+                ExpiresAt = DateTime.Now.AddDays(7),
                 Revoked = false
             });
 
@@ -239,7 +239,7 @@ namespace IAM.Application.Auth
                 UserId = token.UserId,
                 Resource = $"User:{token.UserId}",
                 Description = "Token refreshed",
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.Now
             });
 
             await _db.SaveChangesAsync(ct);
@@ -261,7 +261,7 @@ namespace IAM.Application.Auth
                 UserId = token.UserId,
                 Resource = $"User:{token.UserId}",
                 Description = "User logout",
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.Now
             });
             await _db.SaveChangesAsync(ct);
             return OperationResult.Success();
@@ -291,7 +291,7 @@ namespace IAM.Application.Auth
                 PasswordHistoryId = Guid.NewGuid(),
                 UserId = userId,
                 PasswordHash = user.PasswordHash,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.Now
             });
 
             user.PasswordHash = _passwords.Hash(request.NewPassword);
@@ -302,7 +302,7 @@ namespace IAM.Application.Auth
                 UserId = userId,
                 Resource = $"User:{userId}",
                 Description = "User changed password",
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.Now
             });
 
             await _db.SaveChangesAsync(ct);
@@ -319,7 +319,7 @@ namespace IAM.Application.Auth
                     return OperationResult.Success();
                 }
 
-                var oneHourAgo = DateTime.UtcNow.AddHours(-1);
+                var oneHourAgo = DateTime.Now.AddHours(-1);
                 var recent = await _db.AuditLogs.CountAsync(a => a.UserId == user.UserId && a.Action == "FORGOT_PASSWORD" && a.CreatedAt >= oneHourAgo, ct);
                 if (recent >= MaxResetRequestsPerHour)
                 {
@@ -337,9 +337,9 @@ namespace IAM.Application.Auth
                     PasswordResetTokenId = Guid.NewGuid(),
                     UserId = user.UserId,
                     TokenHash = tokenHash,
-                    ExpiresAt = DateTime.UtcNow.Add(ResetTokenTtl),
+                    ExpiresAt = DateTime.Now.Add(ResetTokenTtl),
                     Attempts = 0,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.Now
                 });
 
                 _db.AuditLogs.Add(new AuditLog
@@ -348,7 +348,7 @@ namespace IAM.Application.Auth
                     UserId = user.UserId,
                     Resource = $"User:{user.UserId}",
                     Description = "Requested password reset",
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.Now
                 });
 
                 await _db.SaveChangesAsync(ct);
@@ -378,7 +378,7 @@ namespace IAM.Application.Auth
             if (prt == null) return OperationResult.Fail(ErrorCodes.InvalidResetToken);
 
             if (prt.UsedAt.HasValue) return OperationResult.Fail(ErrorCodes.ResetTokenUsed);
-            if (prt.ExpiresAt <= DateTime.UtcNow) return OperationResult.Fail(ErrorCodes.ResetTokenExpired);
+            if (prt.ExpiresAt <= DateTime.Now) return OperationResult.Fail(ErrorCodes.ResetTokenExpired);
             if (prt.Attempts >= MaxResetAttempts) return OperationResult.Fail(ErrorCodes.RateLimited);
 
             prt.Attempts++;
@@ -398,11 +398,11 @@ namespace IAM.Application.Auth
                 PasswordHistoryId = Guid.NewGuid(),
                 UserId = user.UserId,
                 PasswordHash = user.PasswordHash,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.Now
             });
 
             user.PasswordHash = _passwords.Hash(request.NewPassword);
-            prt.UsedAt = DateTime.UtcNow;
+            prt.UsedAt = DateTime.Now;
 
             _db.AuditLogs.Add(new AuditLog
             {
@@ -410,7 +410,7 @@ namespace IAM.Application.Auth
                 UserId = user.UserId,
                 Resource = $"User:{user.UserId}",
                 Description = "Password reset via email token",
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.Now
             });
 
             await _db.SaveChangesAsync(ct);

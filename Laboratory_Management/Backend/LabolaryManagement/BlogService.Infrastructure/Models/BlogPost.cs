@@ -11,7 +11,7 @@ public partial class BlogPost
 
     public string? Content { get; set; }
 
-    public long? AuthorId { get; set; }
+    public Guid? AuthorId { get; set; }
 
     public int? CategoryId { get; set; }
 
@@ -23,9 +23,9 @@ public partial class BlogPost
 
     public bool? IsApproved { get; set; }
 
-    public int Status { get; set; }
-
     public string? ThumbnailUrl { get; set; }
+
+    public int? Status { get; set; }
 
     public virtual Category? Category { get; set; }
 

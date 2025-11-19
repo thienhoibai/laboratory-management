@@ -1,20 +1,26 @@
 import React, { useState } from "react";
 import { useSelector } from "react-redux";
 import "./Payment.css";
+import { bookingService } from "../../apis/TestOrderServiceAPI";
+// import api from "../../configs/axios";
+// import { toast } from "react-toastify";
 
 export default function Payment({
   selectedItems,
   selectedDateTime,
-  onProceed, // legacy prop
-  onConfirmRequested, // new prop Booking passes to open modal
+  bookingId,
+  // onProceed, // legacy prop
+  // onConfirm,
+  // onFinish, // prop để gọi khi thanh toán thành công
 }) {
-  console.log("Payment props:", { onConfirmRequested });
   const [form, setForm] = useState({
     fullName: "Tuấn Lê",
     email: "email@example.com",
     phone: "0123321132",
     paymentMethod: "VnPay",
   });
+  // modal state moved into Payment
+  const [showWarningModal, setShowWarningModal] = useState(false);
 
   const { fullName, phone, email } = useSelector((state) => state.patient);
 
@@ -25,13 +31,41 @@ export default function Payment({
   const handleProceed = (e) => {
     // ensure no form submit
     if (e && e.preventDefault) e.preventDefault();
-    // prefer Booking's onConfirmRequested to show modal
-    if (typeof onConfirmRequested === "function") {
-      onConfirmRequested();
+    // show modal inside Payment; when modal confirmed, call parent onConfirm (or fallback)
+    setShowWarningModal(true);
+  };
+
+  const handleModalCancel = () => setShowWarningModal(false);
+  const amount = selectedItems?.total;
+  console.log(amount);
+  console.log(bookingId.instancesCode);
+  const handleModalConfirm = async () => {
+    setShowWarningModal(false);
+
+    if (!bookingId.instancesCode || !amount) {
+      console.error("Missing bookingId or amount to create VNPAY URL");
       return;
     }
-    // fallback to legacy onProceed if provided
-    if (typeof onProceed === "function") onProceed();
+
+    try {
+      const res = await bookingService.createVnPayUrl(
+        bookingId.instancesCode,
+        amount
+      );
+      // Lấy URL từ nhiều khả năng trả về
+      const url =
+        typeof res === "string"
+          ? res
+          : res?.data?.url || res?.data?.paymentUrl || res?.data;
+
+      if (typeof url === "string") {
+        window.location.assign(url);
+      } else {
+        console.error("Invalid VNPAY URL response:", res);
+      }
+    } catch (err) {
+      console.error("Failed to create VNPAY URL:", err);
+    }
   };
 
   return (
@@ -86,7 +120,7 @@ export default function Payment({
                   checked={form.paymentMethod === "credit"}
                   onChange={handleChange}
                 />
-                <img src="src\assets\icon\ATM.svg" />
+                <img src="src\\assets\\icon\\ATM.svg" />
                 <span>Thẻ Visa</span>
               </label>
 
@@ -98,7 +132,7 @@ export default function Payment({
                   checked={form.paymentMethod === "VnPay"}
                   onChange={handleChange}
                 />
-                <img src="src\assets\icon\Momo.svg" />
+                <img src="src\\assets\\icon\\Momo.svg" />
                 <span>VnPay</span>
               </label>
 
@@ -110,7 +144,7 @@ export default function Payment({
                   checked={form.paymentMethod === "momo"}
                   onChange={handleChange}
                 />
-                <img src="src\assets\icon\bank.svg" />
+                <img src="src\\assets\\icon\\bank.svg" />
                 <span>Ví Momo</span>
               </label>
             </div>
@@ -235,6 +269,42 @@ export default function Payment({
           </div>
         </div>
       </div>
+
+      {/* Modal warning / confirmation now rendered inside Payment */}
+      {showWarningModal && (
+        <div className="modal-overlay" role="dialog" aria-modal="true">
+          <div className="modal-dialog">
+            <div className="modal-title">Chính sách hoàn tiền</div>
+            <div className="modal-body-alert">
+              <p>
+                <strong>Lưu ý quan trọng:</strong>
+              </p>
+              <ul>
+                <li id>
+                  Thanh toán sẽ <strong>không được hoàn</strong> nếu hủy trong
+                  vòng 24 giờ trước lịch hẹn.
+                </li>
+                <li>
+                  Nếu lịch hẹn vào thứ 7 hoặc chủ nhật, sẽ không được hoàn tiền
+                  khi hủy.
+                </li>
+              </ul>
+              <p>Bạn có chắc chắn muốn tiếp tục thanh toán?</p>
+            </div>
+            <div className="modal-actions">
+              <button className="btn-modal-cancel" onClick={handleModalCancel}>
+                Hủy
+              </button>
+              <button
+                className="btn-modal-confirm"
+                onClick={handleModalConfirm}
+              >
+                Xác nhận
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

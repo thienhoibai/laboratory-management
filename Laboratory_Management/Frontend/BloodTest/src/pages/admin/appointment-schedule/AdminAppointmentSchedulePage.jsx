@@ -1,4 +1,6 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect } from "react";
+import { toast } from "react-toastify";
+import { Pagination } from "antd";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import {
   FiCalendar,
@@ -10,13 +12,15 @@ import {
   FiCheck,
 } from "react-icons/fi";
 import {
-  mockAppointments,
   appointmentStatuses,
   timeSlots,
   getAppointmentCountBySlot,
   getStatusInfo,
 } from "../../../data/appointment";
 import "./AdminAppointmentSchedulePage.css";
+import api from "../../../configs/axios";
+import { formatDate1 } from "../../../utils/formatDate";
+// import { CgLayoutGrid } from "react-icons/cg";
 
 const AdminAppointmentSchedulePage = () => {
   const [selectedDate, setSelectedDate] = useState(new Date()); // Ngày hiện tại
@@ -28,7 +32,13 @@ const AdminAppointmentSchedulePage = () => {
   const [editingStatus, setEditingStatus] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
-  const itemsPerPage = 7;
+  const [pageSize, setPageSize] = useState(5);
+  const [total, setTotal] = useState(0);
+
+  const [Booking, SetBookings] = useState([]);
+  const [checkingInId, setCheckingInId] = useState(null);
+  const [checkingOutId, setCheckingOutId] = useState(null); // track check-out
+  const totalFetchedRef = React.useRef(false); // Đánh dấu đã fetch total chưa
 
   // Format date to YYYY-MM-DD
   const formatDate = (date) => {
@@ -60,7 +70,7 @@ const AdminAppointmentSchedulePage = () => {
     const month = currentMonth.getMonth();
 
     const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
+    // const lastDay = new Date(year, month + 1, 0);
     const startDate = new Date(firstDay);
 
     // Start from Monday of the week containing the 1st
@@ -80,39 +90,12 @@ const AdminAppointmentSchedulePage = () => {
 
   const calendarDays = getCalendarDays();
 
-  // Filter appointments
-  const filteredAppointments = useMemo(() => {
-    const selectedDateStr = formatDate(selectedDate);
-    let filtered = mockAppointments.filter(
-      (apt) => apt.appointmentDate === selectedDateStr
-    );
-
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (apt) =>
-          apt.patientName.toLowerCase().includes(query) ||
-          apt.email.toLowerCase().includes(query) ||
-          apt.phone.includes(query) ||
-          apt.bookingCode.toLowerCase().includes(query)
-      );
-    }
-
-    return filtered;
-  }, [selectedDate, searchQuery]);
-
-  // Pagination
-  const totalPages = Math.ceil(filteredAppointments.length / itemsPerPage);
-  const paginatedAppointments = filteredAppointments.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
   // Handle date selection
   const handleDateSelect = (date) => {
     setSelectedDate(date);
-    setCurrentPage(1);
+    setCurrentPage(1); // Reset về trang 1 khi đổi ngày
     setIsDatePickerOpen(false);
+    totalFetchedRef.current = false; // Reset để fetch total lại khi đổi ngày
   };
 
   // Handle month navigation in calendar picker
@@ -259,6 +242,96 @@ const AdminAppointmentSchedulePage = () => {
     return nextDate <= maxDate;
   };
 
+  // Hàm để lấy tổng số items nếu API không trả về total
+  const fetchAPITotal = async () => {
+    try {
+      const response = await api.get(
+        `testorder/api/Booking/info?date=${formatDate1(
+          selectedDate
+        )}&pageSize=1000&pageNumber=1`
+      );
+      const data = response.data;
+      if (Array.isArray(data)) {
+        return data.length;
+      }
+      return 0;
+    } catch (error) {
+      console.log(error || "Lỗi");
+      return 0;
+    }
+  };
+
+  const fetchAPI = async () => {
+    try {
+      const response = await api.get(
+        `testorder/api/Booking/info?date=${formatDate1(
+          selectedDate
+        )}&pageSize=${pageSize}&pageNumber=${currentPage}`
+      );
+      const data = response.data;
+      const total = await fetchAPITotal();
+      if (response.status >= 200 && response.status < 300) {
+        SetBookings(data);
+        setTotal(total);
+      }
+      return [];
+    } catch (error) {
+      console.log(error || "Lỗi");
+      return [];
+    }
+  };
+
+  useEffect(() => {
+    // Reset totalFetchedRef khi đổi ngày
+    if (selectedDate) {
+      totalFetchedRef.current = false;
+    }
+    fetchAPI();
+  }, [selectedDate, currentPage, pageSize]);
+
+  const handleCheckin = async (bookingId) => {
+    try {
+      setCheckingInId(bookingId);
+      const response = await api.put(
+        `testorder/api/Booking/check-in?bookingId=${bookingId}`
+      );
+      const data = response.data || {};
+
+      if (data.responseCode === 0 || data.responseCode < 0) {
+        toast.error(data.message || "Không thể check-in.");
+        return;
+      }
+
+      toast.success("Check in thành công!");
+      await fetchAPI();
+    } catch (err) {
+      const message =
+        err.response?.data?.message || "Check-in thất bại. Vui lòng thử lại.";
+      toast.error(message);
+      console.error("Check-in failed:", err);
+    } finally {
+      setCheckingInId(null);
+    }
+  };
+
+  const handleCheckout = async (bookingId) => {
+    try {
+      setCheckingOutId(bookingId);
+      const response = await api.put(
+        `testorder/api/Booking/check-out?bookingId=${bookingId}`
+      );
+
+      if (response.status >= 200 && response.status < 300) {
+        toast.success("Check In thành công!!");
+        await fetchAPI();
+      }
+    } catch (err) {
+      console.error("Check-out failed:", err);
+    } finally {
+      setCheckingOutId(null);
+    }
+  };
+
   return (
     <AdminLayout
       pageTitle="Quản lý lịch xét nghiệm"
@@ -401,28 +474,58 @@ const AdminAppointmentSchedulePage = () => {
                   <th>Email</th>
                   <th>Số điện thoại</th>
                   <th>Mã đặt lịch</th>
-                  <th>Giờ</th>
+                  <th>Ngày Khám</th>
+                  <th>Giờ Khám</th>
                   <th>Trạng thái</th>
+                  <th>Thao Tác</th>
                   <th>Hành động</th>
                 </tr>
               </thead>
               <tbody>
-                {paginatedAppointments.length > 0 ? (
-                  paginatedAppointments.map((appointment) => {
-                    const statusInfo = getStatusInfo(appointment.status);
+                {Booking.length > 0 ? (
+                  Booking.map((appointment) => {
+                    const status = String(appointment.status).toLowerCase();
+                    const isConfirmed = status === "confirmed";
+                    const isCheckedIn =
+                      status === "checked-in" || status === "checkedin";
+                    const isCheckingIn = checkingInId === appointment.bookingId;
+                    const isCheckingOut =
+                      checkingOutId === appointment.bookingId;
+
                     return (
-                      <tr key={appointment.id}>
+                      <tr key={appointment.bookingId}>
                         <td>{appointment.patientName}</td>
-                        <td>{appointment.email}</td>
-                        <td>{appointment.phone}</td>
+                        <td>{appointment.patientEmail}</td>
+                        <td>{appointment.patientPhoneNumber}</td>
                         <td>{appointment.bookingCode}</td>
-                        <td>{appointment.appointmentTime}</td>
+                        <td>{appointment.slotInfo.appointmentDate}</td>
+                        <td>{appointment.slotInfo.timeBlock}</td>
+                        <td>{appointment.status}</td>
                         <td>
-                          <span
-                            className={`status-badge ${appointment.status}`}
-                          >
-                            {statusInfo.label}
-                          </span>
+                          {isConfirmed && (
+                            <button
+                              onClick={() =>
+                                handleCheckin(appointment.bookingId)
+                              }
+                              disabled={isCheckingIn}
+                              className="CheckIn-Button"
+                            >
+                              {isCheckingIn ? "Đang check in..." : "Check In"}
+                            </button>
+                          )}
+                          {isCheckedIn && (
+                            <button
+                              onClick={() =>
+                                handleCheckout(appointment.bookingId)
+                              }
+                              disabled={isCheckingOut}
+                              className="CheckIn-Button"
+                            >
+                              {isCheckingOut
+                                ? "Đang check out..."
+                                : "Check Out"}
+                            </button>
+                          )}
                         </td>
                         <td>
                           <button
@@ -450,47 +553,30 @@ const AdminAppointmentSchedulePage = () => {
           </div>
 
           {/* Pagination */}
-          {filteredAppointments.length > 0 && (
-            <div className="pagination">
-              <div className="pagination-info">
-                Hiện thị {(currentPage - 1) * itemsPerPage + 1} đến{" "}
-                {Math.min(
-                  currentPage * itemsPerPage,
-                  filteredAppointments.length
-                )}{" "}
-                trong {filteredAppointments.length} lịch hẹn
-              </div>
-              <div className="pagination-controls">
-                <button
-                  className="pagination-button"
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                >
-                  Trước
-                </button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                  (page) => (
-                    <button
-                      key={page}
-                      className={`pagination-button ${
-                        currentPage === page ? "active" : ""
-                      }`}
-                      onClick={() => setCurrentPage(page)}
-                    >
-                      {page}
-                    </button>
-                  )
-                )}
-                <button
-                  className="pagination-button"
-                  onClick={() =>
-                    setCurrentPage((p) => Math.min(totalPages, p + 1))
-                  }
-                  disabled={currentPage === totalPages}
-                >
-                  Sau
-                </button>
-              </div>
+          {Booking.length > 0 && (
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                marginTop: "24px",
+                padding: "16px 0",
+              }}
+            >
+              <Pagination
+                current={currentPage}
+                total={total}
+                pageSize={pageSize}
+                showSizeChanger
+                showQuickJumper
+                pageSizeOptions={["5", "10", "20", "50"]}
+                onChange={(page) => {
+                  setCurrentPage(page);
+                }}
+                onShowSizeChange={(current, size) => {
+                  setPageSize(size);
+                  setCurrentPage(1); // Reset về trang 1 khi đổi pageSize
+                }}
+              />
             </div>
           )}
         </div>
@@ -517,59 +603,61 @@ const AdminAppointmentSchedulePage = () => {
             </div>
 
             <div className="modal-body">
-              <div className="modal-info-grid">
-                <div className="modal-info-item">
-                  <span className="modal-info-label">Mã đặt lịch</span>
-                  <span className="modal-info-value">
-                    {selectedAppointment.bookingCode}
-                  </span>
+              <div className="modal-info-1">
+                <div className="modal-info-grid">
+                  <div className="modal-info-item">
+                    <span className="modal-info-label">Mã đặt lịch</span>
+                    <span className="modal-info-value">
+                      {selectedAppointment.bookingCode}
+                    </span>
+                  </div>
+                  <div className="modal-info-item">
+                    <span className="modal-info-label">Giờ hẹn hiện tại</span>
+                    <span className="modal-info-value">
+                      {selectedAppointment.slotInfo.timeBlock}
+                    </span>
+                  </div>
                 </div>
-                <div className="modal-info-item">
-                  <span className="modal-info-label">Giờ hẹn hiện tại</span>
-                  <span className="modal-info-value">
-                    {selectedAppointment.appointmentTime}
-                  </span>
-                </div>
-              </div>
 
-              <div className="modal-section">
-                <h3 className="modal-section-title">Trạng thái</h3>
-                <div className="status-dropdown">
-                  <button
-                    className="status-dropdown-button"
-                    onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
-                  >
-                    <span>{getStatusInfo(editingStatus).label}</span>
-                    <FiChevronRight
-                      style={{
-                        transform: statusDropdownOpen
-                          ? "rotate(90deg)"
-                          : "rotate(0deg)",
-                        transition: "transform 0.2s",
-                      }}
-                    />
-                  </button>
-                  {statusDropdownOpen && (
-                    <div className="status-dropdown-menu">
-                      {appointmentStatuses.map((status) => (
-                        <div
-                          key={status.value}
-                          className={`status-dropdown-item ${
-                            editingStatus === status.value ? "selected" : ""
-                          }`}
-                          onClick={() => {
-                            setEditingStatus(status.value);
-                            setStatusDropdownOpen(false);
-                          }}
-                        >
-                          {editingStatus === status.value && (
-                            <FiCheck size={16} />
-                          )}
-                          <span>{status.label}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                <div className="modal-section">
+                  <h3 className="modal-section-title">Trạng thái</h3>
+                  <div className="status-dropdown">
+                    <button
+                      className="status-dropdown-button"
+                      onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
+                    >
+                      <span>{getStatusInfo(editingStatus).label}</span>
+                      <FiChevronRight
+                        style={{
+                          transform: statusDropdownOpen
+                            ? "rotate(90deg)"
+                            : "rotate(0deg)",
+                          transition: "transform 0.2s",
+                        }}
+                      />
+                    </button>
+                    {statusDropdownOpen && (
+                      <div className="status-dropdown-menu">
+                        {appointmentStatuses.map((status) => (
+                          <div
+                            key={status.value}
+                            className={`status-dropdown-item ${
+                              editingStatus === status.value ? "selected" : ""
+                            }`}
+                            onClick={() => {
+                              setEditingStatus(status.value);
+                              setStatusDropdownOpen(false);
+                            }}
+                          >
+                            {editingStatus === status.value && (
+                              <FiCheck size={16} />
+                            )}
+                            <span>{status.label}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 

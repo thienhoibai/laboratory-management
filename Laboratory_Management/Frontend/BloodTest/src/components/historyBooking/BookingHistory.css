@@ -142,10 +142,11 @@
   flex: 0 1 auto;
 }
 .booking-card-header .booking-time {
-  color: #6b7280;
-  font-size: 14px;
+  color: black;
+  font-size: 18px;
   white-space: nowrap;
   flex: 0 0 auto;
+  font-weight: bolder;
 }
 
 /* created at / đặt lịch -- full-width centered small bar (add element class .booking-created in markup or reuse .booking-created text) */
