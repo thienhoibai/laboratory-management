@@ -42,46 +42,53 @@ export default function MedicalRecordDetail() {
         const response = await api.get(
           `testorder/api/Booking/patient?patientId=${patientId}&pageNumber=1&pageSize=100`
         );
-        
+
         if (response.status >= 200 && response.status < 300) {
-          const bookings = Array.isArray(response.data) 
-            ? response.data 
+          const bookings = Array.isArray(response.data)
+            ? response.data
             : response.data?.items || response.data?.data || [];
-          
+
           // Xử lý từng booking để lấy thông tin gói hoặc catalog
           const processedBookings = await Promise.all(
             bookings.map(async (booking) => {
               let title = "Xét nghiệm";
-              
+
               // Nếu có bundleId, lấy tên gói
               if (booking.bundleId) {
                 try {
-                  const bundleData = await bookingService.getTestBundle(booking.bundleId);
-                  title = bundleData?.bundleName || bundleData?.name || "Gói xét nghiệm";
+                  const bundleData = await bookingService.getTestBundle(
+                    booking.bundleId
+                  );
+                  title =
+                    bundleData?.bundleName ||
+                    bundleData?.name ||
+                    "Gói xét nghiệm";
                 } catch (error) {
                   console.error("Error fetching bundle:", error);
                   title = "Gói xét nghiệm";
                 }
-              } 
+              }
               // Nếu không có bundleId nhưng có testCatalogs, lấy testName từ các catalog
-              else if (booking.testCatalogs && Array.isArray(booking.testCatalogs) && booking.testCatalogs.length > 0) {
+              else if (
+                booking.testCatalogs &&
+                Array.isArray(booking.testCatalogs) &&
+                booking.testCatalogs.length > 0
+              ) {
                 try {
-                  const catalogPromises = booking.testCatalogs.map((catalogId) =>
-                    bookingService.getTestCatalog(catalogId)
+                  const catalogPromises = booking.testCatalogs.map(
+                    (catalogId) => bookingService.getTestCatalog(catalogId)
                   );
                   const catalogs = await Promise.all(catalogPromises);
                   const testNames = catalogs
                     .map((cat) => cat?.testName || cat?.name)
                     .filter(Boolean);
-                  title = testNames.length > 0 
-                    ? testNames.join(", ") 
-                    : "Xét nghiệm";
+                  title =
+                    testNames.length > 0 ? testNames.join(", ") : "Xét nghiệm";
                 } catch (error) {
                   console.error("Error fetching catalogs:", error);
                   title = "Xét nghiệm";
                 }
               }
-              
               // Format ngày
               const formatDate = (dateStr) => {
                 if (!dateStr) return "—";
@@ -97,18 +104,21 @@ export default function MedicalRecordDetail() {
                   return dateStr;
                 }
               };
-              
+
               return {
                 id: booking.bookingId || booking.id,
                 title: title,
-                date: formatDate(booking.slotInfo?.appointmentDate || booking.appointmentDate),
-                location: booking.slotInfo?.location || "Phòng khám Xét nghiệm Y tế, 123 Nguyễn Huệ, Q.1, TP.HCM",
+                date: formatDate(
+                  booking.slotInfo?.appointmentDate || booking.appointmentDate
+                ),
+                location:
+                  booking.slotInfo?.location ||
+                  "Phòng khám Xét nghiệm Y tế, 123 Nguyễn Huệ, Q.1, TP.HCM",
                 status: booking.status || "completed",
                 booking: booking, // Lưu toàn bộ booking data để dùng sau
               };
             })
           );
-          
           setAppointmentHistory(processedBookings);
         }
       } catch (error) {
@@ -118,7 +128,6 @@ export default function MedicalRecordDetail() {
         setLoading(false);
       }
     };
-    
     fetchBookingHistory();
   }, [patientId]);
 
@@ -253,7 +262,9 @@ export default function MedicalRecordDetail() {
             </div>
             <div className="info-content">
               <span className="info-label">Số bảo hiểm y tế</span>
-              <span className="info-value">{patients?.insuranceNumber || patients?.healthInsurance || "—"}</span>
+              <span className="info-value">
+                {patients?.insuranceNumber || patients?.healthInsurance || "—"}
+              </span>
             </div>
           </div>
 
@@ -275,7 +286,10 @@ export default function MedicalRecordDetail() {
             </div>
             <div className="info-content">
               <span className="info-label">Ngày sinh</span>
-              <span className="info-value">{patients?.dateOfBirth} ({calculateAge(patients?.dateOfBirth)} Tuổi)</span>
+              <span className="info-value">
+                {patients?.dateOfBirth} ({calculateAge(patients?.dateOfBirth)}{" "}
+                Tuổi)
+              </span>
             </div>
           </div>
 
@@ -293,7 +307,9 @@ export default function MedicalRecordDetail() {
             </div>
             <div className="info-content">
               <span className="info-label">Giới tính</span>
-              <span className="info-value">{patients?.gender == 1 ? "Nam" : "Nữ"}</span>
+              <span className="info-value">
+                {patients?.gender == 1 ? "Nam" : "Nữ"}
+              </span>
             </div>
           </div>
 
@@ -385,62 +401,9 @@ export default function MedicalRecordDetail() {
             </div>
           ) : (
             appointmentHistory.map((appointment) => (
-            <div key={appointment.id} className="appointment-card-wrapper">
-              <div className="appointment-card">
-                <div className="appointment-icon">
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                    <polyline points="14,2 14,8 20,8" />
-                    <line x1="16" y1="13" x2="8" y2="13" />
-                    <line x1="16" y1="17" x2="8" y2="17" />
-                    <polyline points="10,9 9,9 8,9" />
-                  </svg>
-                </div>
-                <div className="appointment-content">
-                  <h3 className="appointment-title">{appointment.title}</h3>
-                  <div className="appointment-info">
-                    <div className="appointment-date">
-                      <svg
-                        className="date-icon"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <rect
-                          x="3"
-                          y="4"
-                          width="18"
-                          height="18"
-                          rx="2"
-                          ry="2"
-                        />
-                        <line x1="16" y1="2" x2="16" y2="6" />
-                        <line x1="8" y1="2" x2="8" y2="6" />
-                        <line x1="3" y1="10" x2="21" y2="10" />
-                      </svg>
-                      <span>Ngày xét nghiệm: {appointment.date}</span>
-                    </div>
-                    <div className="appointment-location">
-                      <span>Khám tại: {appointment.location}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="appointment-actions">
-                  <button
-                    className={`view-detail-btn ${
-                      expandedTests[appointment.id] ? "active" : ""
-                    }`}
-                    onClick={() => toggleTestDetail(appointment.id)}
-                  >
-                    {expandedTests[appointment.id] ? "Ẩn" : "Xem"} chi tiết kết
-                      quả
-                      <div>
+              <div key={appointment.id} className="appointment-card-wrapper">
+                <div className="appointment-card">
+                  <div className="appointment-icon">
                     <svg
                       viewBox="0 0 24 24"
                       fill="none"
@@ -513,12 +476,6 @@ export default function MedicalRecordDetail() {
                   </div>
                 )}
               </div>
-              {expandedTests[appointment.id] && (
-                <div className="test-detail-dropdown">
-                  <TestResultDetail test={appointment} inline={true} />
-                </div>
-              )}
-            </div>
             ))
           )}
         </div>
