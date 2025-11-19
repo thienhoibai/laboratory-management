@@ -29,7 +29,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Config
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
 builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
-builder.Services.AddHealthChecks();
+builder.Services.AddHealthChecks(); 
 
 // MVC + Filters
 builder.Services.AddControllers();
@@ -132,8 +132,8 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy.WithOrigins(
-            "http://localhost:5174",
-            "http://127.0.0.1:5174"
+            "http://localhost:5174",   
+            "http://127.0.0.1:5174"   
         )
         .AllowAnyHeader()
         .AllowAnyMethod()
