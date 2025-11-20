@@ -36,12 +36,13 @@ namespace TestOrder.Application.Services.Booking
             foreach (var slot in appointmentSlots)
             {
                 var slotBookings = await _bookingRepository.GetBookingsByAppointmentSlotSearchableAsync
-                    (slot.SlotId, keyword, sortBy, sortDirection);
+                    (slot.SlotId, keyword);
                 bookings = bookings.Concat(slotBookings!);
             }
 
-            bookings = bookings.Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize).ToList();
+            IEnumerable<Infrastructure.Models.Booking>? enumerable = await _bookingRepository.SortingAndPaging
+                (sortBy, sortDirection, pageSize, pageNumber, bookings);
+            bookings = enumerable;
 
 
             var bookingResponses = new List<BookingResponseDTO>();
