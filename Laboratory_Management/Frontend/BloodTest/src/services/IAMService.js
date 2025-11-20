@@ -4,7 +4,7 @@ import { Form } from "antd";
 import { IAMServiceAPI } from "../apis/IAMServiceAPI";
 import { toast } from "react-toastify";
 import { jwtDecode } from "jwt-decode";
-import { setUserData } from "../utils/auth";
+import { setUserData, setAuthToken } from "../utils/auth";
 
 export const useResetPassword = () => {
   const navigate = useNavigate();
@@ -281,4 +281,51 @@ export const useRegister = () => {
     }
   };
   return { onFinish, apiErrors, form, setApiErrors };
+};
+
+export const useChangePassword = ({ open, onClose } = {}) => {
+  const [form] = Form.useForm();
+  const [loading, setLoading] = useState(false);
+  const token = localStorage.getItem("accessToken");
+  const passwordPattern =
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+
+  // Make onClose safe to call even if not provided
+  const safeOnClose = typeof onClose === "function" ? onClose : () => {};
+
+  const handleSubmit = async (values) => {
+    setLoading(true);
+    setAuthToken(token);
+    try {
+      const response = await IAMServiceAPI.ChangePassword(
+        values.oldPassword,
+        values.newPassword
+      );
+
+      if (response.status >= 200 && response.status < 300) {
+        toast.success("Đổi mật khẩu thành công!");
+        form.resetFields();
+        safeOnClose();
+      }
+    } catch (err) {
+      const serverMsg =
+        (typeof err?.response?.data === "string" && err.response.data) ||
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        "Đổi mật khẩu thất bại.";
+      toast.error(serverMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
+  // return safe values (open -> boolean, onClose -> safe function)
+  return {
+    handleSubmit,
+    loading,
+    passwordPattern,
+    onClose: safeOnClose,
+    open: !!open,
+    form,
+  };
 };

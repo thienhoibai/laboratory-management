@@ -59,16 +59,16 @@ namespace IAM.Application.Auth
                     FullName = name,
                     AuthProvider = "Google",
                     IsActive = true,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow,
-                    EmailVerifiedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now,
+                    EmailVerifiedAt = DateTime.Now
                 };
                 _db.Users.Add(user);
 
                 var customerRoleId = await _db.Roles.Where(r => r.Name == "Customer").Select(r => r.RoleId).FirstOrDefaultAsync(ct);
                 if (customerRoleId != 0)
                 {
-                    _db.UserRoles.Add(new UserRole { UserId = user.UserId, RoleId = customerRoleId, AssignedAt = DateTime.UtcNow });
+                    _db.UserRoles.Add(new UserRole { UserId = user.UserId, RoleId = customerRoleId, AssignedAt = DateTime.Now });
                 }
             }
 
@@ -84,8 +84,8 @@ namespace IAM.Application.Auth
                 RefreshTokenId = Guid.NewGuid(),
                 UserId = user.UserId,
                 TokenHash = refreshHash,
-                IssuedAt = DateTime.UtcNow,
-                ExpiresAt = DateTime.UtcNow.AddDays(7),
+                IssuedAt = DateTime.Now,
+                ExpiresAt = DateTime.Now.AddDays(7),
             });
 
             _db.AuditLogs.Add(new AuditLog
@@ -95,7 +95,7 @@ namespace IAM.Application.Auth
                 Resource = $"User:{user.UserId}",
                 Description = $"Login via Google: {email}",
                 ActorIp = ip,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.Now
             });
 
             await _db.SaveChangesAsync(ct);
