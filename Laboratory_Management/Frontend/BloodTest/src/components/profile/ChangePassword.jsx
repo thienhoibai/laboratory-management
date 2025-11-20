@@ -1,44 +1,14 @@
-import React, { useState } from "react";
+import React from "react";
 import { Modal, Form, Input, Button } from "antd";
-import { setAuthToken } from "../../utils/auth";
-import api from "../../configs/axios";
-import { toast } from "react-toastify";
+import { useChangePassword } from "../../services/IAMService";
 
-const URL = "iam/api/Auth/change-password";
-
-const ChangePasswordModal = ({ open, onClose }) => {
-  const [form] = Form.useForm();
-  const [loading, setLoading] = useState(false);
-  const token = localStorage.getItem("accessToken");
-  const passwordPattern =
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
-
-  const handleSubmit = async (values) => {
-    setLoading(true);
-    setAuthToken(token);
-    try {
-      const response = await api.post(URL, {
-        currentPassword: values.oldPassword,
-        newPassword: values.newPassword,
-      });
-
-      if (response.status >= 200 && response.status < 300) {
-        toast.success(response?.data?.message || "Đổi mật khẩu thành công!");
-        form.resetFields();
-        onClose();
-      }
-    } catch (err) {
-      const serverMsg =
-        (typeof err?.response?.data === "string" && err.response.data) ||
-        err?.response?.data?.message ||
-        err?.response?.data?.error ||
-        err?.message ||
-        "Đổi mật khẩu thất bại.";
-      toast.error(serverMsg);
-    } finally {
-      setLoading(false);
-    }
-  };
+const ChangePasswordModal = ({
+  open: propOpen = false,
+  onClose: propOnClose = () => {},
+}) => {
+  // pass props into hook so hook knows open/onClose from parent
+  const { handleSubmit, loading, passwordPattern, onClose, open, form } =
+    useChangePassword({ open: propOpen, onClose: propOnClose });
 
   return (
     <Modal
