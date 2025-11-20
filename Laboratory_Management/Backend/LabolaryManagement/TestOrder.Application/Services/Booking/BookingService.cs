@@ -165,6 +165,8 @@ namespace TestOrder.Application.Services.Booking
 
 
 
+
+
             if (!_appointmentSlotService.IsAppointmentSlotExists(
                     bookingRequest.slotDTO.AppointmentDate,
                     bookingRequest.slotDTO.TimeBlock))

@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { useDispatch } from "react-redux";
+import { setPatient } from "../../data/patientSlice";
 import { useNavigate } from "react-router-dom";
 import "./ProfilePage.css";
 import { setAuthToken } from "../../utils/auth";
@@ -37,6 +39,7 @@ const initialFormData = {
 // Add: expose Option from Select
 const { Option } = Select;
 
+// ===== MAIN PROFILE PAGE COMPONENT =====
 export default function ProfilePage() {
   // ===== STATE =====
   const [activeTab, setActiveTab] = useState("personal");

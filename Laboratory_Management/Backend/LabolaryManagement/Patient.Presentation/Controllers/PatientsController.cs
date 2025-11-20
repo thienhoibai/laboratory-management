@@ -107,4 +107,24 @@ public class PatientsController : ControllerBase
         }
         return NoContent();
     }
+    [HttpGet("all")]
+    public async Task<IActionResult> GetAll(CancellationToken ct)
+    {
+        // Lấy toàn bộ không filter
+        var (items, total) = await _service.ListAsync(
+            page: 1,
+            pageSize: 10000,   // load all
+            name: null,
+            dob: null,
+            isDeleted: null,
+            sortBy: "createdAt",
+            sortDir: "desc",
+            idLast4: null,
+            phoneLast4: null,
+            ct
+        );
+
+        return Ok(new { total, items });
+    }
+
 }

@@ -56,8 +56,14 @@ namespace BlogService.Application.Services
                 throw new Exception("Bài viết không tồn tại.");
 
             post.Title = dto.Title ?? post.Title;
+            post.ThumbnailUrl = dto.ThumbnailUrl ?? post.ThumbnailUrl;
             post.Content = dto.Content ?? post.Content;
-            
+            post.CategoryId = dto.CategoryId ?? post.CategoryId;
+            if (dto.AuthorId.HasValue)
+                post.AuthorId = dto.AuthorId.Value;
+
+            post.UpdatedDate = DateTime.Now;
+
             post.UpdatedDate = DateTime.Now;
 
             await _repository.UpdateAsync(post);
