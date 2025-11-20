@@ -19,6 +19,8 @@ CREATE TABLE BlogPost(
  IsPublished BIT DEFAULT 0,
  IsApproved BIT DEFAULT 0,
  ThumbnailUrl NVARCHAR(500),
+ Status INT DEFAULT 0  -- 0 = Chờ duyệt, 1 = Đã duyệt, 2 = Đã hủy
+
 );
  ALTER TABLE BlogPost
 ADD Status INT DEFAULT 0;  -- 0 = Chờ duyệt, 1 = Đã duyệt, 2 = Đã hủy
@@ -40,13 +42,13 @@ Content NVARCHAR(max),
 CreatedDate DATETIME,
 IsUpdated BIT
 );
+ ALTER TABLE BlogPost
 
 
 
 select * from BlogPost
+select * from Category
+select * from BlogPostTag
 
 
-
-CREATE DATABASE BlogServiceDB;
-GO
 
