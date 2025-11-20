@@ -51,9 +51,19 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
+.parameters-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
 /* Search Section */
 .search-section {
-  margin-bottom: 24px;
+  flex: 1;
+  min-width: 260px;
 }
 
 .search-box {
@@ -138,33 +148,9 @@
   color: #2e7d32;
 }
 
-.action-buttons {
-  display: flex;
-  gap: 8px;
-}
-
-.action-button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 6px;
-  transition: background 0.2s;
-  color: #666;
-}
-
-.action-button:hover {
-  background: #f0f0f0;
-}
-
-.action-button.edit:hover {
-  background: #e3f2fd;
-  color: #1976d2;
-}
-
-.action-button.delete:hover {
-  background: #ffebee;
-  color: #c62828;
+.page-info {
+  font-size: 14px;
+  color: #555;
 }
 
 /* Modal Overlay */
@@ -266,6 +252,12 @@
 
 .form-group {
   margin-bottom: 20px;
+}
+
+.form-hint {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin-bottom: 12px;
 }
 
 /* Remove bottom margin for form-groups inside form-row */
@@ -375,6 +367,12 @@
 .modal-button.primary:active:not(:disabled) {
   transform: translateY(0);
   box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+}
+
+.parameters-pagination {
+  margin-top: 24px;
+  display: flex;
+  justify-content: center;
 }
 
 /* Responsive */
