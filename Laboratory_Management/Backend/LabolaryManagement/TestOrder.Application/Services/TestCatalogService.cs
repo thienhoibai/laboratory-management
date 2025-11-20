@@ -15,9 +15,40 @@ namespace TestOrder.Application.Services
             _repository = repository;
         }
 
-        public async Task<object> GetAllCatalogAsync(int page = 1, int pageSize = 10, string? search = null)
+        TestCatalogResponseDTO MapToDTO(TestCatalog catalog)
+        {
+            var dto = new TestCatalogResponseDTO
+            {
+                Id = catalog.CatalogId,
+                CatalogName = catalog.TestName,
+                Description = catalog.Description,
+                Price = catalog.Price,
+                Parameters = new List<TestParameterDTO>()
+            };
+            foreach (var param in catalog.Parameters)
+            {
+                dto.Parameters.Add(new TestParameterDTO
+                {
+                    ParameterName = param.ParameterName,
+                    Unit = param.Unit,
+                    ReferenceRange = param.ReferenceRange
+                });
+            }
+            return dto;
+        }
+
+        public async Task<object> GetAllCatalogAsync(int page, int pageSize, string? search)
         {
             var (items, totalItems) = await _repository.GetAllPagedAsync(page, pageSize, search);
+
+            
+
+            List<TestCatalogResponseDTO> catalogDTOs = new List<TestCatalogResponseDTO>();
+
+            foreach (var catalog in items)
+            {
+                catalogDTOs.Add(MapToDTO(catalog));
+            }
 
             return new
             {
@@ -25,13 +56,15 @@ namespace TestOrder.Application.Services
                 page,
                 pageSize,
                 totalPages = (int)Math.Ceiling(totalItems / (double)pageSize),
-                items
+                catalogDTOs
             };
         }
 
-        public async Task<TestCatalog> GetByIdAsync(int id)
+        public async Task<TestCatalogResponseDTO> GetByIdAsync(int id)
         {
-            return await _repository.GetByIdAsync(id);
+            var catalog = await _repository.GetByIdAsync(id);
+            var catalogDTO = MapToDTO(catalog);
+            return catalogDTO;
         }
 
         public async Task AddCatalogAsync(TestCatalogDTO catalog)
@@ -79,6 +112,15 @@ namespace TestOrder.Application.Services
         public async Task UpdateCatalogAsync(int id, string description, double price)
         {
             await _repository.UpdateCatalogAsync(id, description, price);
+        }
+
+        public async Task RemoveParameterAsync(int catalogId, List<int> parameterId)
+        {
+            if (parameterId == null || parameterId.Count == 0)
+                return;
+            await _repository.RemoveParametersAsync(catalogId, parameterId);
+
+
         }
     }
 }
