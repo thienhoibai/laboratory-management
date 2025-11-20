@@ -9,17 +9,29 @@ import {
   FiTrendingUp,
   FiMessageCircle,
   FiX,
-  FiUpload,
-  FiImage,
   FiCheck,
   FiXCircle,
+  FiEdit,
 } from "react-icons/fi";
 import { Pagination } from "antd";
 import { toast } from "react-toastify";
-import { categories } from "../../../data/blog";
 import BlogService from "../../../services/BlogService";
 import { setAuthToken } from "../../../utils/auth";
 import "./BlogsManagement.css";
+
+const resolveBlogId = (blogOrId) => {
+  if (blogOrId == null) return null;
+  if (typeof blogOrId === "number" || typeof blogOrId === "string") {
+    return blogOrId;
+  }
+  return (
+    blogOrId.id ??
+    blogOrId.postId ??
+    blogOrId.blogPostId ??
+    blogOrId.blogId ??
+    null
+  );
+};
 
 const BlogsManagement = () => {
   const breadcrumbs = [
@@ -36,19 +48,22 @@ const BlogsManagement = () => {
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  const [categories, setCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
+
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
-    author: "",
     category: "",
-    status: "pending",
+    categoryId: "",
     content: "",
     img: "",
-    imgFile: null,
   });
   const [formErrors, setFormErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingBlogId, setEditingBlogId] = useState(null);
 
   // Delete modal states
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -59,9 +74,10 @@ const BlogsManagement = () => {
   const [isViewDetailOpen, setIsViewDetailOpen] = useState(false);
   const [viewingBlog, setViewingBlog] = useState(null);
 
-  // Load blogs on mount
+  // Load data on mount
   useEffect(() => {
     loadBlogs();
+    loadCategories();
   }, []);
 
   const loadBlogs = async () => {
@@ -77,6 +93,22 @@ const BlogsManagement = () => {
       toast.error("Không thể tải danh sách bài viết. Vui lòng thử lại!");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadCategories = async () => {
+    setCategoriesLoading(true);
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (token) setAuthToken(token);
+
+      const categoriesData = await BlogService.getCategories();
+      setCategories(categoriesData);
+    } catch (error) {
+      console.error("Error loading categories:", error);
+      toast.error("Không thể tải danh mục. Vui lòng thử lại!");
+    } finally {
+      setCategoriesLoading(false);
     }
   };
 
@@ -122,14 +154,14 @@ const BlogsManagement = () => {
   const openCreateModal = () => {
     setFormData({
       title: "",
-      author: "",
       category: "",
-      status: "pending",
+      categoryId: "",
       content: "",
       img: "",
-      imgFile: null,
     });
     setFormErrors({});
+    setIsEditMode(false);
+    setEditingBlogId(null);
     setIsModalOpen(true);
   };
 
@@ -137,14 +169,37 @@ const BlogsManagement = () => {
     setIsModalOpen(false);
     setFormData({
       title: "",
-      author: "",
       category: "",
-      status: "pending",
+      categoryId: "",
       content: "",
       img: "",
-      imgFile: null,
     });
     setFormErrors({});
+    setIsEditMode(false);
+    setEditingBlogId(null);
+  };
+
+  const openEditModal = (blog) => {
+    const resolvedId = resolveBlogId(blog);
+    if (!resolvedId && resolvedId !== 0) {
+      toast.error("Không xác định được ID bài viết để chỉnh sửa");
+      return;
+    }
+    setFormData({
+      title: blog.title || "",
+      category: blog.category || "",
+      categoryId:
+        blog.categoryId !== undefined && blog.categoryId !== null
+          ? String(blog.categoryId)
+          : "",
+      status: blog.status || "pending",
+      content: blog.content || "",
+      img: blog.img || blog.thumbnailUrl || "",
+    });
+    setFormErrors({});
+    setIsEditMode(true);
+    setEditingBlogId(resolvedId);
+    setIsModalOpen(true);
   };
 
   // Form handlers
@@ -163,27 +218,23 @@ const BlogsManagement = () => {
     }
   };
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        // 5MB limit
-        toast.error("Kích thước ảnh không được vượt quá 5MB");
-        return;
-      }
-      if (!file.type.startsWith("image/")) {
-        toast.error("File phải là hình ảnh");
-        return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData((prev) => ({
-          ...prev,
-          imgFile: file,
-          img: reader.result,
-        }));
-      };
-      reader.readAsDataURL(file);
+  const handleCategorySelect = (e) => {
+    const selectedId = e.target.value;
+    const selectedCategory = categories.find(
+      (category) => String(category.categoryId) === selectedId
+    );
+
+    setFormData((prev) => ({
+      ...prev,
+      categoryId: selectedId,
+      category: selectedCategory?.name || "",
+    }));
+
+    if (formErrors.categoryId) {
+      setFormErrors((prev) => ({
+        ...prev,
+        categoryId: "",
+      }));
     }
   };
 
@@ -193,17 +244,17 @@ const BlogsManagement = () => {
     if (!formData.title.trim()) {
       errors.title = "Tiêu đề bài viết không được để trống";
     }
-    if (!formData.author.trim()) {
-      errors.author = "Tác giả không được để trống";
+    if (!formData.categoryId) {
+      errors.categoryId = "Danh mục không được để trống";
     }
-    if (!formData.category.trim()) {
-      errors.category = "Danh mục không được để trống";
+    if (formData.categoryId && Number.isNaN(Number(formData.categoryId))) {
+      errors.categoryId = "Category ID phải là số";
     }
     if (!formData.content.trim()) {
       errors.content = "Nội dung bài viết không được để trống";
     }
-    if (!formData.img && !formData.imgFile) {
-      errors.img = "Vui lòng chọn ảnh bài viết";
+    if (!formData.img) {
+      errors.img = "Vui lòng nhập đường dẫn ảnh bài viết";
     }
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -221,20 +272,41 @@ const BlogsManagement = () => {
       const token = localStorage.getItem("accessToken");
       if (token) setAuthToken(token);
 
+      const selectedCategory = categories.find(
+        (category) =>
+          String(category.categoryId) === String(formData.categoryId)
+      );
+      const categoryName = selectedCategory?.name || formData.category || "";
+      const trimmedCategoryName = categoryName.trim();
+      const categoryIdNumber = Number(formData.categoryId);
+      const hasValidCategoryId = !Number.isNaN(categoryIdNumber);
+
       // Prepare data
       const submitData = {
         title: formData.title.trim(),
-        author: formData.author.trim(),
-        category: formData.category.trim(),
-        status: formData.status,
+        category: trimmedCategoryName,
         content: formData.content.trim(),
         img: formData.img,
-        tag: formData.category.trim(),
+        tag: trimmedCategoryName,
       };
 
-      // Create blog
-      await BlogService.createBlog(submitData);
-      toast.success("Tạo bài viết mới thành công!");
+      if (hasValidCategoryId) {
+        submitData.categoryId = categoryIdNumber;
+      }
+
+      if (isEditMode) {
+        submitData.updatedDate = new Date().toISOString();
+        if (editingBlogId === null || editingBlogId === undefined) {
+          throw new Error("Không tìm thấy ID bài viết để cập nhật");
+        }
+        submitData.authorId = formData.authorId.trim();
+        submitData.thumbnailUrl = formData.img;
+        await BlogService.updateBlog(editingBlogId, submitData);
+        toast.success("Cập nhật bài viết thành công!");
+      } else {
+        await BlogService.createBlog(submitData);
+        toast.success("Tạo bài viết mới thành công!");
+      }
 
       closeModal();
       loadBlogs();
@@ -263,13 +335,18 @@ const BlogsManagement = () => {
 
   const confirmDelete = async () => {
     if (!blogToDelete) return;
+    const blogId = resolveBlogId(blogToDelete);
+    if (!blogId && blogId !== 0) {
+      toast.error("Không xác định được ID bài viết để xóa");
+      return;
+    }
 
     setIsDeleting(true);
     try {
       const token = localStorage.getItem("accessToken");
       if (token) setAuthToken(token);
 
-      await BlogService.deleteBlog(blogToDelete.id);
+      await BlogService.deleteBlog(blogId);
       toast.success("Xóa bài viết thành công!");
       closeDeleteModal();
       loadBlogs();
@@ -285,7 +362,12 @@ const BlogsManagement = () => {
   };
 
   // Approve blog handler
-  const handleApproveBlog = async (blogId) => {
+  const handleApproveBlog = async (blog) => {
+    const blogId = resolveBlogId(blog);
+    if (!blogId && blogId !== 0) {
+      toast.error("Không xác định được ID bài viết để duyệt");
+      return;
+    }
     try {
       const token = localStorage.getItem("accessToken");
       if (token) setAuthToken(token);
@@ -303,7 +385,12 @@ const BlogsManagement = () => {
   };
 
   // Reject blog handler
-  const handleRejectBlog = async (blogId) => {
+  const handleRejectBlog = async (blog) => {
+    const blogId = resolveBlogId(blog);
+    if (!blogId && blogId !== 0) {
+      toast.error("Không xác định được ID bài viết để hủy");
+      return;
+    }
     try {
       const token = localStorage.getItem("accessToken");
       if (token) setAuthToken(token);
@@ -474,7 +561,7 @@ const BlogsManagement = () => {
                       className={`blogs-action-btn approve-btn ${
                         blog.status === "approved" ? "disabled" : ""
                       }`}
-                      onClick={() => handleApproveBlog(blog.id)}
+                      onClick={() => handleApproveBlog(blog)}
                       title="Duyệt bài"
                       disabled={blog.status === "approved"}
                     >
@@ -484,11 +571,18 @@ const BlogsManagement = () => {
                       className={`blogs-action-btn reject-btn ${
                         blog.status === "rejected" ? "disabled" : ""
                       }`}
-                      onClick={() => handleRejectBlog(blog.id)}
+                      onClick={() => handleRejectBlog(blog)}
                       title="Hủy bài"
                       disabled={blog.status === "rejected"}
                     >
                       <FiXCircle />
+                    </button>
+                    <button
+                      className="blogs-action-btn edit-btn"
+                      onClick={() => openEditModal(blog)}
+                      title="Chỉnh sửa"
+                    >
+                      <FiEdit />
                     </button>
                     <button
                       className="blogs-action-btn view-btn"
@@ -547,9 +641,13 @@ const BlogsManagement = () => {
           >
             <div className="blogs-modal-header">
               <div>
-                <h2 className="blogs-modal-title">Tạo bài viết mới</h2>
+                <h2 className="blogs-modal-title">
+                  {isEditMode ? "Chỉnh sửa bài viết" : "Tạo bài viết mới"}
+                </h2>
                 <p className="blogs-modal-subtitle">
-                  Viết một bài viết blog mới cho trang web
+                  {isEditMode
+                    ? "Cập nhật nội dung cho bài viết hiện có"
+                    : "Viết một bài viết blog mới cho trang web"}
                 </p>
               </div>
               <button className="blogs-modal-close" onClick={closeModal}>
@@ -558,40 +656,38 @@ const BlogsManagement = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="blogs-modal-form">
-              {/* Image Upload */}
+              {/* Image URL */}
               <div className="blogs-form-group">
-                <label className="blogs-form-label">Ảnh bài viết</label>
-                <div className="blogs-image-upload">
-                  {formData.img ? (
-                    <div className="blogs-image-preview">
-                      <img src={formData.img} alt="Preview" />
-                      <button
-                        type="button"
-                        className="blogs-image-remove"
-                        onClick={() =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            img: "",
-                            imgFile: null,
-                          }))
-                        }
-                      >
-                        <FiX />
-                      </button>
-                    </div>
-                  ) : (
-                    <label className="blogs-image-upload-button">
-                      <FiUpload />
-                      <span>Chọn ảnh bài viết</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageChange}
-                        style={{ display: "none" }}
-                      />
-                    </label>
-                  )}
-                </div>
+                <label className="blogs-form-label">
+                  Ảnh bài viết (Image URL)
+                </label>
+                <input
+                  type="url"
+                  name="img"
+                  value={formData.img}
+                  onChange={handleInputChange}
+                  className={`blogs-form-input ${
+                    formErrors.img ? "error" : ""
+                  }`}
+                  placeholder="Dán đường dẫn ảnh (https://...)"
+                />
+                {formData.img && (
+                  <div className="blogs-image-preview">
+                    <img src={formData.img} alt="Preview" />
+                    <button
+                      type="button"
+                      className="blogs-image-remove"
+                      onClick={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          img: "",
+                        }))
+                      }
+                    >
+                      <FiX />
+                    </button>
+                  </div>
+                )}
                 {formErrors.img && (
                   <span className="blogs-form-error">{formErrors.img}</span>
                 )}
@@ -615,65 +711,51 @@ const BlogsManagement = () => {
                 )}
               </div>
 
-              {/* Author */}
-              <div className="blogs-form-group">
-                <label className="blogs-form-label">Tác giả</label>
-                <input
-                  type="text"
-                  name="author"
-                  value={formData.author}
-                  onChange={handleInputChange}
-                  className={`blogs-form-input ${
-                    formErrors.author ? "error" : ""
-                  }`}
-                  placeholder="Nhập tên tác giả"
-                />
-                {formErrors.author && (
-                  <span className="blogs-form-error">{formErrors.author}</span>
-                )}
-              </div>
-
               {/* Category */}
               <div className="blogs-form-group">
                 <label className="blogs-form-label">Danh mục</label>
                 <select
-                  name="category"
-                  value={formData.category}
-                  onChange={handleInputChange}
+                  name="categoryId"
+                  value={formData.categoryId}
+                  onChange={handleCategorySelect}
                   className={`blogs-form-input ${
-                    formErrors.category ? "error" : ""
+                    formErrors.categoryId ? "error" : ""
                   }`}
+                  disabled={categoriesLoading}
                 >
-                  <option value="">Chọn danh mục</option>
-                  {categories
-                    .filter((cat) => cat !== "Tất cả")
-                    .map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
+                  <option value="">
+                    {categoriesLoading
+                      ? "Đang tải danh mục..."
+                      : "Chọn danh mục"}
+                  </option>
+                  {!categoriesLoading &&
+                    formData.categoryId &&
+                    !categories.some(
+                      (category) =>
+                        String(category.categoryId) ===
+                        String(formData.categoryId)
+                    ) && (
+                      <option value={formData.categoryId}>
+                        {formData.category || "Danh mục hiện tại"}
                       </option>
-                    ))}
+                    )}
+                  {categories.map((category) => (
+                    <option
+                      key={category.id ?? category.categoryId}
+                      value={category.categoryId}
+                    >
+                      {category.name || category.categoryName}
+                    </option>
+                  ))}
                 </select>
-                {formErrors.category && (
+                {formErrors.categoryId && (
                   <span className="blogs-form-error">
-                    {formErrors.category}
+                    {formErrors.categoryId}
                   </span>
                 )}
               </div>
 
-              {/* Status */}
-              <div className="blogs-form-group">
-                <label className="blogs-form-label">Trạng thái</label>
-                <select
-                  name="status"
-                  value={formData.status}
-                  onChange={handleInputChange}
-                  className="blogs-form-input"
-                >
-                  <option value="pending">Chờ duyệt</option>
-                  <option value="approved">Đã duyệt</option>
-                  <option value="rejected">Đã hủy</option>
-                </select>
-              </div>
+              {/* Status field now hidden for both create and edit */}
 
               {/* Content */}
               <div className="blogs-form-group">
@@ -708,7 +790,11 @@ const BlogsManagement = () => {
                   className="blogs-modal-submit"
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? "Đang lưu..." : "Lưu thay đổi"}
+                  {isSubmitting
+                    ? "Đang lưu..."
+                    : isEditMode
+                    ? "Cập nhật"
+                    : "Lưu thay đổi"}
                 </button>
               </div>
             </form>
