@@ -23,9 +23,9 @@ public partial class BlogPost
 
     public bool? IsApproved { get; set; }
 
-    public string? ThumbnailUrl { get; set; }
+    public int Status { get; set; }
 
-    public int? Status { get; set; }
+    public string? ThumbnailUrl { get; set; }
 
     public virtual Category? Category { get; set; }
 

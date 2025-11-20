@@ -4,7 +4,7 @@ DROP DATABASE TestOrderDB;
 
 CREATE DATABASE TestOder
 
-use TestOder
+use TestOrderDB
 
 CREATE TABLE AuditLog
 (
