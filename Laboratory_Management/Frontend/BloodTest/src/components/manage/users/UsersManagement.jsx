@@ -19,6 +19,19 @@ import "./UsersManagement.css";
 
 const endPoint = "http://localhost:8080/iam/api/Users";
 
+const getUserId = (user) =>
+  user?.id ?? user?.userId ?? user?.uuid ?? user?.Id ?? null;
+
+const resolveIsLocked = (user) => {
+  if (typeof user?.isLocked === "boolean") return user.isLocked;
+  if (typeof user?.IsLocked === "boolean") return user.IsLocked;
+  if (typeof user?.isActive === "boolean") return !user.isActive;
+  if (typeof user?.status === "string") {
+    return user.status.toLowerCase() === "locked";
+  }
+  return false;
+};
+
 const getRoleStyle = (role) => {
   const name = String(role || "").toLowerCase();
   const styles = {
@@ -105,8 +118,9 @@ const UsersManagement = () => {
       params.append("pageSize", pageSize);
       if (searchDebounce) params.append("search", searchDebounce);
       if (role) params.append("role", role);
-      if (status)
-        params.append("isActive", status === "active" ? "true" : "false");
+      if (status) {
+        params.append("isLocked", status === "locked" ? "true" : "false");
+      }
 
       if (sortBy) {
         const sortByLower = sortBy.toLowerCase();
@@ -129,7 +143,11 @@ const UsersManagement = () => {
           );
         });
 
-        setUsers(usersList);
+        const normalizedUsers = usersList.map((user) => ({
+          ...user,
+          isLocked: resolveIsLocked(user),
+        }));
+        setUsers(normalizedUsers);
         setTotal(meta.totalItems || 0);
       }
     } catch (error) {
@@ -351,7 +369,7 @@ const UsersManagement = () => {
   };
 
   const handleLockUser = async (user) => {
-    const id = user?.id ?? user?.userId ?? user?.uuid ?? user?.Id;
+    const id = getUserId(user);
     if (!id) {
       toast.error("Không tìm thấy ID người dùng để thao tác");
       return;
@@ -359,13 +377,22 @@ const UsersManagement = () => {
     setLockLoadingId(id);
     try {
       const response = await api.post(`iam/api/Users/${id}/lock`);
-      if (response?.data?.data.status === "locked" || response.status === 200) {
+      if (
+        response?.data?.data?.status === "locked" ||
+        (response.status >= 200 && response.status < 300)
+      ) {
         // Update local state immediately for instant UI feedback
         setUsers((prevUsers) =>
           prevUsers.map((u) => {
-            const userId = u?.id ?? u?.userId ?? u?.uuid ?? u?.Id;
+            const userId = getUserId(u);
             if (userId === id) {
-              return { ...u, isActive: false, status: "locked" };
+              return {
+                ...u,
+                isLocked: true,
+                IsLocked: true,
+                isActive: false,
+                status: "locked",
+              };
             }
             return u;
           })
@@ -389,7 +416,7 @@ const UsersManagement = () => {
   };
 
   const handleUnlockUser = async (user) => {
-    const id = user?.id ?? user?.userId ?? user?.uuid ?? user?.Id;
+    const id = getUserId(user);
     if (!id) {
       toast.error("Không tìm thấy ID người dùng để thao tác");
       return;
@@ -398,15 +425,21 @@ const UsersManagement = () => {
     try {
       const response = await api.post(`iam/api/Users/${id}/unlock`);
       if (
-        response?.data?.data.status === "unlocked" ||
-        response.status === 200
+        response?.data?.data?.status === "unlocked" ||
+        (response.status >= 200 && response.status < 300)
       ) {
         // Update local state immediately for instant UI feedback
         setUsers((prevUsers) =>
           prevUsers.map((u) => {
-            const userId = u?.id ?? u?.userId ?? u?.uuid ?? u?.Id;
+            const userId = getUserId(u);
             if (userId === id) {
-              return { ...u, isActive: true, status: "unlocked" };
+              return {
+                ...u,
+                isLocked: false,
+                IsLocked: false,
+                isActive: true,
+                status: "unlocked",
+              };
             }
             return u;
           })
@@ -614,8 +647,8 @@ const UsersManagement = () => {
                 onChange={handleStatusChange}
               >
                 <option value="">Tất cả trạng thái</option>
-                <option value="active">Hoạt động</option>
-                <option value="inactive">Không hoạt động</option>
+                <option value="unlocked">Đang hoạt động</option>
+                <option value="locked">Đã khóa</option>
               </select>
               <FiChevronDown className="select-icon" />
             </div>
@@ -641,7 +674,7 @@ const UsersManagement = () => {
                   >
                     Vai trò{getSortIcon("role")}
                   </th>
-                  <th>Lần đăng nhập cuối</th>
+                  <th>Số điện thoại</th>
                   <th
                     className="sortable"
                     onClick={() => handleSort("createdat")}
@@ -661,82 +694,86 @@ const UsersManagement = () => {
               </thead>
               <tbody>
                 {users.length > 0 ? (
-                  users.map((user, index) => (
-                    <tr key={user.id || user.userId || user.uuid || index}>
-                      <td>
-                        <span className="user-name">
-                          {user.fullName || "-"}
-                        </span>
-                      </td>
-                      <td>{user.email || "-"}</td>
-                      <td>
-                        <span
-                          className="role-badge"
-                          style={getRoleStyle(user.role || user.roles)}
-                        >
-                          {user.roles || user.role || "-"}
-                        </span>
-                      </td>
-                      <td>{user.lastLoginAt || "N/A"}</td>
-                      <td>
-                        {user.createdAt
-                          ? new Date(user.createdAt).toLocaleDateString("vi-VN")
-                          : "-"}
-                      </td>
-                      <td>
-                        <span
-                          className={`status-badge ${
-                            user.isActive ? "active" : "inactive"
-                          }`}
-                        >
-                          {user.isActive ? "Hoạt động" : "Không hoạt động"}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="action-buttons">
-                          <button
-                            className="action-button edit"
-                            onClick={() => handleOpenEditModal(user)}
-                            title="Chỉnh sửa"
+                  users.map((user, index) => {
+                    const isLocked = resolveIsLocked(user);
+                    const userKey = getUserId(user) ?? index;
+
+                    return (
+                      <tr key={userKey}>
+                        <td>
+                          <span className="user-name">
+                            {user.fullName || "-"}
+                          </span>
+                        </td>
+                        <td>{user.email || "-"}</td>
+                        <td>
+                          <span
+                            className="role-badge"
+                            style={getRoleStyle(user.role || user.roles)}
                           >
-                            <FiEdit2 size={18} />
-                          </button>
-                          <button
-                            className="action-button delete"
-                            onClick={() => openDeleteModal(user)}
-                            title="Xóa"
-                          >
-                            <FiTrash2 size={18} />
-                          </button>
-                          <button
-                            className={`action-button lock-toggle ${
-                              user.isActive ? "unlocked" : "locked"
+                            {user.roles || user.role || "-"}
+                          </span>
+                        </td>
+                        <td>{user.phone || user.phoneNumber || "-"}</td>
+                        <td>
+                          {user.createdAt
+                            ? new Date(user.createdAt).toLocaleDateString(
+                                "vi-VN"
+                              )
+                            : "-"}
+                        </td>
+                        <td>
+                          <span
+                            className={`status-badge ${
+                              isLocked ? "locked" : "unlocked"
                             }`}
-                            onClick={() =>
-                              user.isActive
-                                ? handleLockUser(user)
-                                : handleUnlockUser(user)
-                            }
-                            disabled={
-                              lockLoadingId ===
-                              (user.id ?? user.userId ?? user.uuid ?? user.Id)
-                            }
-                            title={
-                              user.isActive
-                                ? "Khóa tài khoản"
-                                : "Mở khóa tài khoản"
-                            }
                           >
-                            {user.isActive ? (
-                              <FiUnlock size={18} />
-                            ) : (
-                              <FiLock size={18} />
-                            )}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                            {isLocked ? "Đã khóa" : "Hoạt động"}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="action-buttons">
+                            <button
+                              className="action-button edit"
+                              onClick={() => handleOpenEditModal(user)}
+                              title="Chỉnh sửa"
+                            >
+                              <FiEdit2 size={18} />
+                            </button>
+                            <button
+                              className="action-button delete"
+                              onClick={() => openDeleteModal(user)}
+                              title="Xóa"
+                            >
+                              <FiTrash2 size={18} />
+                            </button>
+                            <button
+                              className={`action-button lock-toggle ${
+                                isLocked ? "locked" : "unlocked"
+                              }`}
+                              onClick={() =>
+                                isLocked
+                                  ? handleUnlockUser(user)
+                                  : handleLockUser(user)
+                              }
+                              disabled={lockLoadingId === userKey}
+                              title={
+                                isLocked
+                                  ? "Mở khóa tài khoản"
+                                  : "Khóa tài khoản"
+                              }
+                            >
+                              {isLocked ? (
+                                <FiLock size={18} />
+                              ) : (
+                                <FiUnlock size={18} />
+                              )}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 ) : (
                   <tr>
                     <td

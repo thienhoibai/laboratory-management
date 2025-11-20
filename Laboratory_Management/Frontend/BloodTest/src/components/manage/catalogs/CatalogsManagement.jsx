@@ -1,50 +1,91 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import AdminLayout from "../../admin/layout/AdminLayout";
-import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiX } from "react-icons/fi";
-import { availableParameters } from "../../../data/catalogTest.js";
-import api from "../../../configs/axios";
+import { FiPlus, FiEdit2, FiSearch, FiX } from "react-icons/fi";
+import { Pagination } from "antd";
 import { setAuthToken } from "../../../utils/auth";
 import { toast } from "react-toastify";
+import {
+  getAllCatalogs,
+  getCatalogById,
+  createCatalog,
+  updateCatalog,
+  updateCatalogParameters,
+} from "../../../apis/TestOrderServiceAPI.jsx";
+import { getAllParameters } from "../../../apis/TestOrderServiceAPI.jsx";
 import "./CatalogsManagement.css";
 
-const endPoint = "testorder/api/TestCatalog";
+const DEFAULT_FORM = {
+  testName: "",
+  description: "",
+  price: "",
+};
+
+const getParameterId = (param) =>
+  param?.parameterId ?? param?.id ?? param?.Id ?? null;
 
 const CatalogsManagement = () => {
-  const [searchQuery, setSearchQuery] = useState("");
   const [catalogs, setCatalogs] = useState([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState("create");
-  const [selectedCatalog, setSelectedCatalog] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState("create"); // create | edit
+  const [selectedCatalog, setSelectedCatalog] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDetailLoading, setIsDetailLoading] = useState(false);
 
-  const [formData, setFormData] = useState({
-    name: "",
-    category: "",
-    price: "",
-    status: "Hoạt động",
-    parameters: [],
-    description: "",
-  });
+  const [formData, setFormData] = useState(DEFAULT_FORM);
 
-  // Fetch catalogs from API
+  // Pagination & search
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
+  const [total, setTotal] = useState(0);
+  const [searchInput, setSearchInput] = useState("");
+  const [searchDebounce, setSearchDebounce] = useState("");
+
+  // Parameters
+  const [availableParameters, setAvailableParameters] = useState([]);
+  const [parametersLoading, setParametersLoading] = useState(false);
+  const [selectedParameters, setSelectedParameters] = useState([]);
+  const [parameterSearch, setParameterSearch] = useState("");
+
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
     if (token) setAuthToken(token);
-    fetchCatalogs();
+    preloadParameters();
   }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchDebounce(searchInput.trim());
+      setPage(1);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  useEffect(() => {
+    fetchCatalogs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, pageSize, searchDebounce]);
+
+  const preloadParameters = async () => {
+    setParametersLoading(true);
+    try {
+      const { items } = await getAllParameters({ page: 1, pageSize: 1000 });
+      setAvailableParameters(items || []);
+    } catch (error) {
+      console.error("Error loading parameters:", error);
+    } finally {
+      setParametersLoading(false);
+    }
+  };
 
   const fetchCatalogs = async () => {
     setIsLoading(true);
     try {
-      const response = await api.get(endPoint);
-      if (response.status === 200) {
-        const data = response.data;
-        // Handle different response structures
-        const catalogsList = Array.isArray(data)
-          ? data
-          : data.data || data.items || [];
-        setCatalogs(catalogsList);
-      }
+      const query = { page, pageSize };
+      if (searchDebounce) query.search = searchDebounce;
+      const { items, meta } = await getAllCatalogs(query);
+      setCatalogs(items || []);
+      setTotal(meta?.totalItems ?? items?.length ?? 0);
     } catch (error) {
       console.error("Error fetching catalogs:", error);
       toast.error("Không thể tải danh sách mục xét nghiệm");
@@ -53,125 +94,150 @@ const CatalogsManagement = () => {
     }
   };
 
-  const filteredCatalogs = useMemo(() => {
-    if (!searchQuery) return catalogs;
-    const query = searchQuery.toLowerCase();
-    return catalogs.filter(
-      (catalog) =>
-        catalog.testName?.toLowerCase().includes(query) ||
-        catalog.description?.toLowerCase().includes(query)
-    );
-  }, [catalogs, searchQuery]);
+  const handlePageChange = (newPage, newPageSize) => {
+    if (newPageSize !== pageSize) {
+      setPageSize(newPageSize);
+      setPage(1);
+    } else {
+      setPage(newPage);
+    }
+  };
 
   const handleOpenCreateModal = () => {
     setModalMode("create");
-    setFormData({
-      name: "",
-      category: "",
-      price: "",
-      status: "Hoạt động",
-      parameters: [],
-      description: "",
-    });
     setSelectedCatalog(null);
+    setFormData(DEFAULT_FORM);
+    setSelectedParameters([]);
+    setParameterSearch("");
     setIsModalOpen(true);
   };
 
-  const handleOpenEditModal = (catalog) => {
+  const handleOpenEditModal = async (catalog) => {
+    if (!catalog?.catalogId) return;
     setModalMode("edit");
-    setFormData({
-      name: catalog.testName || "",
-      category: catalog.category || "",
-      price: catalog.price || "",
-      status: catalog.status || "Hoạt động",
-      parameters: [...(catalog.parameters || [])],
-      description: catalog.description || "",
-    });
     setSelectedCatalog(catalog);
     setIsModalOpen(true);
+    setParameterSearch("");
+    setIsDetailLoading(true);
+    try {
+      const detail = await getCatalogById(catalog.catalogId);
+      setFormData({
+        testName: detail?.testName || catalog.testName || "",
+        description: detail?.description || catalog.description || "",
+        price: detail?.price ?? catalog.price ?? "",
+      });
+      setSelectedParameters(detail?.parameters || catalog.parameters || []);
+    } catch (error) {
+      console.error("Error loading catalog detail:", error);
+      toast.error("Không thể tải thông tin mục xét nghiệm");
+      setFormData({
+        testName: catalog.testName || "",
+        description: catalog.description || "",
+        price: catalog.price ?? "",
+      });
+      setSelectedParameters(catalog.parameters || []);
+    } finally {
+      setIsDetailLoading(false);
+    }
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    setFormData({
-      name: "",
-      category: "",
-      price: "",
-      status: "Hoạt động",
-      parameters: [],
-      description: "",
-    });
     setSelectedCatalog(null);
+    setFormData(DEFAULT_FORM);
+    setSelectedParameters([]);
+    setIsSaving(false);
+    setIsDetailLoading(false);
   };
 
-  const handleInputChange = (e) => {
+  const handleFormChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleAddParameter = (parameter) => {
-    setFormData((prev) => ({
-      ...prev,
-      parameters: [...prev.parameters, parameter],
-    }));
-  };
-
-  const handleRemoveParameter = (parameterId) => {
-    setFormData((prev) => ({
-      ...prev,
-      parameters: prev.parameters.filter((p) => p.id !== parameterId),
-    }));
-  };
-
-  const handleSaveCatalog = () => {
-    if (!formData.name || !formData.category || !formData.price) {
-      alert("Vui lòng điền đầy đủ thông tin!");
-      return;
-    }
-
-    if (formData.parameters.length === 0) {
-      alert("Vui lòng chọn ít nhất một chỉ số xét nghiệm!");
-      return;
-    }
-
-    if (modalMode === "create") {
-      const newCatalog = {
-        id: catalogs.length + 1,
-        name: formData.name,
-        category: formData.category,
-        price: parseInt(formData.price),
-        status: formData.status,
-        parameters: formData.parameters,
-        description: formData.description,
-      };
-      setCatalogs([...catalogs, newCatalog]);
-    } else {
-      setCatalogs(
-        catalogs.map((catalog) =>
-          catalog.id === selectedCatalog.id
-            ? {
-                ...catalog,
-                name: formData.name,
-                category: formData.category,
-                price: parseInt(formData.price),
-                status: formData.status,
-                parameters: formData.parameters,
-                description: formData.description,
-              }
-            : catalog
-        )
+  const handleToggleParameter = (parameter) => {
+    const paramId = getParameterId(parameter);
+    if (!paramId) return;
+    const exists = selectedParameters.some(
+      (item) => getParameterId(item) === paramId
+    );
+    if (exists) {
+      setSelectedParameters((prev) =>
+        prev.filter((item) => getParameterId(item) !== paramId)
       );
+    } else {
+      setSelectedParameters((prev) => [...prev, parameter]);
     }
-
-    handleCloseModal();
   };
 
-  const handleDeleteCatalog = (id) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa mục xét nghiệm này?")) {
-      setCatalogs(catalogs.filter((catalog) => catalog.catalogId !== id));
+  const filteredAvailableParameters = useMemo(() => {
+    if (!parameterSearch) return availableParameters;
+    const query = parameterSearch.toLowerCase();
+    return availableParameters.filter((param) => {
+      const name = param.parameterName || param.name || "";
+      const unit = param.unit || "";
+      return (
+        name.toLowerCase().includes(query) || unit.toLowerCase().includes(query)
+      );
+    });
+  }, [availableParameters, parameterSearch]);
+
+  const validateForm = () => {
+    if (!formData.testName.trim() && modalMode === "create") {
+      toast.error("Tên mục xét nghiệm là bắt buộc");
+      return false;
+    }
+    if (!formData.price && formData.price !== 0) {
+      toast.error("Giá là bắt buộc");
+      return false;
+    }
+    return true;
+  };
+
+  const handleSaveCatalog = async () => {
+    if (!validateForm()) return;
+    setIsSaving(true);
+    try {
+      let catalogId = selectedCatalog?.catalogId || selectedCatalog?.id || null;
+      if (modalMode === "create") {
+        const payload = {
+          testName: formData.testName.trim(),
+          description: formData.description.trim(),
+          price: Number(formData.price) || 0,
+        };
+        const created = await createCatalog(payload);
+        catalogId = created?.catalogId ?? created?.id ?? catalogId;
+      } else if (catalogId) {
+        const payload = {
+          description: formData.description.trim(),
+          price: Number(formData.price) || 0,
+        };
+        await updateCatalog(catalogId, payload);
+      }
+
+      if (catalogId) {
+        const parameterIds = selectedParameters
+          .map((param) => getParameterId(param))
+          .filter(Boolean);
+        await updateCatalogParameters(catalogId, parameterIds);
+      }
+
+      toast.success(
+        modalMode === "create"
+          ? "Thêm mục xét nghiệm thành công!"
+          : "Cập nhật mục xét nghiệm thành công!"
+      );
+      await fetchCatalogs();
+      handleCloseModal();
+    } catch (error) {
+      console.error("Error saving catalog:", error);
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Không thể lưu mục xét nghiệm";
+      toast.error(errorMessage);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -199,15 +265,22 @@ const CatalogsManagement = () => {
         </div>
 
         <div className="catalogs-content">
-          <div className="search-section">
-            <div className="search-box">
-              <FiSearch size={18} />
-              <input
-                type="text"
-                placeholder="Tìm kiếm theo tên hoặc mô tả..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+          <div className="catalogs-controls">
+            <div className="search-section">
+              <div className="search-box">
+                <FiSearch size={18} />
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm theo tên hoặc mô tả..."
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="page-info">
+              <span>
+                Hiển thị {catalogs.length} / {total || 0} mục
+              </span>
             </div>
           </div>
 
@@ -216,6 +289,7 @@ const CatalogsManagement = () => {
               <thead>
                 <tr>
                   <th>Tên mục xét nghiệm</th>
+                  <th>Mô tả</th>
                   <th>Chỉ số xét nghiệm</th>
                   <th>Giá</th>
                   <th>Trạng thái</th>
@@ -225,103 +299,91 @@ const CatalogsManagement = () => {
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td
-                      colSpan="5"
-                      style={{ textAlign: "center", padding: "40px" }}
-                    >
+                    <td colSpan="6" style={{ padding: "40px" }}>
                       <div className="loading-container">
                         <div className="loading-spinner"></div>
                         <p>Đang tải dữ liệu...</p>
                       </div>
                     </td>
                   </tr>
-                ) : filteredCatalogs.length > 0 ? (
-                  filteredCatalogs.map((catalog) => (
+                ) : catalogs.length > 0 ? (
+                  catalogs.map((catalog) => (
                     <tr key={catalog.catalogId}>
                       <td>
-                        <span className="catalog-name">{catalog.testName}</span>
-                        {catalog.description && (
-                          <div
-                            style={{
-                              fontSize: "12px",
-                              color: "#6b7280",
-                              marginTop: "4px",
-                            }}
-                          >
+                        <span className="catalog-name">
+                          {catalog.testName || "-"}
+                        </span>
+                      </td>
+                      <td>
+                        {catalog.description ? (
+                          <span className="catalog-desc">
                             {catalog.description}
-                          </div>
+                          </span>
+                        ) : (
+                          <span className="catalog-desc empty">
+                            Chưa có mô tả
+                          </span>
                         )}
                       </td>
                       <td>
                         <div className="parameters-tags">
                           {catalog.parameters &&
                           catalog.parameters.length > 0 ? (
-                            catalog.parameters.map((param) => (
+                            catalog.parameters.slice(0, 3).map((param) => (
                               <span
-                                key={param.parameterId || param.id}
+                                key={getParameterId(param)}
                                 className="parameter-tag"
                               >
-                                {param.parameterName ||
-                                  param.name ||
-                                  param.code}
+                                {param.parameterName || param.name || "-"}
                               </span>
                             ))
                           ) : (
-                            <span
-                              style={{ color: "#9ca3af", fontStyle: "italic" }}
-                            >
-                              Chưa có chỉ số
-                            </span>
+                            <span className="no-parameter">Chưa có chỉ số</span>
                           )}
+                          {catalog.parameters &&
+                            catalog.parameters.length > 3 && (
+                              <span className="parameter-tag more">
+                                +{catalog.parameters.length - 3}
+                              </span>
+                            )}
                         </div>
                       </td>
                       <td>
                         <span className="catalog-price">
-                          {catalog.price?.toLocaleString("vi-VN")} đ
+                          {catalog.price
+                            ? `${catalog.price.toLocaleString("vi-VN")} đ`
+                            : "-"}
                         </span>
                       </td>
                       <td>
                         <span
                           className={`status-badge ${
-                            catalog.status === "Hoạt động" ||
-                            catalog.status === "Active" ||
-                            !catalog.status
-                              ? "active"
-                              : "inactive"
+                            catalog.status === "Inactive"
+                              ? "inactive"
+                              : "active"
                           }`}
                         >
-                          {catalog.status || "Hoạt động"}
+                          {catalog.status || "Đang cập nhật"}
                         </span>
                       </td>
                       <td>
-                        <div className="action-buttons">
-                          <button
-                            className="action-button edit"
-                            onClick={() => handleOpenEditModal(catalog)}
-                            title="Chỉnh sửa"
-                          >
-                            <FiEdit2 size={18} />
-                          </button>
-                          <button
-                            className="action-button delete"
-                            onClick={() =>
-                              handleDeleteCatalog(catalog.catalogId)
-                            }
-                            title="Xóa"
-                          >
-                            <FiTrash2 size={18} />
-                          </button>
-                        </div>
+                        <button
+                          className="action-button edit"
+                          onClick={() => handleOpenEditModal(catalog)}
+                          title="Chỉnh sửa"
+                        >
+                          <FiEdit2 size={18} />
+                        </button>
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
                     <td
-                      colSpan="5"
-                      style={{ textAlign: "center", padding: "40px" }}
+                      colSpan="6"
+                      style={{ textAlign: "center", padding: 40 }}
                     >
-                      {searchQuery
+                      {searchDebounce
                         ? "Không tìm thấy mục xét nghiệm nào"
                         : "Chưa có mục xét nghiệm nào"}
                     </td>
@@ -329,6 +391,20 @@ const CatalogsManagement = () => {
                 )}
               </tbody>
             </table>
+          </div>
+
+          <div className="catalogs-pagination">
+            <Pagination
+              current={page}
+              pageSize={pageSize}
+              total={total}
+              onChange={handlePageChange}
+              showSizeChanger
+              pageSizeOptions={["5", "10", "20", "50", "100"]}
+              showTotal={(tot, range) =>
+                tot > 0 ? `${range[0]}-${range[1]} của ${tot} mục` : "0 mục"
+              }
+            />
           </div>
         </div>
       </div>
@@ -348,34 +424,23 @@ const CatalogsManagement = () => {
             </div>
 
             <div className="modal-body">
+              {isDetailLoading && (
+                <p className="form-hint">Đang tải dữ liệu mục xét nghiệm...</p>
+              )}
               <div className="form-section">
                 <div className="form-row">
                   <div className="form-group">
                     <label className="form-label">Tên mục xét nghiệm</label>
                     <input
                       type="text"
-                      name="name"
+                      name="testName"
                       className="form-input"
                       placeholder="VD: Xét nghiệm máu toàn bộ"
-                      value={formData.name}
-                      onChange={handleInputChange}
+                      value={formData.testName}
+                      onChange={handleFormChange}
+                      disabled={modalMode === "edit" || isSaving}
                     />
                   </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Danh mục</label>
-                    <input
-                      type="text"
-                      name="category"
-                      className="form-input"
-                      placeholder="VD: Máu"
-                      value={formData.category}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                </div>
-
-                <div className="form-row">
                   <div className="form-group">
                     <label className="form-label">Giá (VNĐ)</label>
                     <input
@@ -384,92 +449,82 @@ const CatalogsManagement = () => {
                       className="form-input"
                       placeholder="150000"
                       value={formData.price}
-                      onChange={handleInputChange}
+                      onChange={handleFormChange}
+                      disabled={isSaving}
                     />
                   </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Trạng thái</label>
-                    <select
-                      name="status"
-                      className="form-input"
-                      value={formData.status}
-                      onChange={handleInputChange}
-                    >
-                      <option value="Hoạt động">Hoạt động</option>
-                      <option value="Ngừng hoạt động">Ngừng hoạt động</option>
-                    </select>
-                  </div>
                 </div>
-              </div>
 
-              <div className="form-section">
-                <label className="form-label">Chọn chỉ số xét nghiệm</label>
-                <div className="parameters-selection">
-                  {availableParameters.map((param) => {
-                    const isSelected = formData.parameters.some(
-                      (p) => p.id === param.id
-                    );
-                    return (
-                      <div
-                        key={param.id}
-                        className={`parameter-item ${
-                          isSelected ? "selected" : ""
-                        }`}
-                        onClick={() => {
-                          if (isSelected) {
-                            handleRemoveParameter(param.id);
-                          } else {
-                            handleAddParameter(param);
-                          }
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => {}}
-                        />
-                        <div className="parameter-info">
-                          <span className="parameter-code">{param.code}</span>
-                          <span className="parameter-name">{param.name}</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {formData.parameters.length > 0 && (
-                <div className="form-section">
-                  <label className="form-label">Các chỉ số đã chọn</label>
-                  <div className="selected-parameters">
-                    {formData.parameters.map((param) => (
-                      <div key={param.id} className="selected-parameter-tag">
-                        <span>
-                          {param.code} - {param.name}
-                        </span>
-                        <button
-                          className="remove-tag-btn"
-                          onClick={() => handleRemoveParameter(param.id)}
-                        >
-                          <FiX size={14} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="form-section">
                 <div className="form-group">
                   <label className="form-label">Mô tả</label>
                   <textarea
                     name="description"
                     className="form-textarea"
-                    placeholder="Xét nghiệm máu toàn bộ bao gồm các chỉ số"
+                    placeholder="Nhập mô tả chi tiết cho mục xét nghiệm"
                     value={formData.description}
-                    onChange={handleInputChange}
+                    onChange={handleFormChange}
+                    disabled={isSaving}
                   />
+                </div>
+              </div>
+
+              <div className="parameter-selector">
+                <div className="parameter-selector-header">
+                  <div>
+                    <h4>Chỉ số xét nghiệm</h4>
+                    <p>Chọn những chỉ số sẽ áp dụng cho mục xét nghiệm này</p>
+                  </div>
+                  <div className="search-box compact">
+                    <FiSearch size={16} />
+                    <input
+                      type="text"
+                      placeholder="Tìm kiếm chỉ số..."
+                      value={parameterSearch}
+                      onChange={(e) => setParameterSearch(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="parameters-selection">
+                  {parametersLoading ? (
+                    <div className="loading-container small">
+                      <div className="loading-spinner"></div>
+                      <p>Đang tải chỉ số...</p>
+                    </div>
+                  ) : filteredAvailableParameters.length > 0 ? (
+                    filteredAvailableParameters.map((param) => {
+                      const paramId = getParameterId(param);
+                      const isSelected = selectedParameters.some(
+                        (item) => getParameterId(item) === paramId
+                      );
+                      return (
+                        <div
+                          key={paramId}
+                          className={`parameter-item ${
+                            isSelected ? "selected" : ""
+                          }`}
+                          onClick={() => handleToggleParameter(param)}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            readOnly
+                          />
+                          <div className="parameter-info">
+                            <span className="parameter-title">
+                              {param.parameterName || param.name}
+                            </span>
+                            <span className="parameter-meta">
+                              {param.unit} • {param.referenceRange}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <p className="empty-text">
+                      Không có chỉ số nào phù hợp với tìm kiếm
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -478,14 +533,20 @@ const CatalogsManagement = () => {
               <button
                 className="modal-button cancel"
                 onClick={handleCloseModal}
+                disabled={isSaving}
               >
                 Hủy
               </button>
               <button
                 className="modal-button primary"
                 onClick={handleSaveCatalog}
+                disabled={isSaving || isDetailLoading}
               >
-                {modalMode === "create" ? "Thêm mới" : "Cập nhật"}
+                {isSaving
+                  ? "Đang xử lý..."
+                  : modalMode === "create"
+                  ? "Thêm mới"
+                  : "Cập nhật"}
               </button>
             </div>
           </div>

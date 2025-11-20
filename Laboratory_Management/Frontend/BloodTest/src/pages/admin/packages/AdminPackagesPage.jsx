@@ -1,9 +1,9 @@
 import React from "react";
-import PackagesManagement from "../../../components/manage/packages/PackagesManagement";
+import BundleManager from "../../../components/manage/packages/BundleManager";
 import "./AdminPackagesPage.css";
 
 const AdminPackagesPage = () => {
-  return <PackagesManagement />;
+  return <BundleManager />;
 };
 
 export default AdminPackagesPage;

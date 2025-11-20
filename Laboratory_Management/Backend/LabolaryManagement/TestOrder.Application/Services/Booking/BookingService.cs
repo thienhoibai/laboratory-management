@@ -50,8 +50,8 @@ namespace TestOrder.Application.Services.Booking
                 bookingResponses.Add(new BookingResponseDTO
                 {
                     BookingCode = booking.BookingCode ??= "",
-                    PatientId = (Guid)booking.PatientId,
                     BookingId = booking.BookingId,
+                    PatientId = (Guid)booking.PatientId,
                     PatientName = booking.PatientName ?? string.Empty,
                     PatientPhoneNumber = booking.PatientPhone,
                     PatientEmail = booking.PatientEmail,
@@ -162,8 +162,6 @@ namespace TestOrder.Application.Services.Booking
                 response.Message = "Date must be 1 day in the future";
                 return response;
             }
-
-
 
 
 

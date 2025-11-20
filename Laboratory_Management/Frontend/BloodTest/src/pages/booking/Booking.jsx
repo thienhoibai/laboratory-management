@@ -9,10 +9,11 @@ import AcceptInfo from "../../components/booking/AcceptInfo";
 import LoginRequirement from "../../components/booking/LoginRequirement";
 import Payment from "../../components/booking/Payment";
 import Success from "../../components/booking/SuccessBooking";
-import QR from "../../components/booking/QR";
 import "./Booking.css";
+import { useNavigate } from "react-router-dom";
 
 function Booking() {
+  const navigate = useNavigate();
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [selectedItems, setSelectedItems] = useState(null); // payload from Package/Catalog continue
   const [selectedDateTime, setSelectedDateTime] = useState(null); // { date, time }
@@ -20,11 +21,13 @@ function Booking() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [packageMode, setPackageMode] = useState("preset");
   // modal state for payment confirmation warning
-  const [showWarningModal, setShowWarningModal] = useState(false);
+  // const [showWarningModal, setShowWarningModal] = useState(false);
   // store payment result to show in Success
   const [paymentResult, setPaymentResult] = useState(null);
   // QR step state
   const [qrLoading, setQrLoading] = useState(false);
+  // store bookingId from AcceptInfo after successful booking
+  const [bookingId, setBookingId] = useState(null);
 
   // Reset booking to initial state (bắt đầu lại bước 1)
   const handleNewBooking = () => {
@@ -32,6 +35,7 @@ function Booking() {
     setSelectedItems(null);
     setSelectedDateTime(null);
     setPaymentResult(null);
+    setBookingId(null);
     setPackageMode("preset");
     setCurrentStep(1);
     // nếu cần, cuộn lên top hoặc focus UI ở đây
@@ -72,7 +76,11 @@ function Booking() {
   };
 
   // AcceptInfo tiếp tục (chỉ chuyển nội bộ sang Payment step)
-  const handleProceedPayment = () => {
+  const handleProceedPayment = (bookingIdFromAcceptInfo) => {
+    // Lưu bookingId từ AcceptInfo sau khi booking thành công
+    if (bookingIdFromAcceptInfo) {
+      setBookingId(bookingIdFromAcceptInfo);
+    }
     setCurrentStep(4);
     // Payment step will show and Payment should trigger the warning modal
   };
@@ -80,7 +88,14 @@ function Booking() {
   // Payment hoàn tất -> chuyển sang Success
   const handlePaymentFinish = (result) => {
     setPaymentResult(result || { status: "success", time: Date.now() });
-    setCurrentStep(6); // SuccessBooking là step 6
+    // Navigate với bookingId trong URL params
+    // Ưu tiên dùng bookingId từ result, fallback về state
+    const finalBookingId = result?.bookingId || bookingId;
+    if (finalBookingId) {
+      navigate(`/booking/successBooking?bookingId=${finalBookingId}`);
+    } else {
+      navigate("/booking/successBooking");
+    }
   };
 
   // back handlers
@@ -89,11 +104,10 @@ function Booking() {
   const backFromPayment = () => setCurrentStep(3);
 
   // Called by Payment component when user presses "Xác nhận thanh toán"
-  const handleRequestConfirm = () => {
-    setShowWarningModal(true);
-  };
+  // const handleRequestConfirm = () => {
+  //   setShowWarningModal(true);
+  // };
 
-  // Fallback: if Payment doesn't call prop, detect clicks on .btn-confirm inside payment container
   useEffect(() => {
     const clickHandler = (e) => {
       if (currentStep !== 4) return;
@@ -104,19 +118,12 @@ function Booking() {
       const inPayment = e.target.closest(".payment-container");
       if (btn && inPayment && !btn.disabled) {
         e.preventDefault();
-        setShowWarningModal(true);
+        // setShowWarningModal(true);
       }
     };
     document.addEventListener("click", clickHandler);
     return () => document.removeEventListener("click", clickHandler);
   }, [currentStep]);
-
-  const handleModalCancel = () => setShowWarningModal(false);
-  // Khi xác nhận modal, chuyển sang QR step
-  const handleModalConfirm = () => {
-    setShowWarningModal(false);
-    setCurrentStep(5); // QR là step 5
-  };
 
   // Nếu chưa đăng nhập, hiển thị yêu cầu đăng nhập
   if (!isLoggedIn) {
@@ -189,10 +196,10 @@ function Booking() {
           <Payment
             selectedItems={selectedItems}
             selectedDateTime={selectedDateTime}
+            bookingId={bookingId}
             onBack={backFromPayment}
             onFinish={(result) => handlePaymentFinish(result)}
-            // Payment should call this prop when user clicks its confirm button
-            onConfirmRequested={handleRequestConfirm}
+            // onConfirmRequested={handleRequestConfirm}
           />
         )}
         {currentStep === 5 && (
@@ -206,6 +213,7 @@ function Booking() {
                 handlePaymentFinish({
                   status: "success",
                   confirmedAt: Date.now(),
+                  bookingId: bookingId,
                 });
               }, 5000);
             }}
@@ -222,43 +230,6 @@ function Booking() {
         )}
 
         {/* Modal warning / confirmation rendered at Booking level */}
-        {showWarningModal && (
-          <div className="modal-overlay" role="dialog" aria-modal="true">
-            <div className="modal-dialog">
-              <div className="modal-title">Chính sách hoàn tiền</div>
-              <div className="modal-body-alert">
-                <p>
-                  <strong>Lưu ý quan trọng:</strong>
-                </p>
-                <ul>
-                  <li id>
-                    Thanh toán sẽ <strong>không được hoàn</strong> nếu hủy trong
-                    vòng 24 giờ trước lịch hẹn.
-                  </li>
-                  <li>
-                    Nếu lịch hẹn vào thứ 7 hoặc chủ nhật, sẽ không được hoàn
-                    tiền khi hủy.
-                  </li>
-                </ul>
-                <p>Bạn có chắc chắn muốn tiếp tục thanh toán?</p>
-              </div>
-              <div className="modal-actions">
-                <button
-                  className="btn-modal-cancel"
-                  onClick={handleModalCancel}
-                >
-                  Hủy
-                </button>
-                <button
-                  className="btn-modal-confirm"
-                  onClick={handleModalConfirm}
-                >
-                  Xác nhận
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

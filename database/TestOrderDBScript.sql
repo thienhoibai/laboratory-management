@@ -2,7 +2,7 @@
 ALTER DATABASE TestOrderDB SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
 DROP DATABASE TestOrderDB;
 
-CREATE DATABASE TestOrderDB
+CREATE DATABASE TestOder
 
 use TestOrderDB
 
@@ -236,9 +236,8 @@ GO
 INSERT INTO
 
 ALTER TABLE Booking
-ADD BookingCode NVARCHAR(10);
-ALTER TABLE Booking
 ADD PatientEmail nvarchar(255);
+
 
 
 		select * from Booking

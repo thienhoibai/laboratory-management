@@ -13,6 +13,19 @@ builder.Services.AddHttpClient("testorder", c =>
 {
     c.BaseAddress = new Uri(builder.Configuration["TestOrderBaseUrl"]!);
 });
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins(
+            "http://localhost:5174",
+            "http://127.0.0.1:5174"
+        )
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials();
+    });
+});
 
 builder.Services.AddScoped<IResultGenerator, ResultGenerator>();
 
@@ -26,6 +39,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
+app.UseRouting();
+app.UseCors("AllowFrontend");
 app.MapControllers();
 app.Run();

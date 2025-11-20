@@ -1,13 +1,36 @@
 import React, { useEffect, useState } from "react";
 import "./PackageSelection.css";
 import api from "../../configs/axios";
-// import { catalog } from "../../data/catalog"; // <-- sử dụng dữ liệu chung
 
-const endPoint = "testorder/api/TestCatalog";
+const endPoint = "testorder/api/TestCatalog?page=1&pageSize=20";
 
 function CatalogSelection({ setPackageMode, onContinue }) {
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [catalog, setCatalog] = useState([]);
+
+  const normalizeCatalog = (data) => {
+    if (!data) return [];
+    const arr = Array.isArray(data)
+      ? data
+      : Array.isArray(data.items)
+      ? data.items
+      : Array.isArray(data.data)
+      ? data.data
+      : typeof data === "object"
+      ? Object.values(data)
+      : [];
+    return arr.map((it) => {
+      const id = it.catalogId;
+      const price = Number(it.price) || 0;
+      return {
+        catalogId: String(id),
+        testName: it.testName,
+        price,
+        description: it.description,
+        _raw: it,
+      };
+    });
+  };
 
   useEffect(() => {
     const fetchAPI = async () => {
@@ -15,7 +38,8 @@ function CatalogSelection({ setPackageMode, onContinue }) {
         const response = await api.get(endPoint);
         const data = response.data;
         if (response.status >= 200 && response.status < 300) {
-          setCatalog(data || []);
+          setCatalog(normalizeCatalog(data));
+          console.log(data);
         }
       } catch (error) {
         console.log(error);
@@ -26,22 +50,26 @@ function CatalogSelection({ setPackageMode, onContinue }) {
   }, []);
 
   const toggle = (id) => {
+    const key = String(id);
     const next = new Set(selectedIds);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
     setSelectedIds(next);
   };
 
-  const parsePrice = (price) => price.toLocaleString("Vi-VN") + "đ" || 0;
+  const parsePrice = (price = 0) =>
+    (Number(price) || 0).toLocaleString("vi-VN") + "₫";
+
+  const normalized = Array.isArray(catalog) ? catalog : [];
 
   const total = Array.from(selectedIds).reduce((sum, catalogId) => {
-    const item = catalog.find((c) => c.catalogId === catalogId);
-    return sum + (item ? item.price : 0); // cộng số, không format
+    const item = normalized.find((c) => c.catalogId === String(catalogId));
+    return sum + (item ? Number(item.price) : 0);
   }, 0);
 
   const selectedItemsArray = Array.from(selectedIds)
     .map((id) => {
-      const item = catalog.find((c) => c.catalogId === id);
+      const item = normalized.find((c) => c.catalogId === String(id));
       return item
         ? {
             catalogId: item.catalogId,
@@ -76,7 +104,7 @@ function CatalogSelection({ setPackageMode, onContinue }) {
       </div>
 
       <div className="packages-grid" style={{ marginTop: 8 }}>
-        {catalog.map((item) => (
+        {normalized.map((item) => (
           <div
             key={item.catalogId}
             className="package-card"
@@ -92,7 +120,7 @@ function CatalogSelection({ setPackageMode, onContinue }) {
             >
               <input
                 type="checkbox"
-                checked={selectedIds.has(item.catalogId)}
+                checked={selectedIds.has(String(item.catalogId))}
                 onChange={() => toggle(item.catalogId)}
                 style={{ marginTop: 6 }}
               />
