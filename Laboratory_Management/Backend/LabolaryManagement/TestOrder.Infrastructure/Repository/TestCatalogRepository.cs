@@ -12,7 +12,7 @@ namespace TestOrder.Infrastructure.Repository
         public TestCatalogRepository(Data.TestOrderDBContext context) : base(context)
         {
         }
-        public async Task<(IEnumerable<TestCatalog> items, int totalItems)> GetAllPagedAsync(int page, int pageSize,string? search = null)
+        public async Task<(IEnumerable<TestCatalog> items, int totalItems)> GetAllPagedAsync(int page, int pageSize, string? search)
         {
             var query = _context.TestCatalogs.AsQueryable();
 
@@ -30,6 +30,17 @@ namespace TestOrder.Infrastructure.Repository
                 .ToListAsync();
 
             return (items, totalItems);
+        }
+
+        public async Task<List<int>> GetParamtersByCatalogId (int id)
+        {
+            var catalog = await _context.TestCatalogs
+                .Include(c => c.Parameters)
+                .FirstOrDefaultAsync(c => c.CatalogId == id);
+            if (catalog == null)
+                throw new KeyNotFoundException($"Catalog with id {id} not found.");
+            return catalog.Parameters.Select(p => p.ParameterId).ToList();
+
         }
 
         public async Task<IEnumerable<TestCatalog>> GetActiveCataLogAsync()
@@ -61,9 +72,9 @@ namespace TestOrder.Infrastructure.Repository
             return catalog;
 
         }
-        
-        
-        
+
+
+
 
         public async Task UpdateCatalogAsync(int id, string description, double price)
         {
@@ -74,6 +85,23 @@ namespace TestOrder.Infrastructure.Repository
             catalog.Description = description;
             catalog.Price = price;
 
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task RemoveParametersAsync(int catalogId, List<int> parameterIds)
+        {
+            var catalog = await _context.TestCatalogs
+                .Include(c => c.Parameters)
+                .FirstOrDefaultAsync(c => c.CatalogId == catalogId);
+            if (catalog == null)
+                throw new KeyNotFoundException($"Catalog with id {catalogId} not found.");
+            var parametersToRemove = catalog.Parameters
+                .Where(p => parameterIds.Contains(p.ParameterId))
+                .ToList();
+            foreach (var parameter in parametersToRemove)
+            {
+                catalog.Parameters.Remove(parameter);
+            }
             await _context.SaveChangesAsync();
         }
     }

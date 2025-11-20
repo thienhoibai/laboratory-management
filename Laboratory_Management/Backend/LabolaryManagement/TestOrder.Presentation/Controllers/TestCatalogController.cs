@@ -22,8 +22,8 @@ namespace TestOrder.Presentation.Controllers
         [HttpGet]
 
         public async Task<IActionResult> GetAllCatalogAsync(
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10,
+            [FromQuery] int page,
+            [FromQuery] int pageSize,
             [FromQuery] string? search = null)
 
         {
@@ -65,5 +65,15 @@ namespace TestOrder.Presentation.Controllers
             var AddCatalog = await _service.AddParameterAsync(id, ParameterIds);
             return Ok(AddCatalog);
         }
+
+        [HttpDelete]
+        [Route("{id}/paramters")]
+        public async Task<IActionResult> RemoveParameterAsync(int id, [FromBody] List<int> parametersIds)
+        {
+            await _service.RemoveParameterAsync(id, parametersIds);
+            return Ok();
+        }
+
+
     }
 }
