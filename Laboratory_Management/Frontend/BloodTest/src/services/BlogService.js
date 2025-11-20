@@ -1,5 +1,4 @@
 import BlogAPI from "../apis/BlogAPI";
-import CategoryAPI from "../apis/CategoryAPI";
 
 /**
  * Blog Service
@@ -245,7 +244,7 @@ const BlogService = {
    */
   getCategories: async () => {
     try {
-      const apiResponse = await CategoryAPI.getAllCategories();
+      const apiResponse = await BlogAPI.getAllCategories();
       const apiCategories = BlogService.extractCategoryList(apiResponse);
       return apiCategories.map((category) =>
         BlogService.transformCategoryFromAPI(category)

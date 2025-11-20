@@ -1,35 +1,78 @@
 // src/pages/blog/BlogDetailPage.jsx
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import Navbar from "../../components/navbar/Navbar";
 import Footer from "../../components/footer/Footer";
-import { blogPosts } from "../../data/blog";
+import BlogService from "../../services/BlogService";
 import "./BlogDetailPage.css";
 
 export default function BlogDetailPage() {
   const { id } = useParams();
-  const post = blogPosts.find((p) => p.id === parseInt(id));
+  const [post, setPost] = useState(null);
+  const [relatedPosts, setRelatedPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Scroll to top when component mounts or id changes
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+    loadBlogDetail();
   }, [id]);
 
-  if (!post) {
+  const loadBlogDetail = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Gọi API để lấy chi tiết bài blog theo ID
+      const blogData = await BlogService.getBlogById(id);
+      setPost(blogData);
+
+      // Lấy danh sách các bài blog khác để hiển thị bài viết liên quan
+      const allBlogs = await BlogService.getAllBlogs();
+      const related = allBlogs
+        .filter(
+          (blog) => blog.id !== parseInt(id) && blog.status === "approved"
+        )
+        .slice(0, 2);
+      setRelatedPosts(related);
+    } catch (err) {
+      console.error("Error loading blog detail:", err);
+      setError("Không thể tải bài viết. Vui lòng thử lại sau.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
     return (
       <div className="blog-detail-page">
         <Navbar />
         <div className="blog-detail-content">
-          <h1>Bài viết không tồn tại</h1>
-          <Link to="/blog">Quay lại trang blog</Link>
+          <div className="blog-detail-loading">
+            <p>Đang tải bài viết...</p>
+          </div>
         </div>
         <Footer />
       </div>
     );
   }
 
-  // Lấy 2 bài viết liên quan (không bao gồm bài hiện tại)
-  const relatedPosts = blogPosts.filter((p) => p.id !== post.id).slice(0, 2);
+  if (error || !post) {
+    return (
+      <div className="blog-detail-page">
+        <Navbar />
+        <div className="blog-detail-content">
+          <div className="blog-detail-error">
+            <h1>{error || "Bài viết không tồn tại"}</h1>
+            <Link to="/blog" className="back-to-blog-btn">
+              Quay lại trang blog
+            </Link>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="blog-detail-page">
