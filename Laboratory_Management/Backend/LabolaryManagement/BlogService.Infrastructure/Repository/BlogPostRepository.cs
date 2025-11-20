@@ -15,8 +15,8 @@ namespace BlogService.Infrastructure.Repository
     {
         public BlogPostRepository(DBContext context) : base(context) { }
 
-        public async Task<List<BlogPost>> GetAllWithCategoryAsync(
-            Guid? authorId, int? status, int page, int pageSize)
+        public async Task<List<BlogPost>> GetAllWithCategoryAsync(Guid? authorId, int? status, int page, int pageSize)
+
         {
             var query = _context.BlogPosts
                 .Include(p => p.Category)
@@ -38,8 +38,8 @@ namespace BlogService.Infrastructure.Repository
         public async Task<List<BlogPost>> GetApprovalAsync()
         {
             return await _context.BlogPosts
-                .Where(p => p.IsApproved == true || p.Status == 1)
-                .Include(p => p.Category)
+                .Where(p => p.IsApproved == true || p.Status ==1)
+                .Include(p => p.Category)            
                 .ToListAsync();
         }
 
