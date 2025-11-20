@@ -19,8 +19,8 @@ namespace TestOrder.Presentation.Controllers
         }
         [HttpGet]
         public async Task<IActionResult> GetAllParametersAsync(
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 2,
+            [FromQuery] int page,
+            [FromQuery] int pageSize,
             [FromQuery] string? search = null)
         {
             var result = await _service.GetAllParameterAsync(page, pageSize,search);
