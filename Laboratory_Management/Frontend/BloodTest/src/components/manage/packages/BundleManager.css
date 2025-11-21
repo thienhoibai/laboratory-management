@@ -323,16 +323,11 @@
   gap: 8px;
 }
 
-.switch-container {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
 .switch {
   position: relative;
   display: inline-flex;
   align-items: center;
+  gap: 10px;
 }
 
 .switch input {

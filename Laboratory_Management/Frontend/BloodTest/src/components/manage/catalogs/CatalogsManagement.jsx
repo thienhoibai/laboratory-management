@@ -10,8 +10,8 @@ import {
   createCatalog,
   updateCatalog,
   updateCatalogParameters,
-  getAllParameters,
-} from "../../../apis/TestOrderServiceAPI";
+} from "../../../apis/TestOrderServiceAPI.jsx";
+import { getAllParameters } from "../../../apis/TestOrderServiceAPI.jsx";
 import "./CatalogsManagement.css";
 
 const DEFAULT_FORM = {

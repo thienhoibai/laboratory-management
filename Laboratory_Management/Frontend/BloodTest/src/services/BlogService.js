@@ -7,21 +7,87 @@ import BlogAPI from "../apis/BlogAPI";
  */
 
 const BlogService = {
+  STATUS_TEXT_BY_CODE: {
+    0: "pending",
+    1: "approved",
+    2: "rejected",
+  },
+  STATUS_CODE_BY_TEXT: {
+    pending: 0,
+    approved: 1,
+    rejected: 2,
+  },
+
+  mapStatusFromAPI(status) {
+    if (typeof status === "number") {
+      return BlogService.STATUS_TEXT_BY_CODE[status] || "pending";
+    }
+    if (typeof status === "string" && status.trim() !== "") {
+      const normalized = status.trim().toLowerCase();
+      if (
+        Object.prototype.hasOwnProperty.call(
+          BlogService.STATUS_CODE_BY_TEXT,
+          normalized
+        )
+      ) {
+        return normalized;
+      }
+      const parsed = Number(normalized);
+      if (!Number.isNaN(parsed)) {
+        return BlogService.STATUS_TEXT_BY_CODE[parsed] || "pending";
+      }
+    }
+    return "pending";
+  },
+
+  mapStatusToAPI(status) {
+    if (typeof status === "number") {
+      return status;
+    }
+    if (typeof status === "string") {
+      const normalized = status.trim().toLowerCase();
+      if (
+        Object.prototype.hasOwnProperty.call(
+          BlogService.STATUS_CODE_BY_TEXT,
+          normalized
+        )
+      ) {
+        return BlogService.STATUS_CODE_BY_TEXT[normalized];
+      }
+      const parsed = Number(normalized);
+      if (!Number.isNaN(parsed)) {
+        return parsed;
+      }
+    }
+    return 0;
+  },
+
   /**
    * Transform API blog data to UI format
    * @param {Object} apiBlog - Blog data from API
    * @returns {Object} Transformed blog object for UI
    */
   transformBlogFromAPI: (apiBlog) => {
+    const categoryName =
+      apiBlog.category?.categoryName ||
+      apiBlog.categoryName ||
+      apiBlog.tag ||
+      "";
+    const status = BlogService.mapStatusFromAPI(apiBlog.status);
     return {
-      id: apiBlog.blogPostId || apiBlog.id,
+      id: apiBlog.blogPostId || apiBlog.postId || apiBlog.id,
       title: apiBlog.title || "",
-      author: apiBlog.author || "Unknown",
-      category: apiBlog.category || apiBlog.tag || "",
-      tag: apiBlog.tag || apiBlog.category || "",
-      status: apiBlog.status || "draft",
+      author: apiBlog.author || apiBlog.authorName || "Unknown",
+      authorId: apiBlog.authorId || apiBlog.author?.id || "",
+      categoryId: apiBlog.categoryId || apiBlog.category?.categoryId || null,
+      category: categoryName,
+      tag: apiBlog.tag || categoryName,
+      status,
       content: apiBlog.content || "",
-      img: apiBlog.imageUrl || apiBlog.img || "",
+      img: apiBlog.imageUrl || apiBlog.thumbnailUrl || apiBlog.img || "",
+      thumbnailUrl: apiBlog.thumbnailUrl || apiBlog.imageUrl || "",
+      createdDate: apiBlog.createdDate || apiBlog.createdAt || "",
+      updatedDate: apiBlog.updatedDate || apiBlog.updatedAt || "",
       date: apiBlog.createdDate
         ? new Date(apiBlog.createdDate).toLocaleDateString("vi-VN", {
             day: "numeric",
@@ -58,15 +124,97 @@ const BlogService = {
    * @returns {Object} Transformed blog object for API
    */
   transformBlogToAPI: (uiBlog) => {
-    return {
+    const status = BlogService.mapStatusToAPI(uiBlog.status);
+    const hasCategoryId =
+      uiBlog.categoryId !== undefined &&
+      uiBlog.categoryId !== null &&
+      uiBlog.categoryId !== "" &&
+      !Number.isNaN(Number(uiBlog.categoryId));
+    const categoryId = hasCategoryId ? Number(uiBlog.categoryId) : undefined;
+    const authorId =
+      uiBlog.authorId && uiBlog.authorId.trim() !== ""
+        ? uiBlog.authorId.trim()
+        : undefined;
+    const thumbnailUrl = uiBlog.thumbnailUrl || uiBlog.img || "";
+
+    const payload = {
       title: uiBlog.title,
       author: uiBlog.author,
       category: uiBlog.category,
       tag: uiBlog.tag || uiBlog.category,
-      status: uiBlog.status,
+      status,
       content: uiBlog.content,
       imageUrl: uiBlog.img,
     };
+
+    if (thumbnailUrl) {
+      payload.thumbnailUrl = thumbnailUrl;
+    }
+    if (authorId) {
+      payload.authorId = authorId;
+    }
+    if (hasCategoryId && categoryId !== undefined && categoryId !== null) {
+      payload.categoryId = categoryId;
+    }
+    if (uiBlog.updatedDate) {
+      payload.updatedDate = uiBlog.updatedDate;
+    }
+
+    return payload;
+  },
+
+  /**
+   * Transform API category data to UI format
+   * @param {Object} apiCategory
+   * @returns {{id:number|string, categoryId:number|string, name:string, description:string}}
+   */
+  transformCategoryFromAPI: (apiCategory) => {
+    if (!apiCategory) {
+      return {
+        id: null,
+        categoryId: null,
+        name: "",
+        description: "",
+      };
+    }
+    return {
+      id: apiCategory.categoryId || apiCategory.id,
+      categoryId: apiCategory.categoryId || apiCategory.id,
+      name: apiCategory.categoryName || apiCategory.name || "",
+      description: apiCategory.description || "",
+    };
+  },
+
+  /**
+   * Normalize list responses coming from API
+   * @param {*} apiResponse
+   * @returns {Array}
+   */
+  extractBlogList: (apiResponse) => {
+    if (!apiResponse) return [];
+    if (Array.isArray(apiResponse)) return apiResponse;
+    if (Array.isArray(apiResponse.items)) return apiResponse.items;
+    if (Array.isArray(apiResponse.data)) return apiResponse.data;
+    if (apiResponse.data && Array.isArray(apiResponse.data.items)) {
+      return apiResponse.data.items;
+    }
+    return [];
+  },
+
+  /**
+   * Normalize category list responses coming from API
+   * @param {*} apiResponse
+   * @returns {Array}
+   */
+  extractCategoryList: (apiResponse) => {
+    if (!apiResponse) return [];
+    if (Array.isArray(apiResponse)) return apiResponse;
+    if (Array.isArray(apiResponse.items)) return apiResponse.items;
+    if (Array.isArray(apiResponse.data)) return apiResponse.data;
+    if (apiResponse.data && Array.isArray(apiResponse.data.items)) {
+      return apiResponse.data.items;
+    }
+    return [];
   },
 
   /**
@@ -75,10 +223,28 @@ const BlogService = {
    */
   getAllBlogs: async () => {
     try {
-      const apiBlogs = await BlogAPI.getAllBlogs();
+      const apiResponse = await BlogAPI.getAllBlogs();
+      const apiBlogs = BlogService.extractBlogList(apiResponse);
       return apiBlogs.map((blog) => BlogService.transformBlogFromAPI(blog));
     } catch (error) {
       console.error("BlogService - Error getting all blogs:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get all categories
+   * @returns {Promise<Array>} Array of categories
+   */
+  getCategories: async () => {
+    try {
+      const apiResponse = await BlogAPI.getAllCategories();
+      const apiCategories = BlogService.extractCategoryList(apiResponse);
+      return apiCategories.map((category) =>
+        BlogService.transformCategoryFromAPI(category)
+      );
+    } catch (error) {
+      console.error("BlogService - Error getting categories:", error);
       throw error;
     }
   },
@@ -141,6 +307,34 @@ const BlogService = {
       return await BlogAPI.deleteBlog(id);
     } catch (error) {
       console.error(`BlogService - Error deleting blog ${id}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Approve blog
+   * @param {number} id - Blog ID
+   * @returns {Promise} Approve confirmation
+   */
+  approveBlog: async (id) => {
+    try {
+      return await BlogAPI.approveBlog(id);
+    } catch (error) {
+      console.error(`BlogService - Error approving blog ${id}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Reject blog
+   * @param {number} id - Blog ID
+   * @returns {Promise} Reject confirmation
+   */
+  rejectBlog: async (id) => {
+    try {
+      return await BlogAPI.rejectBlog(id);
+    } catch (error) {
+      console.error(`BlogService - Error rejecting blog ${id}:`, error);
       throw error;
     }
   },

@@ -13,8 +13,8 @@ import {
   addCatalogsToBundle,
   removeCatalogsFromBundle,
   getCatalogsOfBundle,
-  getAllCatalogs,
-} from "../../../apis/TestOrderServiceAPI";
+} from "../../../apis/TestOrderServiceAPI.jsx";
+import { getAllCatalogs } from "../../../apis/TestOrderServiceAPI.jsx";
 import "./BundleManager.css";
 
 const getCatalogId = (catalog) =>
@@ -114,10 +114,22 @@ const BundleManager = () => {
       if (searchDebounce) query.search = searchDebounce;
       const { items, meta } = await getAllBundles(query);
       // Chuẩn hóa isActive cho tất cả bundles
-      const normalizedBundles = (items || []).map((bundle) => ({
-        ...bundle,
-        isActive: normalizeIsActive(bundle),
-      }));
+      const normalizedBundles = (items || []).map((bundle) => {
+        const normalized = {
+          ...bundle,
+          isActive: normalizeIsActive(bundle),
+        };
+        // Debug: log để kiểm tra giá trị (có thể xóa sau khi fix)
+        console.log(
+          "Bundle:",
+          bundle.bundleName,
+          "Original isActive:",
+          bundle.isActive,
+          "Normalized:",
+          normalized.isActive
+        );
+        return normalized;
+      });
       setBundles(normalizedBundles);
       setTotal(meta?.totalItems ?? items?.length ?? 0);
     } catch (error) {
@@ -153,17 +165,8 @@ const BundleManager = () => {
   };
 
   const handleOpenEditModal = async (bundle) => {
-    console.log("=== handleOpenEditModal called ===");
-    console.log("Bundle object:", bundle);
-
     const bundleId = getBundleId(bundle);
-    console.log("Extracted bundleId:", bundleId);
-
-    if (!bundleId) {
-      console.error("No bundleId found, returning early");
-      return;
-    }
-
+    if (!bundleId) return;
     setModalMode("edit");
     setSelectedBundle(bundle);
     setIsModalOpen(true);
