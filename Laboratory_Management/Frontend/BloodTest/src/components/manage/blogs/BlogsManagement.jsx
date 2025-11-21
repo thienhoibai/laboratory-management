@@ -83,6 +83,17 @@ const BlogsManagement = () => {
   }, [filter]);
 
   useEffect(() => {
+    // Only trigger search when user stops typing (debounce effect)
+    if (search.trim() !== "") {
+      loadBlogs();
+    } else {
+      // Clear search, reload with current filter
+      loadBlogs();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
+
+  useEffect(() => {
     loadCategories();
   }, []);
 
@@ -101,8 +112,15 @@ const BlogsManagement = () => {
       };
 
       const params = {};
+
+      // Always apply status filter (except for "all")
       if (filter !== "all") {
         params.status = statusMap[filter];
+      }
+
+      // Add search parameter if search term exists
+      if (search && search.trim() !== "") {
+        params.search = search.trim();
       }
 
       const blogsData = await BlogService.getAllBlogs(params);
@@ -131,15 +149,9 @@ const BlogsManagement = () => {
     }
   };
 
-  // Frontend search only (API already filtered by status)
-  const searchedBlogs = blogs.filter((blog) =>
-    blog.title.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const displayedBlogs = searchedBlogs.slice(
-    (page - 1) * pageSize,
-    page * pageSize
-  );
+  // API handles both status filter and search
+  // Just slice for pagination
+  const displayedBlogs = blogs.slice((page - 1) * pageSize, page * pageSize);
 
   // Statistics
   const stats = {
@@ -630,7 +642,7 @@ const BlogsManagement = () => {
             <Pagination
               current={page}
               pageSize={pageSize}
-              total={searchedBlogs.length}
+              total={blogs.length}
               onChange={(newPage, newPageSize) => {
                 setPage(newPage);
                 if (newPageSize !== pageSize) {

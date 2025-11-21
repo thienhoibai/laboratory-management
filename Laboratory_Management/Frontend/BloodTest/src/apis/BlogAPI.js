@@ -12,11 +12,13 @@ const BlogAPI = {
    * @param {number} params.page - Page number
    * @param {number} params.pageSize - Page size
    * @param {number} params.status - Status filter (0: pending, 1: approved, 2: rejected)
+   * @param {string} params.search - Search term for filtering blogs
+   * @param {string} params.authorId - Author ID filter
    * @returns {Promise} Array of blog posts
    */
   getAllBlogs: async (params = {}) => {
     try {
-      const { page = 1, pageSize = 100, status, authorId } = params;
+      const { page = 1, pageSize = 100, status, authorId, search } = params;
       let url = `blog/api/BlogPost?page=${page}&pageSize=${pageSize}`;
       
       if (status !== undefined && status !== null) {
@@ -25,6 +27,10 @@ const BlogAPI = {
       
       if (authorId) {
         url += `&authorId=${authorId}`;
+      }
+      
+      if (search && search.trim() !== "") {
+        url += `&search=${encodeURIComponent(search.trim())}`;
       }
       
       const response = await api.get(url);
