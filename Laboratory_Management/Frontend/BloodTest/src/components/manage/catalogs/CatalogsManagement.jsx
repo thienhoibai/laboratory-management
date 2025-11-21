@@ -10,18 +10,27 @@ import {
   createCatalog,
   updateCatalog,
   updateCatalogParameters,
+  deleteCatalogParameter,
 } from "../../../apis/TestOrderServiceAPI.jsx";
 import { getAllParameters } from "../../../apis/TestOrderServiceAPI.jsx";
 import "./CatalogsManagement.css";
 
 const DEFAULT_FORM = {
   testName: "",
+  catalogName: "",
   description: "",
   price: "",
 };
 
+// Helper để lấy tên catalog
+const getCatalogName = (catalog) =>
+  catalog?.catalogName || catalog?.testName || "";
+
 const getParameterId = (param) =>
   param?.parameterId ?? param?.id ?? param?.Id ?? null;
+
+const getCatalogId = (catalog) =>
+  catalog?.catalogId ?? catalog?.id ?? catalog?.Id ?? null;
 
 const CatalogsManagement = () => {
   const [catalogs, setCatalogs] = useState([]);
@@ -106,23 +115,26 @@ const CatalogsManagement = () => {
   const handleOpenCreateModal = () => {
     setModalMode("create");
     setSelectedCatalog(null);
-    setFormData(DEFAULT_FORM);
+    setFormData({ ...DEFAULT_FORM, catalogName: "" });
     setSelectedParameters([]);
     setParameterSearch("");
     setIsModalOpen(true);
   };
 
   const handleOpenEditModal = async (catalog) => {
-    if (!catalog?.catalogId) return;
+    const catalogId = getCatalogId(catalog);
+    if (!catalogId) return;
     setModalMode("edit");
     setSelectedCatalog(catalog);
     setIsModalOpen(true);
     setParameterSearch("");
     setIsDetailLoading(true);
     try {
-      const detail = await getCatalogById(catalog.catalogId);
+      const detail = await getCatalogById(catalogId);
+      const catalogName = getCatalogName(detail) || getCatalogName(catalog);
       setFormData({
-        testName: detail?.testName || catalog.testName || "",
+        testName: catalogName,
+        catalogName: catalogName,
         description: detail?.description || catalog.description || "",
         price: detail?.price ?? catalog.price ?? "",
       });
@@ -130,8 +142,10 @@ const CatalogsManagement = () => {
     } catch (error) {
       console.error("Error loading catalog detail:", error);
       toast.error("Không thể tải thông tin mục xét nghiệm");
+      const catalogName = getCatalogName(catalog);
       setFormData({
-        testName: catalog.testName || "",
+        testName: catalogName,
+        catalogName: catalogName,
         description: catalog.description || "",
         price: catalog.price ?? "",
       });
@@ -152,20 +166,48 @@ const CatalogsManagement = () => {
 
   const handleFormChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => {
+      const updated = { ...prev, [name]: value };
+      // Đồng bộ testName và catalogName
+      if (name === "testName") {
+        updated.catalogName = value;
+      } else if (name === "catalogName") {
+        updated.testName = value;
+      }
+      return updated;
+    });
   };
 
-  const handleToggleParameter = (parameter) => {
+  const handleToggleParameter = async (parameter) => {
     const paramId = getParameterId(parameter);
     if (!paramId) return;
     const exists = selectedParameters.some(
       (item) => getParameterId(item) === paramId
     );
+
     if (exists) {
+      // Uncheck: Xóa parameter khỏi danh sách
       setSelectedParameters((prev) =>
         prev.filter((item) => getParameterId(item) !== paramId)
       );
+
+      // Nếu đang ở chế độ edit và có catalogId, gọi API DELETE để xóa parameter
+      if (modalMode === "edit" && selectedCatalog) {
+        const catalogId = getCatalogId(selectedCatalog);
+        if (catalogId) {
+          try {
+            await deleteCatalogParameter(catalogId, paramId);
+            toast.success("Đã xóa chỉ số xét nghiệm khỏi mục xét nghiệm");
+          } catch (error) {
+            console.error("Error deleting parameter:", error);
+            toast.error("Không thể xóa chỉ số xét nghiệm");
+            // Rollback: thêm lại parameter vào danh sách
+            setSelectedParameters((prev) => [...prev, parameter]);
+          }
+        }
+      }
     } else {
+      // Check: Thêm parameter vào danh sách
       setSelectedParameters((prev) => [...prev, parameter]);
     }
   };
@@ -183,7 +225,9 @@ const CatalogsManagement = () => {
   }, [availableParameters, parameterSearch]);
 
   const validateForm = () => {
-    if (!formData.testName.trim() && modalMode === "create") {
+    const catalogName =
+      formData.testName?.trim() || formData.catalogName?.trim() || "";
+    if (!catalogName && modalMode === "create") {
       toast.error("Tên mục xét nghiệm là bắt buộc");
       return false;
     }
@@ -198,23 +242,33 @@ const CatalogsManagement = () => {
     if (!validateForm()) return;
     setIsSaving(true);
     try {
-      let catalogId = selectedCatalog?.catalogId || selectedCatalog?.id || null;
+      let catalogId = getCatalogId(selectedCatalog);
+      const catalogName =
+        formData.testName?.trim() || formData.catalogName?.trim() || "";
+
       if (modalMode === "create") {
         const payload = {
-          testName: formData.testName.trim(),
+          catalogName: catalogName, // Gửi catalogName theo API mới
+          testName: catalogName, // Giữ testName để tương thích
           description: formData.description.trim(),
           price: Number(formData.price) || 0,
         };
         const created = await createCatalog(payload);
-        catalogId = created?.catalogId ?? created?.id ?? catalogId;
+        catalogId = getCatalogId(created) || catalogId;
       } else if (catalogId) {
+        // Gửi đầy đủ các trường khi cập nhật: catalogName, description, price
         const payload = {
+          catalogName: catalogName, // Tên mục xét nghiệm
+          testName: catalogName, // Giữ testName để tương thích
           description: formData.description.trim(),
           price: Number(formData.price) || 0,
         };
         await updateCatalog(catalogId, payload);
       }
 
+      // Sync danh sách parameters
+      // Khi edit: việc xóa parameter đã được xử lý ngay bằng DELETE trong handleToggleParameter
+      // Khi save: gọi PUT để đảm bảo danh sách parameters được sync đúng với selectedParameters
       if (catalogId) {
         const parameterIds = selectedParameters
           .map((param) => getParameterId(param))
@@ -271,7 +325,7 @@ const CatalogsManagement = () => {
                 <FiSearch size={18} />
                 <input
                   type="text"
-                  placeholder="Tìm kiếm theo tên hoặc mô tả..."
+                  placeholder="Tìm kiếm theo tên"
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
                 />
@@ -292,14 +346,13 @@ const CatalogsManagement = () => {
                   <th>Mô tả</th>
                   <th>Chỉ số xét nghiệm</th>
                   <th>Giá</th>
-                  <th>Trạng thái</th>
                   <th>Thao tác</th>
                 </tr>
               </thead>
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td colSpan="6" style={{ padding: "40px" }}>
+                    <td colSpan="5" style={{ padding: "40px" }}>
                       <div className="loading-container">
                         <div className="loading-spinner"></div>
                         <p>Đang tải dữ liệu...</p>
@@ -308,10 +361,10 @@ const CatalogsManagement = () => {
                   </tr>
                 ) : catalogs.length > 0 ? (
                   catalogs.map((catalog) => (
-                    <tr key={catalog.catalogId}>
+                    <tr key={getCatalogId(catalog)}>
                       <td>
                         <span className="catalog-name">
-                          {catalog.testName || "-"}
+                          {getCatalogName(catalog) || "-"}
                         </span>
                       </td>
                       <td>
@@ -356,17 +409,6 @@ const CatalogsManagement = () => {
                         </span>
                       </td>
                       <td>
-                        <span
-                          className={`status-badge ${
-                            catalog.status === "Inactive"
-                              ? "inactive"
-                              : "active"
-                          }`}
-                        >
-                          {catalog.status || "Đang cập nhật"}
-                        </span>
-                      </td>
-                      <td>
                         <button
                           className="action-button edit"
                           onClick={() => handleOpenEditModal(catalog)}
@@ -380,7 +422,7 @@ const CatalogsManagement = () => {
                 ) : (
                   <tr>
                     <td
-                      colSpan="6"
+                      colSpan="5"
                       style={{ textAlign: "center", padding: 40 }}
                     >
                       {searchDebounce
@@ -438,7 +480,7 @@ const CatalogsManagement = () => {
                       placeholder="VD: Xét nghiệm máu toàn bộ"
                       value={formData.testName}
                       onChange={handleFormChange}
-                      disabled={modalMode === "edit" || isSaving}
+                      disabled={isSaving}
                     />
                   </div>
                   <div className="form-group">

@@ -98,9 +98,20 @@ export const getCatalogsOfBundle = async (bundleId) => {
   const response = await api.get(`${CATALOG_BUNDLE_BASE}/${bundleId}`);
   console.log(
     `[API] Response from ${CATALOG_BUNDLE_BASE}/${bundleId}:`,
-    response
+    response?.data
   );
-  return response?.data?.data || response?.data || [];
+  // Xử lý nhiều trường hợp response structure
+  const data = response?.data;
+  if (Array.isArray(data)) {
+    return data;
+  } else if (Array.isArray(data?.data)) {
+    return data.data;
+  } else if (Array.isArray(data?.catalogs)) {
+    return data.catalogs;
+  } else if (data?.data) {
+    return [data.data];
+  }
+  return data || [];
 };
 
 export const addCatalogsToBundle = async (bundleId, catalogIds = []) => {
@@ -115,6 +126,8 @@ export const addCatalogsToBundle = async (bundleId, catalogIds = []) => {
 
 export const removeCatalogsFromBundle = async (bundleId, catalogIds = []) => {
   if (!bundleId) throw new Error("Bundle ID is required");
+  // Gọi API DELETE /api/CatalogBundle/{bundleId}
+  // Truyền catalogId trong body
   const payload = {
     bundleId,
     catalogId: catalogIds,
@@ -127,8 +140,43 @@ export const removeCatalogsFromBundle = async (bundleId, catalogIds = []) => {
 
 // ==================== Catalog Service APIs ====================
 export const getAllCatalogs = async (params = {}) => {
-  const response = await api.get(CATALOG_BASE, { params });
-  return extractItemsAndMeta(response, params);
+  // Đảm bảo luôn có page và pageSize
+  const queryParams = {
+    page: params.page || 1,
+    pageSize: params.pageSize || 10,
+    ...params,
+  };
+
+  const response = await api.get(CATALOG_BASE, { params: queryParams });
+  const data = response?.data;
+
+  // Xử lý response mới với catalogDTOs
+  let items = [];
+
+  if (Array.isArray(data?.catalogDTOs)) {
+    items = data.catalogDTOs;
+  } else if (Array.isArray(data)) {
+    items = data;
+  } else if (Array.isArray(data?.data)) {
+    items = data.data;
+  } else if (Array.isArray(data?.items)) {
+    items = data.items;
+  }
+
+  // Meta từ response mới
+  const meta = data?.meta || {
+    totalItems: data?.totalItems ?? items.length ?? 0,
+    page: data?.page ?? queryParams.page ?? 1,
+    pageSize: data?.pageSize ?? queryParams.pageSize ?? items.length ?? 0,
+    totalPages:
+      data?.totalPages ??
+      Math.ceil(
+        (data?.totalItems ?? items.length) /
+          (data?.pageSize ?? queryParams.pageSize)
+      ),
+  };
+
+  return { items, meta };
 };
 
 export const getCatalogById = async (id) => {
@@ -154,6 +202,17 @@ export const updateCatalogParameters = async (id, parameterIds = []) => {
     `${CATALOG_BASE}/${id}/parameters`,
     parameterIds
   );
+  return response?.data?.data || response?.data;
+};
+
+export const deleteCatalogParameter = async (catalogId, parameterId) => {
+  if (!catalogId) throw new Error("Catalog ID is required");
+  if (!parameterId) throw new Error("Parameter ID is required");
+  // Gọi API DELETE api/TestCatalog/{catalogId}/parameter
+  // Truyền parameterId trong body (tương tự như removeCatalogsFromBundle)
+  const response = await api.delete(`${CATALOG_BASE}/${catalogId}/parameter`, {
+    data: { parameterId },
+  });
   return response?.data?.data || response?.data;
 };
 
@@ -226,6 +285,7 @@ const TestOrderServiceAPI = {
   createCatalog,
   updateCatalog,
   updateCatalogParameters,
+  deleteCatalogParameter,
   // Parameter APIs
   getAllParameters,
   getParameterById,
