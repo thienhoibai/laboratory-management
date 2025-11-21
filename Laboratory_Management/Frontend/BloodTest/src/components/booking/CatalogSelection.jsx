@@ -9,27 +9,15 @@ function CatalogSelection({ setPackageMode, onContinue }) {
   const [catalog, setCatalog] = useState([]);
 
   const normalizeCatalog = (data) => {
-    if (!data) return [];
-    const arr = Array.isArray(data)
-      ? data
-      : Array.isArray(data.items)
-      ? data.items
-      : Array.isArray(data.data)
-      ? data.data
-      : typeof data === "object"
-      ? Object.values(data)
-      : [];
-    return arr.map((it) => {
-      const id = it.catalogId;
-      const price = Number(it.price) || 0;
-      return {
-        catalogId: String(id),
-        testName: it.testName,
-        price,
-        description: it.description,
-        _raw: it,
-      };
-    });
+    if (!data || !Array.isArray(data.catalogDTOs)) return [];
+
+    return data.catalogDTOs.map((it) => ({
+      catalogId: String(it.id),
+      testName: it.catalogName,
+      price: Number(it.price) || 0,
+      description: it.description,
+      _raw: it,
+    }));
   };
 
   useEffect(() => {
@@ -37,9 +25,9 @@ function CatalogSelection({ setPackageMode, onContinue }) {
       try {
         const response = await api.get(endPoint);
         const data = response.data;
+        console.log("data" + data);
         if (response.status >= 200 && response.status < 300) {
           setCatalog(normalizeCatalog(data));
-          console.log(data);
         }
       } catch (error) {
         console.log(error);

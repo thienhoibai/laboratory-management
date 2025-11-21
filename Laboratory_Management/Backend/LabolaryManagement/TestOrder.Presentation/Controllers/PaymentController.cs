@@ -24,9 +24,9 @@ namespace TestOrder.Presentation.Controllers
 
         [HttpGet]
         [Route("all")]
-        public async Task<IActionResult> GetAllPayments([FromQuery] int pageNumber)
+        public async Task<IActionResult> GetAllPayments([FromQuery] int pageNumber, [FromQuery] int pageSize)
         {
-            var payments = await paymentService.GetAllPaymentEnvoicePaged(pageNumber);
+            var payments = await paymentService.GetAllPaymentEnvoicePaged(pageNumber, pageSize);
             return Ok(payments);
         }
         [HttpGet]

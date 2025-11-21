@@ -48,6 +48,13 @@ namespace TestOrder.Infrastructure.Repository
             b.PatientName.Contains(keyword) ||
             b.PatientEmail.Contains(keyword) ||
             b.PatientPhone.Contains(keyword))); 
+
+            if (query == null || !query.Any())
+            {
+                return null;
+            }
+
+
             return await query.ToListAsync();
 
         }
