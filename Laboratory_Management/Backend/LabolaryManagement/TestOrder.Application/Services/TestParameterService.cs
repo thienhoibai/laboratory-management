@@ -43,6 +43,8 @@ namespace TestOrder.Application.Services
                 ParameterName = parameter.ParameterName,
                 Unit = parameter.Unit,
                 ReferenceRange = parameter.ReferenceRange,
+                MinRange = parameter.MinRange,
+                MaxRange = parameter.MaxRange
 
             };
             await _repository.AddParameterAsync(entity);
