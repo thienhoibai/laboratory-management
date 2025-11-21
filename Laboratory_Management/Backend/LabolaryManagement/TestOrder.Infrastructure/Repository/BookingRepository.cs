@@ -52,7 +52,7 @@ namespace TestOrder.Infrastructure.Repository
 
         }
 
-        public async Task<IEnumerable<Booking>?> SortingAndPaging
+        public Task<IEnumerable<Booking>?> SortingAndPaging
             (string? sortBy, string? sortDirection, int pageSize, int pageNumber, IEnumerable<Booking> bookingList)
         {
             bool isDescending = sortDirection?.ToLower() == "desc";
@@ -64,13 +64,15 @@ namespace TestOrder.Infrastructure.Repository
                 "patientname" => isDescending ? query.OrderByDescending(b => b.PatientName) : query.OrderBy(b => b.PatientName),
                 "patientemail" => isDescending ? query.OrderByDescending(b => b.PatientEmail) : query.OrderBy(b => b.PatientEmail),
                 "patientphone" => isDescending ? query.OrderByDescending(b => b.PatientPhone) : query.OrderBy(b => b.PatientPhone),
-                _ => query
+                _ => query.OrderBy(b => b.BookingCode),
             };
 
-            return await query
+
+
+            return Task.FromResult<IEnumerable<Booking>?>(query
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
-                .ToListAsync();
+                .ToList());
 
         }
        
