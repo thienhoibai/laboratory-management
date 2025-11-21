@@ -8,14 +8,45 @@ import api from "../configs/axios";
 const BlogAPI = {
   /**
    * Get all blog posts
+   * @param {Object} params - Query parameters
+   * @param {number} params.page - Page number
+   * @param {number} params.pageSize - Page size
+   * @param {number} params.status - Status filter (0: pending, 1: approved, 2: rejected)
    * @returns {Promise} Array of blog posts
    */
-  getAllBlogs: async () => {
+  getAllBlogs: async (params = {}) => {
     try {
-      const response = await api.get("blog/api/BlogPost?page=1&pageSize=10");
+      const { page = 1, pageSize = 100, status, authorId } = params;
+      let url = `blog/api/BlogPost?page=${page}&pageSize=${pageSize}`;
+      
+      if (status !== undefined && status !== null) {
+        url += `&status=${status}`;
+      }
+      
+      if (authorId) {
+        url += `&authorId=${authorId}`;
+      }
+      
+      const response = await api.get(url);
       return response.data;
     } catch (error) {
       console.error("Error fetching blogs:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get approved blog posts (for public display)
+   * @param {number} page - Page number
+   * @param {number} pageSize - Page size
+   * @returns {Promise} Array of approved blog posts
+   */
+  getApprovedBlogs: async (page = 1, pageSize = 100) => {
+    try {
+      // Use getAllBlogs with status=1 (approved)
+      return await BlogAPI.getAllBlogs({ page, pageSize, status: 1 });
+    } catch (error) {
+      console.error("Error fetching approved blogs:", error);
       throw error;
     }
   },

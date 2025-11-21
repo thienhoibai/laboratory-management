@@ -76,9 +76,13 @@ const BlogsManagement = () => {
   const [isViewDetailOpen, setIsViewDetailOpen] = useState(false);
   const [viewingBlog, setViewingBlog] = useState(null);
 
-  // Load data on mount
+  // Load data on mount and when filter changes
   useEffect(() => {
     loadBlogs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter]);
+
+  useEffect(() => {
     loadCategories();
   }, []);
 
@@ -88,7 +92,20 @@ const BlogsManagement = () => {
       const token = localStorage.getItem("accessToken");
       if (token) setAuthToken(token);
 
-      const blogsData = await BlogService.getAllBlogs();
+      // Map filter to status code
+      const statusMap = {
+        all: undefined,
+        pending: 0,
+        approved: 1,
+        rejected: 2,
+      };
+
+      const params = {};
+      if (filter !== "all") {
+        params.status = statusMap[filter];
+      }
+
+      const blogsData = await BlogService.getAllBlogs(params);
       setBlogs(blogsData);
     } catch (error) {
       console.error("Error loading blogs:", error);
@@ -114,14 +131,8 @@ const BlogsManagement = () => {
     }
   };
 
-  const filteredBlogs = blogs.filter((blog) => {
-    if (filter === "all") {
-      return true;
-    }
-    return blog.status === filter;
-  });
-
-  const searchedBlogs = filteredBlogs.filter((blog) =>
+  // Frontend search only (API already filtered by status)
+  const searchedBlogs = blogs.filter((blog) =>
     blog.title.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -302,7 +313,6 @@ const BlogsManagement = () => {
       }
 
       if (isEditMode) {
-        submitData.updatedDate = new Date().toISOString();
         if (editingBlogId === null || editingBlogId === undefined) {
           throw new Error("Không tìm thấy ID bài viết để cập nhật");
         }
@@ -557,7 +567,7 @@ const BlogsManagement = () => {
               displayedBlogs.map((blog) => (
                 <div className="blogs-table-row" key={blog.id}>
                   <span className="blogs-table-title">{blog.title}</span>
-                  <span>{blog.authorId}</span>
+                  <span>{blog.author || "Unknown"}</span>
                   <span>{blog.category}</span>
                   <span>{formatDate1(blog.createdDate) || "Chưa có"}</span>
                   <span>
@@ -901,12 +911,16 @@ const BlogsManagement = () => {
 
                 <div className="blogs-view-row">
                   <label>Ngày tạo:</label>
-                  <span>{viewingBlog.createdDate || "Chưa có"}</span>
+                  <span>
+                    {formatDate1(viewingBlog.createdDate) || "Chưa có"}
+                  </span>
                 </div>
 
                 <div className="blogs-view-row">
                   <label>Ngày cập nhật:</label>
-                  <span>{viewingBlog.updatedDate || "Chưa cập nhật"}</span>
+                  <span>
+                    {formatDate1(viewingBlog.updatedDate) || "Chưa cập nhật"}
+                  </span>
                 </div>
 
                 <div className="blogs-view-row blogs-view-content-section">

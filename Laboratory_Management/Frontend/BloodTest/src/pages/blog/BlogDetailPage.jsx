@@ -27,12 +27,10 @@ export default function BlogDetailPage() {
       const blogData = await BlogService.getBlogById(id);
       setPost(blogData);
 
-      // Lấy danh sách các bài blog khác để hiển thị bài viết liên quan
-      const allBlogs = await BlogService.getAllBlogs();
+      // Lấy danh sách các bài blog khác (đã duyệt) để hiển thị bài viết liên quan
+      const allBlogs = await BlogService.getApprovedBlogs(1, 100);
       const related = allBlogs
-        .filter(
-          (blog) => blog.id !== parseInt(id) && blog.status === "approved"
-        )
+        .filter((blog) => blog.id !== parseInt(id))
         .slice(0, 2);
       setRelatedPosts(related);
     } catch (err) {
