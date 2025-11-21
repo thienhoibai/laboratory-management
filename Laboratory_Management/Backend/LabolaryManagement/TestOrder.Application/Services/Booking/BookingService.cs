@@ -27,6 +27,7 @@ namespace TestOrder.Application.Services.Booking
             _appointmentSlotService = appointmentSlotService;
         }
 
+
         public async Task<IEnumerable<BookingResponseDTO>> GetAllBookingsByDateAsync
             (DateOnly date, string? keyword, string? sortBy, string? sortDirection, int pageSize, int pageNumber)
         {
@@ -42,7 +43,12 @@ namespace TestOrder.Application.Services.Booking
 
             IEnumerable<Infrastructure.Models.Booking>? enumerable = await _bookingRepository.SortingAndPaging
                 (sortBy, sortDirection, pageSize, pageNumber, bookings);
-            bookings = enumerable;
+            bookings = enumerable.AsEnumerable();
+
+            if (!bookings.Any() || bookings == null)
+            {
+                throw new Exception("No bookings found");
+            }
 
 
             var bookingResponses = new List<BookingResponseDTO>();
