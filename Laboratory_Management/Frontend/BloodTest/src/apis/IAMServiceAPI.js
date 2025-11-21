@@ -2,6 +2,7 @@ import api from "../configs/axios";
 
 const URL = "iam/api/Auth/";
 const URL_Google = "iam/v1/auth/";
+const URL_User = "iam/api/Users/";
 export const IAMServiceAPI = {
   ResetPasswordAPI: async (token, newPassword) => {
     return await api.post(`${URL}reset-password`, {
@@ -36,5 +37,8 @@ export const IAMServiceAPI = {
       currentPassword: currentPassword,
       newPassword: newPassword,
     });
+  },
+  GetUserById: async (userId) => {
+    return await api.get(`${URL_User}${userId}`);
   },
 };
