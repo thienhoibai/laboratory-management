@@ -24,6 +24,15 @@ namespace BlogService.Infrastructure.Repository
 
             if (authorId.HasValue)
                 query = query.Where(p => p.AuthorId == authorId.Value);
+            if  (!string.IsNullOrEmpty(search))
+                    query = query.Where(p =>
+                        p.Title!.Contains(search) ||
+                        p.Category!.CategoryName!.Contains(search));
+            if (!string.IsNullOrEmpty(search))
+                query = query.Where(p =>
+                    p.Title!.Contains(search) ||
+                    p.Category!.CategoryName!.Contains(search));
+
 
 
             if (status.HasValue)

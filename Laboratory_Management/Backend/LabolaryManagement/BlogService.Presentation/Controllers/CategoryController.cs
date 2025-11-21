@@ -8,6 +8,7 @@ namespace BlogService.Presentation.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Tags("Danh mục bài viết")]
     public class CategoryController : ControllerBase
     {
         

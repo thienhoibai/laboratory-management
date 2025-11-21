@@ -9,45 +9,48 @@ namespace TestOrder.Application.Services
     public class TestCatalogService
     {
         private readonly TestCatalogRepository _repository;
+        private readonly TestParameterRepository _parameterRepository;
 
-        public TestCatalogService(TestCatalogRepository repository)
+        public TestCatalogService(TestCatalogRepository repository,
+                                  TestParameterRepository _parameterRepository)
         {
             _repository = repository;
+            this._parameterRepository = _parameterRepository;
         }
 
-        TestCatalogResponseDTO MapToDTO(TestCatalog catalog)
-        {
-            var dto = new TestCatalogResponseDTO
-            {
-                Id = catalog.CatalogId,
-                CatalogName = catalog.TestName,
-                Description = catalog.Description,
-                Price = catalog.Price,
-                Parameters = new List<TestParameterDTO>()
-            };
-            foreach (var param in catalog.Parameters)
-            {
-                dto.Parameters.Add(new TestParameterDTO
-                {
-                    ParameterName = param.ParameterName,
-                    Unit = param.Unit,
-                    ReferenceRange = param.ReferenceRange
-                });
-            }
-            return dto;
-        }
+
 
         public async Task<object> GetAllCatalogAsync(int page, int pageSize, string? search)
         {
             var (items, totalItems) = await _repository.GetAllPagedAsync(page, pageSize, search);
-
-            
-
             List<TestCatalogResponseDTO> catalogDTOs = new List<TestCatalogResponseDTO>();
 
             foreach (var catalog in items)
             {
-                catalogDTOs.Add(MapToDTO(catalog));
+                var catalogDTO = new TestCatalogResponseDTO
+                {
+                    Id = catalog.CatalogId,
+                    CatalogName = catalog.TestName,
+                    Description = catalog.Description,
+                    Price = catalog.Price,
+                    Parameters = new List<TestParameterDTO>()
+                };
+                List<int> parameterIds = await _repository.GetParamtersByCatalogId(catalog.CatalogId);
+                foreach (var paramId in parameterIds)
+                {
+                    var parameter = await _parameterRepository.GetByIdAsync(paramId);
+                    if (parameter != null)
+                    {
+                        catalogDTO.Parameters.Add(new TestParameterDTO
+                        {
+                            ParameterName = parameter.ParameterName,
+                            Unit = parameter.Unit,
+                            ReferenceRange = parameter.ReferenceRange
+                        });
+                    }
+
+                }
+                catalogDTOs.Add(catalogDTO);
             }
 
             return new
@@ -63,7 +66,24 @@ namespace TestOrder.Application.Services
         public async Task<TestCatalogResponseDTO> GetByIdAsync(int id)
         {
             var catalog = await _repository.GetByIdAsync(id);
-            var catalogDTO = MapToDTO(catalog);
+
+            var catalogDTO = new TestCatalogResponseDTO
+            {
+                Id = catalog.CatalogId,
+                CatalogName = catalog.TestName,
+                Description = catalog.Description,
+                Price = catalog.Price,
+                Parameters = new List<TestParameterDTO>()
+            };
+            foreach (var param in catalog.Parameters)
+            {
+                catalogDTO.Parameters.Add(new TestParameterDTO
+                {
+                    ParameterName = param.ParameterName,
+                    Unit = param.Unit,
+                    ReferenceRange = param.ReferenceRange
+                });
+            }
             return catalogDTO;
         }
 
