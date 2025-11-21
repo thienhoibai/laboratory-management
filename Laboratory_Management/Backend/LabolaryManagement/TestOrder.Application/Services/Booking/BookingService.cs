@@ -17,14 +17,17 @@ namespace TestOrder.Application.Services.Booking
         private readonly BookingTestService _bookingTestService;
         private readonly AppointmentSlotService _appointmentSlotService;
         private readonly BookingRepository _bookingRepository;
+        private readonly CatalogBundleService _catalogBundleService;
 
         public BookingService(BookingRepository bookingRepository,
                               BookingTestService bookingTestService,
-                              AppointmentSlotService appointmentSlotService)
+                              AppointmentSlotService appointmentSlotService,
+                              CatalogBundleService catalogBundleService)
         {
             _bookingTestService = bookingTestService;
             _bookingRepository = bookingRepository;
             _appointmentSlotService = appointmentSlotService;
+            _catalogBundleService = catalogBundleService;
         }
 
 
@@ -221,6 +224,17 @@ namespace TestOrder.Application.Services.Booking
                     _bookingTestService.AddBookingTestAsync(newBooking.BookingId, catalogId).Wait();
                 }
             }
+            if (bookingRequest.BundleId.HasValue)
+            {
+                var bundleCatalogs = await _catalogBundleService.GetCatalogidsByBundleIdAsync(bookingRequest.BundleId.Value);
+                if (bundleCatalogs != null)
+                {
+                    foreach (var catalog in bundleCatalogs)
+                    {
+                        await _bookingTestService.AddBookingTestAsync(newBooking.BookingId, catalog);
+                    }
+                }
+            }
 
             response.ResponseCode = ResponseCode.Success;
             response.Message = "Booking Successfully";
@@ -237,6 +251,9 @@ namespace TestOrder.Application.Services.Booking
 
             DateOnly today = DateOnly.FromDateTime(DateTime.Now);
             TimeOnly now = TimeOnly.FromDateTime(DateTime.Now);
+
+            
+
 
             var booking =  await _bookingRepository.GetByIdAsync(bookingId);
             var timeSlot = await _appointmentSlotService.GetAppointmentSlotByIdAsync((Guid)booking.AppointmentSlotId);

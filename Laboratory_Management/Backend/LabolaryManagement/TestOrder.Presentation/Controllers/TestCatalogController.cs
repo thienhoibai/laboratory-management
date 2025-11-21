@@ -74,6 +74,12 @@ namespace TestOrder.Presentation.Controllers
             return Ok();
         }
 
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteCatalogAsync(int id)
+        {
+            await _service.DeleteCatalogAsync(id);
+            return Ok();
+        }
 
     }
 }
