@@ -7,7 +7,7 @@ import { toast } from "react-toastify";
 import {
   getAllParameters,
   createParameter,
-} from "../../../apis/TestOrderServiceAPI.jsx";
+} from "../../../services/TestOrderService.jsx";
 import "./ParameterManagement.css";
 
 const ParameterManagement = () => {

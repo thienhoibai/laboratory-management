@@ -11,8 +11,8 @@ import {
   updateCatalog,
   updateCatalogParameters,
   deleteCatalogParameter,
-} from "../../../apis/TestOrderServiceAPI.jsx";
-import { getAllParameters } from "../../../apis/TestOrderServiceAPI.jsx";
+  getAllParameters,
+} from "../../../services/TestOrderService.jsx";
 import "./CatalogsManagement.css";
 
 const DEFAULT_FORM = {

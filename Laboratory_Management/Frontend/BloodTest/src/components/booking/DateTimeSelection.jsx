@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import "./DateTimeSelection.css";
 import { IoMdTime } from "react-icons/io";
 import { CiCalendar } from "react-icons/ci";
-import { bookingService } from "../../apis/TestOrderServiceAPI";
+import { bookingService } from "../../services/TestOrderService.jsx";
 import { setAuthToken } from "../../utils/auth";
 function DateTimeSelection({ onBack, onContinue }) {
   // tạo danh sách 30 ngày bắt đầu từ hôm nay
