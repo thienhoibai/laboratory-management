@@ -1,20 +1,42 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Instrument.Infrastructure.Configs;
 using DomainInstrument = Instrument.Domain.Entities.Instrument;
-using DomainInstrumentResult = Instrument.Domain.Entities.InstrumentResult;
+using Instrument.Domain.Entities;
 
 namespace Instrument.Infrastructure;
 
+/// <summary>
+/// MINIMAL VERSION - Chỉ quản lý Instrument và Run
+/// Đã loại bỏ: Cartridge, LoadTx, RunUsage, InstrumentResult
+/// </summary>
 public class InstrumentDbContext : DbContext
 {
     public InstrumentDbContext(DbContextOptions<InstrumentDbContext> options) : base(options) { }
 
+    // ✅ CORE TABLES - Chỉ 2 bảng
     public DbSet<DomainInstrument> Instruments => Set<DomainInstrument>();
-    public DbSet<DomainInstrumentResult> InstrumentResults => Set<DomainInstrumentResult>();
+    public DbSet<InstrumentRun> InstrumentRuns => Set<InstrumentRun>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
+        // ===== INSTRUMENTS TABLE =====
         b.ApplyConfiguration(new InstrumentConfig());
-        b.ApplyConfiguration(new InstrumentResultConfig());
+        
+        // ===== INSTRUMENT RUNS TABLE =====
+        b.Entity<InstrumentRun>(entity =>
+        {
+            entity.ToTable("InstrumentRuns");
+            entity.HasKey(e => e.RunId);
+            
+            entity.Property(e => e.InstrumentCode).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.Status).HasMaxLength(15).IsRequired().HasDefaultValue("RUNNING");
+            entity.Property(e => e.StartedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+            
+            // Indexes
+            entity.HasIndex(e => e.BookingId);
+            entity.HasIndex(e => e.InstrumentCode);
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => new { e.InstrumentCode, e.Status });
+        });
     }
 }

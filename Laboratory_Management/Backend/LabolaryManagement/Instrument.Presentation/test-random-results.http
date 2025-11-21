@@ -1,0 +1,117 @@
+﻿### ===========================================
+### INSTRUMENT SERVICE - TEST RANDOM RESULTS
+### ===========================================
+
+@baseUrl = http://localhost:5006
+@testOrderUrl = http://localhost:5048
+@bookingId = {{$guid}}
+@instrumentCode = INSTR001
+
+### ===========================================
+### SETUP: Tạo Instrument
+### ===========================================
+
+### 1. Tạo máy xét nghiệm
+POST {{baseUrl}}/api/instruments
+Content-Type: application/json
+
+{
+  "instrumentCode": "{{instrumentCode}}",
+  "name": "Máy xét nghiệm test random",
+  "status": "ONLINE"
+}
+
+### 2. Kiểm tra máy đã tạo
+GET {{baseUrl}}/api/instruments/{{instrumentCode}}
+
+###
+
+### ===========================================
+### TEST ORDER: Chuẩn bị Booking (Chạy trên TestOrder)
+### ===========================================
+
+### 3. Kiểm tra Booking có status = 4 không
+# Chạy trên TestOrder service (port 5048)
+GET {{testOrderUrl}}/api/bookings/{{bookingId}}
+
+### 4. Kiểm tra Bridge có trả data không
+# Endpoint này phải có data với status = 4
+GET {{testOrderUrl}}/api/bridge/bookings/{{bookingId}}/for-instrument
+
+###
+
+### ===========================================
+### TEST 1: Simulation (Full workflow)
+### ===========================================
+
+### 5. Test simulation - Cách nhanh nhất
+# Tự động: Start → Random → Send → Complete
+POST {{baseUrl}}/api/instrument/simulations/run
+Content-Type: application/json
+
+{
+  "bookingId": "{{bookingId}}",
+  "instrumentCode": "{{instrumentCode}}"
+}
+
+###
+
+### ===========================================
+### TEST 2: Step-by-step (Manual workflow)
+### ===========================================
+
+### 6. Start Run
+# @name startRun
+POST {{baseUrl}}/api/instrument/runs/start
+Content-Type: application/json
+
+{
+  "bookingId": "{{bookingId}}",
+  "instrumentCode": "{{instrumentCode}}"
+}
+
+###
+
+### 7. Lấy RunId từ response trước
+@runId = {{startRun.response.body.runId}}
+
+### 8. Kiểm tra run detail
+GET {{baseUrl}}/api/instrument/runs/{{runId}}
+
+###
+
+### 9. Generate Random Results và gửi về TestOrder
+# Đây là bước quan trọng - sinh kết quả random
+POST {{baseUrl}}/api/instrument/runs/{{runId}}/drop-csv
+
+###
+
+### 10. Complete Run
+POST {{baseUrl}}/api/instrument/runs/{{runId}}/complete
+
+###
+
+### ===========================================
+### VERIFY: Kiểm tra kết quả
+### ===========================================
+
+### 11. Kiểm tra kết quả đã gửi về TestOrder chưa
+# Chạy trên TestOrder service
+GET {{testOrderUrl}}/api/bridge/bookings/{{bookingId}}/expected
+
+###
+
+### 12. Xem kết quả trong TestOrder
+# Lấy từ TestResults table
+GET {{testOrderUrl}}/api/bookings/{{bookingId}}/results
+
+###
+
+### ===========================================
+### CLEANUP: Dọn dẹp
+### ===========================================
+
+### 13. Xóa máy test (optional)
+DELETE {{baseUrl}}/api/instruments/{{instrumentCode}}
+
+###
