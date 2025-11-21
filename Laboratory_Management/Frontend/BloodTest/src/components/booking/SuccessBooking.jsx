@@ -16,7 +16,6 @@ export default function SuccessBooking({
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const Amount = Number(searchParams.get("Amount"));
-
   // Sử dụng dữ liệu từ API nếu có, nếu không dùng dữ liệu mặc định
   const orderCode =
     bookingData?.bookingCode || paymentResult?.orderCode || "XN2025010001";

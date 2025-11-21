@@ -75,9 +75,8 @@ namespace TestOrder.Application.Services
                 Price = catalog.Price,
                 Parameters = new List<TestParameterDTO>()
             };
-
-            List<int> paramId = await _repository.GetParamtersByCatalogId(catalog.CatalogId);
-            foreach (var param in paramId)
+            List<int> parameterIds = await _repository.GetParamtersByCatalogId(catalog.CatalogId);
+            foreach (var paramId in parameterIds)
             {
                 var parameter = await _parameterRepository.GetByIdAsync(paramId);
                 if (parameter != null)

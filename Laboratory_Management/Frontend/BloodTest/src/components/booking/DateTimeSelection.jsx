@@ -145,7 +145,7 @@ function DateTimeSelection({ onBack, onContinue }) {
                       color: isFullyBooked ? "#ef4444" : "#6b7280",
                       marginTop: "2px",
                       fontWeight: isFullyBooked ? "600" : "normal",
-                      cursor: "not-allowed",
+                      cursor: isFullyBooked ? "not-allowed" : "pointer",
                     }}
                   >
                     {isFullyBooked ? "Hết chỗ" : `Còn ${remainingSlots} chỗ`}
