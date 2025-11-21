@@ -9,6 +9,7 @@ namespace BlogService.Presentation.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Tags("Bài viết")]
     public class BlogPostController : ControllerBase
     {
         private readonly BlogPostService _service;
@@ -22,13 +23,14 @@ namespace BlogService.Presentation.Controllers
         public async Task<IActionResult> GetAllBlogs(
     [FromQuery] Guid? authorId,
     [FromQuery] int? status,
+    [FromQuery] string? search,
     [FromQuery] int page = 1,
     [FromQuery] int pageSize = 10)
         {
-            var totalItems = await _service.GetAllWithCategoryAsync(authorId, status, 1, int.MaxValue)
+            var totalItems = await _service.GetAllWithCategoryAsync(authorId, status, 1, int.MaxValue,search)
                 .ContinueWith(t => t.Result.Count);
 
-            var data = await _service.GetAllWithCategoryAsync(authorId, status, page, pageSize);
+            var data = await _service.GetAllWithCategoryAsync(authorId, status, page, pageSize, search);
 
             return Ok(new
             {
