@@ -27,6 +27,7 @@ namespace TestOrder.Application.Services.Booking
             _appointmentSlotService = appointmentSlotService;
         }
 
+
         public async Task<IEnumerable<BookingResponseDTO>> GetAllBookingsByDateAsync
             (DateOnly date, string? keyword, string? sortBy, string? sortDirection, int pageSize, int pageNumber)
         {
@@ -36,12 +37,18 @@ namespace TestOrder.Application.Services.Booking
             foreach (var slot in appointmentSlots)
             {
                 var slotBookings = await _bookingRepository.GetBookingsByAppointmentSlotSearchableAsync
-                    (slot.SlotId, keyword, sortBy, sortDirection);
+                    (slot.SlotId, keyword);
                 bookings = bookings.Concat(slotBookings!);
             }
 
-            bookings = bookings.Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize).ToList();
+            IEnumerable<Infrastructure.Models.Booking>? enumerable = await _bookingRepository.SortingAndPaging
+                (sortBy, sortDirection, pageSize, pageNumber, bookings);
+            bookings = enumerable.AsEnumerable();
+
+            if (!bookings.Any() || bookings == null)
+            {
+                throw new Exception("No bookings found");
+            }
 
 
             var bookingResponses = new List<BookingResponseDTO>();
@@ -227,6 +234,10 @@ namespace TestOrder.Application.Services.Booking
 
         public async Task<ResponseMessage> CheckInBooking (Guid bookingId)
         {
+
+            DateOnly today = DateOnly.FromDateTime(DateTime.Now);
+            TimeOnly now = TimeOnly.FromDateTime(DateTime.Now);
+
             var booking =  await _bookingRepository.GetByIdAsync(bookingId);
             var timeSlot = await _appointmentSlotService.GetAppointmentSlotByIdAsync((Guid)booking.AppointmentSlotId);
             TimeOnly lowerLimit = timeSlot.TimeBlock.Add(-TimeSpan.FromMinutes(30));
@@ -247,19 +258,18 @@ namespace TestOrder.Application.Services.Booking
                 response.InstancesCode = bookingId;
                 return response;
             }
-            if (DateOnly.FromDateTime(DateTime.Now) == timeSlot.AppointmentDate)
+            if (today == timeSlot.AppointmentDate &&
+                now >= lowerLimit && 
+                now <= upperLimit)
             {
-                if ( TimeOnly.FromDateTime(DateTime.Now) >= lowerLimit && 
-                    TimeOnly.FromDateTime(DateTime.Now) <= upperLimit ) 
-                {
-                    booking.Status = (byte?)BookingStatusEnum.InProgress;
+                
+                    booking.Status = (byte)BookingStatusEnum.InProgress;
                     booking.RunDate = DateOnly.FromDateTime(DateTime.Now);
                     await _bookingRepository.UpdateAsync(booking);
-
                     response.ResponseCode = ResponseCode.Success;
                     response.Message = "Check-in successful";
                     response.InstancesCode = bookingId;
-                }
+                
             }
             else 
             {

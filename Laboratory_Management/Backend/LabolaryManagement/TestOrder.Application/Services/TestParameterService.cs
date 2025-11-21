@@ -16,7 +16,7 @@ namespace TestOrder.Application.Services
         }
 
 
-        public async Task<object> GetAllParameterAsync(int page = 1, int pageSize = 10, string? search = null)
+        public async Task<object> GetAllParameterAsync(int page, int pageSize, string? search = null)
         {
             var (items, totalItems) = await _repository.GetAllPagedAsync(page, pageSize, search);
 

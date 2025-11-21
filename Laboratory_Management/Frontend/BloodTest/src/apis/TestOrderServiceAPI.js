@@ -30,3 +30,5 @@ export const bookingService = {
     return response.data;
   },
 };
+
+export const ManagerAppointmentSchedule = {};
