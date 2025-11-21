@@ -2,7 +2,7 @@ import api from "../configs/axios";
 
 /**
  * Blog API Service
- * Handles all HTTP requests related to blog posts
+ * Handles all HTTP requests related to blog posts and categories
  */
 
 const BlogAPI = {
@@ -113,6 +113,20 @@ const BlogAPI = {
       return response.data;
     } catch (error) {
       console.error(`Error rejecting blog ${id}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get all categories
+   * @returns {Promise<Array|Object>} Category response data
+   */
+  getAllCategories: async () => {
+    try {
+      const response = await api.get("blog/api/Category");
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching categories:", error);
       throw error;
     }
   },

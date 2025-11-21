@@ -34,9 +34,9 @@ namespace TestOrder.Application.Services
             this.configuration = configuration ?? throw new ArgumentNullException(nameof(configuration), "Configuration cannot be null.");
         }
 
-        public async Task<IEnumerable<PaymentResponseDTO>> GetAllPaymentEnvoicePaged(int pageNumber)
+        public async Task<IEnumerable<PaymentResponseDTO>> GetAllPaymentEnvoicePaged(int pageNumber,int pageSize)
         {
-            var payments = await _paymentRepository.GetAllPagedAsync(pageNumber);
+            var payments = await _paymentRepository.GetAllPagedAsync(pageNumber, pageSize);
             return payments.Select(p => new PaymentResponseDTO
             {
                 BookingId = p.BookingId,

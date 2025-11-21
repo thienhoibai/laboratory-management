@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import "./DateTimeSelection.css";
 import { IoMdTime } from "react-icons/io";
 import { CiCalendar } from "react-icons/ci";
-
+import { bookingService } from "../../apis/TestOrderServiceAPI";
+import { setAuthToken } from "../../utils/auth";
 function DateTimeSelection({ onBack, onContinue }) {
   // tạo danh sách 30 ngày bắt đầu từ hôm nay
   const days = useMemo(() => {
@@ -19,10 +20,67 @@ function DateTimeSelection({ onBack, onContinue }) {
   }, []);
 
   const morningSlots = ["07:00", "08:00", "09:00", "10:00", "11:00"];
-  const afternoonSlots = ["13:00", "14:00", "15:00", "16:00", "12:00"];
+  const afternoonSlots = ["13:00", "14:00", "15:00", "16:00"];
 
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
+  const [slotCounts, setSlotCounts] = useState([]);
+
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    setAuthToken(token);
+    const fetchSlotCounts = async () => {
+      try {
+        const response = await bookingService.getAppointmentSlotCounts();
+
+        // API trả về array trực tiếp
+        if (Array.isArray(response.data)) {
+          setSlotCounts(response.data);
+        } else {
+          setSlotCounts([]);
+        }
+      } catch (error) {
+        console.log("Error fetching slot counts:", error);
+        setSlotCounts([]);
+      }
+    };
+    fetchSlotCounts();
+  }, []);
+
+  // Helper function to check if a slo  t is fully booked
+  const isSlotFullyBooked = (dateISO, time) => {
+    if (!dateISO || !time) return false;
+    // Convert ISO date to YYYY-MM-DD format
+    const dateStr = new Date(dateISO).toISOString().split("T")[0];
+    // Convert time from "HH:mm" to "HH:mm:ss"
+    const timeBlock = time + ":00";
+
+    console.log("Checking slot:", dateStr, timeBlock);
+    const slot = slotCounts.find(
+      (s) => s.appointmentDate === dateStr && s.timeBlock === timeBlock
+    );
+    console.log("Found slot:", slot);
+    return slot ? slot.isFullyBooked : false;
+  };
+
+  // Helper function to get booking count
+  const getBookingCount = (dateISO, time) => {
+    if (!dateISO || !time) return 0;
+    const dateStr = new Date(dateISO).toISOString().split("T")[0];
+    const timeBlock = time + ":00";
+
+    const slot = slotCounts.find(
+      (s) => s.appointmentDate === dateStr && s.timeBlock === timeBlock
+    );
+    return slot ? slot.totalBookings : 0;
+  };
+
+  // Helper function to get remaining slots
+  const getRemainingSlots = (dateISO, time) => {
+    if (!dateISO || !time) return 10;
+    const bookingCount = getBookingCount(dateISO, time);
+    return Math.max(0, 10 - bookingCount);
+  };
 
   const formatDayLabel = (d) => {
     const opts = { weekday: "short", day: "numeric", month: "numeric" };
@@ -65,32 +123,71 @@ function DateTimeSelection({ onBack, onContinue }) {
       <div className="dt-slots">
         <h4>Ca sáng (07:00 - 11:00)</h4>
         <div className="dt-slot-row">
-          {morningSlots.map((t) => (
-            <button
-              key={t}
-              className={`dt-slot ${selectedTime === t ? "selected" : ""}`}
-              onClick={() => setSelectedTime(t)}
-              disabled={!selectedDate}
-              type="button"
-            >
-              {t}
-            </button>
-          ))}
+          {morningSlots.map((t) => {
+            const isFullyBooked = isSlotFullyBooked(selectedDate, t);
+            const remainingSlots = getRemainingSlots(selectedDate, t);
+
+            return (
+              <button
+                key={t}
+                className={`dt-slot ${selectedTime === t ? "selected" : ""} ${
+                  isFullyBooked ? "fully-booked" : ""
+                }`}
+                onClick={() => setSelectedTime(t)}
+                disabled={!selectedDate || isFullyBooked}
+                type="button"
+              >
+                <div>{t}</div>
+                {selectedDate && (
+                  <div
+                    style={{
+                      fontSize: "0.7rem",
+                      color: isFullyBooked ? "#ef4444" : "#6b7280",
+                      marginTop: "2px",
+                      fontWeight: isFullyBooked ? "600" : "normal",
+                      cursor: isFullyBooked ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    {isFullyBooked ? "Hết chỗ" : `Còn ${remainingSlots} chỗ`}
+                  </div>
+                )}
+              </button>
+            );
+          })}
         </div>
 
         <h4>Ca chiều (13:00 - 17:00)</h4>
         <div className="dt-slot-row">
-          {afternoonSlots.map((t) => (
-            <button
-              key={t}
-              className={`dt-slot ${selectedTime === t ? "selected" : ""}`}
-              onClick={() => setSelectedTime(t)}
-              disabled={!selectedDate}
-              type="button"
-            >
-              {t}
-            </button>
-          ))}
+          {afternoonSlots.map((t) => {
+            const isFullyBooked = isSlotFullyBooked(selectedDate, t);
+            const remainingSlots = getRemainingSlots(selectedDate, t);
+
+            return (
+              <button
+                key={t}
+                className={`dt-slot ${selectedTime === t ? "selected" : ""} ${
+                  isFullyBooked ? "fully-booked" : ""
+                }`}
+                onClick={() => setSelectedTime(t)}
+                disabled={!selectedDate || isFullyBooked}
+                type="button"
+              >
+                <div>{t}</div>
+                {selectedDate && (
+                  <div
+                    style={{
+                      fontSize: "0.7rem",
+                      color: isFullyBooked ? "#ef4444" : "#6b7280",
+                      marginTop: "2px",
+                      fontWeight: isFullyBooked ? "600" : "normal",
+                    }}
+                  >
+                    {isFullyBooked ? "Hết chỗ" : `Còn ${remainingSlots} chỗ`}
+                  </div>
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
 

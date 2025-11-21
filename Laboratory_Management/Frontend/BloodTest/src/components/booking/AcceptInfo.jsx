@@ -18,7 +18,6 @@ const endPoint = "testorder/api/Booking";
 function AcceptInfo({ selectedItems, selectedDateTime, onBack, onProceed }) {
   // selectedItems: { source:'package', package: {...}, total } OR { source:'catalog', items:[{name,price}], total }
   const dispatch = useDispatch();
-  const parsePrice = (price) => price.toLocaleString("Vi-VN") + "đ" || 0;
 
   let headerTitle = "Xét nghiệm đã chọn";
   let itemList = [];
