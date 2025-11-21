@@ -195,10 +195,7 @@ const BlogService = {
     if (Array.isArray(apiResponse)) return apiResponse;
     if (Array.isArray(apiResponse.items)) return apiResponse.items;
     if (Array.isArray(apiResponse.data)) return apiResponse.data;
-    if (
-      apiResponse.data &&
-      Array.isArray(apiResponse.data.items)
-    ) {
+    if (apiResponse.data && Array.isArray(apiResponse.data.items)) {
       return apiResponse.data.items;
     }
     return [];
@@ -214,10 +211,7 @@ const BlogService = {
     if (Array.isArray(apiResponse)) return apiResponse;
     if (Array.isArray(apiResponse.items)) return apiResponse.items;
     if (Array.isArray(apiResponse.data)) return apiResponse.data;
-    if (
-      apiResponse.data &&
-      Array.isArray(apiResponse.data.items)
-    ) {
+    if (apiResponse.data && Array.isArray(apiResponse.data.items)) {
       return apiResponse.data.items;
     }
     return [];
