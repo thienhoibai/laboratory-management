@@ -257,6 +257,25 @@ public class PatientService : IPatientService
 
         return OperationResult<PatientDto>.Success(patient);
     }
+    public async Task<IReadOnlyList<PatientSummaryDto>> GetAllAsync(CancellationToken ct = default)
+    {
+        var patients = await _db.Patients
+            .AsNoTracking()
+            .OrderByDescending(p => p.CreatedAt)
+            .Select(p => new PatientSummaryDto(
+                p.PatientId,
+                p.FullName,
+                p.DateOfBirth,
+                p.Gender,
+                Last4(p.Phone),
+                p.IsDeleted,
+                p.CreatedAt,
+                p.UpdatedAt
+            ))
+            .ToListAsync(ct);
+
+        return patients;
+    }
 
     // ========== Guest linking flows ==========
     public async Task<OperationResult> StartLinkAsync(Guid patientId, Guid actorUserId, string mode, string baseLinkUrl, CancellationToken ct = default)
@@ -387,51 +406,6 @@ public class PatientService : IPatientService
         _db.PatientEventLogs.Add(new PatientEventLog { PatientId = p.PatientId, EventType = "LINK_OTP_CONFIRMED", ActorUserId = actorUserId, OccurredAt = DateTime.UtcNow });
         await _db.SaveChangesAsync(ct);
         return OperationResult.Success();
-    }
-
-    public async Task<OperationResult<PatientDto>> GetByUserIdAsync(Guid userId, CancellationToken ct)
-    {
-        var patient = await _db.Patients
-            .AsNoTracking()
-            .Where(p => p.UserId == userId && !p.IsDeleted)
-            .Select(p => new PatientDto
-            {
-                PatientId = p.PatientId,
-                FullName = p.FullName,
-                DateOfBirth = p.DateOfBirth,
-                Gender = p.Gender,
-                Email = p.Email,
-                Phone = p.Phone,
-                Address = p.Address,
-                IdNumber = p.IdNumber,
-                InsuranceNumber = p.InsuranceNumber,
-                CreatedAt = p.CreatedAt
-            })
-            .FirstOrDefaultAsync(ct);
-
-        if (patient == null)
-            return OperationResult<PatientDto>.Fail(ErrorCodes.NotFound);
-
-        return OperationResult<PatientDto>.Success(patient);
-    }
-    public async Task<IReadOnlyList<PatientSummaryDto>> GetAllAsync(CancellationToken ct = default)
-    {
-        var patients = await _db.Patients
-            .AsNoTracking()
-            .OrderByDescending(p => p.CreatedAt)
-            .Select(p => new PatientSummaryDto(
-                p.PatientId,
-                p.FullName,
-                p.DateOfBirth,
-                p.Gender,
-                Last4(p.Phone),
-                p.IsDeleted,
-                p.CreatedAt,
-                p.UpdatedAt
-            ))
-            .ToListAsync(ct);
-
-        return patients;
     }
 
 }

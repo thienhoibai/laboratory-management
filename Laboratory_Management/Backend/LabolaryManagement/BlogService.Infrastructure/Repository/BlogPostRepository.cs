@@ -58,7 +58,7 @@ namespace BlogService.Infrastructure.Repository
             if (post != null)
             {
                 post.Status = (int)status; // lưu enum dưới dạng int
-               
+
                 post.UpdatedDate = DateTime.Now;
                 await _context.SaveChangesAsync();
             }

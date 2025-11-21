@@ -5,13 +5,19 @@ import "./layout/AdminLayout.css";
 import { useNavigate } from "react-router-dom";
 import { logoutUser } from "../../utils/auth";
 import { toast } from "react-toastify";
+import { setAuthToken } from "../../utils/auth";
+import { jwtDecode } from "jwt-decode";
 
 const AdminHeader = ({ pageTitle, breadcrumbs }) => {
+  const token = localStorage.getItem("accessToken");
   const navigate = useNavigate();
+  const deocde = jwtDecode(token);
+  let role = ["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
 
   const handleLogout = async () => {
+    setAuthToken(token);
     await logoutUser();
-    toast.success("Đăng Xuất Thành Công");
+    toast.success("Đăng Xuất Thành Công!");
     navigate("/login");
   };
 

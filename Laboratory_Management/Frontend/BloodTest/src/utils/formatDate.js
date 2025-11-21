@@ -118,3 +118,12 @@ export const validateForm = (formData) => {
   }
   return newErrors;
 };
+
+export const formatTime = (timeString) => {
+  const [hour] = timeString.split(":").map(Number);
+
+  if (hour >= 7 && hour < 11) return hour + " Giờ Sáng";
+  if (hour >= 13 && hour < 18) return hour + " Giờ Chiều";
+
+  return hour + " Giờ Tối";
+};

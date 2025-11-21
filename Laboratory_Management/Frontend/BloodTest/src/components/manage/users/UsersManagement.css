@@ -202,12 +202,12 @@
   font-weight: 500;
 }
 
-.status-badge.active {
+.status-badge.unlocked {
   background: #e8f5e9;
   color: #2e7d32;
 }
 
-.status-badge.inactive {
+.status-badge.locked {
   background: #ffebee;
   color: #c62828;
 }
