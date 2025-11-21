@@ -14,6 +14,10 @@ namespace TestOrder.Application.DTOs
         public string? Unit { get; set; }
         public string? ReferenceRange { get; set; }
 
+        public double? MinRange { get; set; }
+
+        public double? MaxRange { get; set; }
+
         public int CatalogId { get; set; }
         
 
