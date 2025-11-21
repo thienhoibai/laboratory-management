@@ -16,9 +16,9 @@ namespace TestOrder.Presentation.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllAppointmentSlots([FromQuery] int pageNumber)
+        public async Task<IActionResult> GetAllAppointmentSlots([FromQuery] int pageNumber, [FromQuery] int pageSize)
         {
-            var response = await _appointmentSlotService.GetAllAppointmentSlot(pageNumber);
+            var response = await _appointmentSlotService.GetAllAppointmentSlot(pageNumber, pageSize);
             return Ok(response);
         }
 
@@ -37,9 +37,9 @@ namespace TestOrder.Presentation.Controllers
         }
 
         [HttpGet("count-all")]
-        public async Task<IActionResult> GetBookingsCountForAllSlots([FromQuery] int pageNumber)
+        public async Task<IActionResult> GetBookingsCountForAllSlots([FromQuery] int pageNumber, [FromQuery] int pageSize)
         {
-            var response = await _appointmentSlotService.GetBookingCountForAllSlotAsync(pageNumber);
+            var response = await _appointmentSlotService.GetBookingCountForAllSlotAsync(pageNumber,pageSize);
             return Ok(response);
         }
 

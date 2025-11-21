@@ -75,14 +75,20 @@ namespace TestOrder.Application.Services
                 Price = catalog.Price,
                 Parameters = new List<TestParameterDTO>()
             };
-            foreach (var param in catalog.Parameters)
+            List<int> parameterIds = await _repository.GetParamtersByCatalogId(catalog.CatalogId);
+            foreach (var paramId in parameterIds)
             {
-                catalogDTO.Parameters.Add(new TestParameterDTO
+                var parameter = await _parameterRepository.GetByIdAsync(paramId);
+                if (parameter != null)
                 {
-                    ParameterName = param.ParameterName,
-                    Unit = param.Unit,
-                    ReferenceRange = param.ReferenceRange
-                });
+                    catalogDTO.Parameters.Add(new TestParameterDTO
+                    {
+                        ParameterName = parameter.ParameterName,
+                        Unit = parameter.Unit,
+                        ReferenceRange = parameter.ReferenceRange
+                    });
+                }
+
             }
             return catalogDTO;
         }
@@ -96,6 +102,8 @@ namespace TestOrder.Application.Services
                 Price = catalog.Price
 
             };
+
+
            await _repository.AddAsync(entity);
 
         }
@@ -141,6 +149,12 @@ namespace TestOrder.Application.Services
             await _repository.RemoveParametersAsync(catalogId, parameterId);
 
 
+        }
+
+        public async Task DeleteCatalogAsync(int id)
+        {
+            var catalog =  await _repository.GetByIdAsync(id);
+            await _repository.DeleteAsync(catalog);
         }
     }
 }

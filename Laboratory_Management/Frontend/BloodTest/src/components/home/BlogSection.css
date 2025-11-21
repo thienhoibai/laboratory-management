@@ -260,3 +260,31 @@
     max-width: 100%;
   }
 }
+
+/* Loading, Error, Empty states */
+.blog-loading,
+.blog-error,
+.blog-empty {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 60px 24px;
+  text-align: center;
+}
+
+.blog-loading p,
+.blog-error p,
+.blog-empty p {
+  font-size: 1.1rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.blog-error p {
+  color: #ef4444;
+}
+
+.blog-loading p {
+  color: #2563eb;
+  font-weight: 500;
+}

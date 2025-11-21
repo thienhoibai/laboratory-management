@@ -1,133 +1,202 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using System.Net.Http; // thêm để dùng IHttpClientFactory
-using System.Net.Http.Json;
 using TestOrder.Application.DTOs.InstrumentBridge;
 using TestOrder.Infrastructure.Data;
-using TestOrder.Infrastructure.Models;     // Booking/BookingTest/TestCatalog/TestResult
+using TestOrder.Infrastructure.Models;
+using BookingEntity = TestOrder.Infrastructure.Models.Booking;
 
-namespace TestOrder.Application.InstrumentBridge;
+namespace TestOrder.Application.Services.InstrumentBridge;
 
 public class InstrumentBridgeService
 {
-    private readonly TestOrderDBContext _ctx;          // Đổi tên DbContext cho khớp project của bạn
-    private readonly IHttpClientFactory _httpFactory;
-    private readonly IConfiguration _cfg;
+    private readonly TestOrderDBContext _db;
 
-    public InstrumentBridgeService(TestOrderDBContext ctx, IHttpClientFactory httpFactory, IConfiguration cfg)
-    {
-        _ctx = ctx; _httpFactory = httpFactory; _cfg = cfg;
-    }
+    public InstrumentBridgeService(TestOrderDBContext db) => _db = db;
 
-    public async Task<ForInstrumentResponse> GetForInstrumentAsync(Guid bookingId)
+    /// <summary>
+    /// GET /for-instrument: Trả danh sách test con & tham số để máy sinh kết quả
+    /// </summary>
+    public async Task<ForInstrumentResponse?> GetForInstrumentAsync(Guid bookingId)
     {
-        var booking = await _ctx.Set<Booking>()
+        // Lấy booking và kiểm tra Status == 4
+        var booking = await _db.Set<BookingEntity>().AsNoTracking()
+            .Where(b => b.BookingId == bookingId)
+            .Select(b => new { b.BookingId, b.Status, b.PatientName, b.BundleId })
+            .FirstOrDefaultAsync();
+
+        if (booking == null || booking.Status != 4) 
+            return null;
+
+        // 🔍 DEBUG: Kiểm tra số lượng BookingTest
+        var bookingTestCount = await _db.Set<BookingTest>()
+            .Where(bt => bt.BookingId == bookingId)
+            .CountAsync();
+
+        Console.WriteLine($"[DEBUG] BookingId: {bookingId}, BundleId: {booking.BundleId}, BookingTest count: {bookingTestCount}");
+
+        // ✅ FIX: Sử dụng SelectMany với navigation property
+        var items = await _db.Set<BookingTest>()
             .AsNoTracking()
-            .Include(b => b.BookingTests)
-                .ThenInclude(bt => bt.Catalog)
-                    .ThenInclude(c => c.Parameters)
-            .SingleOrDefaultAsync(b => b.BookingId == bookingId);
-
-        if (booking is null) throw new InvalidOperationException("Booking not found");
-
-        // Lấy giới tính qua PatientService (nếu cấu hình); nếu không → null
-        string? patientSex = null;
-        if (booking.PatientId.HasValue)
-        {
-            var baseUrl = _cfg["PatientServiceBaseUrl"];
-            if (!string.IsNullOrWhiteSpace(baseUrl))
-            {
-                try
-                {
-                    var client = _httpFactory.CreateClient("patient");
-                    var dto = await client.GetFromJsonAsync<PatientDto>($"/api/patients/{booking.PatientId.Value}");
-                    patientSex = NormalizeSex(dto?.Sex); // "M"/"F"/null
-                }
-                catch { /* ignore & fallback */ }
-            }
-        }
-
-        var items = booking.BookingTests
-            .SelectMany(bt => bt.Catalog!.Parameters.Select(p =>
-                new ForInstrumentItem(
-                    bt.TestBookingNo,
-                    bt.CatalogId ?? 0,
-                    p.ParameterId,
-                    p.ParameterName,
-                    p.Unit,
-                    p.ReferenceRange
-                )))
-            .OrderBy(i => i.TestBookingNo).ThenBy(i => i.ParameterId)
-            .ToList();
-
-        return new ForInstrumentResponse(booking.BookingId, booking.PatientName, patientSex, items);
-    }
-
-    public async Task SaveResultsFromInstrumentAsync(PostResultsRequest req)
-    {
-        // Validate TestBookingNo thuộc booking
-        var validNos = await _ctx.Set<BookingTest>()
-            .Where(bt => bt.BookingId == req.BookingId)
-            .Select(bt => bt.TestBookingNo)
+            .Where(bt => bt.BookingId == bookingId)
+            .Include(bt => bt.Catalog)
+                .ThenInclude(c => c.Parameters)
+            .SelectMany(bt => bt.Catalog.Parameters.Select(param => new ForInstrumentItemDto(
+                bt.TestBookingNo,
+                bt.Catalog.CatalogId,
+                param.ParameterId,
+                param.ParameterName,
+                param.Unit,
+                param.MinRange.HasValue ? (decimal)param.MinRange.Value : null,
+                param.MaxRange.HasValue ? (decimal)param.MaxRange.Value : null
+            )))
             .ToListAsync();
 
-        var invalidNos = req.Results.Select(r => r.TestBookingNo).Distinct().Except(validNos).ToArray();
-        if (invalidNos.Length > 0)
-            throw new InvalidOperationException($"Invalid TestBookingNo(s): {string.Join(",", invalidNos)}");
+        Console.WriteLine($"[DEBUG] Items returned: {items.Count}");
 
-        // Upsert theo (TestBookingNo, ParameterId)
-        foreach (var r in req.Results)
+        // Tìm duplicate groups (cùng ParameterId xuất hiện ở nhiều TestBookingNo)
+        var duplicateGroups = items
+            .GroupBy(i => i.ParameterId)
+            .Where(g => g.Select(x => x.TestBookingNo).Distinct().Count() > 1)
+            .Select(g => new DuplicateGroup(
+                g.Key,
+                g.Select(x => x.TestBookingNo).Distinct().OrderBy(x => x).ToList()
+            ))
+            .ToList();
+
+        return new ForInstrumentResponse(
+            booking.BookingId,
+            booking.Status ?? 0,
+            booking.PatientName,
+            items,
+            duplicateGroups
+        );
+    }
+
+    /// <summary>
+    /// POST /results: Instrument gửi kết quả JSON, validate + upsert + báo completed
+    /// </summary>
+    public async Task<IngestResponse?> IngestResultsAsync(Guid bookingId, IngestRequest req)
+    {
+        // Kiểm tra booking tồn tại và Status == 4
+        var booking = await _db.Set<BookingEntity>().FirstOrDefaultAsync(b => b.BookingId == bookingId);
+        if (booking == null || booking.Status != 4) 
+            return null;
+
+        // ✅ FIX: Sử dụng SelectMany với navigation property
+        var expectedPairs = await _db.Set<BookingTest>()
+            .AsNoTracking()
+            .Where(bt => bt.BookingId == bookingId)
+            .Include(bt => bt.Catalog)
+                .ThenInclude(c => c.Parameters)
+            .SelectMany(bt => bt.Catalog.Parameters.Select(param => new { bt.TestBookingNo, param.ParameterId }))
+            .ToListAsync();
+
+        var expectedSet = expectedPairs.Select(x => (x.TestBookingNo, x.ParameterId)).ToHashSet();
+
+        int accepted = 0, rejected = 0;
+
+        // Upsert từng item
+        foreach (var item in req.Items)
         {
-            var row = await _ctx.Set<TestResult>()
-                .SingleOrDefaultAsync(x => x.TestBookingNo == r.TestBookingNo && x.ParameterId == r.ParameterId);
-
-            var valStr = r.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            if (row is null)
+            var key = (item.TestBookingNo, item.ParameterId);
+            
+            // Validate: chỉ chấp nhận nếu thuộc expectedSet
+            if (!expectedSet.Contains(key))
             {
-                await _ctx.Set<TestResult>().AddAsync(new TestResult
+                rejected++;
+                continue;
+            }
+
+            // Upsert theo (TestBookingNo, ParameterId)
+            var existing = await _db.Set<TestResult>()
+                .FirstOrDefaultAsync(r => r.TestBookingNo == item.TestBookingNo 
+                                       && r.ParameterId == item.ParameterId);
+
+            var valueStr = item.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+            if (existing == null)
+            {
+                _db.Set<TestResult>().Add(new TestResult
                 {
-                    TestBookingNo = r.TestBookingNo,
-                    ParameterId = r.ParameterId,
-                    ResultValue = valStr
+                    TestBookingNo = item.TestBookingNo,
+                    ParameterId = item.ParameterId,
+                    ResultValue = valueStr
                 });
             }
             else
             {
-                row.ResultValue = valStr;
+                existing.ResultValue = valueStr;
+                _db.Update(existing);
             }
+
+            accepted++;
         }
-        await _ctx.SaveChangesAsync();
 
-        // Đủ kết quả thì Completed (4)
-        var expected = await _ctx.Set<BookingTest>()
-            .Where(bt => bt.BookingId == req.BookingId)
-            .Join(_ctx.Set<TestCatalog>(), bt => bt.CatalogId, c => c.CatalogId, (bt, c) => new { bt, c })
-            .SelectMany(x => x.c.Parameters.Select(p => new { x.bt.TestBookingNo, p.ParameterId }))
-            .CountAsync();
+        await _db.SaveChangesAsync();
 
-        var actual = await _ctx.Set<TestResult>()
-            .Join(_ctx.Set<BookingTest>(), r => r.TestBookingNo, bt => bt.TestBookingNo, (r, bt) => new { r, bt })
-            .Where(x => x.bt.BookingId == req.BookingId)
-            .Select(x => new { x.r.TestBookingNo, x.r.ParameterId })
-            .Distinct()
-            .CountAsync();
+        // FIX: Kiểm tra đủ kết quả chưa - Load by TestBookingNo list để tránh EF Core translation error
+        var allTestBookingNos = expectedSet.Select(x => x.TestBookingNo).Distinct().ToList();
+        
+        var existingPairs = await _db.Set<TestResult>()
+            .Where(r => r.TestBookingNo.HasValue && allTestBookingNos.Contains(r.TestBookingNo.Value))
+            .Select(r => new { r.TestBookingNo, r.ParameterId })
+            .ToListAsync();
 
-        if (expected > 0 && actual >= expected)
-        {
-            var b = await _ctx.Set<Booking>().SingleAsync(x => x.BookingId == req.BookingId);
-            b.Status = (byte)4; // Completed
-            await _ctx.SaveChangesAsync();
+        var existingSet = existingPairs
+            .Where(x => x.TestBookingNo.HasValue && x.ParameterId.HasValue)
+            .Select(x => (x.TestBookingNo!.Value, x.ParameterId!.Value))
+            .ToHashSet();
+
+        var missing = expectedSet.Except(existingSet)
+            .Select(x => new MissingPair(x.Item1, x.Item2))
+            .ToList();
+
+        bool completed = missing.Count == 0;
+
+        // ✅ Auto update Booking status = 5 khi đã nhận đủ kết quả
+        if (completed) 
+        { 
+            booking.Status = 5;
+            await _db.SaveChangesAsync(); 
         }
+
+        return new IngestResponse(accepted, rejected, completed, missing);
     }
 
-    private static string? NormalizeSex(string? s)
+    /// <summary>
+    /// GET /expected: Trả tổng số cặp cần có để booking xem đã đủ chưa
+    /// </summary>
+    public async Task<ExpectedResponse?> GetExpectedAsync(Guid bookingId)
     {
-        if (string.IsNullOrWhiteSpace(s)) return null;
-        var t = s.Trim().ToLowerInvariant();
-        if (t.StartsWith("m") || t.StartsWith("na")) return "M";
-        if (t.StartsWith("f") || t.StartsWith("nữ") || t.StartsWith("nu")) return "F";
-        return null;
-    }
+        var info = await GetForInstrumentAsync(bookingId);
+        if (info == null) 
+            return null;
 
-    private sealed class PatientDto { public string? Sex { get; set; } }
+        var expectedPairs = info.Items.Count;
+
+        // FIX: Đếm existing - Load by TestBookingNo list để tránh EF Core translation error
+        var expectedSet = info.Items.Select(x => (x.TestBookingNo, x.ParameterId)).ToHashSet();
+        var allTestBookingNos = expectedSet.Select(x => x.TestBookingNo).Distinct().ToList();
+        
+        var existingPairs = await _db.Set<TestResult>()
+            .Where(r => r.TestBookingNo.HasValue && allTestBookingNos.Contains(r.TestBookingNo.Value))
+            .Select(r => new { r.TestBookingNo, r.ParameterId })
+            .ToListAsync();
+
+        var existingSet = existingPairs
+            .Where(x => x.TestBookingNo.HasValue && x.ParameterId.HasValue)
+            .Select(x => (x.TestBookingNo!.Value, x.ParameterId!.Value))
+            .ToHashSet();
+
+        var missing = expectedSet.Except(existingSet)
+            .Select(x => new MissingPair(x.Item1, x.Item2))
+            .ToList();
+
+        return new ExpectedResponse(
+            bookingId,
+            expectedPairs,
+            existingSet.Count,
+            missing.Count == 0,
+            missing
+        );
+    }
 }

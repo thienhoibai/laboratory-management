@@ -6,31 +6,67 @@ using System.Threading.Tasks;
 
 namespace TestOrder.Application.DTOs.InstrumentBridge
 {
-    
 
-    public record ForInstrumentItem(
-        long TestBookingNo,
-        int CatalogId,
-        int ParameterId,
-        string ParameterName,
-        string? Unit,
-        string? ReferenceRange
-    );
+// ===== GET /for-instrument =====
+public record ForInstrumentItemDto(
+    long TestBookingNo,
+    int CatalogId,
+    int ParameterId,
+    string ParameterName,
+    string? Unit,
+    decimal? RefMin,
+    decimal? RefMax
+);
 
-    public record ForInstrumentResponse(
-        Guid BookingId,
-        string? PatientName,
-        string? PatientSex,               // "M" / "F" / null
-        List<ForInstrumentItem> Items
-    );
+public record DuplicateGroup(
+    int ParameterId,
+    List<long> TestBookingNos
+);
 
-    public record ResultItem(long TestBookingNo, int ParameterId, decimal Value);
+public record ForInstrumentResponse(
+    Guid BookingId,
+    byte Status,
+    string? PatientName,
+    List<ForInstrumentItemDto> Items,
+    List<DuplicateGroup> DuplicateGroups
+);
 
-    public record PostResultsRequest(
-        Guid BookingId,
-        string InstrumentCode,
-        DateTimeOffset MeasuredAt,
-        List<ResultItem> Results
-    );
+// ===== POST /results =====
+public record IngestItem(
+    long TestBookingNo,
+    int ParameterId,
+    string ParameterName,
+    decimal Value,
+    string? Unit,
+    decimal? RefMin,
+    decimal? RefMax
+);
+
+public record IngestRequest(
+    string InstrumentCode,
+    DateTimeOffset MeasuredAt,
+    List<IngestItem> Items
+);
+
+public record IngestResponse(
+    int Accepted,
+    int Rejected,
+    bool Completed,
+    List<MissingPair> MissingPairs
+);
+
+public record MissingPair(
+    long TestBookingNo,
+    int ParameterId
+);
+
+// ===== GET /expected =====
+public record ExpectedResponse(
+    Guid BookingId,
+    int ExpectedPairs,
+    int ExistingPairs,
+    bool Completed,
+    List<MissingPair> MissingPairs
+);
 
 }
