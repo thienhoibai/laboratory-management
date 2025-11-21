@@ -13,5 +13,7 @@ namespace TestOrder.Application.DTOs
         public string? Description { get; set; }
 
         public double Price { get; set; }
+
+        public List<int>? ParameterIds { get; set; }
     }
 }

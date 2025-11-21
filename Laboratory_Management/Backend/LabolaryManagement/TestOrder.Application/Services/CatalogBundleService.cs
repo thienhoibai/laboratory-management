@@ -25,6 +25,16 @@ namespace TestOrder.Application.Services
             return await _repository.GetByBundleIdAsync(bundleId);
         }
 
+        internal async Task<IEnumerable<int>?> GetCatalogidsByBundleIdAsync(int bundleid)
+        {
+            var list = await _repository.GetCatalogIdsByBundleIdAsync(bundleid);
+            if (list == null)
+            {
+                return null;
+            }
+            return list;
+        }
+
         public async Task AddCatalogToBundleAsync(CatalogBundleDTO dto)
         {
             if (dto.CatalogId == null || !dto.CatalogId.Any())
