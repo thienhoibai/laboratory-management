@@ -6,31 +6,67 @@ using System.Threading.Tasks;
 
 namespace TestOrder.Application.DTOs.InstrumentBridge
 {
-    // Item đã được gộp theo ParameterId, nhưng vẫn liệt kê đầy đủ các TestBookingNo/CatalogIds
-    public record ForInstrumentItem(
-        int ParameterId,
-        string ParameterName,
-        string? Unit,
-        decimal? RefMin,
-        decimal? RefMax,
-        List<long> TestBookingNos,
-        List<int> CatalogIds
-    );
 
-    public record ForInstrumentResponse(
-        Guid BookingId,
-        string? PatientName,
-        string? PatientSex,               // "M" / "F" / null
-        List<ForInstrumentItem> Items
-    );
+// ===== GET /for-instrument =====
+public record ForInstrumentItemDto(
+    long TestBookingNo,
+    int CatalogId,
+    int ParameterId,
+    string ParameterName,
+    string? Unit,
+    decimal? RefMin,
+    decimal? RefMax
+);
 
-    public record ResultItem(long TestBookingNo, int ParameterId, decimal Value);
+public record DuplicateGroup(
+    int ParameterId,
+    List<long> TestBookingNos
+);
 
-    public record PostResultsRequest(
-        Guid BookingId,
-        string InstrumentCode,
-        DateTimeOffset MeasuredAt,
-        List<ResultItem> Results
-    );
+public record ForInstrumentResponse(
+    Guid BookingId,
+    byte Status,
+    string? PatientName,
+    List<ForInstrumentItemDto> Items,
+    List<DuplicateGroup> DuplicateGroups
+);
+
+// ===== POST /results =====
+public record IngestItem(
+    long TestBookingNo,
+    int ParameterId,
+    string ParameterName,
+    decimal Value,
+    string? Unit,
+    decimal? RefMin,
+    decimal? RefMax
+);
+
+public record IngestRequest(
+    string InstrumentCode,
+    DateTimeOffset MeasuredAt,
+    List<IngestItem> Items
+);
+
+public record IngestResponse(
+    int Accepted,
+    int Rejected,
+    bool Completed,
+    List<MissingPair> MissingPairs
+);
+
+public record MissingPair(
+    long TestBookingNo,
+    int ParameterId
+);
+
+// ===== GET /expected =====
+public record ExpectedResponse(
+    Guid BookingId,
+    int ExpectedPairs,
+    int ExistingPairs,
+    bool Completed,
+    List<MissingPair> MissingPairs
+);
 
 }

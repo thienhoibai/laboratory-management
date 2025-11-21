@@ -2,6 +2,7 @@
 using TestOrder.Application.Services;
 using TestOrder.Application.Services.Booking;
 using TestOrder.Application.Services.Payment;
+using TestOrder.Application.Services.InstrumentBridge;
 using TestOrder.Infrastructure.Base;
 using TestOrder.Infrastructure.Data;
 using TestOrder.Infrastructure.Repository;
@@ -15,19 +16,28 @@ namespace TestOrder.Presentation
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
-
             builder.Services.AddControllers();
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-            builder.Services.AddDbContext<TestOrderDBContext>(options =>
-            options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-            builder.Services.AddDbContextFactory<TestOrderDBContext>(options =>
-            options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-            // Đăng ký HttpClient factory (bắt buộc để resolve IHttpClientFactory)
+            // ===== DbContext Configuration =====
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+            
+            // Sử dụng PooledDbContextFactory cho cả Controllers và Background Services
+            builder.Services.AddPooledDbContextFactory<TestOrderDBContext>(options =>
+                options.UseSqlServer(connectionString));
+
+            // Đăng ký DbContext với Scoped lifetime để inject vào Controllers/Services
+            builder.Services.AddScoped(sp => 
+            {
+                var factory = sp.GetRequiredService<IDbContextFactory<TestOrderDBContext>>();
+                return factory.CreateDbContext();
+            });
+
+            // Đăng ký HttpClient factory
             builder.Services.AddHttpClient();
 
             // CSV Ingest Worker options & hosted service
-            builder.Services.Configure<TestOrder.Presentation.Workers.CsvIngestOptions>(builder.Configuration.GetSection("CsvIngest"));
+            builder.Services.Configure<TestOrder.Presentation.Workers.CsvIngestOptions>(
+                builder.Configuration.GetSection("CsvIngest"));
             builder.Services.AddHostedService<TestOrder.Presentation.Workers.CsvIngestWorker>();
 
             // Dependency Injection for Repositories and Services
@@ -48,24 +58,26 @@ namespace TestOrder.Presentation
             builder.Services.AddScoped<BookingTestRepository>();
             builder.Services.AddScoped<TimeBlockRepository>();
 
-            builder.Services.AddScoped<TestOrder.Application.InstrumentBridge.InstrumentBridgeService>();
+            // InstrumentBridge Service
+            builder.Services.AddScoped<InstrumentBridgeService>();
 
-            // Named client patient (tuỳ chọn)
+            // Named client patient
             var patientBase = builder.Configuration["PatientServiceBaseUrl"];
             if (!string.IsNullOrWhiteSpace(patientBase))
             {
                 builder.Services.AddHttpClient("patient", c => c.BaseAddress = new Uri(patientBase));
             }
 
-            builder.Services.AddScoped<IVnPayService,PaymentService>();
+            builder.Services.AddScoped<IVnPayService, PaymentService>();
             builder.Services.AddScoped<PaymentService>();
             builder.Services.AddScoped<PaymentRepository>();
 
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+            
             builder.Services.AddControllers()
-    .AddJsonOptions(x =>
-        x.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
+                .AddJsonOptions(x =>
+                    x.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
 
             builder.Services.AddCors(options =>
             {
@@ -82,32 +94,26 @@ namespace TestOrder.Presentation
                 });
             });
 
-
-
-
-
             var app = builder.Build();
 
             var isDocker = string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Docker", StringComparison.OrdinalIgnoreCase);
 
-            // Configure the HTTP request pipeline.
+            // Configure the HTTP request pipeline
             if (app.Environment.IsDevelopment() || isDocker)
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
 
-
-            // Do not redirect to HTTPS inside container (no dev certs)
+            // Do not redirect to HTTPS inside container
             if (!isDocker)
             {
                 app.UseHttpsRedirection();
             }
+            
             app.UseRouting();
-
             app.UseCors("AllowFrontend");
             app.UseAuthorization();
-
             app.MapControllers();
 
             app.Run();

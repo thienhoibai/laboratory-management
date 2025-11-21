@@ -13,7 +13,8 @@ public class InstrumentConfig : IEntityTypeConfiguration<DomainInstrument>
         b.Property(x => x.InstrumentCode).HasMaxLength(50).IsRequired();
         b.HasIndex(x => x.InstrumentCode).IsUnique();
         b.Property(x => x.Name).HasMaxLength(100).IsRequired();
-        b.Property(x => x.Status).HasMaxLength(10).HasDefaultValue("ONLINE");
+        b.Property(x => x.Status).HasMaxLength(15).HasDefaultValue("ONLINE");
+        b.Property(x => x.ReagentStatus).HasMaxLength(10).HasDefaultValue("OK");
         b.Property(x => x.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
     }
 }
