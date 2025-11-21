@@ -9,6 +9,7 @@ namespace BlogService.Presentation.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Tags("Bài viết")]
     public class BlogPostController : ControllerBase
     {
         private readonly BlogPostService _service;
