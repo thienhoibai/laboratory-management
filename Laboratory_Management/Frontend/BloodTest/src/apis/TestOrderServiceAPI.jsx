@@ -94,7 +94,12 @@ export const deleteBundle = async (id) => {
 
 export const getCatalogsOfBundle = async (bundleId) => {
   if (!bundleId) throw new Error("Bundle ID is required");
+  console.log(`[API] Calling GET ${CATALOG_BUNDLE_BASE}/${bundleId}`);
   const response = await api.get(`${CATALOG_BUNDLE_BASE}/${bundleId}`);
+  console.log(
+    `[API] Response from ${CATALOG_BUNDLE_BASE}/${bundleId}:`,
+    response
+  );
   return response?.data?.data || response?.data || [];
 };
 
