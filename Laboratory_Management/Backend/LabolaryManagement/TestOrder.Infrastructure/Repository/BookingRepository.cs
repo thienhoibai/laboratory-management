@@ -36,7 +36,7 @@ namespace TestOrder.Infrastructure.Repository
         }
 
         public async Task<IEnumerable<Booking>?> GetBookingsByAppointmentSlotSearchableAsync 
-            (Guid appointmentSlotId,string? keyword, string? sortBy, string? sortDirection)
+            (Guid appointmentSlotId,string? keyword)
         {
             if (string.IsNullOrEmpty(keyword))
             {
@@ -48,19 +48,32 @@ namespace TestOrder.Infrastructure.Repository
             b.PatientName.Contains(keyword) ||
             b.PatientEmail.Contains(keyword) ||
             b.PatientPhone.Contains(keyword))); 
+            return await query.ToListAsync();
 
-            bool desc = sortDirection?.ToLower() == "desc";
+        }
 
-            query = (sortBy?.ToLower()) switch
+        public Task<IEnumerable<Booking>?> SortingAndPaging
+            (string? sortBy, string? sortDirection, int pageSize, int pageNumber, IEnumerable<Booking> bookingList)
+        {
+            bool isDescending = sortDirection?.ToLower() == "desc";
+
+            IQueryable<Booking> query = bookingList.AsQueryable();
+            query = sortBy?.ToLower() switch
             {
-                "bookingcode" => desc ? query.OrderByDescending(b => b.BookingCode) : query.OrderBy(b => b.BookingCode),
-                "patientname" => desc ? query.OrderByDescending(b => b.PatientName) : query.OrderBy(b => b.PatientName),
-                "patientemail" => desc ? query.OrderByDescending(b => b.PatientEmail) : query.OrderBy(b => b.PatientEmail),
-                "patientphone" => desc ? query.OrderByDescending(b => b.PatientPhone) : query.OrderBy(b => b.PatientPhone),
-                "status" => desc ? query.OrderByDescending(b => b.Status) : query.OrderBy(b => b.Status),
+                "bookingcode" => isDescending ? query.OrderByDescending(b => b.BookingCode) : query.OrderBy(b => b.BookingCode),
+                "patientname" => isDescending ? query.OrderByDescending(b => b.PatientName) : query.OrderBy(b => b.PatientName),
+                "patientemail" => isDescending ? query.OrderByDescending(b => b.PatientEmail) : query.OrderBy(b => b.PatientEmail),
+                "patientphone" => isDescending ? query.OrderByDescending(b => b.PatientPhone) : query.OrderBy(b => b.PatientPhone),
                 _ => query.OrderBy(b => b.BookingCode),
             };
-            return query;
+
+
+
+            return Task.FromResult<IEnumerable<Booking>?>(query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToList());
+
         }
        
     }

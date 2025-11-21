@@ -1,12 +1,7 @@
-﻿CREATE DATABASE BlogServiceDB;
-GO
-USE BlogServiceDB;
-GO
-
---------------------------------------------------
--- TẠO BẢNG
---------------------------------------------------
-
+﻿USE master;
+ALTER DATABASE BlogServiceDB SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+DROP DATABASE BlogServiceDB;
+use BlogServiceDB
 CREATE TABLE Category (
   CategoryId INT IDENTITY(1,1) PRIMARY KEY,
   CategoryName NVARCHAR(100) NOT NULL,

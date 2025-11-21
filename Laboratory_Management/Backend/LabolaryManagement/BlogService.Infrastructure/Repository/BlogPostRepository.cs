@@ -15,8 +15,8 @@ namespace BlogService.Infrastructure.Repository
     {
         public BlogPostRepository(DBContext context) : base(context) { }
 
-        public async Task<List<BlogPost>> GetAllWithCategoryAsync(
-            Guid? authorId, int? status, int page, int pageSize)
+        public async Task<List<BlogPost>> GetAllWithCategoryAsync(Guid? authorId, int? status, int page, int pageSize,string? search)
+
         {
             var query = _context.BlogPosts
                 .Include(p => p.Category)
@@ -24,6 +24,15 @@ namespace BlogService.Infrastructure.Repository
 
             if (authorId.HasValue)
                 query = query.Where(p => p.AuthorId == authorId.Value);
+            if  (!string.IsNullOrEmpty(search))
+                    query = query.Where(p =>
+                        p.Title!.Contains(search) ||
+                        p.Category!.CategoryName!.Contains(search));
+            if (!string.IsNullOrEmpty(search))
+                query = query.Where(p =>
+                    p.Title!.Contains(search) ||
+                    p.Category!.CategoryName!.Contains(search));
+
 
 
             if (status.HasValue)
@@ -38,8 +47,8 @@ namespace BlogService.Infrastructure.Repository
         public async Task<List<BlogPost>> GetApprovalAsync()
         {
             return await _context.BlogPosts
-                .Where(p => p.IsApproved == true || p.Status == 1)
-                .Include(p => p.Category)
+                .Where(p => p.IsApproved == true || p.Status ==1)
+                .Include(p => p.Category)            
                 .ToListAsync();
         }
 

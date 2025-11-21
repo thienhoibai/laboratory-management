@@ -89,7 +89,6 @@ export default function MedicalRecordDetail() {
                   title = "Xét nghiệm";
                 }
               }
-
               // Format ngày
               const formatDate = (dateStr) => {
                 if (!dateStr) return "—";
@@ -120,7 +119,6 @@ export default function MedicalRecordDetail() {
               };
             })
           );
-
           setAppointmentHistory(processedBookings);
         }
       } catch (error) {
@@ -130,7 +128,6 @@ export default function MedicalRecordDetail() {
         setLoading(false);
       }
     };
-
     fetchBookingHistory();
   }, [patientId]);
 

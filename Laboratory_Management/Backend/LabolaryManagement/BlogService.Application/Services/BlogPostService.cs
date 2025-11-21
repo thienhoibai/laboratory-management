@@ -21,9 +21,9 @@ namespace BlogService.Application.Services
 
         // Lấy tất cả bài viết (kèm Category)
         public Task<List<BlogPost>> GetAllWithCategoryAsync(
-            Guid? authorId, int? status, int page, int pageSize)
+            Guid? authorId, int? status, int page, int pageSize, string? search)
         {
-            return _repository.GetAllWithCategoryAsync(authorId, status, page, pageSize);
+            return _repository.GetAllWithCategoryAsync(authorId, status, page, pageSize,search);
         }
 
 

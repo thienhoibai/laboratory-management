@@ -124,6 +124,6 @@ export const formatTime = (timeString) => {
 
   if (hour >= 7 && hour < 11) return hour + " Giờ Sáng";
   if (hour >= 13 && hour < 18) return hour + " Giờ Chiều";
-  
-  return hour + " Giờ Tối"
-}
+
+  return hour + " Giờ Tối";
+};
