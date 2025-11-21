@@ -306,7 +306,6 @@ const BlogsManagement = () => {
         if (editingBlogId === null || editingBlogId === undefined) {
           throw new Error("Không tìm thấy ID bài viết để cập nhật");
         }
-        submitData.authorId = formData.authorId.trim();
         submitData.thumbnailUrl = formData.img;
         await BlogService.updateBlog(editingBlogId, submitData);
         toast.success("Cập nhật bài viết thành công!");

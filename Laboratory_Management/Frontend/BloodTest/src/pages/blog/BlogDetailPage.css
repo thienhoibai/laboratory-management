@@ -313,3 +313,43 @@
   }
 }
 
+/* Loading, Error states */
+.blog-detail-loading,
+.blog-detail-error {
+  text-align: center;
+  padding: 80px 24px;
+}
+
+.blog-detail-loading p {
+  font-size: 1.2rem;
+  color: #2563eb;
+  font-weight: 500;
+}
+
+.blog-detail-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.blog-detail-error h1 {
+  font-size: 1.5rem;
+  color: #374151;
+  font-weight: 600;
+}
+
+.back-to-blog-btn {
+  display: inline-block;
+  padding: 12px 24px;
+  background: #2563eb;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.back-to-blog-btn:hover {
+  background: #1d4ed8;
+}

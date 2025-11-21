@@ -176,3 +176,26 @@
   }
 }
 
+/* Loading, Error, Empty states */
+.blog-page-loading,
+.blog-page-error,
+.blog-page-empty {
+  text-align: center;
+  padding: 60px 24px;
+}
+
+.blog-page-loading p {
+  font-size: 1.2rem;
+  color: #2563eb;
+  font-weight: 500;
+}
+
+.blog-page-error p {
+  font-size: 1.1rem;
+  color: #ef4444;
+}
+
+.blog-page-empty p {
+  font-size: 1.1rem;
+  color: #6b7280;
+}
