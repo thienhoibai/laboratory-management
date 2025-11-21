@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TestOrder.Application.DTOs.Payment;
+using TestOrder.Application.Services.Booking;
 using TestOrder.Application.Services.Payment;
 using TestOrder.Infrastructure.Models;
 using TestOrder.Infrastructure.Models.VnPayModels;
@@ -20,11 +21,16 @@ namespace TestOrder.Application.Services
         private readonly PaymentRepository _paymentRepository;
         
         private readonly IConfiguration configuration;
+        private readonly BookingService _bookingService;
 
-        public PaymentService(IConfiguration configuration, PaymentRepository paymentRepository)
+        
+
+        public PaymentService(IConfiguration configuration, 
+                              PaymentRepository paymentRepository,
+                              BookingService bookingService)
         {
             _paymentRepository = paymentRepository;
-            
+            _bookingService = bookingService;
             this.configuration = configuration ?? throw new ArgumentNullException(nameof(configuration), "Configuration cannot be null.");
         }
 
@@ -147,19 +153,22 @@ namespace TestOrder.Application.Services
             return responseData;
         }
 
-        public async Task<bool> UpdatePaymentAsync(string token, UpdatePaymentDTO dto)
+        public async Task<string> UpdatePaymentAsync(string token, UpdatePaymentDTO dto, bool isSuccess)
         {
             var payment = await _paymentRepository.GetByTokenAsync(token);
             if (payment == null)
             {
-                return false;
+                return null;
+            }
+            if (isSuccess)
+            {
+                await _bookingService.PaymentConfirmBooking(payment.BookingId);
             }
             payment.Method = dto.Method ?? payment.Method;
             payment.Status = dto.Status ?? payment.Status;
             payment.PaidAt = dto.PaidAt ?? payment.PaidAt;
             await _paymentRepository.UpdateAsync(payment);
-            return true;
-            
+            return payment.BookingId.ToString();
         }
     }
     #endregion

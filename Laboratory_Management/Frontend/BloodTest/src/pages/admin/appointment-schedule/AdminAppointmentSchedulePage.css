@@ -605,14 +605,18 @@
 }
 
 .modal-body {
-  padding: 24px;
+  gap: 120px;
 }
 
 .modal-info-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
+  gap: 25px;
   margin-bottom: 24px;
+}
+.modal-info-1 {
+  display: flex;
+  flex-direction: column;
 }
 
 .modal-info-item {
@@ -810,16 +814,21 @@
   background: #1565c0;
 }
 
+.CheckIn-Button {
+  background-color: rgb(161, 243, 39);
+  padding: 10px;
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
   .calendar-grid {
     grid-template-columns: repeat(7, 1fr);
   }
-  
+
   .modal-info-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .time-slots-grid {
     grid-template-columns: repeat(3, 1fr);
   }
@@ -829,28 +838,28 @@
   .appointment-schedule-container {
     padding: 12px;
   }
-  
+
   .appointment-content {
     padding: 16px;
   }
-  
+
   .calendar-grid {
     grid-template-columns: repeat(7, 1fr);
     gap: 4px;
   }
-  
+
   .calendar-day {
     padding: 8px 4px;
   }
-  
+
   .time-slots-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .appointments-table {
     font-size: 13px;
   }
-  
+
   .pagination {
     flex-direction: column;
     gap: 12px;

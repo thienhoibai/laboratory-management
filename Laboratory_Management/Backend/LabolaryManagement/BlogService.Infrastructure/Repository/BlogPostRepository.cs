@@ -25,6 +25,7 @@ namespace BlogService.Infrastructure.Repository
             if (authorId.HasValue)
                 query = query.Where(p => p.AuthorId == authorId.Value);
 
+
             if (status.HasValue)
                 query = query.Where(p => p.Status == status.Value);
 
@@ -37,8 +38,8 @@ namespace BlogService.Infrastructure.Repository
         public async Task<List<BlogPost>> GetApprovalAsync()
         {
             return await _context.BlogPosts
-                .Where(p => p.IsApproved == true || p.Status ==1)
-                .Include(p => p.Category)            
+                .Where(p => p.IsApproved == true || p.Status == 1)
+                .Include(p => p.Category)
                 .ToListAsync();
         }
 
@@ -48,7 +49,7 @@ namespace BlogService.Infrastructure.Repository
             if (post != null)
             {
                 post.Status = (int)status; // lưu enum dưới dạng int
-               
+
                 post.UpdatedDate = DateTime.Now;
                 await _context.SaveChangesAsync();
             }

@@ -1,62 +1,138 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./MedicalRecordDetail.css";
 import TestResultDetail from "./TestResultDetail";
+import { useSearchParams } from "react-router-dom";
+import { PatientServiceAPI } from "../../apis/PatientServiceAPI";
+import { setAuthToken } from "../../utils/auth";
+import { calculateAge } from "../../utils/formatDate";
+import api from "../../configs/axios";
+import { bookingService } from "../../apis/TestOrderServiceAPI";
 
 export default function MedicalRecordDetail() {
   const navigate = useNavigate();
   const [expandedTests, setExpandedTests] = useState({});
+  const [searchParams] = useSearchParams();
+  const patientId = searchParams.get("patientId");
+  const [patients, setPatient] = useState(null);
+  const [appointmentHistory, setAppointmentHistory] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  // Mock data
-  const patientInfo = {
-    recordId: "MR001",
-    fullname: "Nguyễn Văn An",
-    patientId: "550e8400",
-    gender: "Nam",
-    birthday: "5 tháng 3, 1985 (40 tuổi)",
-    phone: "0912345678",
-    email: "nguyenvanan@email.com",
-    address: "123 Đường Lê Lợi, Quận 1, TP.HCM",
-    idCard: "079085001234",
-  };
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    setAuthToken(token);
 
-  const appointmentHistory = [
-    {
-      id: 1,
-      title: "Xét nghiệm máu",
-      date: "20 tháng 9, 2024",
-      location: "Phòng khám Vinmec, 123 Lê Văn Việt, Tân Phú",
-      status: "completed",
-    },
-    {
-      id: 2,
-      title: "Gói xét nghiệm tổng quát",
-      date: "10 tháng 8, 2024",
-      location: "Phòng khám Vinmec, 123 Lê Văn Việt, Tân Phú",
-      status: "completed",
-    },
-    {
-      id: 3,
-      title: "Xét nghiệm tim mạch",
-      date: "25 tháng 6, 2024",
-      location: "Phòng khám Vinmec, 123 Lê Văn Việt, Tân Phú",
-      status: "completed",
-    },
-    {
-      id: 4,
-      title: "Xét nghiệm nước tiểu",
-      date: "17 tháng 5, 2024",
-      location: "Phòng khám Vinmec, 123 Lê Văn Việt, Tân Phú",
-      status: "completed",
-    },
-    {
-      id: 5,
-      title: "Xét nghiệm chức năng gan",
-      date: "12 tháng 3, 2024",
-      location: "Phòng khám Vinmec, 123 Lê Văn Việt, Tân Phú",
-      status: "completed",
-    },
-  ];
+    const fetchPatientAPI = async () => {
+      const response = await PatientServiceAPI.GetProfileByPatientId(patientId);
+      if (response.status >= 200 && response.status < 300) {
+        setPatient(response.data);
+        console.log(response.data);
+      }
+    };
+
+    fetchPatientAPI();
+  }, [patientId]);
+
+  useEffect(() => {
+    const fetchBookingHistory = async () => {
+      if (!patientId) return;
+
+      try {
+        setLoading(true);
+        const response = await api.get(
+          `testorder/api/Booking/patient?patientId=${patientId}&pageNumber=1&pageSize=100`
+        );
+
+        if (response.status >= 200 && response.status < 300) {
+          const bookings = Array.isArray(response.data)
+            ? response.data
+            : response.data?.items || response.data?.data || [];
+
+          // Xử lý từng booking để lấy thông tin gói hoặc catalog
+          const processedBookings = await Promise.all(
+            bookings.map(async (booking) => {
+              let title = "Xét nghiệm";
+
+              // Nếu có bundleId, lấy tên gói
+              if (booking.bundleId) {
+                try {
+                  const bundleData = await bookingService.getTestBundle(
+                    booking.bundleId
+                  );
+                  title =
+                    bundleData?.bundleName ||
+                    bundleData?.name ||
+                    "Gói xét nghiệm";
+                } catch (error) {
+                  console.error("Error fetching bundle:", error);
+                  title = "Gói xét nghiệm";
+                }
+              }
+              // Nếu không có bundleId nhưng có testCatalogs, lấy testName từ các catalog
+              else if (
+                booking.testCatalogs &&
+                Array.isArray(booking.testCatalogs) &&
+                booking.testCatalogs.length > 0
+              ) {
+                try {
+                  const catalogPromises = booking.testCatalogs.map(
+                    (catalogId) => bookingService.getTestCatalog(catalogId)
+                  );
+                  const catalogs = await Promise.all(catalogPromises);
+                  const testNames = catalogs
+                    .map((cat) => cat?.testName || cat?.name)
+                    .filter(Boolean);
+                  title =
+                    testNames.length > 0 ? testNames.join(", ") : "Xét nghiệm";
+                } catch (error) {
+                  console.error("Error fetching catalogs:", error);
+                  title = "Xét nghiệm";
+                }
+              }
+
+              // Format ngày
+              const formatDate = (dateStr) => {
+                if (!dateStr) return "—";
+                try {
+                  const d = new Date(dateStr);
+                  return d.toLocaleDateString("vi-VN", {
+                    weekday: "long",
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                  });
+                } catch {
+                  return dateStr;
+                }
+              };
+
+              return {
+                id: booking.bookingId || booking.id,
+                title: title,
+                date: formatDate(
+                  booking.slotInfo?.appointmentDate || booking.appointmentDate
+                ),
+                location:
+                  booking.slotInfo?.location ||
+                  "Phòng khám Xét nghiệm Y tế, 123 Nguyễn Huệ, Q.1, TP.HCM",
+                status: booking.status || "completed",
+                booking: booking, // Lưu toàn bộ booking data để dùng sau
+              };
+            })
+          );
+
+          setAppointmentHistory(processedBookings);
+        }
+      } catch (error) {
+        console.error("Error fetching booking history:", error);
+        setAppointmentHistory([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBookingHistory();
+  }, [patientId]);
 
   const toggleTestDetail = (testId) => {
     setExpandedTests((prev) => ({
@@ -68,17 +144,27 @@ export default function MedicalRecordDetail() {
   return (
     <div className="medical-record-detail">
       {/* Header */}
-      <div className="medical-record-header">
+      <div className="medical-record-header-1">
         <div className="breadcrumb">
           <button
-            onClick={() => navigate("/profile")}
             className="breadcrumb-link"
+            onClick={() => navigate("/profile")}
           >
-            Quay lại hồ sơ cá nhân
+            <svg
+              className="back-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M19 12H5" />
+              <path d="M12 19l-7-7 7-7" />
+            </svg>
+            Quay về trang chủ
           </button>
         </div>
         <h1 className="page-title">Chi tiết hồ sơ bệnh án</h1>
-        <p className="page-subtitle">Hồ sơ bệnh án #{patientInfo.recordId}</p>
+        <p className="page-subtitle">Hồ sơ bệnh án #</p>
       </div>
 
       {/* Patient Info Section */}
@@ -87,6 +173,7 @@ export default function MedicalRecordDetail() {
         <p className="section-subtitle">Thông tin chi tiết của bệnh nhân</p>
 
         <div className="patient-info-grid">
+          {/* Cột 1 - 5 trường */}
           <div className="patient-info-item">
             <div className="info-icon-wrapper">
               <svg
@@ -102,28 +189,7 @@ export default function MedicalRecordDetail() {
             </div>
             <div className="info-content">
               <span className="info-label">Họ và tên</span>
-              <span className="info-value">{patientInfo.fullname}</span>
-            </div>
-          </div>
-
-          <div className="patient-info-item">
-            <div className="info-icon-wrapper">
-              <svg
-                className="info-icon"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                <line x1="16" y1="2" x2="16" y2="6" />
-                <line x1="8" y1="2" x2="8" y2="6" />
-                <line x1="3" y1="10" x2="21" y2="10" />
-              </svg>
-            </div>
-            <div className="info-content">
-              <span className="info-label">Ngày sinh</span>
-              <span className="info-value">{patientInfo.birthday}</span>
+              <span className="info-value">{patients?.fullName}</span>
             </div>
           </div>
 
@@ -142,7 +208,91 @@ export default function MedicalRecordDetail() {
             </div>
             <div className="info-content">
               <span className="info-label">Mã bệnh nhân</span>
-              <span className="info-value">{patientInfo.patientId}</span>
+              <span className="info-value">{patients?.patientId}</span>
+            </div>
+          </div>
+
+          <div className="patient-info-item">
+            <div className="info-icon-wrapper">
+              <svg
+                className="info-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                <circle cx="12" cy="10" r="3" />
+              </svg>
+            </div>
+            <div className="info-content">
+              <span className="info-label">Địa chỉ</span>
+              <span className="info-value">{patients?.address}</span>
+            </div>
+          </div>
+
+          <div className="patient-info-item">
+            <div className="info-icon-wrapper">
+              <svg
+                className="info-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                <line x1="8" y1="21" x2="16" y2="21" />
+                <line x1="12" y1="17" x2="12" y2="21" />
+              </svg>
+            </div>
+            <div className="info-content">
+              <span className="info-label">Số CMND/CCCD</span>
+              <span className="info-value">{patients?.idNumber}</span>
+            </div>
+          </div>
+
+          <div className="patient-info-item">
+            <div className="info-icon-wrapper">
+              <svg
+                className="info-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+            </div>
+            <div className="info-content">
+              <span className="info-label">Số bảo hiểm y tế</span>
+              <span className="info-value">
+                {patients?.insuranceNumber || patients?.healthInsurance || "—"}
+              </span>
+            </div>
+          </div>
+
+          {/* Cột 2 - 4 trường */}
+          <div className="patient-info-item">
+            <div className="info-icon-wrapper">
+              <svg
+                className="info-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                <line x1="16" y1="2" x2="16" y2="6" />
+                <line x1="8" y1="2" x2="8" y2="6" />
+                <line x1="3" y1="10" x2="21" y2="10" />
+              </svg>
+            </div>
+            <div className="info-content">
+              <span className="info-label">Ngày sinh</span>
+              <span className="info-value">
+                {patients?.dateOfBirth} ({calculateAge(patients?.dateOfBirth)}{" "}
+                Tuổi)
+              </span>
             </div>
           </div>
 
@@ -160,7 +310,9 @@ export default function MedicalRecordDetail() {
             </div>
             <div className="info-content">
               <span className="info-label">Giới tính</span>
-              <span className="info-value">{patientInfo.gender}</span>
+              <span className="info-value">
+                {patients?.gender == 1 ? "Nam" : "Nữ"}
+              </span>
             </div>
           </div>
 
@@ -178,7 +330,7 @@ export default function MedicalRecordDetail() {
             </div>
             <div className="info-content">
               <span className="info-label">Số điện thoại</span>
-              <span className="info-value">{patientInfo.phone}</span>
+              <span className="info-value">{patients?.phone}</span>
             </div>
           </div>
 
@@ -197,46 +349,7 @@ export default function MedicalRecordDetail() {
             </div>
             <div className="info-content">
               <span className="info-label">Email</span>
-              <span className="info-value">{patientInfo.email}</span>
-            </div>
-          </div>
-
-          <div className="patient-info-item full-width">
-            <div className="info-icon-wrapper">
-              <svg
-                className="info-icon"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                <circle cx="12" cy="10" r="3" />
-              </svg>
-            </div>
-            <div className="info-content">
-              <span className="info-label">Địa chỉ</span>
-              <span className="info-value">{patientInfo.address}</span>
-            </div>
-          </div>
-
-          <div className="patient-info-item full-width">
-            <div className="info-icon-wrapper">
-              <svg
-                className="info-icon"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
-                <line x1="8" y1="21" x2="16" y2="21" />
-                <line x1="12" y1="17" x2="12" y2="21" />
-              </svg>
-            </div>
-            <div className="info-content">
-              <span className="info-label">Số CMND/CCCD</span>
-              <span className="info-value">{patientInfo.idCard}</span>
+              <span className="info-value">{patients?.email}</span>
             </div>
           </div>
         </div>
@@ -281,83 +394,93 @@ export default function MedicalRecordDetail() {
         </div>
 
         <div className="appointment-list">
-          {appointmentHistory.map((appointment) => (
-            <div key={appointment.id} className="appointment-card-wrapper">
-              <div className="appointment-card">
-                <div className="appointment-icon">
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                    <polyline points="14,2 14,8 20,8" />
-                    <line x1="16" y1="13" x2="8" y2="13" />
-                    <line x1="16" y1="17" x2="8" y2="17" />
-                    <polyline points="10,9 9,9 8,9" />
-                  </svg>
-                </div>
-                <div className="appointment-content">
-                  <h3 className="appointment-title">{appointment.title}</h3>
-                  <div className="appointment-info">
-                    <div className="appointment-date">
-                      <svg
-                        className="date-icon"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <rect
-                          x="3"
-                          y="4"
-                          width="18"
-                          height="18"
-                          rx="2"
-                          ry="2"
-                        />
-                        <line x1="16" y1="2" x2="16" y2="6" />
-                        <line x1="8" y1="2" x2="8" y2="6" />
-                        <line x1="3" y1="10" x2="21" y2="10" />
-                      </svg>
-                      <span>Ngày xét nghiệm: {appointment.date}</span>
-                    </div>
-                    <div className="appointment-location">
-                      <span>Khám tại: {appointment.location}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="appointment-actions">
-                  <button
-                    className={`view-detail-btn ${
-                      expandedTests[appointment.id] ? "active" : ""
-                    }`}
-                    onClick={() => toggleTestDetail(appointment.id)}
-                  >
-                    {expandedTests[appointment.id] ? "Ẩn" : "Xem"} chi tiết kết
-                    quả
+          {loading ? (
+            <div style={{ padding: "40px", textAlign: "center" }}>
+              <p>Đang tải lịch sử xét nghiệm...</p>
+            </div>
+          ) : appointmentHistory.length === 0 ? (
+            <div style={{ padding: "40px", textAlign: "center" }}>
+              <p>Chưa có lịch sử xét nghiệm</p>
+            </div>
+          ) : (
+            appointmentHistory.map((appointment) => (
+              <div key={appointment.id} className="appointment-card-wrapper">
+                <div className="appointment-card">
+                  <div className="appointment-icon">
                     <svg
-                      className={`chevron-icon ${
-                        expandedTests[appointment.id] ? "expanded" : ""
-                      }`}
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth="2"
                     >
-                      <polyline points="6 9 12 15 18 9" />
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      <polyline points="14,2 14,8 20,8" />
+                      <line x1="16" y1="13" x2="8" y2="13" />
+                      <line x1="16" y1="17" x2="8" y2="17" />
+                      <polyline points="10,9 9,9 8,9" />
                     </svg>
-                  </button>
+                  </div>
+                  <div className="appointment-content">
+                    <h3 className="appointment-title">{appointment.title}</h3>
+                    <div className="appointment-info">
+                      <div className="appointment-date">
+                        <svg
+                          className="date-icon"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <rect
+                            x="3"
+                            y="4"
+                            width="18"
+                            height="18"
+                            rx="2"
+                            ry="2"
+                          />
+                          <line x1="16" y1="2" x2="16" y2="6" />
+                          <line x1="8" y1="2" x2="8" y2="6" />
+                          <line x1="3" y1="10" x2="21" y2="10" />
+                        </svg>
+                        <span>Ngày xét nghiệm: {appointment.date}</span>
+                      </div>
+                      <div className="appointment-location">
+                        <span>Khám tại: {appointment.location}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="appointment-actions">
+                    <button
+                      className={`view-detail-btn ${
+                        expandedTests[appointment.id] ? "active" : ""
+                      }`}
+                      onClick={() => toggleTestDetail(appointment.id)}
+                    >
+                      {expandedTests[appointment.id] ? "Ẩn" : "Xem"} chi tiết
+                      kết quả
+                      <svg
+                        className={`chevron-icon ${
+                          expandedTests[appointment.id] ? "expanded" : ""
+                        }`}
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <polyline points="6 9 12 15 18 9" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
+                {expandedTests[appointment.id] && (
+                  <div className="test-detail-dropdown">
+                    <TestResultDetail test={appointment} inline={true} />
+                  </div>
+                )}
               </div>
-              {expandedTests[appointment.id] && (
-                <div className="test-detail-dropdown">
-                  <TestResultDetail test={appointment} inline={true} />
-                </div>
-              )}
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
     </div>

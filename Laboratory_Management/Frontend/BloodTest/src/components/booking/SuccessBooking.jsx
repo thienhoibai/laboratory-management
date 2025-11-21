@@ -1,29 +1,38 @@
 import React from "react";
 import "./SuccessBooking.css";
-import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import packageIcon from "../../assets/icon/SVG_margin.svg";
+import locationIcon from "../../assets/icon/Location.svg";
+import calendarIcon from "../../assets/icon/Calender.svg";
+import clockIcon from "../../assets/icon/Clock.svg";
 
 export default function SuccessBooking({
   paymentResult,
   selectedItems,
   selectedDateTime,
   onNewBooking,
+  bookingData, // Thêm prop để nhận dữ liệu từ API
 }) {
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const Amount = Number(searchParams.get("Amount"));
 
-  const { fullName, phone, email } = useSelector((state) => state.patient);
+  // Sử dụng dữ liệu từ API nếu có, nếu không dùng dữ liệu mặc định
+  const orderCode =
+    bookingData?.bookingCode || paymentResult?.orderCode || "XN2025010001";
+  const formattedTotal = (price) => price.toLocaleString("vi-VN") + "đ";
 
-  const orderCode = paymentResult?.orderCode || "XN2025010001";
-  const total =
-    selectedItems?.total ||
-    (selectedItems?.package?.price ?? paymentResult?.amount) ||
-    300000;
-  const formattedTotal = (total || 0).toLocaleString("vi-VN") + "đ";
+  // Lấy tên gói/test từ API
+  const pkgName = bookingData?.bundleId
+    ? bookingData.testInfo?.bundleName
+    : bookingData?.testCatalogs
+    ? bookingData.testInfo?.map((t) => t.testName).join(", ")
+    : selectedItems?.package?.name || "Xét nghiệm tổng quát";
 
-  const pkgName =
-    selectedItems?.package?.name ||
-    selectedItems?.package?.title ||
-    "Xét nghiệm tổng quát";
+  // Thông tin khách hàng từ API
+  const fullName = bookingData?.patientName || "—";
+  const email = bookingData?.patientEmail || "—";
+  const phone = bookingData?.patientPhoneNumber || "—";
 
   const formatDate = (iso) => {
     if (!iso) return "—";
@@ -64,7 +73,7 @@ export default function SuccessBooking({
               />
             </svg>
           </div>
-          <h1 className="sb-title">Đặt lịch thành công!</h1>
+          <h1 className="sb-title">Thanh Toán thành công!</h1>
           <p className="sb-desc">
             Cảm ơn bạn đã đặt lịch. Chúng tôi đã gửi xác nhận đến email của bạn.
           </p>
@@ -79,7 +88,7 @@ export default function SuccessBooking({
               </div>
               <div className="sb-code">
                 Tổng Thanh Toán <br />
-                <span className="sb-total">{formattedTotal}</span>
+                <span className="sb-total">{formattedTotal(Amount)}</span>
               </div>
             </div>
 
@@ -87,7 +96,7 @@ export default function SuccessBooking({
               <div className="sb-row">
                 <div className="sb-icon">
                   {/* icon list */}
-                  <img src="src\assets\icon\SVG_margin.svg" />
+                  <img src={packageIcon} alt="Gói xét nghiệm" />
                 </div>
                 <div className="sb-text">
                   <div className="sb-label">Gói xét nghiệm</div>
@@ -97,7 +106,7 @@ export default function SuccessBooking({
 
               <div className="sb-row">
                 <div className="sb-icon">
-                  <img src="src\assets\icon\Location.svg" />
+                  <img src={locationIcon} alt="Địa điểm" />
                 </div>
                 <div className="sb-text">
                   <div className="sb-label">Địa điểm</div>
@@ -113,24 +122,29 @@ export default function SuccessBooking({
 
               <div className="sb-row">
                 <div className="sb-icon">
-                  <img src="src\assets\icon\Calender.svg" />
+                  <img src={calendarIcon} alt="Ngày khám" />
                 </div>
                 <div className="sb-text">
                   <div className="sb-label">Ngày khám</div>
                   <div className="sb-value">
-                    {formatDate(selectedDateTime?.date)}
+                    {formatDate(
+                      bookingData?.slotInfo?.appointmentDate ||
+                        selectedDateTime?.date
+                    )}
                   </div>
                 </div>
               </div>
 
               <div className="sb-row">
                 <div className="sb-icon">
-                  <img src="src\assets\icon\Clock.svg" />
+                  <img src={clockIcon} alt="Giờ khám" />
                 </div>
                 <div className="sb-text">
                   <div className="sb-label">Giờ khám</div>
                   <div className="sb-value">
-                    {selectedDateTime?.time || "—"}
+                    {bookingData?.slotInfo?.timeBlock ||
+                      selectedDateTime?.time ||
+                      "—"}
                   </div>
                 </div>
               </div>
@@ -142,15 +156,15 @@ export default function SuccessBooking({
             <div className="sb-cust-grid">
               <div>
                 <div className="c-l">Họ và tên</div>
-                <div className="c-v">{fullName || "Nguyễn Văn A"}</div>
+                <div className="c-v">{fullName}</div>
               </div>
               <div>
                 <div className="c-l">Email</div>
-                <div className="c-v">{email || "email@example.com"}</div>
+                <div className="c-v">{email}</div>
               </div>
               <div>
                 <div className="c-l">Số điện thoại</div>
-                <div className="c-v">{phone || "0912345678"}</div>
+                <div className="c-v">{phone}</div>
               </div>
             </div>
           </div>

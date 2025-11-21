@@ -14,6 +14,7 @@ namespace TestOrder.Presentation.Controllers
     {
         private readonly IVnPayService vnPayService;
         private readonly PaymentService paymentService;
+        private const string paymentSuccess = "http://localhost:5174/booking/successBooking?bookingId=";
 
         public PaymentController(IVnPayService vnPayService, PaymentService paymentService)
         {
@@ -65,6 +66,13 @@ namespace TestOrder.Presentation.Controllers
             try
             {
                 var vnPayResponse = vnPayService.PaymentExecute(Request.Query);
+
+                long amount = 0;
+                if (Request.Query.ContainsKey("vnp_Amount"))
+                {
+                    amount = Convert.ToInt64(Request.Query["vnp_Amount"]) / 100;
+                }
+
                 if (vnPayResponse.IsSuccess)
                 {
                     string token = vnPayResponse.OrderId;
@@ -73,10 +81,10 @@ namespace TestOrder.Presentation.Controllers
                         Method = vnPayResponse.PaymentMethod,
                         Status = (byte?)PaymentStatusEnum.Completed,
                         PaidAt = DateTime.Now,
+                        Amount = amount
                     };
-                    await paymentService.UpdatePaymentAsync(token, updatePaymentDto);
-
-                    return Ok("Payment successful");
+                    string id = await paymentService.UpdatePaymentAsync(token, updatePaymentDto, vnPayResponse.IsSuccess);
+                    return Redirect($"{paymentSuccess}{id}&Amount={amount}");
                 }
                 else
                 {
@@ -85,7 +93,7 @@ namespace TestOrder.Presentation.Controllers
                     {
                         Status = (byte?)PaymentStatusEnum.Failed,            
                     };
-                    await paymentService.UpdatePaymentAsync(token, updatePaymentDto);
+                    string id = await paymentService.UpdatePaymentAsync(token, updatePaymentDto, vnPayResponse.IsSuccess);
                     return BadRequest("Payment failed");
                 }
             }

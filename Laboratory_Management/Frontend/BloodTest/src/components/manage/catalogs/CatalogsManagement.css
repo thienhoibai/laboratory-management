@@ -49,8 +49,18 @@
   padding: 24px;
 }
 
-.search-section {
+.catalogs-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
   margin-bottom: 24px;
+}
+
+.search-section {
+  flex: 1;
+  min-width: 260px;
 }
 
 .search-box {
@@ -122,6 +132,16 @@
   color: #333;
 }
 
+.catalog-desc {
+  color: #4b5563;
+  font-size: 13px;
+}
+
+.catalog-desc.empty {
+  font-style: italic;
+  color: #9ca3af;
+}
+
 .catalog-price {
   font-weight: 600;
   color: #2e7d32;
@@ -141,7 +161,16 @@
   border-radius: 12px;
   font-size: 12px;
   font-weight: 500;
-  font-family: monospace;
+}
+
+.parameter-tag.more {
+  background: #e0e7ff;
+  color: #1d4ed8;
+}
+
+.no-parameter {
+  color: #9ca3af;
+  font-style: italic;
 }
 
 .status-badge {
@@ -160,11 +189,6 @@
 .status-badge.inactive {
   background: #ffebee;
   color: #c62828;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 8px;
 }
 
 .action-button {
@@ -186,9 +210,9 @@
   color: #1976d2;
 }
 
-.action-button.delete:hover {
-  background: #ffebee;
-  color: #c62828;
+.page-info {
+  font-size: 14px;
+  color: #555;
 }
 
 .modal-overlay {
@@ -206,11 +230,12 @@
 
 .catalog-modal {
   background: white;
-  border-radius: 12px;
-  width: 700px;
-  max-width: 95%;
-  max-height: 90vh;
+  border-radius: 16px;
+  width: 900px;
+  max-width: 96%;
+  max-height: 92vh;
   overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.25);
 }
 
 .modal-header {
@@ -250,8 +275,51 @@
   padding: 24px;
 }
 
+.form-hint {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin-bottom: 12px;
+}
+
 .form-section {
   margin-bottom: 24px;
+}
+
+.parameter-selector {
+  border: 1px solid #f0f0f0;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  background: #f8fafc;
+}
+
+.parameter-selector-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.parameter-selector-header h4 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.parameter-selector-header p {
+  margin: 4px 0 0;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.search-box.compact {
+  max-width: 240px;
+}
+
+.search-box.compact input {
+  padding: 10px 12px 10px 40px;
 }
 
 .form-row {
@@ -312,11 +380,12 @@
 }
 
 .parameters-selection {
-  max-height: 250px;
+  max-height: 260px;
   overflow-y: auto;
   border: 1px solid #e0e0e0;
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 8px;
+  background: white;
 }
 
 .parameter-item {
@@ -324,14 +393,18 @@
   align-items: center;
   gap: 12px;
   padding: 12px;
-  border-radius: 6px;
+  border-radius: 10px;
   cursor: pointer;
   transition: all 0.2s;
-  margin-bottom: 8px;
+  border: 1px solid transparent;
+}
+
+.parameter-item + .parameter-item {
+  margin-top: 8px;
 }
 
 .parameter-item:hover {
-  background: #f8f9fa;
+  background: #f8fafc;
 }
 
 .parameter-item.selected {
@@ -355,56 +428,20 @@
 .parameter-code {
   font-weight: 600;
   color: #1976d2;
-  font-family: monospace;
   font-size: 13px;
 }
 
-.parameter-name {
+.parameter-meta {
   font-size: 12px;
-  color: #666;
+  color: #6b7280;
 }
 
-.selected-parameters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 12px;
-  background: #f8f9fa;
-  border-radius: 8px;
-  min-height: 50px;
-}
-
-.selected-parameter-tag {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  background: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
+.parameter-title {
   font-size: 13px;
-  color: #333;
+  color: #111827;
+  font-weight: 600;
 }
 
-.selected-parameter-tag span {
-  font-weight: 500;
-}
-
-.remove-tag-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 2px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #999;
-  transition: color 0.2s;
-}
-
-.remove-tag-btn:hover {
-  color: #c62828;
-}
 
 .modal-footer {
   display: flex;
@@ -446,6 +483,23 @@
 .modal-button.primary:hover {
   background: #1565c0;
   transform: translateY(-1px);
+}
+
+.catalogs-pagination {
+  margin-top: 24px;
+  display: flex;
+  justify-content: center;
+}
+
+.loading-container.small {
+  text-align: center;
+  padding: 24px;
+}
+
+.empty-text {
+  text-align: center;
+  color: #6b7280;
+  font-style: italic;
 }
 
 @media (max-width: 768px) {

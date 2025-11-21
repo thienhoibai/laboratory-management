@@ -271,6 +271,40 @@
 }
 
 /* Medical Records */
+.medical-record-header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.create-record-btn {
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 20px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.create-record-btn:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.plus-icon {
+  width: 18px;
+  height: 18px;
+}
+
 .medical-records-list {
   margin-bottom: 32px;
 }
@@ -313,6 +347,10 @@
   font-weight: 600;
 }
 
+.medical-record-status.status-archived {
+  background: #6b7280;
+}
+
 .medical-record-dates {
   display: flex;
   align-items: center;
@@ -322,19 +360,16 @@
   color: #6b7280;
 }
 
+.medical-record-date {
+  font-size: 13px;
+}
+
 .medical-record-separator {
   color: #d1d5db;
 }
 
 .medical-record-patient-info {
   margin-bottom: 20px;
-}
-
-.medical-record-patient-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #374151;
-  margin: 0 0 12px 0;
 }
 
 .medical-record-patient-details {
@@ -352,6 +387,7 @@
 .medical-record-patient-item {
   display: flex;
   gap: 8px;
+  font-size: 14px;
 }
 
 .medical-record-patient-label {
@@ -370,7 +406,7 @@
   color: white;
   border: none;
   border-radius: 8px;
-  padding: 12px 20px;
+  padding: 10px 18px;
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
@@ -474,6 +510,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  margin-bottom: 16px;
 }
 
 .form-group label {
@@ -495,10 +532,17 @@
   border-radius: 8px;
   font-size: 16px;
   transition: border-color 0.2s;
+  font-family: "Inter", Arial, sans-serif;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
 }
 
 .form-group input:focus,
-.form-group select:focus {
+.form-group select:focus,
+.form-group textarea:focus {
   outline: none;
   border-color: #2563eb;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
@@ -506,6 +550,12 @@
 
 .form-group input.error {
   border-color: #ef4444;
+}
+
+.disabled-input {
+  background-color: #f3f4f6;
+  color: #6b7280;
+  cursor: not-allowed;
 }
 
 .error-text {
