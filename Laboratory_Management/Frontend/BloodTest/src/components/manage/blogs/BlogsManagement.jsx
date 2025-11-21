@@ -18,6 +18,8 @@ import { toast } from "react-toastify";
 import BlogService from "../../../services/BlogService";
 import { setAuthToken } from "../../../utils/auth";
 import "./BlogsManagement.css";
+import { jwtDecode } from "jwt-decode";
+import { formatDate1 } from "../../../utils/formatDate";
 
 const resolveBlogId = (blogOrId) => {
   if (blogOrId == null) return null;
@@ -42,7 +44,7 @@ const BlogsManagement = () => {
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(5);
 
   // Blogs state
   const [blogs, setBlogs] = useState([]);
@@ -270,6 +272,10 @@ const BlogsManagement = () => {
     setIsSubmitting(true);
     try {
       const token = localStorage.getItem("accessToken");
+      const decode = jwtDecode(token);
+      let id = null;
+      id = decode["sub"];
+
       if (token) setAuthToken(token);
 
       const selectedCategory = categories.find(
@@ -288,6 +294,7 @@ const BlogsManagement = () => {
         content: formData.content.trim(),
         img: formData.img,
         tag: trimmedCategoryName,
+        authorId: id,
       };
 
       if (hasValidCategoryId) {
@@ -551,10 +558,12 @@ const BlogsManagement = () => {
               displayedBlogs.map((blog) => (
                 <div className="blogs-table-row" key={blog.id}>
                   <span className="blogs-table-title">{blog.title}</span>
-                  <span>{blog.author}</span>
+                  <span>{blog.authorId}</span>
                   <span>{blog.category}</span>
-                  <span>{blog.createdDate || "Chưa có"}</span>
-                  <span>{blog.updatedDate || "Chưa cập nhật"}</span>
+                  <span>{formatDate1(blog.createdDate) || "Chưa có"}</span>
+                  <span>
+                    {formatDate1(blog.updatedDate) || "Chưa Cập Nhật"}
+                  </span>
                   <span>{getStatusTag(blog.status)}</span>
                   <span className="blogs-table-actions">
                     <button
@@ -626,7 +635,7 @@ const BlogsManagement = () => {
                   ? `${range[0]}-${range[1]} của ${total} bài viết`
                   : "0 bài viết"
               }
-              pageSizeOptions={["10", "20", "50", "100"]}
+              pageSizeOptions={["5", "10", "20", "50", "100"]}
             />
           </div>
         </div>
