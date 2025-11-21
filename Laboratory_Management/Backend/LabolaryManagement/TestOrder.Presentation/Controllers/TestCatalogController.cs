@@ -66,7 +66,7 @@ namespace TestOrder.Presentation.Controllers
             return Ok(AddCatalog);
         }
 
-        [HttpDelete]
+        [HttpPut]
         [Route("{id}/paramters")]
         public async Task<IActionResult> RemoveParameterAsync(int id, [FromBody] List<int> parametersIds)
         {
