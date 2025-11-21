@@ -24,27 +24,24 @@ public class InstrumentBridgeService
             .FirstOrDefaultAsync();
 
         if (booking == null || booking.Status != 4) 
-            return null; // Chỉ cho status = 4 (ReadyForInstrument)
+            return null;
 
-        // Lấy danh sách (TestBookingNo, CatalogId, ParameterId, ParameterName, Unit, RefMin, RefMax)
-        // FIX: Dùng join trực tiếp với CatalogParameter và TestParameter
-        var items = await (
-            from bt in _db.Set<BookingTest>().AsNoTracking().Where(x => x.BookingId == bookingId)
-            join catalog in _db.Set<TestCatalog>().AsNoTracking() on bt.CatalogId equals catalog.CatalogId
-            join cp in _db.Set<Dictionary<string, object>>("CatalogParameter").AsNoTracking() 
-                on catalog.CatalogId equals EF.Property<int>(cp, "CatalogId")
-            join param in _db.Set<TestParameter>().AsNoTracking() 
-                on EF.Property<int>(cp, "ParameterId") equals param.ParameterId
-            select new ForInstrumentItemDto(
+        // ✅ FIX: Sử dụng SelectMany với navigation property
+        var items = await _db.Set<BookingTest>()
+            .AsNoTracking()
+            .Where(bt => bt.BookingId == bookingId)
+            .Include(bt => bt.Catalog)
+                .ThenInclude(c => c.Parameters)
+            .SelectMany(bt => bt.Catalog.Parameters.Select(param => new ForInstrumentItemDto(
                 bt.TestBookingNo,
-                catalog.CatalogId,
+                bt.Catalog.CatalogId,
                 param.ParameterId,
                 param.ParameterName,
                 param.Unit,
                 param.MinRange.HasValue ? (decimal)param.MinRange.Value : null,
                 param.MaxRange.HasValue ? (decimal)param.MaxRange.Value : null
-            )
-        ).ToListAsync();
+            )))
+            .ToListAsync();
 
         // Tìm duplicate groups (cùng ParameterId xuất hiện ở nhiều TestBookingNo)
         var duplicateGroups = items
@@ -75,17 +72,14 @@ public class InstrumentBridgeService
         if (booking == null || booking.Status != 4) 
             return null;
 
-        // Build expected set: tất cả (TestBookingNo, ParameterId) cần có
-        // FIX: Dùng join trực tiếp với CatalogParameter và TestParameter
-        var expectedPairs = await (
-            from bt in _db.Set<BookingTest>().AsNoTracking().Where(x => x.BookingId == bookingId)
-            join catalog in _db.Set<TestCatalog>().AsNoTracking() on bt.CatalogId equals catalog.CatalogId
-            join cp in _db.Set<Dictionary<string, object>>("CatalogParameter").AsNoTracking() 
-                on catalog.CatalogId equals EF.Property<int>(cp, "CatalogId")
-            join param in _db.Set<TestParameter>().AsNoTracking() 
-                on EF.Property<int>(cp, "ParameterId") equals param.ParameterId
-            select new { bt.TestBookingNo, param.ParameterId }
-        ).ToListAsync();
+        // ✅ FIX: Sử dụng SelectMany với navigation property
+        var expectedPairs = await _db.Set<BookingTest>()
+            .AsNoTracking()
+            .Where(bt => bt.BookingId == bookingId)
+            .Include(bt => bt.Catalog)
+                .ThenInclude(c => c.Parameters)
+            .SelectMany(bt => bt.Catalog.Parameters.Select(param => new { bt.TestBookingNo, param.ParameterId }))
+            .ToListAsync();
 
         var expectedSet = expectedPairs.Select(x => (x.TestBookingNo, x.ParameterId)).ToHashSet();
 

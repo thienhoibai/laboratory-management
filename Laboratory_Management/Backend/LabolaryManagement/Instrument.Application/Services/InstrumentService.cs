@@ -29,8 +29,7 @@ public class InstrumentService
             i.InstrumentCode,
             i.Name,
             i.Status,
-            i.ReagentStatus,
-            i.LastHeartbeatAt
+            i.ReagentStatus
         )).ToList();
     }
 
@@ -52,7 +51,6 @@ public class InstrumentService
             instrument.Name,
             instrument.Status,
             instrument.ReagentStatus,
-            instrument.LastHeartbeatAt,
             instrument.CreatedAt
         );
     }
@@ -75,7 +73,6 @@ public class InstrumentService
             instrument.Name,
             instrument.Status,
             instrument.ReagentStatus,
-            instrument.LastHeartbeatAt,
             instrument.CreatedAt
         );
     }
@@ -110,7 +107,6 @@ public class InstrumentService
             instrument.Name,
             instrument.Status,
             instrument.ReagentStatus,
-            instrument.LastHeartbeatAt,
             instrument.CreatedAt
         );
     }
@@ -158,7 +154,6 @@ public class InstrumentService
             instrument.Name,
             instrument.Status,
             instrument.ReagentStatus,
-            instrument.LastHeartbeatAt,
             instrument.CreatedAt
         );
     }
@@ -188,28 +183,6 @@ public class InstrumentService
     }
 
     /// <summary>
-    /// POST /api/instruments/{code}/heartbeat - Cập nhật heartbeat
-    /// </summary>
-    public async Task<bool> UpdateHeartbeatAsync(string instrumentCode)
-    {
-        var instrument = await _db.Instruments
-            .FirstOrDefaultAsync(i => i.InstrumentCode == instrumentCode);
-
-        if (instrument == null)
-            return false;
-
-        instrument.LastHeartbeatAt = DateTime.UtcNow;
-        
-        // Tự động chuyển status về ONLINE nếu đang offline
-        if (instrument.Status == "OFFLINE")
-            instrument.Status = "ONLINE";
-
-        await _db.SaveChangesAsync();
-
-        return true;
-    }
-
-    /// <summary>
     /// GET /api/instruments/{code}/status - Lấy trạng thái đầy đủ của máy (bao gồm run hiện tại)
     /// </summary>
     public async Task<InstrumentStatusDto?> GetStatusAsync(string instrumentCode)
@@ -221,7 +194,6 @@ public class InstrumentService
         if (instrument == null)
             return null;
 
-        // Lấy run đang chạy (nếu có)
         var currentRun = await _db.InstrumentRuns
             .AsNoTracking()
             .Where(r => r.InstrumentCode == instrumentCode && r.Status == "RUNNING")
@@ -231,15 +203,13 @@ public class InstrumentService
         RunDetailDto? runDetail = null;
         if (currentRun != null)
         {
-            // Không có usages trong minimal version
             runDetail = new RunDetailDto(
                 currentRun.RunId,
                 currentRun.BookingId,
                 currentRun.InstrumentCode,
                 currentRun.Status,
                 currentRun.StartedAt,
-                currentRun.CompletedAt,
-                new List<RunUsageDto>() // Empty list
+                currentRun.CompletedAt
             );
         }
 
@@ -248,7 +218,6 @@ public class InstrumentService
             instrument.Name,
             instrument.Status,
             instrument.ReagentStatus,
-            instrument.LastHeartbeatAt,
             runDetail
         );
     }

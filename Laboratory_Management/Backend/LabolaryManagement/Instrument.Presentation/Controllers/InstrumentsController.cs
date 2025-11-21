@@ -142,29 +142,8 @@ public class InstrumentsController : ControllerBase
     }
 
     /// <summary>
-    /// POST /api/instruments/{code}/heartbeat - Cập nhật heartbeat của máy
+    /// GET /api/instruments/{code}/status - Lấy trạng thái máy + run đang chạy
     /// </summary>
-    /// <remarks>
-    /// Máy xét nghiệm gọi endpoint này định kỳ để báo hiệu đang hoạt động.
-    /// Tự động chuyển status về ONLINE nếu đang OFFLINE.
-    /// </remarks>
-    [HttpPost("{code}/heartbeat")]
-    public async Task<IActionResult> Heartbeat(string code)
-    {
-        var updated = await _service.UpdateHeartbeatAsync(code);
-        
-        if (!updated)
-            return NotFound(new { error = $"Instrument '{code}' not found." });
-
-        return Ok(new { message = "Heartbeat updated", timestamp = DateTime.UtcNow });
-    }
-
-    /// <summary>
-    /// GET /api/instruments/{code}/status - Lấy trạng thái đầy đủ của máy
-    /// </summary>
-    /// <remarks>
-    /// Trả về thông tin máy + run đang chạy (nếu có) + cartridge status
-    /// </remarks>
     [HttpGet("{code}/status")]
     public async Task<IActionResult> GetStatus(string code)
     {

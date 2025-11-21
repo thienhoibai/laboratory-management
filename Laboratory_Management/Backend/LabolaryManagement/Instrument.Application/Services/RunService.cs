@@ -22,9 +22,9 @@ public class RunService
 
     /// <summary>
     /// POST /api/instrument/runs/start
-    /// Tạo run đơn giản (không kiểm tra warehouse)
+    /// Tạo run, sinh kết quả random, gửi về TestOrder, và hoàn thành tự động
     /// </summary>
-    public async Task<StartRunResponse> StartRunAsync(StartRunRequest req)
+    public async Task<StartRunResponse> StartAndCompleteRunAsync(StartRunRequest req)
     {
         // 1. Gọi TestOrder bridge lấy danh sách Catalog/Parameter
         var testOrderClient = _httpFactory.CreateClient("testorder");
@@ -32,45 +32,33 @@ public class RunService
             $"/api/bridge/bookings/{req.BookingId}/for-instrument");
 
         if (bridgeRes == null || bridgeRes.Status != 4)
-            return new StartRunResponse(0, "FAILED", "Booking not ready (Status must be 4)");
+            return new StartRunResponse(0, "FAILED", "Booking not ready (Status must be 4)", 0);
+
+        // ✅ THÊM VALIDATION: Kiểm tra Items có dữ liệu không
+        if (bridgeRes.Items == null || bridgeRes.Items.Count == 0)
+        {
+            return new StartRunResponse(0, "FAILED", 
+                $"No test parameters found for BookingId {req.BookingId}. Please ensure the booking has tests assigned with parameters.", 
+                0);
+        }
 
         // 2. Tạo Run
         var run = new InstrumentRun
         {
             BookingId = req.BookingId,
             InstrumentCode = req.InstrumentCode,
-            Status = "RUNNING"
+            Status = "RUNNING",
+            StartedAt = DateTime.UtcNow
         };
 
         _db.InstrumentRuns.Add(run);
         await _db.SaveChangesAsync();
 
-        return new StartRunResponse(run.RunId, "RUNNING", "Run started successfully");
-    }
-
-    /// <summary>
-    /// POST /api/instrument/runs/{runId}/drop-csv
-    /// Sinh CSV kết quả (random deterministic) và gửi về TestOrder
-    /// </summary>
-    public async Task<DropCsvResponse> DropCsvAsync(DropCsvRequest req)
-    {
-        var run = await _db.InstrumentRuns.FindAsync(req.RunId);
-        if (run == null)
-            throw new InvalidOperationException("Run not found");
-
-        // Lấy danh sách parameter từ TestOrder
-        var testOrderClient = _httpFactory.CreateClient("testorder");
-        var bridgeRes = await testOrderClient.GetFromJsonAsync<BridgeResponse>(
-            $"/api/bridge/bookings/{run.BookingId}/for-instrument");
-
-        if (bridgeRes == null)
-            throw new InvalidOperationException("Booking not found");
-
-        // Sinh kết quả deterministic
+        // 3. Sinh kết quả random deterministic
         var results = new List<IngestItemDto>();
         foreach (var item in bridgeRes.Items)
         {
-            var value = GenerateDeterministicValue(run.BookingId, item.ParameterId, item.RefMin, item.RefMax);
+            var value = GenerateDeterministicValue(req.BookingId, item.ParameterId, item.RefMin, item.RefMax);
             results.Add(new IngestItemDto(
                 item.TestBookingNo,
                 item.ParameterId,
@@ -82,7 +70,7 @@ public class RunService
             ));
         }
 
-        // Gửi kết quả về TestOrder (POST /api/bridge/.../results)
+        // 4. Gửi kết quả về TestOrder
         var ingestReq = new
         {
             instrumentCode = run.InstrumentCode,
@@ -98,35 +86,20 @@ public class RunService
         
         if (!string.IsNullOrEmpty(bridgeToken))
             request.Headers.Add("X-Bridge-Token", bridgeToken);
-
+    
         var response = await testOrderClient.SendAsync(request);
         response.EnsureSuccessStatusCode();
 
-        // (Optional) Lưu path file CSV vào log
-        var csvPath = $"results/{run.BookingId}_{run.RunId}.csv";
-
-        return new DropCsvResponse(csvPath, $"Sent {results.Count} results to TestOrder");
-    }
-
-    /// <summary>
-    /// POST /api/instrument/runs/{runId}/complete
-    /// Hoàn thành run (simplified - no cartridge consumption)
-    /// </summary>
-    public async Task<CompleteRunResponse> CompleteRunAsync(CompleteRunRequest req)
-    {
-        var run = await _db.InstrumentRuns
-            .FirstOrDefaultAsync(r => r.RunId == req.RunId);
-
-        if (run == null)
-            throw new InvalidOperationException("Run not found");
-
-        // Cập nhật run status (không trừ on-board)
+        // 5. Hoàn thành run tự động
         run.Status = "COMPLETED";
         run.CompletedAt = DateTime.UtcNow;
-
         await _db.SaveChangesAsync();
 
-        return new CompleteRunResponse("COMPLETED", "Run completed successfully", new List<RunUsageDto>());
+        return new StartRunResponse(
+            run.RunId, 
+            "COMPLETED", 
+            $"Run completed successfully. Sent {results.Count} results to TestOrder.",
+            results.Count);
     }
 
     /// <summary>
@@ -141,15 +114,13 @@ public class RunService
 
         if (run == null) return null;
 
-        // Không có usages trong minimal version
         return new RunDetailDto(
             run.RunId,
             run.BookingId,
             run.InstrumentCode,
             run.Status,
             run.StartedAt,
-            run.CompletedAt,
-            new List<RunUsageDto>() // Empty list
+            run.CompletedAt
         );
     }
 
