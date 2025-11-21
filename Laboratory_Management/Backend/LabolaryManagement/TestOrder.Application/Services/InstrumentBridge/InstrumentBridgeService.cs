@@ -152,12 +152,12 @@ public class InstrumentBridgeService
 
         bool completed = missing.Count == 0;
 
-        // Tuỳ chọn: auto set Completed (comment out nếu không muốn)
-        // if (completed) 
-        // { 
-        //     booking.Status = 6; // Completed
-        //     await _db.SaveChangesAsync(); 
-        // }
+        // ✅ Auto update Booking status = 5 khi đã nhận đủ kết quả
+        if (completed) 
+        { 
+            booking.Status = 5;
+            await _db.SaveChangesAsync(); 
+        }
 
         return new IngestResponse(accepted, rejected, completed, missing);
     }
