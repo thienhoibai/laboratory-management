@@ -16,7 +16,7 @@ namespace BlogService.Infrastructure.Repository
         public BlogPostRepository(DBContext context) : base(context) { }
 
         public async Task<List<BlogPost>> GetAllWithCategoryAsync(
-            Guid? authorId, int? status, int page, int pageSize)
+            Guid? authorId, int? status, int page, int pageSize,string? search )
         {
             var query = _context.BlogPosts
                 .Include(p => p.Category)
