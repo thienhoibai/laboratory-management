@@ -20,11 +20,18 @@ public class InstrumentBridgeService
         // Lấy booking và kiểm tra Status == 4
         var booking = await _db.Set<BookingEntity>().AsNoTracking()
             .Where(b => b.BookingId == bookingId)
-            .Select(b => new { b.BookingId, b.Status, b.PatientName })
+            .Select(b => new { b.BookingId, b.Status, b.PatientName, b.BundleId })
             .FirstOrDefaultAsync();
 
         if (booking == null || booking.Status != 4) 
             return null;
+
+        // 🔍 DEBUG: Kiểm tra số lượng BookingTest
+        var bookingTestCount = await _db.Set<BookingTest>()
+            .Where(bt => bt.BookingId == bookingId)
+            .CountAsync();
+
+        Console.WriteLine($"[DEBUG] BookingId: {bookingId}, BundleId: {booking.BundleId}, BookingTest count: {bookingTestCount}");
 
         // ✅ FIX: Sử dụng SelectMany với navigation property
         var items = await _db.Set<BookingTest>()
@@ -42,6 +49,8 @@ public class InstrumentBridgeService
                 param.MaxRange.HasValue ? (decimal)param.MaxRange.Value : null
             )))
             .ToListAsync();
+
+        Console.WriteLine($"[DEBUG] Items returned: {items.Count}");
 
         // Tìm duplicate groups (cùng ParameterId xuất hiện ở nhiều TestBookingNo)
         var duplicateGroups = items
