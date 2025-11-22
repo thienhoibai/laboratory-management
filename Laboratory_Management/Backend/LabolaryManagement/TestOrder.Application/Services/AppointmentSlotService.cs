@@ -22,9 +22,9 @@ namespace TestOrder.Application.Services
             _timeBlockRepository = timeBlockRepository;
         }
 
-        public async Task<IEnumerable<AppointmentSlot>> GetAllAppointmentSlot(int pageNumber)
+        public async Task<IEnumerable<AppointmentSlot>> GetAllAppointmentSlot(int pageNumber,int pageSize)
         {
-            return await _repository.GetAllPagedAsync(pageNumber);
+            return await _repository.GetAllPagedAsync(pageNumber,pageSize);
         }
 
         public async Task<IEnumerable<AppointmentSlot>> GetAppointmentSlotsByDateAsync(DateOnly appointmentDate, int pageNumber, int pageSize)
@@ -120,9 +120,9 @@ namespace TestOrder.Application.Services
             return slotCountResponses;
         }
 
-        public async Task<List<SlotCountResponse>?> GetBookingCountForAllSlotAsync(int pageNumber)
+        public async Task<List<SlotCountResponse>?> GetBookingCountForAllSlotAsync(int pageNumber, int pageSize)
         {
-            var slots = await _repository.GetAllPagedAsync(pageNumber);
+            var slots = await _repository.GetAllPagedAsync(pageNumber,pageSize);
             if (slots == null || !slots.Any())
             {
                 return null;

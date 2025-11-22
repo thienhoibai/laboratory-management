@@ -1,13 +1,38 @@
 // src/components/home/BlogSection.jsx
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import "./BlogSection.css";
-import { blogPosts } from "../../data/blog";
-
-// Lấy 3 bài blog đầu tiên để hiển thị trên homepage
-const blogs = blogPosts.slice(0, 3);
+import BlogService from "../../services/BlogService";
 
 export default function BlogSection() {
+  const [blogs, setBlogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    loadBlogs();
+  }, []);
+
+  const loadBlogs = async () => {
+    try {
+      setLoading(true);
+      const blogsData = await BlogService.getAllBlogs();
+
+      // Lọc chỉ lấy các bài blog đã được duyệt và lấy 3 bài mới nhất
+      const approvedBlogs = blogsData
+        .filter((blog) => blog.status === "approved")
+        .slice(0, 3);
+
+      setBlogs(approvedBlogs);
+      setError(null);
+    } catch (err) {
+      console.error("Error loading blogs:", err);
+      setError("Không thể tải bài viết. Vui lòng thử lại sau.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="blog-section-bg">
       <div className="blog-section-header">
@@ -22,26 +47,43 @@ export default function BlogSection() {
           Xem tất cả &rarr;
         </Link>
       </div>
-      <div className="blog-cards">
-        {blogs.map((blog) => (
-          <div key={blog.id} className="blog-card">
-            <Link to={`/blog/${blog.id}`} className="blog-card-link">
-              <img src={blog.img} alt={blog.title} className="blog-img" />
-              <div className="blog-card-content">
-                <div className="blog-meta">
-                  <span className="blog-tag">{blog.tag}</span>
-                  <span className="blog-time">{blog.time}</span>
+
+      {loading ? (
+        <div className="blog-loading">
+          <p>Đang tải bài viết...</p>
+        </div>
+      ) : error ? (
+        <div className="blog-error">
+          <p>{error}</p>
+        </div>
+      ) : blogs.length === 0 ? (
+        <div className="blog-empty">
+          <p>Chưa có bài viết nào được đăng.</p>
+        </div>
+      ) : (
+        <div className="blog-cards">
+          {blogs.map((blog) => (
+            <div key={blog.id} className="blog-card">
+              <Link to={`/blog/${blog.id}`} className="blog-card-link">
+                <img src={blog.img} alt={blog.title} className="blog-img" />
+                <div className="blog-card-content">
+                  <div className="blog-meta">
+                    <span className="blog-tag">
+                      {blog.tag || blog.category}
+                    </span>
+                    <span className="blog-time">{blog.time}</span>
+                  </div>
+                  <div className="blog-card-title">{blog.title}</div>
+                  <div className="blog-card-desc">{blog.desc}</div>
                 </div>
-                <div className="blog-card-title">{blog.title}</div>
-                <div className="blog-card-desc">{blog.desc}</div>
-              </div>
-            </Link>
-            <Link to={`/blog/${blog.id}`} className="blog-view-details-btn">
-              Đọc thêm
-            </Link>
-          </div>
-        ))}
-      </div>
+              </Link>
+              <Link to={`/blog/${blog.id}`} className="blog-view-details-btn">
+                Đọc thêm
+              </Link>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

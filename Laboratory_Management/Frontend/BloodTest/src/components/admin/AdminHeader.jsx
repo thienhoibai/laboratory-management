@@ -11,8 +11,9 @@ import { jwtDecode } from "jwt-decode";
 const AdminHeader = ({ pageTitle, breadcrumbs }) => {
   const token = localStorage.getItem("accessToken");
   const navigate = useNavigate();
-  const deocde = jwtDecode(token);
-  let role = ["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
+  const decode = jwtDecode(token);
+  let role =
+    decode["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
 
   const handleLogout = async () => {
     setAuthToken(token);
@@ -33,8 +34,7 @@ const AdminHeader = ({ pageTitle, breadcrumbs }) => {
           ))}
       </div>
       <div className="admin-user-profile">
-        <span>Administrator</span>
-        <div className="admin-avatar">AD</div>
+        <span>{role}</span>
 
         <button
           onClick={handleLogout}

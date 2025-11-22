@@ -6,19 +6,19 @@ export const bookingService = {
     const response = await api.get(
       `testorder/api/Booking?bookingId=${bookingId}`
     );
-    return response.data;
+    return response;
   },
 
   // Lấy thông tin test catalog
   getTestCatalog: async (catalogId) => {
     const response = await api.get(`testorder/api/TestCatalog/${catalogId}`);
-    return response.data;
+    return response;
   },
 
   // Lấy thông tin test bundle
   getTestBundle: async (bundleId) => {
     const response = await api.get(`testorder/api/TestBundle/${bundleId}`);
-    return response.data;
+    return response;
   },
 
   // Tạo VNPay URL
@@ -27,7 +27,15 @@ export const bookingService = {
       bookingId,
       amount,
     });
-    return response.data;
+    return response;
+  },
+
+  // Lấy thông tin số lượng booking của các appointment slots
+  getAppointmentSlotCounts: async () => {
+    const response = await api.get(
+      `testorder/api/AppointmentSlot/count-all?pageNumber=1&pageSize=10000`
+    );
+    return response;
   },
 };
 
