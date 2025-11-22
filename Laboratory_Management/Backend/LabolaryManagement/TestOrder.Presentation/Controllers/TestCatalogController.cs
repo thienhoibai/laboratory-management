@@ -66,7 +66,7 @@ namespace TestOrder.Presentation.Controllers
             return Ok(AddCatalog);
         }
 
-        [HttpDelete]
+        [HttpPut]
         [Route("{id}/paramters")]
         public async Task<IActionResult> RemoveParameterAsync(int id, [FromBody] List<int> parametersIds)
         {
@@ -74,6 +74,12 @@ namespace TestOrder.Presentation.Controllers
             return Ok();
         }
 
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteCatalogAsync(int id)
+        {
+            await _service.DeleteCatalogAsync(id);
+            return Ok();
+        }
 
     }
 }

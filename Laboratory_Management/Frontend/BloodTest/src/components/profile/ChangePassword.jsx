@@ -1,6 +1,6 @@
 import React from "react";
 import { Modal, Form, Input, Button } from "antd";
-import { useChangePassword } from "../../services/IAMService";
+import { useChangePassword } from "../../services/IAMService.jsx";
 
 const ChangePasswordModal = ({
   open: propOpen = false,

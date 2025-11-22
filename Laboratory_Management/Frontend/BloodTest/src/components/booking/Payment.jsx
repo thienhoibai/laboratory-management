@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useSelector } from "react-redux";
 import "./Payment.css";
-import { bookingService } from "../../apis/TestOrderServiceAPI";
+import { bookingService } from "../../services/TestOrderService.jsx";
 // import api from "../../configs/axios";
 // import { toast } from "react-toastify";
 

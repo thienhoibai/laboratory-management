@@ -7,7 +7,7 @@ import { PatientServiceAPI } from "../../apis/PatientServiceAPI";
 import { setAuthToken } from "../../utils/auth";
 import { calculateAge } from "../../utils/formatDate";
 import api from "../../configs/axios";
-import { bookingService } from "../../apis/TestOrderServiceAPI";
+import { bookingService } from "../../services/TestOrderService.jsx";
 
 export default function MedicalRecordDetail() {
   const navigate = useNavigate();
@@ -160,8 +160,7 @@ export default function MedicalRecordDetail() {
             Quay về trang chủ
           </button>
         </div>
-        <h1 className="page-title">Chi tiết hồ sơ bệnh án</h1>
-        <p className="page-subtitle">Hồ sơ bệnh án #</p>
+        <h1 className="page-title-1">Chi tiết hồ sơ bệnh án</h1>
       </div>
 
       {/* Patient Info Section */}

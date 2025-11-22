@@ -23,7 +23,7 @@ namespace TestOrder.Presentation.Controllers
             [FromQuery] int pageSize,
             [FromQuery] string? search = null)
         {
-            var result = await _service.GetAllParameterAsync(page, pageSize,search);
+            var result = await _service.GetAllParameterAsync(page, pageSize, search);
             return Ok(result);
         }
 
@@ -37,14 +37,17 @@ namespace TestOrder.Presentation.Controllers
         [HttpPost]
         public async Task<IActionResult> AddParameterAsync([FromBody] TestParameterDTO parameter)
         {
-           var entity = new TestParameter
+            var entity = new TestParameter
             {
                 ParameterName = parameter.ParameterName,
                 Unit = parameter.Unit,
                 ReferenceRange = parameter.ReferenceRange,
-           };
+                MinRange = parameter.MinRange,
+                MaxRange = parameter.MaxRange
+            };
             await _service.AddParameterAsync(parameter);
             return Ok(entity);
         }
+
     }
 }

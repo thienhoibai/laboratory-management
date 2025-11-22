@@ -76,6 +76,14 @@ namespace TestOrder.Infrastructure.Repository
             return grouped.ToList();
         }
 
+        public async Task<IEnumerable<int>> GetCatalogIdsByBundleIdAsync(int bundleId)
+        {
+            return await _context.CatalogBundles
+                .Where(cb => cb.BundleId == bundleId)
+                .Select(cb => cb.CatalogId)
+                .ToListAsync();
+        }
+
 
         public async Task AddAsync(CatalogBundle entity)
         {
