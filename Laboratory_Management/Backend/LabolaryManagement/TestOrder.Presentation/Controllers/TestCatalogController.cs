@@ -67,7 +67,7 @@ namespace TestOrder.Presentation.Controllers
         }
 
         [HttpPut]
-        [Route("{id}/paramters")]
+        [Route("{id}/paramters-remove")]
         public async Task<IActionResult> RemoveParameterAsync(int id, [FromBody] List<int> parametersIds)
         {
             await _service.RemoveParameterAsync(id, parametersIds);
