@@ -22,17 +22,13 @@ export default function BlogPage() {
     try {
       setLoading(true);
 
-      // Load blogs và categories song song
+      // Load blogs đã duyệt và categories song song
       const [blogsData, categoriesData] = await Promise.all([
-        BlogService.getAllBlogs(),
+        BlogService.getApprovedBlogs(1, 100),
         BlogService.getCategories(),
       ]);
 
-      // Lọc chỉ lấy các blog đã được approved
-      const approvedBlogs = blogsData.filter(
-        (blog) => blog.status === "approved"
-      );
-      setBlogPosts(approvedBlogs);
+      setBlogPosts(blogsData);
 
       // Tạo danh sách categories
       const categoryNames = [
