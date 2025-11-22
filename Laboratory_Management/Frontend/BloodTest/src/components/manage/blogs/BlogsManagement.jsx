@@ -9,16 +9,6 @@ import {
   FiTrendingUp,
   FiMessageCircle,
   FiX,
-  FiUpload,
-  FiImage,
-<<<<<<<<< Temporary merge branch 1
-} from "react-icons/fi";
-import { Pagination } from "antd";
-import { toast } from "react-toastify";
-import { blogPosts } from "../../../data/blog";
-import { categories } from "../../../data/blog";
-import api from "../../../configs/axios";
-=========
   FiCheck,
   FiXCircle,
   FiEdit,
@@ -68,11 +58,7 @@ const BlogsManagement = () => {
   const [formData, setFormData] = useState({
     title: "",
     category: "",
-<<<<<<<<< Temporary merge branch 1
-    status: "draft",
-=========
-    status: "pending",
->>>>>>>>> Temporary merge branch 2
+    categoryId: "",
     content: "",
     img: "",
   });
@@ -90,8 +76,7 @@ const BlogsManagement = () => {
   const [isViewDetailOpen, setIsViewDetailOpen] = useState(false);
   const [viewingBlog, setViewingBlog] = useState(null);
 
->>>>>>>>> Temporary merge branch 2
-  // Load blogs on mount
+  // Load data on mount
   useEffect(() => {
     loadBlogs();
     loadCategories();
@@ -111,7 +96,22 @@ const BlogsManagement = () => {
     } finally {
       setLoading(false);
     }
->>>>>>>>> Temporary merge branch 2
+  };
+
+  const loadCategories = async () => {
+    setCategoriesLoading(true);
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (token) setAuthToken(token);
+
+      const categoriesData = await BlogService.getCategories();
+      setCategories(categoriesData);
+    } catch (error) {
+      console.error("Error loading categories:", error);
+      toast.error("Không thể tải danh mục. Vui lòng thử lại!");
+    } finally {
+      setCategoriesLoading(false);
+    }
   };
 
   const filteredBlogs = blogs.filter((blog) => {
@@ -157,32 +157,13 @@ const BlogsManagement = () => {
     setFormData({
       title: "",
       category: "",
-<<<<<<<<< Temporary merge branch 1
-      status: "draft",
-=========
-      status: "pending",
->>>>>>>>> Temporary merge branch 2
+      categoryId: "",
       content: "",
       img: "",
     });
     setFormErrors({});
-    setIsModalOpen(true);
-  };
-
-<<<<<<<<< Temporary merge branch 1
-  const openEditModal = (blog) => {
-    setIsEditMode(true);
-    setEditingBlogId(blog.id);
-    setFormData({
-      title: blog.title || "",
-      author: blog.author || "",
-      category: blog.category || blog.tag || "",
-      status: blog.status || "draft",
-      content: blog.content || "",
-      img: blog.img || "",
-      imgFile: null,
-    });
-    setFormErrors({});
+    setIsEditMode(false);
+    setEditingBlogId(null);
     setIsModalOpen(true);
   };
 
@@ -191,11 +172,7 @@ const BlogsManagement = () => {
     setFormData({
       title: "",
       category: "",
-<<<<<<<<< Temporary merge branch 1
-      status: "draft",
-=========
-      status: "pending",
->>>>>>>>> Temporary merge branch 2
+      categoryId: "",
       content: "",
       img: "",
     });
@@ -278,12 +255,8 @@ const BlogsManagement = () => {
     if (!formData.content.trim()) {
       errors.content = "Nội dung bài viết không được để trống";
     }
-<<<<<<<<< Temporary merge branch 1
-    if (!isEditMode && !formData.img && !formData.imgFile) {
-=========
-    if (!formData.img && !formData.imgFile) {
->>>>>>>>> Temporary merge branch 2
-      errors.img = "Vui lòng chọn ảnh bài viết";
+    if (!formData.img) {
+      errors.img = "Vui lòng nhập đường dẫn ảnh bài viết";
     }
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -320,68 +293,26 @@ const BlogsManagement = () => {
         category: trimmedCategoryName,
         content: formData.content.trim(),
         img: formData.img,
-        tag: formData.category.trim(),
+        tag: trimmedCategoryName,
+        authorId: id,
       };
 
-<<<<<<<<< Temporary merge branch 1
-      let response;
-      if (isEditMode) {
-        // Update blog
-        // TODO: Replace with actual API endpoint
-        // response = await api.put(`blogs/${editingBlogId}`, submitData);
-        console.log("Updating blog:", editingBlogId, submitData);
+      if (hasValidCategoryId) {
+        submitData.categoryId = categoryIdNumber;
+      }
 
-        // Mock update
-        setBlogs((prev) =>
-          prev.map((blog) =>
-            blog.id === editingBlogId
-              ? {
-                  ...blog,
-                  ...submitData,
-                  date: new Date().toLocaleDateString("vi-VN", {
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                  }),
-                }
-              : blog
-          )
-        );
+      if (isEditMode) {
+        submitData.updatedDate = new Date().toISOString();
+        if (editingBlogId === null || editingBlogId === undefined) {
+          throw new Error("Không tìm thấy ID bài viết để cập nhật");
+        }
+        submitData.thumbnailUrl = formData.img;
+        await BlogService.updateBlog(editingBlogId, submitData);
         toast.success("Cập nhật bài viết thành công!");
       } else {
-        // Create blog
-        // TODO: Replace with actual API endpoint
-        // response = await api.post("blogs", submitData);
-        console.log("Creating blog:", submitData);
-
-        // Mock create
-        const newBlog = {
-          id: blogs.length > 0 ? Math.max(...blogs.map((b) => b.id)) + 1 : 1,
-          ...submitData,
-          date: new Date().toLocaleDateString("vi-VN", {
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-          }),
-          fullDate: new Date().toLocaleDateString("vi-VN", {
-            weekday: "long",
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-          }),
-          time: "Vừa xong",
-          views: 0,
-          comments: 0,
-          desc: formData.content.trim().substring(0, 100) + "...",
-        };
-        setBlogs((prev) => [newBlog, ...prev]);
+        await BlogService.createBlog(submitData);
         toast.success("Tạo bài viết mới thành công!");
       }
-=========
-      // Create blog
-      await BlogService.createBlog(submitData);
-      toast.success("Tạo bài viết mới thành công!");
->>>>>>>>> Temporary merge branch 2
 
       closeModal();
       loadBlogs();
@@ -421,17 +352,7 @@ const BlogsManagement = () => {
       const token = localStorage.getItem("accessToken");
       if (token) setAuthToken(token);
 
-<<<<<<<<< Temporary merge branch 1
-      // TODO: Replace with actual API endpoint
-      // await api.delete(`blogs/${blogToDelete.id}`);
-      console.log("Deleting blog:", blogToDelete.id);
-
-      // Mock delete
-      setBlogs((prev) => prev.filter((blog) => blog.id !== blogToDelete.id));
-      toast.success("Xóa bài viết thành công!");
-      closeDeleteModal();
-=========
-      await BlogService.deleteBlog(blogToDelete.id);
+      await BlogService.deleteBlog(blogId);
       toast.success("Xóa bài viết thành công!");
       closeDeleteModal();
       loadBlogs();
@@ -728,19 +649,13 @@ const BlogsManagement = () => {
           >
             <div className="blogs-modal-header">
               <div>
-<<<<<<<<< Temporary merge branch 1
                 <h2 className="blogs-modal-title">
                   {isEditMode ? "Chỉnh sửa bài viết" : "Tạo bài viết mới"}
                 </h2>
                 <p className="blogs-modal-subtitle">
                   {isEditMode
-                    ? "Cập nhật thông tin bài viết blog"
+                    ? "Cập nhật nội dung cho bài viết hiện có"
                     : "Viết một bài viết blog mới cho trang web"}
-=========
-                <h2 className="blogs-modal-title">Tạo bài viết mới</h2>
-                <p className="blogs-modal-subtitle">
-                  Viết một bài viết blog mới cho trang web
->>>>>>>>> Temporary merge branch 2
                 </p>
               </div>
               <button className="blogs-modal-close" onClick={closeModal}>
@@ -848,26 +763,7 @@ const BlogsManagement = () => {
                 )}
               </div>
 
-              {/* Status */}
-              <div className="blogs-form-group">
-                <label className="blogs-form-label">Trạng thái</label>
-                <select
-                  name="status"
-                  value={formData.status}
-                  onChange={handleInputChange}
-                  className="blogs-form-input"
-                >
-<<<<<<<<< Temporary merge branch 1
-                  <option value="draft">Nháp</option>
-                  <option value="pending">Chờ phê duyệt</option>
-                  <option value="approved">Đã phê duyệt</option>
-=========
-                  <option value="pending">Chờ duyệt</option>
-                  <option value="approved">Đã duyệt</option>
-                  <option value="rejected">Đã hủy</option>
->>>>>>>>> Temporary merge branch 2
-                </select>
-              </div>
+              {/* Status field now hidden for both create and edit */}
 
               {/* Content */}
               <div className="blogs-form-group">
