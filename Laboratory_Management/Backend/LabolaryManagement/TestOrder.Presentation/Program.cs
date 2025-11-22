@@ -2,7 +2,7 @@
 using TestOrder.Application.Services;
 using TestOrder.Application.Services.Booking;
 using TestOrder.Application.Services.Payment;
->>>>>>>>> Temporary merge branch 2
+using TestOrder.Application.Services.InstrumentBridge;
 using TestOrder.Infrastructure.Base;
 using TestOrder.Infrastructure.Data;
 using TestOrder.Infrastructure.Repository;
@@ -17,16 +17,29 @@ namespace TestOrder.Presentation
 
             // Add services to the container.
             builder.Services.AddControllers();
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-            builder.Services.AddDbContext<TestOrderDBContext>(options =>
-            options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-<<<<<<<<< Temporary merge branch 1
-=========
 
-            // Đăng ký HttpClient factory (bắt buộc để resolve IHttpClientFactory)
+            // ===== DbContext Configuration =====
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+            // Sử dụng PooledDbContextFactory cho cả Controllers và Background Services
+            builder.Services.AddPooledDbContextFactory<TestOrderDBContext>(options =>
+                options.UseSqlServer(connectionString));
+
+            // Đăng ký DbContext với Scoped lifetime để inject vào Controllers/Services
+            builder.Services.AddScoped(sp =>
+            {
+                var factory = sp.GetRequiredService<IDbContextFactory<TestOrderDBContext>>();
+                return factory.CreateDbContext();
+            });
+
+            // Đăng ký HttpClient factory
             builder.Services.AddHttpClient();
 
->>>>>>>>> Temporary merge branch 2
+            // CSV Ingest Worker options & hosted service
+            builder.Services.Configure<TestOrder.Presentation.Workers.CsvIngestOptions>(
+                builder.Configuration.GetSection("CsvIngest"));
+            builder.Services.AddHostedService<TestOrder.Presentation.Workers.CsvIngestWorker>();
+
             // Dependency Injection for Repositories and Services
             builder.Services.AddScoped(typeof(GenericRepository<>));
             builder.Services.AddScoped<TestCatalogRepository>();
@@ -61,7 +74,7 @@ namespace TestOrder.Presentation
 
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
-            
+
             builder.Services.AddControllers()
                 .AddJsonOptions(x =>
                     x.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
@@ -92,20 +105,12 @@ namespace TestOrder.Presentation
                 app.UseSwaggerUI();
             }
 
-<<<<<<<<< Temporary merge branch 1
-            // Do not redirect to HTTPS inside container (no dev certs)
+            // Do not redirect to HTTPS inside container
             if (!isDocker)
             {
                 app.UseHttpsRedirection();
             }
-=========
->>>>>>>>> Temporary merge branch 2
 
-            // Do not redirect to HTTPS inside container (no dev certs)
-            if (!isDocker)
-            {
-                app.UseHttpsRedirection();
-            }
             app.UseRouting();
             app.UseCors("AllowFrontend");
             app.UseAuthorization();
