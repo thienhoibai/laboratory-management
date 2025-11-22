@@ -1,6 +1,7 @@
 ﻿using Instrument.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Instrument.Application.Results;
+using Instrument.Application.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +14,7 @@ builder.Services.AddHttpClient("testorder", c =>
 {
     c.BaseAddress = new Uri(builder.Configuration["TestOrderBaseUrl"]!);
 });
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
@@ -27,7 +29,10 @@ builder.Services.AddCors(options =>
     });
 });
 
+// Register Application Services
 builder.Services.AddScoped<IResultGenerator, ResultGenerator>();
+builder.Services.AddScoped<InstrumentService>();
+builder.Services.AddScoped<RunService>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -39,6 +44,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
 app.UseRouting();
 app.UseCors("AllowFrontend");
 app.MapControllers();

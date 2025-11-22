@@ -19,6 +19,7 @@ namespace TestOrder.Application.Services
     public class PaymentService : IVnPayService
     {
         private readonly PaymentRepository _paymentRepository;
+        
         private readonly IConfiguration configuration;
         private readonly BookingService _bookingService;
 

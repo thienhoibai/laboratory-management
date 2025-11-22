@@ -1,0 +1,267 @@
+﻿### ===========================================
+### INSTRUMENT CRUD APIS
+### ===========================================
+
+### 1. Get All Instruments
+GET {{baseUrl}}/api/instruments
+Accept: application/json
+
+###
+
+### 2. Create Instrument
+POST {{baseUrl}}/api/instruments
+Content-Type: application/json
+
+{
+  "instrumentCode": "INSTR001",
+  "name": "Máy xét nghiệm sinh hóa tự động",
+  "status": "ONLINE"
+}
+
+###
+
+### 3. Get Instrument by Code
+GET {{baseUrl}}/api/instruments/INSTR001
+Accept: application/json
+
+###
+
+### 4. Get Instrument by ID
+GET {{baseUrl}}/api/instruments/1
+Accept: application/json
+
+###
+
+### 5. Update Instrument
+PUT {{baseUrl}}/api/instruments/INSTR001
+Content-Type: application/json
+
+{
+  "name": "Máy xét nghiệm sinh hóa cao cấp",
+  "status": "ONLINE",
+  "reagentStatus": "OK"
+}
+
+###
+
+### 6. Heartbeat
+POST {{baseUrl}}/api/instruments/INSTR001/heartbeat
+
+###
+
+### 7. Get Instrument Status (with current run)
+GET {{baseUrl}}/api/instruments/INSTR001/status
+Accept: application/json
+
+###
+
+### 8. Delete Instrument
+DELETE {{baseUrl}}/api/instruments/INSTR001
+
+###
+
+
+### ===========================================
+### CARTRIDGE MANAGEMENT APIS
+### ===========================================
+
+### 1. Get Cartridges on Instrument
+GET {{baseUrl}}/api/instrument/cartridges/INSTR001
+Accept: application/json
+
+###
+
+### 2. Load Cartridges to Instrument
+POST {{baseUrl}}/api/instrument/cartridges/load
+Content-Type: application/json
+X-Idempotency-Key: load-{{$timestamp}}
+
+{
+  "instrumentCode": "INSTR001",
+  "lines": [
+    {
+      "skuId": 1,
+      "lotId": 101,
+      "qty": 50.0,
+      "minLevel": 10.0
+    },
+    {
+      "skuId": 2,
+      "lotId": 102,
+      "qty": 30.0,
+      "minLevel": 5.0
+    },
+    {
+      "skuId": 3,
+      "lotId": 103,
+      "qty": 100.0,
+      "minLevel": 20.0
+    }
+  ]
+}
+
+###
+
+### 3. Return Cartridges from Instrument
+POST {{baseUrl}}/api/instrument/cartridges/return
+Content-Type: application/json
+X-Idempotency-Key: return-{{$timestamp}}
+
+{
+  "instrumentCode": "INSTR001",
+  "lines": [
+    {
+      "skuId": 1,
+      "lotId": 101,
+      "qty": 5.0
+    }
+  ]
+}
+
+###
+
+
+### ===========================================
+### RUN MANAGEMENT APIS
+### ===========================================
+
+@bookingId = 3fa85f64-5717-4562-b3fc-2c963f66afa6
+
+### 1. Start Run
+POST {{baseUrl}}/api/instrument/runs/start
+Content-Type: application/json
+
+{
+  "bookingId": "{{bookingId}}",
+  "instrumentCode": "INSTR001"
+}
+
+###
+
+### 2. Get Run Detail
+@runId = 1
+GET {{baseUrl}}/api/instrument/runs/{{runId}}
+Accept: application/json
+
+###
+
+### 3. Drop CSV (Generate Results and Send to TestOrder)
+POST {{baseUrl}}/api/instrument/runs/{{runId}}/drop-csv
+
+###
+
+### 4. Complete Run
+POST {{baseUrl}}/api/instrument/runs/{{runId}}/complete
+
+###
+
+
+### ===========================================
+### SIMULATION API (Testing)
+### ===========================================
+
+### Run Full Simulation
+POST {{baseUrl}}/api/instrument/simulations/run
+Content-Type: application/json
+
+{
+  "bookingId": "{{bookingId}}",
+  "instrumentCode": "INSTR001"
+}
+
+###
+
+
+### ===========================================
+### FULL WORKFLOW TEST
+### ===========================================
+
+### Step 1: Create Instrument
+# @name createInstrument
+POST {{baseUrl}}/api/instruments
+Content-Type: application/json
+
+{
+  "instrumentCode": "TEST001",
+  "name": "Test Machine for Demo",
+  "status": "ONLINE"
+}
+
+###
+
+### Step 2: Load Cartridges
+POST {{baseUrl}}/api/instrument/cartridges/load
+Content-Type: application/json
+X-Idempotency-Key: test-load-001
+
+{
+  "instrumentCode": "TEST001",
+  "lines": [
+    {
+      "skuId": 1,
+      "lotId": 101,
+      "qty": 100.0,
+      "minLevel": 10.0
+    },
+    {
+      "skuId": 2,
+      "lotId": 102,
+      "qty": 80.0,
+      "minLevel": 15.0
+    },
+    {
+      "skuId": 3,
+      "lotId": 103,
+      "qty": 120.0,
+      "minLevel": 20.0
+    }
+  ]
+}
+
+###
+
+### Step 3: Check Cartridge Status
+GET {{baseUrl}}/api/instrument/cartridges/TEST001
+Accept: application/json
+
+###
+
+### Step 4: Check Instrument Status
+GET {{baseUrl}}/api/instruments/TEST001/status
+Accept: application/json
+
+###
+
+### Step 5: Start Run (use real booking from TestOrder)
+# @name startRun
+POST {{baseUrl}}/api/instrument/runs/start
+Content-Type: application/json
+
+{
+  "bookingId": "{{bookingId}}",
+  "instrumentCode": "TEST001"
+}
+
+###
+
+### Step 6: Drop CSV Results
+@testRunId = {{startRun.response.body.runId}}
+POST {{baseUrl}}/api/instrument/runs/{{testRunId}}/drop-csv
+
+###
+
+### Step 7: Complete Run
+POST {{baseUrl}}/api/instrument/runs/{{testRunId}}/complete
+
+###
+
+### Step 8: Check Remaining Cartridges
+GET {{baseUrl}}/api/instrument/cartridges/TEST001
+Accept: application/json
+
+###
+
+### Step 9: Cleanup - Delete Test Instrument
+DELETE {{baseUrl}}/api/instruments/TEST001
+
+###
