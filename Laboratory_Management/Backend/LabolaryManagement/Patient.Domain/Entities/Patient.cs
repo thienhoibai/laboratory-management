@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace Patient.Domain.Entities;
 
@@ -12,15 +11,15 @@ public class PatientEntity
     public string? Phone { get; set; }
     public string? Email { get; set; }
     public string? Address { get; set; }
-    public string? IdNumber { get; set; }
+    public string? CitizenId { get; set; } // Đổi từ IdNumber → CitizenId
     public string? InsuranceNumber { get; set; }
 
     public byte Gender { get; set; }
+    public string? BloodType { get; set; } // Thêm blood_type từ database
 
-    // Searchable columns
+    // Searchable columns (computed, không lưu trong DB mới)
     public string? FullNameNorm { get; set; }
     public DateOnly? DateOfBirth { get; set; }
-    public string? PhoneLast4 { get; set; }
 
     // Link to IAM user
     public Guid? UserId { get; set; }
@@ -36,7 +35,4 @@ public class PatientEntity
     public bool IsDeleted { get; set; }
     public DateTime? DeletedAt { get; set; }
     public Guid? DeletedByUserId { get; set; }
-
-    public ICollection<PatientEventLog> EventLogs { get; set; } = new List<PatientEventLog>();
-    public ICollection<PatientRecordVersion> Versions { get; set; } = new List<PatientRecordVersion>();
 }

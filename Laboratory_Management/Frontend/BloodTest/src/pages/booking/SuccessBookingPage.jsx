@@ -24,7 +24,7 @@ export default function SuccessBookingPage() {
 
       try {
         const booking = (await bookingService.getBookingById(bookingId)).data;
-        console.log(booking.testCatalogs);
+        // console.log(booking.testCatalogs);
         let testInfo = null;
         if (booking.bundleId) {
           testInfo = await bookingService.getTestBundle(booking.bundleId);

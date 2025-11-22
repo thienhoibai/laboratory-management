@@ -13,7 +13,6 @@ using Patient.Presentation.Infrastructure;
 using RabbitMQ.Client;
 using System.Text;
 
-// Allow gRPC over HTTP/2 (h2c) without TLS
 AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,7 +22,7 @@ builder.Services.AddControllers();
 
 // Authentication + Authorization
 var issuer = builder.Configuration["Jwt:Issuer"] ?? "lab-iam";
-var audience = builder.Configuration["Jwt:Audience"] ?? "lab-services";
+var audience = builder.Configuration["Jwt:Audience"] ?? "lab.api";
 var signingKey = builder.Configuration["Jwt:SigningKey"] ?? "Jx6n2QvB5pTf8Kz3Wm9aS4Ld7Yh0Nr2Xu8Cj5Pk1Vg3Mz7Rb0Hq4Tn6Wy8Le2";
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -42,19 +41,37 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    string[] perms = new[]
+    {
+        "Patient.List",
+        "Patient.View", 
+        "Patient.Create",
+        "Patient.Update",
+        "Patient.Delete",
+        "Patient.Search"
+    };
+    
+    foreach (var p in perms)
+    {
+        options.AddPolicy($"perm:{p}", policy =>
+            policy.RequireAssertion(ctx =>
+                ctx.User.IsInRole("Admin")
+                || ctx.User.HasClaim("perm", p)
+                || ctx.User.HasClaim("permissions", p)
+                || ctx.User.HasClaim("scope", p)));
+    }
+});
 
-// Swagger optional for demo
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
-// Health checks
 builder.Services.AddHealthChecks();
 
 // Security: AES-GCM PII protector
 builder.Services.AddSingleton<ISensitiveDataProtector, AesGcmProtector>();
 
-// DbContext: allow InMemory for Docker demo
+// DbContext
 var useInMemory = builder.Configuration.GetValue("UseInMemoryDb", true);
 if (useInMemory)
 {
@@ -72,7 +89,7 @@ else
 
 builder.Services.AddScoped<IPatientService, PatientService>();
 
-// MassTransit publish (nếu Patient cần publish sự kiện khác) - giữ cấu hình exchange để đồng bộ
+// MassTransit
 const string notifyExchange = "lab.notify.v1";
 builder.Services.AddMassTransit(x =>
 {
@@ -85,15 +102,17 @@ builder.Services.AddMassTransit(x =>
         cfg.Message<NotificationRequestedV1>(m => m.SetEntityName(notifyExchange));
         cfg.Publish<NotificationRequestedV1>(p =>
         {
-            p.ExchangeType = ExchangeType.Topic; p.Durable = true; p.AutoDelete = false;
+            p.ExchangeType = ExchangeType.Topic; 
+            p.Durable = true; 
+            p.AutoDelete = false;
         });
     });
 });
 
-// Register UserService.UserServiceClient as a service
+// gRPC Client
 builder.Services.AddScoped<UserService.UserServiceClient>(provider =>
 {
-    var url = builder.Configuration["Grpc:IamUrl"] ?? "http://iam.api:5001";
+    var url = builder.Configuration["Grpc:IamUrl"] ?? "http://localhost:5001";
     var channel = GrpcChannel.ForAddress(url);
     return new UserService.UserServiceClient(channel);
 });
@@ -111,6 +130,7 @@ builder.Services.AddCors(options =>
         .AllowCredentials();
     });
 });
+
 var app = builder.Build();
 
 // Ensure DB exists when using real SQL (DB created manually via script) -> do not run EF migrations
@@ -119,7 +139,7 @@ if (!useInMemory)
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<PatientDbContext>();
     db.Database.SetCommandTimeout(TimeSpan.FromMinutes(2));
-    db.Database.EnsureCreated(); // avoid applying EF migrations that expect different column names
+    db.Database.EnsureCreated();
 }
 
 app.MapGet("/", () => Results.Ok("Patient up"));
@@ -131,11 +151,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// No HTTPS redirection for docker h2c
 app.UseRouting();
+app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseCors("AllowFrontend");
 app.MapControllers();
 
 app.Run();
