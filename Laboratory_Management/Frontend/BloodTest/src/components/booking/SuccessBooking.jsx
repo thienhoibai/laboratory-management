@@ -23,9 +23,14 @@ export default function SuccessBooking({
 
   // Lấy tên gói/test từ API
   const pkgName = bookingData?.bundleId
-    ? bookingData.testInfo?.bundleName
+    ? bookingData.testInfo?.data.bundleName
     : bookingData?.testCatalogs
-    ? bookingData.testInfo?.map((t) => t.testName).join(", ")
+    ? bookingData.testInfo?.map((t, i) => (
+        <div style={{ marginTop: "10px" }} key={i}>
+          <strong> {t.data.description}</strong>{" "}
+          <span style={{ color: "gray" }}>({t.data.catalogName})</span>
+        </div>
+      ))
     : selectedItems?.package?.name || "Xét nghiệm tổng quát";
 
   // Thông tin khách hàng từ API

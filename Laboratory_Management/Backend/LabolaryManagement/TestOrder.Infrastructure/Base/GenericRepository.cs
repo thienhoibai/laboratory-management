@@ -23,7 +23,7 @@ namespace TestOrder.Infrastructure.Base
             _context ??= new TestOrderDBContext();
         }
 
-        public async Task<List<T>> GetAllPagedAsync(int pageNumber,int pageSize)
+        public async Task<List<T>> GetAllPagedAsync(int pageNumber, int pageSize)
         {
             return await _context.Set<T>()
                 .Skip((pageNumber - 1) * pageSize)
