@@ -20,13 +20,13 @@ namespace TestOrder.Presentation
 
             // ===== DbContext Configuration =====
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-            
+
             // Sử dụng PooledDbContextFactory cho cả Controllers và Background Services
             builder.Services.AddPooledDbContextFactory<TestOrderDBContext>(options =>
                 options.UseSqlServer(connectionString));
 
             // Đăng ký DbContext với Scoped lifetime để inject vào Controllers/Services
-            builder.Services.AddScoped(sp => 
+            builder.Services.AddScoped(sp =>
             {
                 var factory = sp.GetRequiredService<IDbContextFactory<TestOrderDBContext>>();
                 return factory.CreateDbContext();
@@ -74,7 +74,7 @@ namespace TestOrder.Presentation
 
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
-            
+
             builder.Services.AddControllers()
                 .AddJsonOptions(x =>
                     x.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
@@ -110,7 +110,7 @@ namespace TestOrder.Presentation
             {
                 app.UseHttpsRedirection();
             }
-            
+
             app.UseRouting();
             app.UseCors("AllowFrontend");
             app.UseAuthorization();

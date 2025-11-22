@@ -29,7 +29,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Config
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
 builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
-builder.Services.AddHealthChecks(); 
+builder.Services.AddHealthChecks();
 
 // MVC + Filters
 builder.Services.AddControllers();
@@ -37,7 +37,43 @@ builder.Services.AddStandardApi();
 
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "IAM API",
+        Version = "v1",
+        Description = "Laboratory Management - IAM Service API"
+    });
+
+    // Add JWT Authentication
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "JWT Authorization header using the Bearer scheme. \r\n\r\n" +
+                      "Enter your token in the text input below.\r\n\r\n" +
+                      "Example: '12345abcdef'"
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
 // Email renderer for templates
 builder.Services.AddSingleton<IEmailTemplateRenderer, FileEmailTemplateRenderer>();
@@ -82,14 +118,14 @@ builder.Services.AddDbContext<IamDbContext>(opt =>
     opt.UseSqlServer(conn, sql =>
     {
         sql.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(10), errorNumbersToAdd: null);
-        sql.CommandTimeout(180); // increase for migrations
+        sql.CommandTimeout(180);
     });
 });
 
 // AuthN & AuthZ
 var issuer = builder.Configuration["Jwt:Issuer"] ?? "lab-iam";
-var audience = builder.Configuration["Jwt:Audience"] ?? "lab-services";
-var signingKey = builder.Configuration["Jwt:SigningKey"] ?? "DevSecretKey_MustBe_At_Least_32Chars!!!";
+var audience = builder.Configuration["Jwt:Audience"] ?? "lab.api";
+var signingKey = builder.Configuration["Jwt:SigningKey"] ?? "Jx6n2QvB5pTf8Kz3Wm9aS4Ld7Yh0Nr2Xu8Cj5Pk1Vg3Mz7Rb0Hq4Tn6Wy8Le2";
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(o =>
@@ -114,7 +150,7 @@ builder.Services.AddAuthorization(options =>
     {
         "User.List","User.View","User.Create","User.Delete","User.Update",
         "Role.Update","Role.Create","Role.Delete",
-        "User.Manage" // for RBAC admin
+        "User.Manage"
     };
     foreach (var p in perms)
     {
@@ -132,8 +168,8 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy.WithOrigins(
-            "http://localhost:5174",   
-            "http://127.0.0.1:5174"   
+            "http://localhost:5174",
+            "http://127.0.0.1:5174"
         )
         .AllowAnyHeader()
         .AllowAnyMethod()
@@ -142,7 +178,6 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddControllers();
-// gRPC + reflection for tooling
 builder.Services.AddGrpc();
 builder.Services.AddGrpcReflection();
 
@@ -160,8 +195,7 @@ using (var scope = app.Services.CreateScope())
     catch (Exception ex)
     {
         logger.LogError(ex, "Database migration failed. Connection: {Conn}", conn);
-        throw; // fail fast; if you want to continue in dev, replace with EnsureCreated
-        // db.Database.EnsureCreated();
+        throw;
     }
 }
 
@@ -169,17 +203,15 @@ app.UseMiddleware<ProblemDetailsMiddleware>();
 app.UseRouting();
 app.UseCors("AllowFrontend");
 app.UseSwagger();
-app.UseSwaggerUI()  ;
+app.UseSwaggerUI();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-
 
 app.MapGrpcService<IamGrpcUserService>();
 if (app.Environment.IsDevelopment()) app.MapGrpcReflectionService();
 
 app.MapGet("/", () => Results.Ok("IAM up"));
 app.MapHealthChecks("/healthz");
-
 
 app.Run();

@@ -7,7 +7,7 @@ import { GoogleLogin } from "@react-oauth/google";
 import {
   useLoginWithGoogle,
   useLoginWithPassword,
-} from "../../services/IAMService";
+} from "../../services/IAMService.jsx";
 
 const LoginForm = ({ errorMessage }) => {
   const { onFinish } = useLoginWithPassword();

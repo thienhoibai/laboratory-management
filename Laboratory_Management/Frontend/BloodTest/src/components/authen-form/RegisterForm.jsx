@@ -2,8 +2,7 @@ import React, { useEffect } from "react";
 import { Button, Form, Input, Card } from "antd";
 import { Link } from "react-router-dom";
 import "./register.css";
-import { useRegister } from "../../services/IAMService";
-const URL = "iam/api/Auth/register";
+import { useRegister } from "../../services/IAMService.jsx";
 
 function RegisterForm() {
   const { onFinish, apiErrors, form, setApiErrors } = useRegister();

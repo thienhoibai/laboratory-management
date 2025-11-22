@@ -1,4 +1,4 @@
-﻿using Common.Errors;
+﻿       using Common.Errors;
 using Common.Responses;
 using Common.Web.Filters;
 using Microsoft.AspNetCore.Authorization;
@@ -28,7 +28,7 @@ public class PatientsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize]
+    [Authorize(Policy = "perm:Patient.Create")]
     public async Task<IActionResult> Create([FromBody] CreatePatientRequest request, CancellationToken ct)
     {
         var userId = GetUserId(User);
@@ -40,21 +40,23 @@ public class PatientsController : ControllerBase
 
 
     [HttpGet("me")]
+    [Authorize] // User tự xem thông tin của mình, không cần permission đặc biệt
     public async Task<IActionResult> GetMyPatient(CancellationToken ct)
     {
         var userId = GetUserId(User);
 
         if (userId == Guid.Empty)
-            return Unauthorized(); ;
+            return Unauthorized();
 
         var result = await _service.GetByUserIdAsync(userId, ct);
         if (result == null)
             return NotFound();
-             return Ok(result);
+        
+        return Ok(result);
     }
 
     [HttpGet("mine")]
-    [Authorize]
+    [Authorize] // User tự xem danh sách bệnh nhân của mình
     public async Task<IActionResult> Mine(int page = 1, int pageSize = 50, string? name = null, CancellationToken ct = default)
     {
         var userId = GetUserId(User);
@@ -64,9 +66,8 @@ public class PatientsController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    [Authorize]
+    [Authorize(Policy = "perm:Patient.View")]
     public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
-                                                                                                                                                                                                 
     {
         var userId = GetUserId(User);
         var res = await _service.GetAsync(id, ct);
@@ -77,7 +78,7 @@ public class PatientsController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize]
+    [Authorize(Policy = "perm:Patient.Update")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdatePatientRequest request, CancellationToken ct)
     {
         var userId = GetUserId(User);
@@ -93,7 +94,7 @@ public class PatientsController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize]
+    [Authorize(Policy = "perm:Patient.Delete")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         var userId = GetUserId(User);
@@ -107,20 +108,31 @@ public class PatientsController : ControllerBase
         }
         return NoContent();
     }
+
     [HttpGet("all")]
-    public async Task<IActionResult> GetAll(CancellationToken ct)
+    [Authorize(Policy = "perm:Patient.Search")] // ✅ Yêu cầu permission để search toàn bộ
+    public async Task<IActionResult> GetAll(
+        [FromQuery] string? name = null,
+        [FromQuery] string? phone = null,
+        [FromQuery] string? email = null,
+        [FromQuery] string? insuranceNumber = null,
+        [FromQuery] string? citizenId = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10000,
+        [FromQuery] string? sortBy = "createdAt",
+        [FromQuery] string? sortDir = "desc",
+        CancellationToken ct = default)
     {
-        // Lấy toàn bộ không filter
-        var (items, total) = await _service.ListAsync(
-            page: 1,
-            pageSize: 10000,   // load all
-            name: null,
-            dob: null,
-            isDeleted: null,
-            sortBy: "createdAt",
-            sortDir: "desc",
-            idLast4: null,
-            phoneLast4: null,
+        var (items, total) = await _service.SearchPatientsAsync(
+            page: page,
+            pageSize: pageSize,
+            name: name,
+            phone: phone,
+            email: email,
+            insuranceNumber: insuranceNumber,
+            citizenId: citizenId,
+            sortBy: sortBy,
+            sortDir: sortDir,
             ct
         );
 

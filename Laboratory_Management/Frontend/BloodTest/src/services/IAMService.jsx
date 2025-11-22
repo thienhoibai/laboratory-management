@@ -1,7 +1,16 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Form } from "antd";
-import { IAMServiceAPI } from "../apis/IAMServiceAPI";
+import { IAMServiceAPI } from "../apis/IAMServiceAPI.jsx";
+import {
+  getPermissionGroups as getPermissionGroupsAPI,
+  getRoles as getRolesAPI,
+  getRolePermissions as getRolePermissionsAPI,
+  updateRolePermissions as updateRolePermissionsAPI,
+  patchRolePermissions as patchRolePermissionsAPI,
+  patchRolePermissionsByModule as patchRolePermissionsByModuleAPI,
+} from "../apis/IAMServiceAPI.jsx";
 import { toast } from "react-toastify";
 import { jwtDecode } from "jwt-decode";
 import { setUserData, setAuthToken } from "../utils/auth";
@@ -328,4 +337,90 @@ export const useChangePassword = ({ open, onClose } = {}) => {
     open: !!open,
     form,
   };
+};
+
+// ==================== RBAC Service Functions ====================
+// GET /api/rbac/permission-groups
+// Lấy danh sách các nhóm quyền với logic xử lý response
+export const getPermissionGroups = async (params = {}) => {
+  const response = await getPermissionGroupsAPI(params);
+  const data = response?.data;
+
+  // Xử lý response structure: data.data hoặc data trực tiếp
+  if (Array.isArray(data?.data)) {
+    return data.data;
+  } else if (Array.isArray(data)) {
+    return data;
+  }
+
+  return [];
+};
+
+// GET /api/rbac/roles
+// Lấy danh sách các vai trò với logic xử lý response
+export const getRoles = async (params = {}) => {
+  const response = await getRolesAPI(params);
+  const data = response?.data;
+
+  // Xử lý nhiều trường hợp response structure
+  if (Array.isArray(data)) {
+    return { items: data, meta: { totalItems: data.length } };
+  } else if (Array.isArray(data?.data)) {
+    return {
+      items: data.data,
+      meta: data.meta || { totalItems: data.data.length },
+    };
+  } else if (Array.isArray(data?.items)) {
+    return {
+      items: data.items,
+      meta: data.meta || { totalItems: data.items.length },
+    };
+  }
+
+  return { items: [], meta: { totalItems: 0 } };
+};
+
+// GET /api/rbac/roles/{roleId}/permissions
+// Lấy danh sách quyền của một vai trò cụ thể
+export const getRolePermissions = async (roleId) => {
+  if (!roleId) throw new Error("Role ID is required");
+  const response = await getRolePermissionsAPI(roleId);
+  const data = response?.data;
+  return data?.data || data || [];
+};
+
+// PUT /api/rbac/roles/{roleId}/permissions
+// Cập nhật toàn bộ quyền của một vai trò
+export const updateRolePermissions = async (roleId, permissions = []) => {
+  if (!roleId) throw new Error("Role ID is required");
+  const response = await updateRolePermissionsAPI(roleId, permissions);
+  const data = response?.data;
+  return data?.data || data;
+};
+
+// PATCH /api/rbac/roles/{roleId}/permissions
+// Cập nhật một phần quyền của một vai trò
+export const patchRolePermissions = async (roleId, permissions = []) => {
+  if (!roleId) throw new Error("Role ID is required");
+  const response = await patchRolePermissionsAPI(roleId, permissions);
+  const data = response?.data;
+  return data?.data || data;
+};
+
+// PATCH /api/rbac/roles/{roleId}/permissions/modules/{module}
+// Cập nhật quyền theo module cụ thể
+export const patchRolePermissionsByModule = async (
+  roleId,
+  module,
+  permissions = []
+) => {
+  if (!roleId) throw new Error("Role ID is required");
+  if (!module) throw new Error("Module is required");
+  const response = await patchRolePermissionsByModuleAPI(
+    roleId,
+    module,
+    permissions
+  );
+  const data = response?.data;
+  return data?.data || data;
 };

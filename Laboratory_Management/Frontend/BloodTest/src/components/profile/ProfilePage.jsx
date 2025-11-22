@@ -450,7 +450,7 @@ export default function ProfilePage() {
                             Ngày sinh:
                           </span>
                           <span className="medical-record-patient-value">
-                            {userData.dateOfBirth}
+                            {userData.dateOfBirth} 
                           </span>
                         </div>
                       </div>
