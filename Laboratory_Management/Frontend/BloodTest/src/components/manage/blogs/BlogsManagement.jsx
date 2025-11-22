@@ -474,9 +474,11 @@ const BlogsManagement = () => {
               Quản lý, phê duyệt và xuất bản các bài viết blog
             </p>
           </div>
-          <button className="blogs-create-button" onClick={openCreateModal}>
-            <FiPlus /> Tạo bài viết mới
-          </button>
+          {(role === "Staff" || role === "Admin") && (
+            <button className="blogs-create-button" onClick={openCreateModal}>
+              <FiPlus /> Tạo bài viết mới
+            </button>
+          )}
         </div>
 
         {/* Statistics Cards */}
@@ -623,33 +625,30 @@ const BlogsManagement = () => {
                   </span>
                   <span>{getStatusTag(blog.status)}</span>
                   <span className="blogs-table-actions">
-                    <button
-                      className={`blogs-action-btn approve-btn ${
-                        blog.status === "approved" ? "disabled" : ""
-                      }`}
-                      onClick={() => handleApproveBlog(blog)}
-                      title="Duyệt bài"
-                      disabled={blog.status === "approved"}
-                    >
-                      <FiCheck />
-                    </button>
-                    <button
-                      className={`blogs-action-btn reject-btn ${
-                        blog.status === "rejected" ? "disabled" : ""
-                      }`}
-                      onClick={() => handleRejectBlog(blog)}
-                      title="Hủy bài"
-                      disabled={blog.status === "rejected"}
-                    >
-                      <FiXCircle />
-                    </button>
-                    <button
-                      className="blogs-action-btn edit-btn"
-                      onClick={() => openEditModal(blog)}
-                      title="Chỉnh sửa"
-                    >
-                      <FiEdit />
-                    </button>
+                    {(role === "Manager" || role === "Admin") && (
+                      <>
+                        <button
+                          className={`blogs-action-btn approve-btn ${
+                            blog.status === "approved" ? "disabled" : ""
+                          }`}
+                          onClick={() => handleApproveBlog(blog)}
+                          title="Duyệt bài"
+                          disabled={blog.status === "approved"}
+                        >
+                          <FiCheck />
+                        </button>
+                        <button
+                          className={`blogs-action-btn reject-btn ${
+                            blog.status === "rejected" ? "disabled" : ""
+                          }`}
+                          onClick={() => handleRejectBlog(blog)}
+                          title="Hủy bài"
+                          disabled={blog.status === "rejected"}
+                        >
+                          <FiXCircle />
+                        </button>
+                      </>
+                    )}
                     <button
                       className="blogs-action-btn view-btn"
                       onClick={() => openViewDetailModal(blog)}
@@ -657,6 +656,15 @@ const BlogsManagement = () => {
                     >
                       <FiEye />
                     </button>
+                    {(role === "Staff" || role === "Admin") && (
+                      <button
+                        className="blogs-action-btn edit-btn"
+                        onClick={() => openEditModal(blog)}
+                        title="Chỉnh sửa"
+                      >
+                        <FiEdit />
+                      </button>
+                    )}
                     <button
                       className="blogs-action-btn delete-btn"
                       onClick={() => openDeleteModal(blog)}
