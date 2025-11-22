@@ -47,11 +47,21 @@ function Navbar() {
   const handleNavClick = (e, sectionId) => {
     e.preventDefault();
 
+    // Tính toán offset của navbar (72px theo CSS)
+    const navbarHeight = 72;
+
     // Nếu đang ở trang chủ, scroll đến section
     if (location.pathname === "/") {
       const element = document.getElementById(sectionId);
       if (element) {
-        element.scrollIntoView({ behavior: "smooth", block: "start" });
+        const elementPosition = element.getBoundingClientRect().top;
+        const offsetPosition =
+          elementPosition + window.pageYOffset - navbarHeight;
+
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: "smooth",
+        });
       }
     } else {
       // Nếu không ở trang chủ, điều hướng về trang chủ với hash
@@ -60,9 +70,16 @@ function Navbar() {
       setTimeout(() => {
         const element = document.getElementById(sectionId);
         if (element) {
-          element.scrollIntoView({ behavior: "smooth", block: "start" });
+          const elementPosition = element.getBoundingClientRect().top;
+          const offsetPosition =
+            elementPosition + window.pageYOffset - navbarHeight;
+
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: "smooth",
+          });
         }
-      }, 100);
+      }, 200);
     }
   };
 
@@ -79,14 +96,62 @@ function Navbar() {
   useEffect(() => {
     if (location.pathname === "/" && location.hash) {
       const sectionId = location.hash.substring(1);
+      const navbarHeight = 72;
       setTimeout(() => {
         const element = document.getElementById(sectionId);
         if (element) {
-          element.scrollIntoView({ behavior: "smooth", block: "start" });
+          const elementPosition = element.getBoundingClientRect().top;
+          const offsetPosition =
+            elementPosition + window.pageYOffset - navbarHeight;
+
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: "smooth",
+          });
         }
-      }, 100);
+      }, 200);
     }
   }, [location]);
+
+  // Track active section on scroll
+  const [activeSection, setActiveSection] = useState("hero");
+  useEffect(() => {
+    if (location.pathname !== "/") {
+      setActiveSection("");
+      return;
+    }
+
+    const sections = ["hero", "services", "equipments", "blog", "bundles"];
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY + 150;
+
+      // Check if at top of page
+      if (window.scrollY < 100) {
+        setActiveSection("hero");
+        return;
+      }
+
+      // Find the section currently in view
+      for (let i = sections.length - 1; i >= 0; i--) {
+        const section = document.getElementById(sections[i]);
+        if (section) {
+          const offsetTop = section.offsetTop;
+          const offsetHeight = section.offsetHeight;
+          if (
+            scrollPosition >= offsetTop &&
+            scrollPosition < offsetTop + offsetHeight
+          ) {
+            setActiveSection(sections[i]);
+            break;
+          }
+        }
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll(); // Initial check
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [location.pathname]);
 
   return (
     <header className="navbar">
@@ -114,24 +179,65 @@ function Navbar() {
         <nav className="navbar-menu">
           <a
             href="#hero"
-            className={location.pathname === "/" ? "active" : ""}
+            className={
+              location.pathname === "/" && activeSection === "hero"
+                ? "active"
+                : ""
+            }
             onClick={(e) => handleNavClick(e, "hero")}
           >
             Trang chủ
           </a>
-          <a href="#services" onClick={(e) => handleNavClick(e, "services")}>
+          <a
+            href="#services"
+            className={
+              location.pathname === "/" && activeSection === "services"
+                ? "active"
+                : ""
+            }
+            onClick={(e) => handleNavClick(e, "services")}
+          >
             Dịch vụ
           </a>
           <a
             href="#equipments"
+            className={
+              location.pathname === "/" && activeSection === "equipments"
+                ? "active"
+                : ""
+            }
             onClick={(e) => handleNavClick(e, "equipments")}
           >
             Thiết bị
           </a>
-          <a href="#blog" onClick={(e) => handleNavClick(e, "blog")}>
+          <a
+            href="#blog"
+            className={
+              location.pathname === "/" && activeSection === "blog"
+                ? "active"
+                : ""
+            }
+            onClick={(e) => handleNavClick(e, "blog")}
+          >
             Blog
           </a>
-          <Link to="/booking" className="navbar-link">
+          <a
+            href="#bundles"
+            className={
+              location.pathname === "/" && activeSection === "bundles"
+                ? "active"
+                : ""
+            }
+            onClick={(e) => handleNavClick(e, "bundles")}
+          >
+            Gói xét nghiệm
+          </a>
+          <Link
+            to="/booking"
+            className={`navbar-link ${
+              location.pathname === "/booking" ? "active" : ""
+            }`}
+          >
             Đặt Lịch
           </Link>
         </nav>
