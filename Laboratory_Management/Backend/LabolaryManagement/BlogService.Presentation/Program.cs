@@ -27,6 +27,8 @@ namespace BlogService.Presentation
             builder.Services.AddScoped<CategoryRepository>();
             builder.Services.AddScoped<BlogTagService>();
             builder.Services.AddScoped<BlogPostTagRepository>();
+            builder.Services.AddScoped<CommentRepository>();
+            builder.Services.AddScoped<CommentService>();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
             builder.Services.AddControllers()
