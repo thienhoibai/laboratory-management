@@ -82,14 +82,14 @@ builder.Services.AddDbContext<IamDbContext>(opt =>
     opt.UseSqlServer(conn, sql =>
     {
         sql.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(10), errorNumbersToAdd: null);
-        sql.CommandTimeout(180); // increase for migrations
+        sql.CommandTimeout(180);
     });
 });
 
 // AuthN & AuthZ
 var issuer = builder.Configuration["Jwt:Issuer"] ?? "lab-iam";
-var audience = builder.Configuration["Jwt:Audience"] ?? "lab-services";
-var signingKey = builder.Configuration["Jwt:SigningKey"] ?? "DevSecretKey_MustBe_At_Least_32Chars!!!";
+var audience = builder.Configuration["Jwt:Audience"] ?? "lab.api";
+var signingKey = builder.Configuration["Jwt:SigningKey"] ?? "Jx6n2QvB5pTf8Kz3Wm9aS4Ld7Yh0Nr2Xu8Cj5Pk1Vg3Mz7Rb0Hq4Tn6Wy8Le2";
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(o =>
@@ -114,7 +114,7 @@ builder.Services.AddAuthorization(options =>
     {
         "User.List","User.View","User.Create","User.Delete","User.Update",
         "Role.Update","Role.Create","Role.Delete",
-        "User.Manage" // for RBAC admin
+        "User.Manage"
     };
     foreach (var p in perms)
     {
@@ -142,7 +142,6 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddControllers();
-// gRPC + reflection for tooling
 builder.Services.AddGrpc();
 builder.Services.AddGrpcReflection();
 
@@ -160,8 +159,7 @@ using (var scope = app.Services.CreateScope())
     catch (Exception ex)
     {
         logger.LogError(ex, "Database migration failed. Connection: {Conn}", conn);
-        throw; // fail fast; if you want to continue in dev, replace with EnsureCreated
-        // db.Database.EnsureCreated();
+        throw;
     }
 }
 
@@ -169,17 +167,15 @@ app.UseMiddleware<ProblemDetailsMiddleware>();
 app.UseRouting();
 app.UseCors("AllowFrontend");
 app.UseSwagger();
-app.UseSwaggerUI()  ;
+app.UseSwaggerUI();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-
 
 app.MapGrpcService<IamGrpcUserService>();
 if (app.Environment.IsDevelopment()) app.MapGrpcReflectionService();
 
 app.MapGet("/", () => Results.Ok("IAM up"));
 app.MapHealthChecks("/healthz");
-
 
 app.Run();
