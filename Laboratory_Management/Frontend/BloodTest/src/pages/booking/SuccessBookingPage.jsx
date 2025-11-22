@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import SuccessBooking from "../../components/booking/SuccessBooking";
 import Navbar from "../../components/navbar/Navbar";
-import { bookingService } from "../../apis/TestOrderServiceAPI";
+import { bookingService } from "../../services/TestOrderService.jsx";
 import { toast } from "react-toastify";
 
 export default function SuccessBookingPage() {

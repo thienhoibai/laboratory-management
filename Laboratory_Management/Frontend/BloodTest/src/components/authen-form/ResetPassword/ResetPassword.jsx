@@ -1,7 +1,7 @@
 import React from "react";
 import { Card, Form, Input, Button } from "antd";
 import { Link } from "react-router-dom";
-import { useResetPassword } from "../../../services/IAMService";
+import { useResetPassword } from "../../../services/IAMService.jsx";
 import { setAuthToken } from "../../../utils/auth";
 import "./ResetPassword.css";
 
