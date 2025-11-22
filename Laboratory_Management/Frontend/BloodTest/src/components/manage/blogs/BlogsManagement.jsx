@@ -76,6 +76,11 @@ const BlogsManagement = () => {
   const [isViewDetailOpen, setIsViewDetailOpen] = useState(false);
   const [viewingBlog, setViewingBlog] = useState(null);
 
+  const token = localStorage.getItem("accessToken");
+  const decode = jwtDecode(token);
+  let role = null;
+  role = decode["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
+
   // Load data on mount and when filter changes
   useEffect(() => {
     loadBlogs();
@@ -122,9 +127,17 @@ const BlogsManagement = () => {
       if (search && search.trim() !== "") {
         params.search = search.trim();
       }
-
-      const blogsData = await BlogService.getAllBlogs(params);
-      setBlogs(blogsData);
+      if (role === "Manager" || role === "Admin") {
+        const blogsData = await BlogService.getAllBlogs(params);
+        setBlogs(blogsData);
+      } else if (role === "Staff") {
+        const decode = jwtDecode(token);
+        let id = null;
+        id = decode["sub"];
+        params.authorId = id;
+        const blogsData = await BlogService.getAllBlogs(params);
+        setBlogs(blogsData);
+      }
     } catch (error) {
       console.error("Error loading blogs:", error);
       toast.error("Không thể tải danh sách bài viết. Vui lòng thử lại!");
@@ -446,6 +459,11 @@ const BlogsManagement = () => {
     setViewingBlog(null);
   };
 
+  const gridCols =
+    role === "Admin" || role === "Manager"
+      ? "2fr 1fr 1fr 1fr 1fr 0.8fr 1.5fr" // Có cột Tác giả
+      : "2fr 1fr 0.75fr 0.75fr 0.75fr 1fr"; // Không có cột Tác giả
+
   return (
     <AdminLayout pageTitle="Quản lý Blog" breadcrumbs={breadcrumbs}>
       <div className="blogs-management-content">
@@ -562,9 +580,16 @@ const BlogsManagement = () => {
           </div>
 
           <div className="blogs-table">
-            <div className="blogs-table-header">
+            <div
+              className="blogs-table-header"
+              style={{
+                display: "grid",
+                gridTemplateColumns: gridCols,
+              }}
+            >
               <span>Tiêu đề</span>
-              <span>Tác giả</span>
+
+              {(role === "Admin" || role === "Manager") && <span>Tác giả</span>}
               <span>Danh mục</span>
               <span>Ngày tạo</span>
               <span>Ngày cập nhật</span>
@@ -577,13 +602,24 @@ const BlogsManagement = () => {
               </div>
             ) : displayedBlogs.length > 0 ? (
               displayedBlogs.map((blog) => (
-                <div className="blogs-table-row" key={blog.id}>
+                <div
+                  className="blogs-table-row"
+                  key={blog.id}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: gridCols,
+                  }}
+                >
                   <span className="blogs-table-title">{blog.title}</span>
-                  <span>{blog.author || "Unknown"}</span>
+
+                  {(role === "Admin" || role === "Manager") && (
+                    <span>{blog.author || ""}</span>
+                  )}
+
                   <span>{blog.category}</span>
                   <span>{formatDate1(blog.createdDate) || "Chưa có"}</span>
                   <span>
-                    {formatDate1(blog.updatedDate) || "Chưa Cập Nhật"}
+                    {formatDate1(blog.updatedDate) || "Chưa cập nhật"}
                   </span>
                   <span>{getStatusTag(blog.status)}</span>
                   <span className="blogs-table-actions">

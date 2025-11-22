@@ -256,6 +256,26 @@ const BlogService = {
     }
   },
 
+  getAllBlogsById: async (authorId) => {
+    try {
+      const apiResponse = await BlogAPI.getAllBlogs({ authorId });
+      if(apiResponse.status >= 200 && apiResponse.status < 300){
+        const apiBlogs = BlogService.extractBlogList(apiResponse);
+        const transformedBlogs = apiBlogs.map((blog) => BlogService.transformBlogFromAPI(blog));
+
+        // Enrich blogs with author names in parallel
+        const enrichedBlogs = await Promise.all(
+          transformedBlogs.map((blog) => BlogService.enrichBlogWithAuthor(blog))
+        );
+        return enrichedBlogs;
+      }
+      
+    } catch (error) {
+       console.error("BlogService - Error getting all blogs:", error);
+      throw error;
+    }
+  },
+
   /**
    * Get approved blogs (for public display)
    * @param {number} page - Page number
