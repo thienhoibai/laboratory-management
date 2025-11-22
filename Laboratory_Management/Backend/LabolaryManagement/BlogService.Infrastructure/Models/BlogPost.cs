@@ -23,7 +23,7 @@ public partial class BlogPost
 
     public bool? IsApproved { get; set; }
 
-    public int Status { get; set; }
+    public int? Status { get; set; }
 
     public string? ThumbnailUrl { get; set; }
 
