@@ -1,0 +1,92 @@
+﻿### ============================================================================
+### BƯỚC 1: LOGIN VÀ LẤY TOKEN
+### ============================================================================
+
+### 1.1. Login to IAM Service
+# Expected response: 200 OK with accessToken
+POST http://localhost:5274/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "Admin@123"
+}
+
+### Response Example:
+# {
+#   "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI...",
+#   "expiresAt": "2025-01-04T10:00:00Z",
+#   "refreshToken": "..."
+# }
+
+### 1.2. QUAN TRỌNG: Copy accessToken
+# - Click vào response tab
+# - Tìm "accessToken": "..."
+# - Copy TOÀN BỘ giá trị bên trong dấu ngoặc kép (KHÔNG bao gồm dấu ngoặc kép)
+# - Token đúng sẽ có dạng: eyJhbGci...xyz (rất dài, khoảng 500+ ký tự)
+
+### ============================================================================
+### BƯỚC 2: TEST PATIENT API
+### ============================================================================
+
+### 2.1. Create Patient (cần permission Patient.Create)
+# Replace <PASTE_TOKEN_HERE> with the accessToken from step 1.1
+POST http://localhost:5071/v1/patients
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.REPLACE_WITH_YOUR_TOKEN
+Content-Type: application/json
+
+{
+  "fullName": "Nguyễn Văn A",
+  "dateOfBirth": "1990-05-15",
+  "gender": 1,
+  "phone": "0901234567",
+  "email": "nguyenvana@example.com",
+  "address": "123 Đường ABC, TP.HCM",
+  "citizenId": "079090001234",
+  "insuranceNumber": "DN4150012345678",
+  "createdChannel": "self"
+}
+
+### ============================================================================
+### TROUBLESHOOTING
+### ============================================================================
+
+### ❌ Nếu gặp lỗi: "JWT is not well formed"
+# → Token bị sai format. Kiểm tra:
+#   1. Có chữ "Bearer " ở trước token không? (phải có)
+#   2. Có chữ "Bearer" bị lặp lại không? (Authorization: Bearer Bearer eyJ...)
+#   3. Token có bị xuống dòng không?
+#   4. Token có đầy đủ 3 phần xxx.yyy.zzz không?
+
+### ✅ Token đúng format:
+# Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+### ❌ Token SAI format:
+# Authorization: Bearer Bearer eyJhbGci...  (thừa "Bearer")
+# Authorization: Bearer                      (thiếu token)
+#                      eyJhbGci...           (xuống dòng)
+# Authorization: eyJhbGci...                 (thiếu "Bearer ")
+
+### ============================================================================
+### ALTERNATIVE: Sử dụng Postman
+### ============================================================================
+
+# 1. Login request
+#    POST http://localhost:5274/api/auth/login
+#    Body (raw JSON):
+#    {
+#      "username": "admin",
+#      "password": "Admin@123"
+#    }
+#
+# 2. Copy accessToken từ response
+#
+# 3. Mở request Create Patient
+#    Tab "Authorization"
+#    Type: Bearer Token
+#    Token: <paste token here> (KHÔNG có chữ "Bearer" ở đây)
+#
+# 4. Send request
+````````
+
+# Response

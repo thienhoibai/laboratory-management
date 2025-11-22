@@ -157,6 +157,7 @@ namespace IAM.Application.Auth
                 .Distinct()
                 .ToListAsync(ct);
 
+            // Permission.Name chứa code (e.g., "Patient.View", "User.Create")
             var permissions = await _db.Permissions
                 .Where(p => permissionIds.Contains(p.PermissionId))
                 .Select(p => p.Name)
@@ -214,6 +215,7 @@ namespace IAM.Application.Auth
                 .Distinct()
                 .ToListAsync(ct);
 
+            // Permission.Name chứa code (e.g., "Patient.View", "User.Create")
             var permissions = await _db.Permissions
                 .Where(p => permissionIds.Contains(p.PermissionId))
                 .Select(p => p.Name)
