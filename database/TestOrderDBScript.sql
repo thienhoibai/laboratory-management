@@ -228,9 +228,9 @@ GO
 
 INSERT INTO TestBundle (BundleName,Description,Price,IsActive)
 VALUES
-('Xét nghiệm tổng quát','Gói xét nghiệm cơ bản bao gồm công thức máu, đường huyết, chức năng gan',450000, 1),
-('Xét nghiệm sinh hóa','Đánh giá chức năng gan, thận và các chỉ số sinh hóa quan trọng',650000, 1),
-('Xét nghiệm toàn diện','Gói xét nghiệm đầy đủ nhất cho sức khỏe tổng thể',1200000, 1)
+(N'Xét nghiệm tổng quát',N'Gói xét nghiệm cơ bản bao gồm công thức máu, đường huyết, chức năng gan',450000, 1),
+(N'Xét nghiệm sinh hóa',N'Đánh giá chức năng gan, thận và các chỉ số sinh hóa quan trọng',650000, 1),
+(N'Xét nghiệm toàn diện',N'Gói xét nghiệm đầy đủ nhất cho sức khỏe tổng thể',1200000, 1)
 GO
 
 INSERT INTO
