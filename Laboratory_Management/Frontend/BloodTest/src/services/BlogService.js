@@ -293,11 +293,11 @@ const BlogService = {
         transformedBlogs.map((blog) => BlogService.enrichBlogWithAuthor(blog))
       );
       
-      // Sort by createdDate descending (newest first)
+      // Sort by blogPostId/id descending (newest first - highest ID)
       enrichedBlogs.sort((a, b) => {
-        const dateA = new Date(a.createdDate || 0);
-        const dateB = new Date(b.createdDate || 0);
-        return dateB - dateA;
+        const idA = a.id || 0;
+        const idB = b.id || 0;
+        return idB - idA;
       });
       
       // Slice to exact pageSize to ensure correct number of blogs
