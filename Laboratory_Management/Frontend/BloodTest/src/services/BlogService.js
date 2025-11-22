@@ -1,6 +1,6 @@
 import BlogAPI from "../apis/BlogAPI";
 import { formatDate1 } from "../utils/formatDate";
-import { getUserById } from "./IAMService";
+import { getUserById } from "./IAMService.jsx";
 
 /**
  * Blog Service
@@ -90,7 +90,9 @@ const BlogService = {
       thumbnailUrl: apiBlog.thumbnailUrl || apiBlog.imageUrl || "",
       createdDate: apiBlog.createdDate ? formatDate1(apiBlog.createdDate) : "",
       updatedDate: apiBlog.updatedDate ? formatDate1(apiBlog.updatedDate) : "",
-      date: apiBlog.createdDate ? formatDate1(apiBlog.createdDate) : formatDate1(new Date().toISOString()),
+      date: apiBlog.createdDate
+        ? formatDate1(apiBlog.createdDate)
+        : formatDate1(new Date().toISOString()),
       fullDate: apiBlog.createdDate
         ? new Date(apiBlog.createdDate).toLocaleDateString("vi-VN", {
             weekday: "long",
@@ -215,11 +217,15 @@ const BlogService = {
     if (blog.authorId) {
       try {
         const userData = await getUserById(blog.authorId);
-        
+
         if (userData) {
           // Handle different field names for full name
-          const fullName = userData.fullName || userData.FullName || userData.name || userData.Name;
-          
+          const fullName =
+            userData.fullName ||
+            userData.FullName ||
+            userData.name ||
+            userData.Name;
+
           if (fullName) {
             return { ...blog, author: fullName };
           }
@@ -242,13 +248,15 @@ const BlogService = {
     try {
       const apiResponse = await BlogAPI.getAllBlogs(params);
       const apiBlogs = BlogService.extractBlogList(apiResponse);
-      const transformedBlogs = apiBlogs.map((blog) => BlogService.transformBlogFromAPI(blog));
-      
+      const transformedBlogs = apiBlogs.map((blog) =>
+        BlogService.transformBlogFromAPI(blog)
+      );
+
       // Enrich blogs with author names in parallel
       const enrichedBlogs = await Promise.all(
         transformedBlogs.map((blog) => BlogService.enrichBlogWithAuthor(blog))
       );
-      
+
       return enrichedBlogs;
     } catch (error) {
       console.error("BlogService - Error getting all blogs:", error);
@@ -259,9 +267,11 @@ const BlogService = {
   getAllBlogsById: async (authorId) => {
     try {
       const apiResponse = await BlogAPI.getAllBlogs({ authorId });
-      if(apiResponse.status >= 200 && apiResponse.status < 300){
+      if (apiResponse.status >= 200 && apiResponse.status < 300) {
         const apiBlogs = BlogService.extractBlogList(apiResponse);
-        const transformedBlogs = apiBlogs.map((blog) => BlogService.transformBlogFromAPI(blog));
+        const transformedBlogs = apiBlogs.map((blog) =>
+          BlogService.transformBlogFromAPI(blog)
+        );
 
         // Enrich blogs with author names in parallel
         const enrichedBlogs = await Promise.all(
@@ -269,9 +279,8 @@ const BlogService = {
         );
         return enrichedBlogs;
       }
-      
     } catch (error) {
-       console.error("BlogService - Error getting all blogs:", error);
+      console.error("BlogService - Error getting all blogs:", error);
       throw error;
     }
   },
@@ -279,27 +288,29 @@ const BlogService = {
   /**
    * Get approved blogs (for public display)
    * @param {number} page - Page number
-   * @param {number} pageSize - Page size  
+   * @param {number} pageSize - Page size
    * @returns {Promise<Array>} Array of approved blogs in UI format
    */
   getApprovedBlogs: async (page = 1, pageSize = 100) => {
     try {
       const apiResponse = await BlogAPI.getApprovedBlogs(page, pageSize);
       const apiBlogs = BlogService.extractBlogList(apiResponse);
-      const transformedBlogs = apiBlogs.map((blog) => BlogService.transformBlogFromAPI(blog));
-      
+      const transformedBlogs = apiBlogs.map((blog) =>
+        BlogService.transformBlogFromAPI(blog)
+      );
+
       // Enrich blogs with author names in parallel
       const enrichedBlogs = await Promise.all(
         transformedBlogs.map((blog) => BlogService.enrichBlogWithAuthor(blog))
       );
-      
+
       // Sort by createdDate descending (newest first)
       enrichedBlogs.sort((a, b) => {
         const dateA = new Date(a.createdDate || 0);
         const dateB = new Date(b.createdDate || 0);
         return dateB - dateA;
       });
-      
+
       // Slice to exact pageSize to ensure correct number of blogs
       return enrichedBlogs.slice(0, pageSize);
     } catch (error) {
@@ -334,7 +345,9 @@ const BlogService = {
     try {
       const apiBlog = await BlogAPI.getBlogById(id);
       const transformedBlog = BlogService.transformBlogFromAPI(apiBlog);
-      const enrichedBlog = await BlogService.enrichBlogWithAuthor(transformedBlog);
+      const enrichedBlog = await BlogService.enrichBlogWithAuthor(
+        transformedBlog
+      );
       return enrichedBlog;
     } catch (error) {
       console.error(`BlogService - Error getting blog ${id}:`, error);
