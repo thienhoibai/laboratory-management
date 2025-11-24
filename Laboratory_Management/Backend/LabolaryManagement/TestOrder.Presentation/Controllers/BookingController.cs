@@ -29,9 +29,19 @@ namespace TestOrder.Presentation.Controllers
              [FromQuery] int pageSize,
              [FromQuery] int pageNumber)
         {
-            var response = await _bookingService.GetAllBookingsByDateAsync
+            try { 
+                var response = await _bookingService.GetAllBookingsByDateAsync
                 (date, keyword, sortBy, sortDirection, pageSize, pageNumber);
-            return Ok(response);
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ResponseMessage
+                {
+                    ResponseCode = ResponseCode.BadInstanceState,
+                    Message = "An error occurred while processing your request: " + ex.Message
+                });
+            }
         }
 
         [HttpGet]
@@ -40,13 +50,25 @@ namespace TestOrder.Presentation.Controllers
             var response = _bookingService.GetBookingByIdAsync(bookingId).Result;
             return Ok(response);
         }
+
+
         [HttpGet("patient")]
         public async Task<IActionResult> GetBookingsByPatientId([FromQuery] Guid patientId, [FromQuery] int pageNumber, [FromQuery] int pageSize)
         {
-            var response = await _bookingService.GetBookingsByPatientIdAsync(patientId, pageNumber, pageSize);
-            return Ok(response);
+            try
+            {
+                var response = await _bookingService.GetBookingsByPatientIdAsync(patientId, pageNumber, pageSize);
+                return Ok(response);
+            }
+            catch (ArgumentException ex)
+            {
+                return NotFound(new ResponseMessage
+                {
+                    ResponseCode = ResponseCode.NotFound,
+                    Message = ex.Message
+                });
+            }
         }
-
 
         [HttpPost]
         public async Task<IActionResult> CreateBooking([FromBody] BookingRequestDTO createBookingDto)

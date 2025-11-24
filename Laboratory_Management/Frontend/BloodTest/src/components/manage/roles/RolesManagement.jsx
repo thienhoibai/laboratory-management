@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import AdminLayout from "../../admin/layout/AdminLayout";
 import {
-  FiSearch,
   FiEdit2,
   FiCheck,
   FiX,
@@ -35,8 +34,6 @@ const RolesManagement = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState(0);
-  const [searchInput, setSearchInput] = useState("");
-  const [searchDebounce, setSearchDebounce] = useState("");
 
   // Store permissions for each role
   const [rolePermissionsMap, setRolePermissionsMap] = useState({});
@@ -62,17 +59,9 @@ const RolesManagement = () => {
   }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setSearchDebounce(searchInput.trim());
-      setPage(1);
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [searchInput]);
-
-  useEffect(() => {
     fetchRoles();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, pageSize, searchDebounce]);
+  }, [page, pageSize]);
 
   // Helper functions
   const getPermissionId = (permission) =>
@@ -124,7 +113,6 @@ const RolesManagement = () => {
     setIsLoading(true);
     try {
       const params = { page, pageSize };
-      if (searchDebounce) params.search = searchDebounce;
       const { items, meta } = await getRoles(params);
       const rolesList = items || [];
       setRoles(rolesList);
@@ -430,16 +418,6 @@ const RolesManagement = () => {
     }
   };
 
-  const filteredRoles = useMemo(() => {
-    if (!searchDebounce) return roles;
-    const query = searchDebounce.toLowerCase();
-    return roles.filter(
-      (role) =>
-        role.name?.toLowerCase().includes(query) ||
-        role.description?.toLowerCase().includes(query)
-    );
-  }, [roles, searchDebounce]);
-
   // Group permissions by module
   // Response structure: [{ module, label, permissions: [{ key, label }] }]
   const groupedPermissions = useMemo(() => {
@@ -488,21 +466,8 @@ const RolesManagement = () => {
 
         <div className="roles-content">
           <div className="roles-controls">
-            <div className="search-section">
-              <div className="search-box">
-                <FiSearch size={18} />
-                <input
-                  type="text"
-                  placeholder="Tìm kiếm vai trò..."
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                />
-              </div>
-            </div>
             <div className="page-info">
-              <span>
-                Hiển thị {filteredRoles.length} / {total || 0} vai trò
-              </span>
+              <span>Tổng cộng {total || 0} vai trò</span>
             </div>
           </div>
 
@@ -526,8 +491,8 @@ const RolesManagement = () => {
                       </div>
                     </td>
                   </tr>
-                ) : filteredRoles.length > 0 ? (
-                  filteredRoles.map((role) => (
+                ) : roles.length > 0 ? (
+                  roles.map((role) => (
                     <tr key={getRoleId(role)}>
                       <td>
                         <div className="role-name-cell">
@@ -620,9 +585,7 @@ const RolesManagement = () => {
                       colSpan="4"
                       style={{ textAlign: "center", padding: 40 }}
                     >
-                      {searchDebounce
-                        ? "Không tìm thấy vai trò nào"
-                        : "Chưa có vai trò nào"}
+                      Chưa có vai trò nào
                     </td>
                   </tr>
                 )}
