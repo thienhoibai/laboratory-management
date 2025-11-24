@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Http.Features;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,14 +19,24 @@ namespace TestOrder.Infrastructure.Repository
         {
         }
 
-        public async Task<IEnumerable<Booking>?> GetBookingsByPatientIdAsync(Guid patientId, int pageNumber, int pageSize)
+        public async Task<(IEnumerable<Booking>? items, int totalItems)> GetBookingsByPatientIdAsync(Guid patientId, int pageNumber, int pageSize)
         {
-            return await _context.Set<Booking>()
-                .Where(b => b.PatientId == patientId)
-                .Skip((pageNumber - 1)* pageSize)
+            var query = _context.Set<Booking>()
+                .Where(b => b.PatientId == patientId);
+            if (query == null || !query.Any())
+            {
+                throw new ArgumentException("No bookings found for the specified patient ID.");
+            }
+            var totalItems = await query.CountAsync();
+            var items = await query
+                .OrderBy(b => b.BookingCode)
+                .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
+            return (items, totalItems);
+
         }
+        
 
         public async Task<string?> GetLastBookingCodeAsync()
         {
@@ -59,7 +70,7 @@ namespace TestOrder.Infrastructure.Repository
 
         }
 
-        public Task<IEnumerable<Booking>?> SortingAndPaging
+        public Task<(IEnumerable<Booking>? items, int totalItems)> SortingAndPaging
             (string? sortBy, string? sortDirection, int pageSize, int pageNumber, IEnumerable<Booking> bookingList)
         {
             bool isDescending = sortDirection?.ToLower() == "desc";
@@ -74,13 +85,14 @@ namespace TestOrder.Infrastructure.Repository
                 _ => query.OrderBy(b => b.BookingCode),
             };
 
+            var totalItems = query.Count();
 
-
-            return Task.FromResult<IEnumerable<Booking>?>(query
+            IEnumerable<Booking>? items = query
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
-                .ToList());
+                .ToList();
 
+            return Task.FromResult<(IEnumerable<Booking>?, int)>((items, totalItems));
         }
        
     }
