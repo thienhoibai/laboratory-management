@@ -4,6 +4,7 @@ import HeroSection from "../../components/home/HeroSection";
 import ServiceSection from "../../components/home/ServiceSection";
 import EquipmentSection from "../../components/home/EquipmentSection";
 import BlogSection from "../../components/home/BlogSection";
+import BundleSection from "../../components/home/BundleSection";
 import CallToActionSection from "../../components/home/CallToActionSection";
 import Footer from "../../components/footer/Footer";
 import "./Home.css";
@@ -41,6 +42,9 @@ function Home() {
       </section>
       <section id="blog" className="section-animate">
         <BlogSection />
+      </section>
+      <section id="bundles" className="section-animate">
+        <BundleSection />
       </section>
       <section className="section-animate">
         <CallToActionSection />

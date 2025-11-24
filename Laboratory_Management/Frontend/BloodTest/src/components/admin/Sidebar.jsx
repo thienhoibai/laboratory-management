@@ -25,7 +25,6 @@ const iconMap = {
   reagents: <FiPackage />,
   blogs: <FiBook />,
   patients: <FiUsers />,
-  "test-orders": <FiFileText />,
   packages: <FiBox />,
   catalogs: <FiPackage />,
   parameter: <FiActivity />,
