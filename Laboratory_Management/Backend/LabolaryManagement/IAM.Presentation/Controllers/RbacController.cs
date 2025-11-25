@@ -1,6 +1,6 @@
 ﻿using IAM.Application.Permissions;
-using IAM.Application.Permissions.DTOs;
-using IAM.Application.Roles;
+using IAM.Application.Permissions.DTOs.Responses;
+using IAM.Application.Roles.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;

@@ -45,7 +45,6 @@ public class PatientDbContext : DbContext
 
             // Ignore properties not in DB
             b.Ignore(x => x.FullNameNorm);
-            b.Ignore(x => x.CreatedChannel);
 
             b.HasQueryFilter(x => !x.IsDeleted);
             b.HasIndex(x => x.UserId).HasDatabaseName("IX_patients_user_id");

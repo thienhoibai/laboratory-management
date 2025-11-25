@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Instrument.Application.DTOs;
+using Instrument.Application.Instruments.DTOs.Requests;
+using Instrument.Application.Instruments.DTOs.Responses;
 using Instrument.Application.Services;
+using Instrument.Domain.Enums;
 
 namespace Instrument.Presentation.Controllers;
 
@@ -64,10 +66,10 @@ public class InstrumentsController : ControllerBase
     ///     {
     ///         "instrumentCode": "INSTR001",
     ///         "name": "Máy xét nghiệm sinh hóa",
-    ///         "status": "ONLINE"
+    ///         "status": 0
     ///     }
     ///     
-    /// Status values: ONLINE, OFFLINE, FAULT, MAINTENANCE
+    /// Status values: 0=Online, 1=Offline, 2=Fault, 3=Maintenance
     /// </remarks>
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateInstrumentRequest request)
@@ -95,12 +97,12 @@ public class InstrumentsController : ControllerBase
     ///     PUT /api/instruments/INSTR001
     ///     {
     ///         "name": "Máy xét nghiệm tự động",
-    ///         "status": "MAINTENANCE",
-    ///         "reagentStatus": "LOW"
+    ///         "status": 3,
+    ///         "reagentStatus": 1
     ///     }
     ///     
-    /// Status values: ONLINE, OFFLINE, FAULT, MAINTENANCE
-    /// ReagentStatus values: OK, LOW, OUT
+    /// Status values: 0=Online, 1=Offline, 2=Fault, 3=Maintenance
+    /// ReagentStatus values: 0=OK, 1=Low, 2=Out
     /// </remarks>
     [HttpPut("{code}")]
     public async Task<IActionResult> Update(string code, [FromBody] UpdateInstrumentRequest request)
