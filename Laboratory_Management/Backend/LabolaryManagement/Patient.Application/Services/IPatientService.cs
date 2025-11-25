@@ -1,5 +1,6 @@
 ﻿using Common.Results;
-using Patient.Application.DTOs;
+using Patient.Application.Patients.DTOs.Requests;
+using Patient.Application.Patients.DTOs.Responses;
 
 namespace Patient.Application.Services;
 

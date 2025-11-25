@@ -7,7 +7,8 @@ using System.Threading.Tasks;
 using Common.Errors;
 using Common.Results;
 using Microsoft.EntityFrameworkCore;
-using Patient.Application.DTOs;
+using Patient.Application.Patients.DTOs.Requests;
+using Patient.Application.Patients.DTOs.Responses;
 using Patient.Domain.Entities;
 using Patient.Infrastructure;
 

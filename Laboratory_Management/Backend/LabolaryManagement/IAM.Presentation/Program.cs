@@ -1,5 +1,4 @@
-﻿using IAM.Application.Auth;
-using IAM.Application.Auth.DTOs;
+﻿using IAM.Application.Auth.Services;
 using IAM.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -9,7 +8,7 @@ using Security.Authorization;
 using Security.Jwt;
 using IAM.Presentation.Middlewares;
 using IAM.Application.Security;
-using IAM.Application.Users;
+using IAM.Application.Users.Services;
 using Common.Web.Extensions;
 using Messaging.Email;
 using Messaging.Notifications;
@@ -20,7 +19,7 @@ using Contracts.Notifications;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using RabbitMQ.Client;
-using IAM.Application.Roles;
+using IAM.Application.Roles.Services;
 using IAM.Application.Permissions;
 
 AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
@@ -117,7 +116,8 @@ builder.Services.AddDbContext<IamDbContext>(opt =>
 {
     opt.UseSqlServer(conn, sql =>
     {
-        sql.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(10), errorNumbersToAdd: null);
+        // ❌ DISABLED: EnableRetryOnFailure conflicts with BeginTransaction in RolePermissionService
+        // If you need retry logic, wrap transactions with CreateExecutionStrategy()
         sql.CommandTimeout(180);
     });
 });

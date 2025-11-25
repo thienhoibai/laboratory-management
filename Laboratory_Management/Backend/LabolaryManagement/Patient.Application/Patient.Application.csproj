@@ -27,6 +27,7 @@
 
   <ItemGroup>
     <Folder Include="Contracts\Events\Patient\" />
+    <Folder Include="DTOs\" />
   </ItemGroup>
 
 

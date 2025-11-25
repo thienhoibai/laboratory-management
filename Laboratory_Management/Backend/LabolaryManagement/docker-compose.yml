@@ -130,3 +130,19 @@
     ports: ["5004:5004"]
     extra_hosts:
       - "host.docker.internal:host-gateway"
+
+  instrument.api:
+    build:
+      context: .
+      dockerfile: instrument.Dockerfile
+    container_name: instrument.api
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Docker"
+      ConnectionStrings__InstrumentDb: "Server=host.docker.internal,1433;Database=InstrumentDB;User Id=sa;Password=12345;TrustServerCertificate=True;Encrypt=False"
+      TestOrderBaseUrl: "http://testorder.api:5003"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    ports: ["5008:5008"]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

@@ -1,7 +1,8 @@
 ﻿using Common.Errors;
 using Common.Pagination;
-using IAM.Application.Users;
-using IAM.Application.Users.DTOs;
+using IAM.Application.Users.Services;
+using IAM.Application.Users.DTOs.Requests;
+using IAM.Application.Users.DTOs.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Common.Web.Filters;
