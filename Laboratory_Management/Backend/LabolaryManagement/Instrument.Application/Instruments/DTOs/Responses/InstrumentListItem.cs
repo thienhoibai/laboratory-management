@@ -7,6 +7,7 @@ public record InstrumentListItem(
     string InstrumentCode,
     string Name,
     InstrumentStatus Status,
-    ReagentStatus ReagentStatus
+    ReagentStatus ReagentStatus,
+    string? ImageUrl
 );
 

@@ -5,6 +5,7 @@ namespace Instrument.Application.Instruments.DTOs.Requests;
 public record UpdateInstrumentRequest(
     string? Name,
     InstrumentStatus? Status,
-    ReagentStatus? ReagentStatus
+    ReagentStatus? ReagentStatus,
+    string? ImageUrl
 );
 
