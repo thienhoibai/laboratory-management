@@ -37,16 +37,17 @@ export const useCreatePatient = () => {
         fullName: values.fullName,
         dateOfBirth: dayjs(values.dateOfBirth).format("YYYY-MM-DD"),
         gender: values.gender,
+        bloodType: values.bloodType,
         phone: values.phoneNumber,
         email: values.email,
         address: values.address,
-        idNumber: values.identityCard,
+        citizenId: values.identityCard,
         insuranceNumber: values.healthInsurance,
-        createdBy: "user",
-        createdAt: new Date().toISOString(),
+        createdChannel: "self",
       };
 
       const response = await PatientServiceAPI.CreateProfile(data);
+      console.log(response);
       if (response.status >= 200 && response.status < 300) {
         toast.success("Tạo hồ sơ bệnh nhân thành công!");
         handleCloseModal();
@@ -240,10 +241,9 @@ export const useAddMedicalRecords = (
         phone: values.phoneNumber,
         email: values.email,
         address: values.address,
-        idNumber: values.identityCard,
+        citizenId: values.identityCard,
         insuranceNumber: values.healthInsurance,
-        createdBy: "user",
-        createdAt: new Date().toISOString(),
+        createdChannel: "self",
       };
       const response = await PatientServiceAPI.AddNewProfile(data);
       if (response.status >= 200 && response.status < 300) {

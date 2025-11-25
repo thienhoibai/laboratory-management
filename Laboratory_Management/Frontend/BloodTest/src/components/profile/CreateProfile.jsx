@@ -221,8 +221,30 @@ function CreateProfile() {
                   </Form.Item>
                 </div>
 
-                {/* CCCD */}
+                {/* Nhóm máu */}
                 <div className="profile-form-group">
+                  <Form.Item
+                    label={
+                      <>
+                        Nhóm máu <span className="required">*</span>
+                      </>
+                    }
+                    name="bloodType"
+                    rules={[
+                      { required: true, message: "Vui lòng chọn nhóm máu" },
+                    ]}
+                  >
+                    <Select placeholder="Chọn nhóm máu">
+                      <Option value="A">A</Option>
+                      <Option value="B">B</Option>
+                      <Option value="AB">AB</Option>
+                      <Option value="O">O</Option>
+                    </Select>
+                  </Form.Item>
+                </div>
+
+                {/* CCCD/CMND */}
+                {/* <div className="profile-form-group">
                   <Form.Item
                     label={
                       <>
@@ -246,7 +268,7 @@ function CreateProfile() {
                       }}
                     />
                   </Form.Item>
-                </div>
+                </div> */}
               </div>
 
               {/* Hàng 3 */}

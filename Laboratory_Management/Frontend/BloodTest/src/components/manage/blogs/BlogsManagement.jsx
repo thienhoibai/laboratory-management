@@ -76,9 +76,29 @@ const BlogsManagement = () => {
   const [isViewDetailOpen, setIsViewDetailOpen] = useState(false);
   const [viewingBlog, setViewingBlog] = useState(null);
 
-  // Load data on mount
+  const token = localStorage.getItem("accessToken");
+  const decode = jwtDecode(token);
+  let role = null;
+  role = decode["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
+
+  // Load data on mount and when filter changes
   useEffect(() => {
     loadBlogs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter]);
+
+  useEffect(() => {
+    // Only trigger search when user stops typing (debounce effect)
+    if (search.trim() !== "") {
+      loadBlogs();
+    } else {
+      // Clear search, reload with current filter
+      loadBlogs();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
+
+  useEffect(() => {
     loadCategories();
   }, []);
 
@@ -88,8 +108,36 @@ const BlogsManagement = () => {
       const token = localStorage.getItem("accessToken");
       if (token) setAuthToken(token);
 
-      const blogsData = await BlogService.getAllBlogs();
-      setBlogs(blogsData);
+      // Map filter to status code
+      const statusMap = {
+        all: undefined,
+        pending: 0,
+        approved: 1,
+        rejected: 2,
+      };
+
+      const params = {};
+
+      // Always apply status filter (except for "all")
+      if (filter !== "all") {
+        params.status = statusMap[filter];
+      }
+
+      // Add search parameter if search term exists
+      if (search && search.trim() !== "") {
+        params.search = search.trim();
+      }
+      if (role === "Manager" || role === "Admin") {
+        const blogsData = await BlogService.getAllBlogs(params);
+        setBlogs(blogsData);
+      } else if (role === "Staff") {
+        const decode = jwtDecode(token);
+        let id = null;
+        id = decode["sub"];
+        params.authorId = id;
+        const blogsData = await BlogService.getAllBlogs(params);
+        setBlogs(blogsData);
+      }
     } catch (error) {
       console.error("Error loading blogs:", error);
       toast.error("Không thể tải danh sách bài viết. Vui lòng thử lại!");
@@ -114,21 +162,9 @@ const BlogsManagement = () => {
     }
   };
 
-  const filteredBlogs = blogs.filter((blog) => {
-    if (filter === "all") {
-      return true;
-    }
-    return blog.status === filter;
-  });
-
-  const searchedBlogs = filteredBlogs.filter((blog) =>
-    blog.title.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const displayedBlogs = searchedBlogs.slice(
-    (page - 1) * pageSize,
-    page * pageSize
-  );
+  // API handles both status filter and search
+  // Just slice for pagination
+  const displayedBlogs = blogs.slice((page - 1) * pageSize, page * pageSize);
 
   // Statistics
   const stats = {
@@ -302,7 +338,6 @@ const BlogsManagement = () => {
       }
 
       if (isEditMode) {
-        submitData.updatedDate = new Date().toISOString();
         if (editingBlogId === null || editingBlogId === undefined) {
           throw new Error("Không tìm thấy ID bài viết để cập nhật");
         }
@@ -424,6 +459,11 @@ const BlogsManagement = () => {
     setViewingBlog(null);
   };
 
+  const gridCols =
+    role === "Admin" || role === "Manager"
+      ? "2fr 1fr 1fr 1fr 1fr 0.8fr 1.5fr" // Có cột Tác giả
+      : "1fr 1fr 0.75fr 0.75fr 0.75fr 1fr"; // Không có cột Tác giả
+
   return (
     <AdminLayout pageTitle="Quản lý Blog" breadcrumbs={breadcrumbs}>
       <div className="blogs-management-content">
@@ -434,9 +474,11 @@ const BlogsManagement = () => {
               Quản lý, phê duyệt và xuất bản các bài viết blog
             </p>
           </div>
-          <button className="blogs-create-button" onClick={openCreateModal}>
-            <FiPlus /> Tạo bài viết mới
-          </button>
+          {(role === "Staff" || role === "Admin") && (
+            <button className="blogs-create-button" onClick={openCreateModal}>
+              <FiPlus /> Tạo bài viết mới
+            </button>
+          )}
         </div>
 
         {/* Statistics Cards */}
@@ -540,9 +582,16 @@ const BlogsManagement = () => {
           </div>
 
           <div className="blogs-table">
-            <div className="blogs-table-header">
+            <div
+              className="blogs-table-header"
+              style={{
+                display: "grid",
+                gridTemplateColumns: gridCols,
+              }}
+            >
               <span>Tiêu đề</span>
-              <span>Tác giả</span>
+
+              {(role === "Admin" || role === "Manager") && <span>Tác giả</span>}
               <span>Danh mục</span>
               <span>Ngày tạo</span>
               <span>Ngày cập nhật</span>
@@ -555,43 +604,51 @@ const BlogsManagement = () => {
               </div>
             ) : displayedBlogs.length > 0 ? (
               displayedBlogs.map((blog) => (
-                <div className="blogs-table-row" key={blog.id}>
+                <div
+                  className="blogs-table-row"
+                  key={blog.id}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: gridCols,
+                  }}
+                >
                   <span className="blogs-table-title">{blog.title}</span>
-                  <span>{blog.authorId}</span>
+
+                  {(role === "Admin" || role === "Manager") && (
+                    <span>{blog.author || ""}</span>
+                  )}
+
                   <span>{blog.category}</span>
                   <span>{formatDate1(blog.createdDate) || "Chưa có"}</span>
                   <span>
-                    {formatDate1(blog.updatedDate) || "Chưa Cập Nhật"}
+                    {formatDate1(blog.updatedDate) || "Chưa cập nhật"}
                   </span>
                   <span>{getStatusTag(blog.status)}</span>
                   <span className="blogs-table-actions">
-                    <button
-                      className={`blogs-action-btn approve-btn ${
-                        blog.status === "approved" ? "disabled" : ""
-                      }`}
-                      onClick={() => handleApproveBlog(blog)}
-                      title="Duyệt bài"
-                      disabled={blog.status === "approved"}
-                    >
-                      <FiCheck />
-                    </button>
-                    <button
-                      className={`blogs-action-btn reject-btn ${
-                        blog.status === "rejected" ? "disabled" : ""
-                      }`}
-                      onClick={() => handleRejectBlog(blog)}
-                      title="Hủy bài"
-                      disabled={blog.status === "rejected"}
-                    >
-                      <FiXCircle />
-                    </button>
-                    <button
-                      className="blogs-action-btn edit-btn"
-                      onClick={() => openEditModal(blog)}
-                      title="Chỉnh sửa"
-                    >
-                      <FiEdit />
-                    </button>
+                    {(role === "Manager" || role === "Admin") && (
+                      <>
+                        <button
+                          className={`blogs-action-btn approve-btn ${
+                            blog.status === "approved" ? "disabled" : ""
+                          }`}
+                          onClick={() => handleApproveBlog(blog)}
+                          title="Duyệt bài"
+                          disabled={blog.status === "approved"}
+                        >
+                          <FiCheck />
+                        </button>
+                        <button
+                          className={`blogs-action-btn reject-btn ${
+                            blog.status === "rejected" ? "disabled" : ""
+                          }`}
+                          onClick={() => handleRejectBlog(blog)}
+                          title="Hủy bài"
+                          disabled={blog.status === "rejected"}
+                        >
+                          <FiXCircle />
+                        </button>
+                      </>
+                    )}
                     <button
                       className="blogs-action-btn view-btn"
                       onClick={() => openViewDetailModal(blog)}
@@ -599,6 +656,15 @@ const BlogsManagement = () => {
                     >
                       <FiEye />
                     </button>
+                    {(role === "Staff" || role === "Admin") && (
+                      <button
+                        className="blogs-action-btn edit-btn"
+                        onClick={() => openEditModal(blog)}
+                        title="Chỉnh sửa"
+                      >
+                        <FiEdit />
+                      </button>
+                    )}
                     <button
                       className="blogs-action-btn delete-btn"
                       onClick={() => openDeleteModal(blog)}
@@ -620,7 +686,7 @@ const BlogsManagement = () => {
             <Pagination
               current={page}
               pageSize={pageSize}
-              total={searchedBlogs.length}
+              total={blogs.length}
               onChange={(newPage, newPageSize) => {
                 setPage(newPage);
                 if (newPageSize !== pageSize) {
@@ -901,12 +967,16 @@ const BlogsManagement = () => {
 
                 <div className="blogs-view-row">
                   <label>Ngày tạo:</label>
-                  <span>{viewingBlog.createdDate || "Chưa có"}</span>
+                  <span>
+                    {formatDate1(viewingBlog.createdDate) || "Chưa có"}
+                  </span>
                 </div>
 
                 <div className="blogs-view-row">
                   <label>Ngày cập nhật:</label>
-                  <span>{viewingBlog.updatedDate || "Chưa cập nhật"}</span>
+                  <span>
+                    {formatDate1(viewingBlog.updatedDate) || "Chưa cập nhật"}
+                  </span>
                 </div>
 
                 <div className="blogs-view-row blogs-view-content-section">

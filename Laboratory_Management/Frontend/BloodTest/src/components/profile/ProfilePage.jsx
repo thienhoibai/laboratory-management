@@ -450,7 +450,7 @@ export default function ProfilePage() {
                             Ngày sinh:
                           </span>
                           <span className="medical-record-patient-value">
-                            {userData.dateOfBirth} 
+                            {userData.dateOfBirth}
                           </span>
                         </div>
                       </div>
@@ -885,6 +885,22 @@ export default function ProfilePage() {
                 current && current > dayjs().endOf("day")
               }
             />
+          </Form.Item>
+          <Form.Item
+            label={
+              <>
+                Nhóm máu <span className="required">*</span>
+              </>
+            }
+            name="bloodType"
+            rules={[{ required: true, message: "Vui lòng chọn nhóm máu" }]}
+          >
+            <Select placeholder="Chọn nhóm máu">
+              <Option value="A">A</Option>
+              <Option value="B">B</Option>
+              <Option value="AB">AB</Option>
+              <Option value="O">O</Option>
+            </Select>
           </Form.Item>
           <Form.Item
             label="Giới tính"

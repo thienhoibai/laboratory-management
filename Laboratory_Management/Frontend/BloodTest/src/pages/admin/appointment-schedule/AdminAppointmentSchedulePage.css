@@ -819,6 +819,104 @@
   padding: 10px;
 }
 
+.Process-Button {
+  background-color: #1976d2;
+  color: white;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.Process-Button:hover {
+  background-color: #1565c0;
+}
+
+/* Active Instrument Alert */
+.active-instrument-alert {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-top: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  animation: pulse-border 2s infinite;
+}
+
+@keyframes pulse-border {
+  0%,
+  100% {
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  }
+  50% {
+    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.6);
+  }
+}
+
+.alert-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: white;
+}
+
+.alert-icon {
+  font-size: 24px;
+  animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.alert-text {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.alert-text strong {
+  font-weight: 700;
+}
+
+.alert-code {
+  opacity: 0.9;
+}
+
+.alert-time {
+  font-weight: 600;
+  opacity: 0.95;
+}
+
+.alert-button {
+  background: white;
+  color: #667eea;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.alert-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  background: #f8f9ff;
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
   .calendar-grid {
