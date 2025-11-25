@@ -10,10 +10,11 @@ import LoginRequirement from "../../components/booking/LoginRequirement";
 import Payment from "../../components/booking/Payment";
 import Success from "../../components/booking/SuccessBooking";
 import "./Booking.css";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 function Booking() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [selectedItems, setSelectedItems] = useState(null); // payload from Package/Catalog continue
   const [selectedDateTime, setSelectedDateTime] = useState(null); // { date, time }
@@ -56,6 +57,25 @@ function Booking() {
     window.addEventListener("storage", checkLoginStatus);
     return () => window.removeEventListener("storage", checkLoginStatus);
   }, []);
+
+  // Tự động chọn bundle từ URL query params
+  useEffect(() => {
+    const bundleIdFromUrl = searchParams.get("bundleId");
+    if (bundleIdFromUrl && isLoggedIn && currentStep === 1) {
+      // Chuyển bundleId từ string sang number nếu cần
+      const bundleId = Number(bundleIdFromUrl) || bundleIdFromUrl;
+      setSelectedPackage(bundleId);
+      // Đảm bảo đang ở chế độ preset package
+      setPackageMode("preset");
+      // Xóa query param sau khi đã sử dụng để tránh conflict
+      const newSearchParams = new URLSearchParams(searchParams);
+      newSearchParams.delete("bundleId");
+      const newUrl = newSearchParams.toString()
+        ? `/booking?${newSearchParams.toString()}`
+        : "/booking";
+      navigate(newUrl, { replace: true });
+    }
+  }, [searchParams, isLoggedIn, currentStep, navigate]);
 
   const handlePackageSelect = (packageId) => {
     setSelectedPackage(packageId);

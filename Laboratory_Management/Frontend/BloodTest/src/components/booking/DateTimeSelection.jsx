@@ -33,9 +33,9 @@ function DateTimeSelection({ onBack, onContinue }) {
       try {
         const response = await bookingService.getAppointmentSlotCounts();
 
-        // API trả về array trực tiếp
-        if (Array.isArray(response.data)) {
-          setSlotCounts(response.data);
+        const data = response;
+        if (Array.isArray(data)) {
+          setSlotCounts(data);
         } else {
           setSlotCounts([]);
         }
@@ -55,11 +55,11 @@ function DateTimeSelection({ onBack, onContinue }) {
     // Convert time from "HH:mm" to "HH:mm:ss"
     const timeBlock = time + ":00";
 
-    console.log("Checking slot:", dateStr, timeBlock);
+    // console.log("Checking slot:", dateStr, timeBlock);
     const slot = slotCounts.find(
       (s) => s.appointmentDate === dateStr && s.timeBlock === timeBlock
     );
-    console.log("Found slot:", slot);
+    // console.log("Found slot:", slot);
     return slot ? slot.isFullyBooked : false;
   };
 

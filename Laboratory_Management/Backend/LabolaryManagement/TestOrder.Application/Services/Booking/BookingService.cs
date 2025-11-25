@@ -31,28 +31,36 @@ namespace TestOrder.Application.Services.Booking
         }
 
 
-        public async Task<IEnumerable<BookingResponseDTO>> GetAllBookingsByDateAsync
+        public async Task<object> GetAllBookingsByDateAsync 
             (DateOnly date, string? keyword, string? sortBy, string? sortDirection, int pageSize, int pageNumber)
         {
-            var appointmentSlots = await _appointmentSlotService.GetAppointmentSlotsByDateAsync(date, 1, int.MaxValue);
+            var appointmentSlots = await _appointmentSlotService.GetAppointmentSlotsByDateAsync(date, 1, byte.MaxValue);
+
+            if (appointmentSlots == null)
+            {
+                throw new Exception("No Appointment Slots found on this date");
+            }
+
             IEnumerable<Infrastructure.Models.Booking> bookings = new List<Infrastructure.Models.Booking>();
             
             foreach (var slot in appointmentSlots)
             {
                 var slotBookings = await _bookingRepository.GetBookingsByAppointmentSlotSearchableAsync
                     (slot.SlotId, keyword);
-                bookings = bookings.Concat(slotBookings!);
+
+                bookings = bookings.Concat(slotBookings ?? Enumerable.Empty<Infrastructure.Models.Booking>());
             }
 
-            IEnumerable<Infrastructure.Models.Booking>? enumerable = await _bookingRepository.SortingAndPaging
+            var (enumerable, totalItem) = await _bookingRepository.SortingAndPaging
                 (sortBy, sortDirection, pageSize, pageNumber, bookings);
             bookings = enumerable.AsEnumerable();
 
+            var totalPages = (int)Math.Ceiling((double)totalItem / pageSize);
+
             if (!bookings.Any() || bookings == null)
             {
-                throw new Exception("No bookings found");
+                throw new Exception("No Bookings found");
             }
-
 
             var bookingResponses = new List<BookingResponseDTO>();
             foreach (var booking in bookings)
@@ -81,7 +89,15 @@ namespace TestOrder.Application.Services.Booking
                     TestCatalogs = await _bookingTestService.GetCatalogIdsByBookingIdAsync(booking.BookingId)
                 });
             }
-            return bookingResponses;
+
+            return new
+            {
+                totalItem,
+                pageNumber,
+                pageSize,
+                totalPages,
+                bookingResponses
+            };
         }
 
         public async Task<BookingResponseDTO> GetBookingByIdAsync(Guid bookingId)
@@ -120,9 +136,12 @@ namespace TestOrder.Application.Services.Booking
             };
         }
 
-        public async Task<List<BookingResponseDTO>> GetBookingsByPatientIdAsync(Guid patientId, int pageNumber, int pageSize)
+        public async Task<object> GetBookingsByPatientIdAsync(Guid patientId, int pageNumber, int pageSize)
         {
-            var bookings = await _bookingRepository.GetBookingsByPatientIdAsync(patientId, pageNumber, pageSize);
+            var (bookings, totalItem) = await _bookingRepository.GetBookingsByPatientIdAsync(patientId, pageNumber, pageSize);
+
+            var totalPages = (int)Math.Ceiling((double)totalItem / pageSize);
+
             var bookingResponses = new List<BookingResponseDTO>();
 
             if (bookings != null)
@@ -156,7 +175,14 @@ namespace TestOrder.Application.Services.Booking
                 }
             }
 
-            return bookingResponses;
+            return new
+            {
+                totalItem,
+                pageNumber,
+                pageSize,
+                totalPages,
+                bookingResponses
+            };
         }
 
 

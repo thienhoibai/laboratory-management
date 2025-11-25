@@ -462,7 +462,7 @@ const BlogsManagement = () => {
   const gridCols =
     role === "Admin" || role === "Manager"
       ? "2fr 1fr 1fr 1fr 1fr 0.8fr 1.5fr" // Có cột Tác giả
-      : "2fr 1fr 0.75fr 0.75fr 0.75fr 1fr"; // Không có cột Tác giả
+      : "1fr 1fr 0.75fr 0.75fr 0.75fr 1fr"; // Không có cột Tác giả
 
   return (
     <AdminLayout pageTitle="Quản lý Blog" breadcrumbs={breadcrumbs}>

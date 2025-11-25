@@ -7,18 +7,21 @@ import { useSearchParams } from "react-router-dom";
 
 const endPoint = "testorder/api/Booking/patient";
 const endPoint1 = "testorder/api/TestBundle";
+const endPointCatalog = "testorder/api/TestCatalog";
 
 export default function BookingHistory() {
   const [expanded, setExpanded] = useState({});
   const [BookingHistory, setBookingHistory] = useState([]);
+  const [allBookings, setAllBookings] = useState([]); // Store all bookings
   const [Package, setPackage] = useState({}); // map: bundleId -> package
+  const [Catalogs, setCatalogs] = useState({}); // map: catalogId -> catalog
   const [Payments, SetPayments] = useState({}); // map: bookingId -> payment
   const [searchParams] = useSearchParams();
   const patientId = searchParams.get("patientId");
 
   // pagination & loading
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(5);
   const [totalRecords, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
 
@@ -26,76 +29,106 @@ export default function BookingHistory() {
     const fetchAPi = async () => {
       try {
         setLoading(true);
+        // Fetch all data with large pageSize
         const response = await api.get(
-          `${endPoint}?patientId=${patientId}&pageNumber=${page}&pageSize=${pageSize}`
+          `${endPoint}?patientId=${patientId}&pageNumber=1&pageSize=1000000`
         );
-        const data = response.data;
+        const data = response.data.bookingResponses;
+        console.log(data);
         if (response.status >= 200 && response.status < 300) {
+          let allItems = [];
           if (Array.isArray(data)) {
-            setBookingHistory(data);
-            setTotal(data.length);
+            allItems = data;
           } else if (data?.items) {
-            setBookingHistory(data.items);
-            setTotal(
-              data.total ?? data.totalCount ?? data.pagination?.total ?? 0
-            );
+            allItems = data.items;
           } else {
-            setBookingHistory(data);
-            setTotal((data && data.length) || 0);
+            allItems = data;
           }
-        }
 
-        // Build unique ids from the current page/list
-        const items = Array.isArray(data)
-          ? data
-          : Array.isArray(data?.items)
-          ? data.items
-          : [];
-        const bundleIds = [
-          ...new Set(items.map((i) => i.bundleId).filter(Boolean)),
-        ];
-        const bookingIds = [
-          ...new Set(items.map((i) => i.bookingId).filter(Boolean)),
-        ];
+          setAllBookings(allItems);
+          setTotal(allItems.length);
 
-        // Fetch packages by bundleId in parallel
-        if (bundleIds.length) {
-          const pkgEntries = await Promise.all(
-            bundleIds.map(async (id) => {
-              try {
-                const r = await api.get(`${endPoint1}/${id}`);
-                if (r.status >= 200 && r.status < 300) return [id, r.data];
-              } catch (error) {
-                console.log(error);
-              }
-              return [id, null];
-            })
-          );
-          const pkgMap = Object.fromEntries(pkgEntries.filter(([, v]) => v));
-          setPackage(pkgMap);
-        } else {
-          setPackage({});
-        }
+          // Paginate on client-side
+          const startIndex = (page - 1) * pageSize;
+          const endIndex = startIndex + pageSize;
+          const paginatedItems = allItems.slice(startIndex, endIndex);
+          setBookingHistory(paginatedItems);
 
-        // Fetch payments by bookingId in parallel
-        if (bookingIds.length) {
-          const payEntries = await Promise.all(
-            bookingIds.map(async (id) => {
-              try {
-                const r = await api.get(
-                  `testorder/api/Payment/by-booking?bookingId=${id}`
-                );
-                if (r.status >= 200 && r.status < 300) return [id, r.data];
-              } catch (error) {
-                console.log(error);
-              }
-              return [id, null];
-            })
-          );
-          const payMap = Object.fromEntries(payEntries.filter(([, v]) => v));
-          SetPayments(payMap);
-        } else {
-          SetPayments({});
+          // Build unique ids from paginated items
+          const bundleIds = [
+            ...new Set(paginatedItems.map((i) => i.bundleId).filter(Boolean)),
+          ];
+          const catalogIds = [
+            ...new Set(
+              paginatedItems
+                .filter((i) => !i.bundleId && i.catalogId)
+                .map((i) => i.catalogId)
+            ),
+          ];
+          const bookingIds = [
+            ...new Set(paginatedItems.map((i) => i.bookingId).filter(Boolean)),
+          ];
+
+          // Fetch packages by bundleId in parallel
+          if (bundleIds.length) {
+            const pkgEntries = await Promise.all(
+              bundleIds.map(async (id) => {
+                try {
+                  const r = await api.get(`${endPoint1}/${id}`);
+                  if (r.status >= 200 && r.status < 300) return [id, r.data];
+                } catch (error) {
+                  console.log(error);
+                }
+                return [id, null];
+              })
+            );
+            const pkgMap = Object.fromEntries(pkgEntries.filter(([, v]) => v));
+            setPackage(pkgMap);
+          } else {
+            setPackage({});
+          }
+
+          // Fetch catalogs by catalogId in parallel
+          if (catalogIds.length) {
+            const catalogEntries = await Promise.all(
+              catalogIds.map(async (id) => {
+                try {
+                  const r = await api.get(`${endPointCatalog}/${id}`);
+                  if (r.status >= 200 && r.status < 300) return [id, r.data];
+                } catch (error) {
+                  console.log(error);
+                }
+                return [id, null];
+              })
+            );
+            const catalogMap = Object.fromEntries(
+              catalogEntries.filter(([, v]) => v)
+            );
+            setCatalogs(catalogMap);
+          } else {
+            setCatalogs({});
+          }
+
+          // Fetch payments by bookingId in parallel
+          if (bookingIds.length) {
+            const payEntries = await Promise.all(
+              bookingIds.map(async (id) => {
+                try {
+                  const r = await api.get(
+                    `testorder/api/Payment/by-booking?bookingId=${id}`
+                  );
+                  if (r.status >= 200 && r.status < 300) return [id, r.data];
+                } catch (error) {
+                  console.log(error);
+                }
+                return [id, null];
+              })
+            );
+            const payMap = Object.fromEntries(payEntries.filter(([, v]) => v));
+            SetPayments(payMap);
+          } else {
+            SetPayments({});
+          }
         }
 
         setLoading(false);
@@ -194,6 +227,8 @@ export default function BookingHistory() {
             const s = statusLabel(b.status);
             const isExpanded = !!expanded[b.bookingCode];
             const pkg = b.bundleId ? Package?.[b.bundleId] : null;
+            const catalog =
+              !b.bundleId && b.catalogId ? Catalogs?.[b.catalogId] : null;
             const payment = Payments?.[b.bookingId];
             const payS = payment
               ? paymentStatus(payment.status)
@@ -280,12 +315,17 @@ export default function BookingHistory() {
                               src="src\assets\icon\Document_Gray.svg"
                               alt="Document"
                             />
-                            <span className="label">Gói</span>
+                            <span className="label">
+                              {b.bundleId ? "Gói" : "Dịch vụ"}
+                            </span>
                           </div>
                           <span className="value">
                             {b.bundleId
                               ? pkg?.bundleName || `Gói #${b.bundleId}`
-                              : "Không có gói"}
+                              : b.catalogId
+                              ? catalog?.catalogName ||
+                                `Dịch vụ #${b.catalogId}`
+                              : "Không có thông tin"}
                           </span>
                         </div>
                         {/* Nếu có thêm thông tin về dịch vụ hoặc catalog, có thể hiển thị ở đây */}
@@ -301,7 +341,7 @@ export default function BookingHistory() {
                             <span className="label">Hình thức</span>
                           </div>
                           <span className="value">
-                            {payment?.method || "-"}
+                            {payment?.method || "Chưa có"}
                           </span>
                         </div>
                         {/* Nếu có trường price thì hiển thị, nếu không thì bỏ qua */}

@@ -23,16 +23,24 @@ export default function SuccessBookingPage() {
       }
 
       try {
-        const booking = (await bookingService.getBookingById(bookingId)).data;
-        // console.log(booking.testCatalogs);
+        const response = await bookingService.getBookingById(bookingId);
+
+        const booking = response.data || response;
+
         let testInfo = null;
         if (booking.bundleId) {
-          testInfo = await bookingService.getTestBundle(booking.bundleId);
+          const bundleResponse = await bookingService.getTestBundle(
+            booking.bundleId
+          );
+          testInfo = bundleResponse.data || bundleResponse;
         } else if (booking.testCatalogs && booking.testCatalogs.length > 0) {
           const catalogPromises = booking.testCatalogs.map((catalogId) =>
             bookingService.getTestCatalog(catalogId)
           );
-          testInfo = await Promise.all(catalogPromises);
+          const responses = await Promise.all(catalogPromises);
+
+          // Xử lý response có thể có .data hoặc không
+          testInfo = responses.map((r) => r.data || r);
         }
 
         setBookingData({
@@ -40,8 +48,8 @@ export default function SuccessBookingPage() {
           testInfo,
         });
       } catch (error) {
-        toast.error(error || "Không thể tải thông tin đơn hàng");
-        navigate("/booking");
+        console.error("Error:", error);
+        toast.error(error?.message || "Không thể tải thông tin đơn hàng");
       } finally {
         setLoading(false);
       }

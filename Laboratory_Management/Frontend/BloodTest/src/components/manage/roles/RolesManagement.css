@@ -17,11 +17,13 @@
   font-weight: 600;
   color: #1a1a1a;
   margin-bottom: 8px;
+  letter-spacing: -0.5px;
 }
 
 .roles-header-left p {
   color: #666;
   font-size: 14px;
+  margin: 0;
 }
 
 .roles-content {
@@ -33,45 +35,9 @@
 
 .roles-controls {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   margin-bottom: 24px;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.search-section {
-  flex: 1;
-  min-width: 250px;
-}
-
-.search-box {
-  position: relative;
-  width: 100%;
-}
-
-.search-box svg {
-  position: absolute;
-  left: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #999;
-  pointer-events: none;
-}
-
-.search-box input {
-  width: 100%;
-  padding: 12px 16px 12px 48px;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 14px;
-  transition: all 0.2s;
-}
-
-.search-box input:focus {
-  outline: none;
-  border-color: #1976d2;
-  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
 }
 
 .page-info {
@@ -95,11 +61,11 @@
 }
 
 .roles-table th {
-  padding: 16px;
+  padding: 12px 16px;
   text-align: left;
+  font-size: 13px;
   font-weight: 600;
-  font-size: 14px;
-  color: #333;
+  color: #666;
   border-bottom: 2px solid #e0e0e0;
 }
 
@@ -107,6 +73,11 @@
   padding: 16px;
   border-bottom: 1px solid #f0f0f0;
   font-size: 14px;
+  color: #333;
+}
+
+.roles-table tbody tr {
+  transition: background 0.2s;
 }
 
 .roles-table tbody tr:hover {
@@ -126,15 +97,11 @@
 
 .role-name {
   font-weight: 500;
-  color: #1a1a1a;
-}
-
-.role-desc {
-  color: #666;
+  color: #333;
 }
 
 .role-permissions-cell {
-  max-width: 400px;
+  max-width: 450px;
 }
 
 .loading-permissions {
@@ -152,7 +119,7 @@
 .permissions-list-inline {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
   align-items: center;
 }
 
@@ -261,7 +228,6 @@
   align-items: center;
   justify-content: center;
   z-index: 2000;
-  backdrop-filter: blur(4px);
 }
 
 .roles-modal {
@@ -273,7 +239,8 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
 .modal-header {

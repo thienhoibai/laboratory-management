@@ -39,10 +39,17 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+var isDocker = string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Docker", StringComparison.OrdinalIgnoreCase);
+
+if (app.Environment.IsDevelopment() || isDocker)
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+}
+// Do not redirect to HTTPS inside container (no dev certs)
+if (!isDocker)
+{
+    app.UseHttpsRedirection();
 }
 
 app.UseRouting();
