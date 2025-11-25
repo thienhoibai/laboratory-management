@@ -31,6 +31,29 @@ namespace TestOrder.Application.Services
         
         }
 
+        public async Task<List<ParameterDisplayDTO>> GetParametersByIdsAsync(List<int> parameterIds)
+        {
+            var parameters = await _repository.GetListOfParametersByIdsAsync(parameterIds);
+            if (parameters == null)
+            {
+                throw new Exception("No parameter found");
+            } 
+
+            var parameterDTOs = new List<ParameterDisplayDTO>();
+            foreach (var parameter in parameters)
+            {
+                parameterDTOs.Add(new ParameterDisplayDTO
+                {
+                    Name = parameter.ParameterName,
+                    Unit = parameter.Unit,
+                    ReferenceRange = parameter.ReferenceRange,
+                });
+
+            }
+            return parameterDTOs;
+
+        }
+
         public async Task<TestParameter> GetByIdAsync(int id)
         {
             return await _repository.GetByIdAsync(id);
