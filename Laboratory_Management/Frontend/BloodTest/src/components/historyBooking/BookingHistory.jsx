@@ -33,7 +33,8 @@ export default function BookingHistory() {
         const response = await api.get(
           `${endPoint}?patientId=${patientId}&pageNumber=1&pageSize=1000000`
         );
-        const data = response.data;
+        const data = response.data.bookingResponses;
+        console.log(data);
         if (response.status >= 200 && response.status < 300) {
           let allItems = [];
           if (Array.isArray(data)) {
