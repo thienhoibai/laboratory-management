@@ -32,7 +32,8 @@ public class InstrumentService
             i.InstrumentCode,
             i.Name,
             i.Status,
-            i.ReagentStatus
+            i.ReagentStatus,
+            i.ImageUrl
         )).ToList();
     }
 
@@ -54,6 +55,7 @@ public class InstrumentService
             instrument.Name,
             instrument.Status,
             instrument.ReagentStatus,
+            instrument.ImageUrl,
             instrument.CreatedAt
         );
     }
@@ -76,6 +78,7 @@ public class InstrumentService
             instrument.Name,
             instrument.Status,
             instrument.ReagentStatus,
+            instrument.ImageUrl,
             instrument.CreatedAt
         );
     }
@@ -98,6 +101,7 @@ public class InstrumentService
             Name = request.Name,
             Status = request.Status,
             ReagentStatus = ReagentStatus.OK,
+            ImageUrl = request.ImageUrl,
             CreatedAt = DateTime.UtcNow
         };
 
@@ -110,6 +114,7 @@ public class InstrumentService
             instrument.Name,
             instrument.Status,
             instrument.ReagentStatus,
+            instrument.ImageUrl,
             instrument.CreatedAt
         );
     }
@@ -135,6 +140,9 @@ public class InstrumentService
         if (request.ReagentStatus.HasValue)
             instrument.ReagentStatus = request.ReagentStatus.Value;
 
+        if (request.ImageUrl != null)
+            instrument.ImageUrl = request.ImageUrl;
+
         await _db.SaveChangesAsync();
 
         return new InstrumentResponse(
@@ -143,6 +151,7 @@ public class InstrumentService
             instrument.Name,
             instrument.Status,
             instrument.ReagentStatus,
+            instrument.ImageUrl,
             instrument.CreatedAt
         );
     }
