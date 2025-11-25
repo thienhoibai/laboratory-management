@@ -57,5 +57,10 @@ namespace TestOrder.Application.Services
         {
             await _repository.DeleteBundleAsync(id);
         }
+
+        internal double GetBundlePriceByIdAsync(int id)
+        {
+            return _repository.GetBundlePrice(id);
+        }
     }
 }
