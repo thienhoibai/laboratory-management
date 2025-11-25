@@ -186,6 +186,13 @@
   line-height: 1.5;
 }
 
+.blog-card-author {
+  color: #6b7280;
+  font-size: 0.9rem;
+  font-style: italic;
+  margin: 0;
+}
+
 .blog-card-desc {
   color: #6b7280;
   font-size: 0.95rem;

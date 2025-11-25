@@ -1,7 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System.Net.Http.Json;
-using Instrument.Application.DTOs;
+using Instrument.Application.Runs.DTOs.Requests;
+using Instrument.Application.Runs.DTOs.Responses;
 using Instrument.Domain.Entities;
+using Instrument.Domain.Enums;
 using Instrument.Infrastructure;
 using Microsoft.Extensions.Configuration;
 
@@ -32,12 +34,12 @@ public class RunService
             $"/api/bridge/bookings/{req.BookingId}/for-instrument");
 
         if (bridgeRes == null || bridgeRes.Status != 4)
-            return new StartRunResponse(0, "FAILED", "Booking not ready (Status must be 4)", 0);
+            return new StartRunResponse(0, RunStatus.Failed, "Booking not ready (Status must be 4)", 0);
 
         // ✅ THÊM VALIDATION: Kiểm tra Items có dữ liệu không
         if (bridgeRes.Items == null || bridgeRes.Items.Count == 0)
         {
-            return new StartRunResponse(0, "FAILED", 
+            return new StartRunResponse(0, RunStatus.Failed, 
                 $"No test parameters found for BookingId {req.BookingId}. Please ensure the booking has tests assigned with parameters.", 
                 0);
         }
@@ -47,7 +49,7 @@ public class RunService
         {
             BookingId = req.BookingId,
             InstrumentCode = req.InstrumentCode,
-            Status = "RUNNING",
+            Status = RunStatus.Running,
             StartedAt = DateTime.UtcNow
         };
 
@@ -91,13 +93,13 @@ public class RunService
         response.EnsureSuccessStatusCode();
 
         // 5. Hoàn thành run tự động
-        run.Status = "COMPLETED";
+        run.Status = RunStatus.Completed;
         run.CompletedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
 
         return new StartRunResponse(
             run.RunId, 
-            "COMPLETED", 
+            RunStatus.Completed, 
             $"Run completed successfully. Sent {results.Count} results to TestOrder.",
             results.Count);
     }

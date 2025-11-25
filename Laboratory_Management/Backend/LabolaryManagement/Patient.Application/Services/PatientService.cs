@@ -7,7 +7,8 @@ using System.Threading.Tasks;
 using Common.Errors;
 using Common.Results;
 using Microsoft.EntityFrameworkCore;
-using Patient.Application.DTOs;
+using Patient.Application.Patients.DTOs.Requests;
+using Patient.Application.Patients.DTOs.Responses;
 using Patient.Domain.Entities;
 using Patient.Infrastructure;
 
@@ -28,6 +29,68 @@ public class PatientService : IPatientService
     public async Task<OperationResult<PatientDetailDto>> CreateAsync(
         CreatePatientRequest request, Guid actorUserId, string? actorIp = null, CancellationToken ct = default)
     {
+        // ✅ VALIDATION 1: Required fields (CHO PHÉP TRÙNG - nhiều người có thể cùng tên)
+        if (string.IsNullOrWhiteSpace(request.FullName))
+            return OperationResult<PatientDetailDto>.Fail("Họ và tên không được để trống");
+
+        // ✅ VALIDATION 2: Required DateOfBirth (CHO PHÉP TRÙNG - nhiều người cùng ngày sinh)
+        if (!request.DateOfBirth.HasValue)
+            return OperationResult<PatientDetailDto>.Fail("Ngày sinh không được để trống");
+
+        // ✅ VALIDATION 3: Age validation
+        var today = DateOnly.FromDateTime(DateTime.Now);
+        var age = today.Year - request.DateOfBirth.Value.Year;
+        
+        // Adjust age if birthday hasn't occurred this year
+        if (request.DateOfBirth.Value > today.AddYears(-age))
+            age--;
+        
+        if (age < 0 || age > 150)
+            return OperationResult<PatientDetailDto>.Fail("Tuổi không hợp lệ (phải từ 0 đến 150)");
+
+        // Future date check
+        if (request.DateOfBirth.Value > today)
+            return OperationResult<PatientDetailDto>.Fail("Ngày sinh không được là ngày trong tương lai");
+
+        // ✅ VALIDATION 4: CitizenId phải UNIQUE nếu có (CMND/CCCD là duy nhất)
+        if (!string.IsNullOrWhiteSpace(request.CitizenId))
+        {
+            var citizenIdExists = await _db.Patients
+                .AnyAsync(p => p.CitizenId == request.CitizenId && !p.IsDeleted, ct);
+            
+            if (citizenIdExists)
+                return OperationResult<PatientDetailDto>.Fail("Số CMND/CCCD này đã được sử dụng bởi bệnh nhân khác");
+        }
+
+        // ✅ VALIDATION 5: InsuranceNumber phải UNIQUE nếu có (Số BHYT là duy nhất)
+        if (!string.IsNullOrWhiteSpace(request.InsuranceNumber))
+        {
+            var insuranceExists = await _db.Patients
+                .AnyAsync(p => p.InsuranceNumber == request.InsuranceNumber && !p.IsDeleted, ct);
+            
+            if (insuranceExists)
+                return OperationResult<PatientDetailDto>.Fail("Số bảo hiểm y tế này đã được sử dụng bởi bệnh nhân khác");
+        }
+
+        // ✅ VALIDATION 6: Email phải UNIQUE nếu có (Email cá nhân riêng)
+        if (!string.IsNullOrWhiteSpace(request.Email))
+        {
+            var emailExists = await _db.Patients
+                .AnyAsync(p => p.Email == request.Email && !p.IsDeleted, ct);
+            
+            if (emailExists)
+                return OperationResult<PatientDetailDto>.Fail("Email này đã được sử dụng bởi bệnh nhân khác");
+        }
+
+        // ✅ VALIDATION 7: Gender validation
+        if (request.Gender > 3)
+            return OperationResult<PatientDetailDto>.Fail("Giới tính không hợp lệ (0=Không xác định, 1=Nam, 2=Nữ, 3=Khác)");
+
+        // ✅ NOTE: FullName CHO PHÉP TRÙNG - Nhiều người có thể cùng tên
+        // ✅ NOTE: DateOfBirth CHO PHÉP TRÙNG - Nhiều người có thể cùng ngày sinh
+        // ✅ NOTE: Phone CHO PHÉP TRÙNG - Trẻ em có thể dùng SĐT bố mẹ
+        // ✅ NOTE: Address CHO PHÉP TRÙNG - Gia đình có thể cùng địa chỉ
+
         var isCreateForSelf = request.CreatedChannel == "self" || request.CreatedChannel == "user";
         var ownerId = isCreateForSelf ? actorUserId : (Guid?)null;
 
@@ -40,7 +103,7 @@ public class PatientService : IPatientService
             Phone = request.Phone,
             Email = request.Email,
             Address = request.Address,
-            CitizenId = request.CitizenId, // Đổi IdNumber → CitizenId
+            CitizenId = request.CitizenId,
             InsuranceNumber = request.InsuranceNumber,
             DateOfBirth = request.DateOfBirth,
             UserId = ownerId,
@@ -68,7 +131,7 @@ public class PatientService : IPatientService
 
         var dto = new PatientDetailDto(
             entity.PatientId, request.FullName, request.DateOfBirth, request.Gender, request.BloodType,
-            request.Phone, request.Email, request.Address, request.CitizenId, request.InsuranceNumber, // Đổi IdNumber → CitizenId
+            request.Phone, request.Email, request.Address, request.CitizenId, request.InsuranceNumber,
             entity.UserId, false, entity.CreatedAt, entity.UpdatedAt);
 
         return OperationResult<PatientDetailDto>.Success(dto);
@@ -83,14 +146,77 @@ public class PatientService : IPatientService
         if (entity.UserId.HasValue && entity.UserId != actorUserId)
             return OperationResult<PatientDetailDto>.Fail(ErrorCodes.Forbidden);
 
+        // ✅ VALIDATION 1: FullName nếu update
+        if (request.FullName != null && string.IsNullOrWhiteSpace(request.FullName))
+            return OperationResult<PatientDetailDto>.Fail("Họ và tên không được để trống");
+
+        // ✅ VALIDATION 2: DateOfBirth nếu update
+        if (request.DateOfBirth.HasValue)
+        {
+            var today = DateOnly.FromDateTime(DateTime.Now);
+            var age = today.Year - request.DateOfBirth.Value.Year;
+            
+            if (request.DateOfBirth.Value > today.AddYears(-age))
+                age--;
+            
+            if (age < 0 || age > 150)
+                return OperationResult<PatientDetailDto>.Fail("Tuổi không hợp lệ (phải từ 0 đến 150)");
+
+            if (request.DateOfBirth.Value > today)
+                return OperationResult<PatientDetailDto>.Fail("Ngày sinh không được là ngày trong tương lai");
+        }
+
+        // ✅ VALIDATION 3: CitizenId phải unique nếu thay đổi
+        if (request.CitizenId != null && request.CitizenId != entity.CitizenId)
+        {
+            if (!string.IsNullOrWhiteSpace(request.CitizenId))
+            {
+                var citizenIdExists = await _db.Patients
+                    .AnyAsync(p => p.CitizenId == request.CitizenId && p.PatientId != patientId && !p.IsDeleted, ct);
+                
+                if (citizenIdExists)
+                    return OperationResult<PatientDetailDto>.Fail("Số CMND/CCCD này đã được sử dụng bởi bệnh nhân khác");
+            }
+        }
+
+        // ✅ VALIDATION 4: InsuranceNumber phải unique nếu thay đổi
+        if (request.InsuranceNumber != null && request.InsuranceNumber != entity.InsuranceNumber)
+        {
+            if (!string.IsNullOrWhiteSpace(request.InsuranceNumber))
+            {
+                var insuranceExists = await _db.Patients
+                    .AnyAsync(p => p.InsuranceNumber == request.InsuranceNumber && p.PatientId != patientId && !p.IsDeleted, ct);
+                
+                if (insuranceExists)
+                    return OperationResult<PatientDetailDto>.Fail("Số bảo hiểm y tế này đã được sử dụng bởi bệnh nhân khác");
+            }
+        }
+
+        // ✅ VALIDATION 5: Email phải unique nếu thay đổi
+        if (request.Email != null && request.Email != entity.Email)
+        {
+            if (!string.IsNullOrWhiteSpace(request.Email))
+            {
+                var emailExists = await _db.Patients
+                    .AnyAsync(p => p.Email == request.Email && p.PatientId != patientId && !p.IsDeleted, ct);
+                
+                if (emailExists)
+                    return OperationResult<PatientDetailDto>.Fail("Email này đã được sử dụng bởi bệnh nhân khác");
+            }
+        }
+
+        // ✅ VALIDATION 6: Gender validation
+        if (request.Gender.HasValue && request.Gender.Value > 3)
+            return OperationResult<PatientDetailDto>.Fail("Giới tính không hợp lệ (0=Không xác định, 1=Nam, 2=Nữ, 3=Khác)");
+
         if (request.FullName != null) entity.FullName = request.FullName;
         if (request.DateOfBirth.HasValue) entity.DateOfBirth = request.DateOfBirth;
         if (request.Gender.HasValue) entity.Gender = request.Gender.Value;
-        if (request.BloodType != null) entity.BloodType = request.BloodType;
+        if (request.BloodType.HasValue) entity.BloodType = request.BloodType.Value; // Fixed: use .HasValue and .Value for nullable enum
         if (request.Phone != null) entity.Phone = request.Phone;
         if (request.Email != null) entity.Email = request.Email;
         if (request.Address != null) entity.Address = request.Address;
-        if (request.CitizenId != null) entity.CitizenId = request.CitizenId; // Đổi IdNumber → CitizenId
+        if (request.CitizenId != null) entity.CitizenId = request.CitizenId;
         if (request.InsuranceNumber != null) entity.InsuranceNumber = request.InsuranceNumber;
 
         entity.UpdatedByUserId = actorUserId;
@@ -117,7 +243,7 @@ public class PatientService : IPatientService
 
         var dto = new PatientDetailDto(
             entity.PatientId, entity.FullName, entity.DateOfBirth, entity.Gender, entity.BloodType,
-            entity.Phone, entity.Email, entity.Address, entity.CitizenId, entity.InsuranceNumber, // Đổi IdNumber → CitizenId
+            entity.Phone, entity.Email, entity.Address, entity.CitizenId, entity.InsuranceNumber,
             entity.UserId, entity.IsDeleted, entity.CreatedAt, entity.UpdatedAt);
         
         return OperationResult<PatientDetailDto>.Success(dto);

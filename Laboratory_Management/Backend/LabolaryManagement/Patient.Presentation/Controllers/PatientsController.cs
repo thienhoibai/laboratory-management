@@ -1,9 +1,9 @@
-﻿       using Common.Errors;
+﻿using Common.Errors;
 using Common.Responses;
 using Common.Web.Filters;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Patient.Application.DTOs;
+using Patient.Application.Patients.DTOs.Requests;
 using Patient.Application.Services;
 using System.Diagnostics;
 using System.Security.Claims;

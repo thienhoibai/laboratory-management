@@ -57,6 +57,8 @@ namespace TestOrder.Presentation
             builder.Services.AddScoped<BookingTestService>();
             builder.Services.AddScoped<BookingTestRepository>();
             builder.Services.AddScoped<TimeBlockRepository>();
+            builder.Services.AddScoped<TestResultRepository>();
+            builder.Services.AddScoped<TestResultService>();
 
             // InstrumentBridge Service
             builder.Services.AddScoped<InstrumentBridgeService>();

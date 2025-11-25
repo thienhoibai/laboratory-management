@@ -1,4 +1,4 @@
-﻿using IAM.Application.Permissions.DTOs;
+﻿using IAM.Application.Permissions.DTOs.Responses;
 using IAM.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 

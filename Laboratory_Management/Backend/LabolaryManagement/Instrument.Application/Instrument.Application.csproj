@@ -16,4 +16,8 @@
     <ProjectReference Include="..\Instrument.Domain\Instrument.Domain.csproj" />
     <ProjectReference Include="..\Instrument.Infrastructure\Instrument.Infrastructure.csproj" />
   </ItemGroup>
+  
+  <ItemGroup>
+    <Folder Include="DTOs\" />
+  </ItemGroup>
 </Project>

@@ -16,14 +16,10 @@ export default function BlogSection() {
   const loadBlogs = async () => {
     try {
       setLoading(true);
-      const blogsData = await BlogService.getAllBlogs();
+      // Lấy 3 bài blog đã được duyệt mới nhất
+      const blogsData = await BlogService.getApprovedBlogs(1, 3);
 
-      // Lọc chỉ lấy các bài blog đã được duyệt và lấy 3 bài mới nhất
-      const approvedBlogs = blogsData
-        .filter((blog) => blog.status === "approved")
-        .slice(0, 3);
-
-      setBlogs(approvedBlogs);
+      setBlogs(blogsData);
       setError(null);
     } catch (err) {
       console.error("Error loading blogs:", err);
@@ -74,6 +70,9 @@ export default function BlogSection() {
                     <span className="blog-time">{blog.time}</span>
                   </div>
                   <div className="blog-card-title">{blog.title}</div>
+                  <div className="blog-card-author">
+                    Tác giả: {blog.author || "Unknown"}
+                  </div>
                   <div className="blog-card-desc">{blog.desc}</div>
                 </div>
               </Link>

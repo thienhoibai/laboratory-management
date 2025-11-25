@@ -28,6 +28,13 @@ namespace TestOrder.Infrastructure.Repository
             return (items, totalItems);
         }
 
+        public async Task<List<TestParameter>> GetListOfParametersByIdsAsync(List<int> parameterIds)
+        {
+            return await _context.TestParameters
+                                 .Where(tp => parameterIds.Contains(tp.ParameterId))
+                                 .ToListAsync();
+        }
+
 
         public async Task AddParameterAsync(TestParameter parameter)
         {
