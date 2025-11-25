@@ -67,6 +67,7 @@ const BundleManager = () => {
   });
   const [isSaving, setIsSaving] = useState(false);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
+  const [initialCatalogIds, setInitialCatalogIds] = useState([]);
 
   const [availableCatalogs, setAvailableCatalogs] = useState([]);
   const [catalogSearch, setCatalogSearch] = useState("");
@@ -150,6 +151,7 @@ const BundleManager = () => {
       isActive: true,
     });
     setSelectedCatalogs([]);
+    setInitialCatalogIds([]);
     setCatalogSearch("");
     setIsModalOpen(true);
   };
@@ -190,6 +192,7 @@ const BundleManager = () => {
           isActive: bundle.isActive ?? true,
         });
         setSelectedCatalogs([]);
+        setInitialCatalogIds([]);
         setIsDetailLoading(false);
         return;
       }
@@ -312,6 +315,9 @@ const BundleManager = () => {
 
       // Set selected catalogs để hiển thị trong UI
       setSelectedCatalogs(mappedCatalogs);
+      setInitialCatalogIds(
+        mappedCatalogs.map((catalog) => getCatalogId(catalog)).filter(Boolean)
+      );
     } catch (error) {
       console.error("Error loading bundle detail:", error);
       toast.error("Không thể tải thông tin gói xét nghiệm");
@@ -345,6 +351,11 @@ const BundleManager = () => {
         .filter((catalog) => getCatalogId(catalog) != null);
 
       setSelectedCatalogs(mappedFallbackCatalogs);
+      setInitialCatalogIds(
+        mappedFallbackCatalogs
+          .map((catalog) => getCatalogId(catalog))
+          .filter(Boolean)
+      );
     } finally {
       setIsDetailLoading(false);
     }
@@ -356,6 +367,7 @@ const BundleManager = () => {
     setIsSaving(false);
     setSelectedCatalogs([]);
     setCatalogSearch("");
+    setInitialCatalogIds([]);
     setFormData({
       bundleName: "",
       description: "",
@@ -372,7 +384,12 @@ const BundleManager = () => {
     }));
   };
 
-  const handleToggleCatalog = async (catalog) => {
+  const handleClearAllCatalogs = () => {
+    if (selectedCatalogs.length === 0) return;
+    setSelectedCatalogs([]);
+  };
+
+  const handleToggleCatalog = (catalog) => {
     const catalogId = getCatalogId(catalog);
     if (!catalogId) return;
     const exists = selectedCatalogs.some((item) =>
@@ -380,51 +397,13 @@ const BundleManager = () => {
     );
 
     if (exists) {
-      // Uncheck: Xóa catalog khỏi danh sách
+      // Uncheck: Xóa catalog khỏi danh sách (sẽ xử lý API khi bấm lưu)
       setSelectedCatalogs((prev) =>
         prev.filter((item) => !compareCatalogIds(getCatalogId(item), catalogId))
       );
-
-      // Nếu đang ở chế độ edit và có bundleId, gọi API DELETE để xóa catalog khỏi bundle
-      if (modalMode === "edit" && selectedBundle) {
-        const bundleId = getBundleId(selectedBundle);
-        if (bundleId) {
-          try {
-            // Gọi API DELETE /api/CatalogBundle/{bundleId} với catalogId
-            await removeCatalogsFromBundle(bundleId, [catalogId]);
-            toast.success("Đã xóa danh mục xét nghiệm khỏi gói");
-          } catch (error) {
-            console.error("Error removing catalog from bundle:", error);
-            toast.error("Không thể xóa danh mục xét nghiệm khỏi gói");
-            // Rollback: thêm lại catalog vào danh sách
-            setSelectedCatalogs((prev) => [...prev, catalog]);
-          }
-        }
-      }
     } else {
       // Check: Thêm catalog vào danh sách
       setSelectedCatalogs((prev) => [...prev, catalog]);
-
-      // Nếu đang ở chế độ edit và có bundleId, gọi API POST để thêm catalog vào bundle
-      if (modalMode === "edit" && selectedBundle) {
-        const bundleId = getBundleId(selectedBundle);
-        if (bundleId) {
-          try {
-            // Gọi API POST /api/CatalogBundle với bundleId và catalogId
-            await addCatalogsToBundle(bundleId, [catalogId]);
-            toast.success("Đã thêm danh mục xét nghiệm vào gói");
-          } catch (error) {
-            console.error("Error adding catalog to bundle:", error);
-            toast.error("Không thể thêm danh mục xét nghiệm vào gói");
-            // Rollback: xóa catalog khỏi danh sách
-            setSelectedCatalogs((prev) =>
-              prev.filter(
-                (item) => !compareCatalogIds(getCatalogId(item), catalogId)
-              )
-            );
-          }
-        }
-      }
     }
   };
 
@@ -473,26 +452,94 @@ const BundleManager = () => {
           isActive: Boolean(formData.isActive),
         };
         const created = await createBundle(payload);
-        bundleId = getBundleId(created) || bundleId;
+        bundleId = getBundleId(created);
+
+        // Nếu không lấy được bundleId từ response (204 No Content),
+        // tìm bundle mới tạo theo tên từ danh sách bundles
+        if (!bundleId) {
+          console.log(
+            "[BundleManager] No bundleId from create response, searching by name..."
+          );
+
+          // Chỉ gọi API một lần để tìm bundle mới tạo
+          try {
+            const searchResult = await getAllBundles({
+              page: 1,
+              pageSize: 100,
+              search: formData.bundleName.trim(),
+            });
+
+            // Tìm bundle mới tạo theo tên chính xác
+            const newBundle = searchResult.items?.find(
+              (b) => b.bundleName === formData.bundleName.trim()
+            );
+
+            if (newBundle) {
+              bundleId = getBundleId(newBundle);
+              console.log(
+                "[BundleManager] Found new bundle by name:",
+                bundleId
+              );
+            } else {
+              // Nếu không tìm thấy với search, thử tìm trong tất cả bundles
+              const allBundles = await getAllBundles({
+                page: 1,
+                pageSize: 100,
+              });
+              const foundBundle = allBundles.items?.find(
+                (b) => b.bundleName === formData.bundleName.trim()
+              );
+              if (foundBundle) {
+                bundleId = getBundleId(foundBundle);
+                console.log(
+                  "[BundleManager] Found new bundle in all bundles:",
+                  bundleId
+                );
+              }
+            }
+          } catch (searchError) {
+            console.error(
+              "[BundleManager] Error searching for new bundle:",
+              searchError
+            );
+          }
+        }
+
+        if (!bundleId) {
+          throw new Error(
+            "Không xác định được ID của gói sau khi tạo. Vui lòng kiểm tra lại."
+          );
+        }
       } else if (bundleId) {
         await updateBundle(bundleId, basePayload);
       }
 
-      if (!bundleId) {
-        throw new Error("Không xác định được ID của gói sau khi lưu");
-      }
+      const currentCatalogIds = selectedCatalogs
+        .map((catalog) => getCatalogId(catalog))
+        .filter(Boolean);
 
-      // Khi create: thêm tất cả catalogs đã chọn vào bundle
       if (modalMode === "create") {
-        const selectedIds = selectedCatalogs
-          .map((catalog) => getCatalogId(catalog))
-          .filter(Boolean);
-        if (selectedIds.length) {
-          await addCatalogsToBundle(bundleId, selectedIds);
+        if (currentCatalogIds.length) {
+          await addCatalogsToBundle(bundleId, currentCatalogIds);
+        }
+      } else {
+        const initialIdStrings = initialCatalogIds.map((id) => String(id));
+        const currentIdStrings = currentCatalogIds.map((id) => String(id));
+
+        const toAdd = currentCatalogIds.filter(
+          (id) => !initialIdStrings.includes(String(id))
+        );
+        const toRemove = initialCatalogIds.filter(
+          (id) => !currentIdStrings.includes(String(id))
+        );
+
+        if (toRemove.length) {
+          await removeCatalogsFromBundle(bundleId, toRemove);
+        }
+        if (toAdd.length) {
+          await addCatalogsToBundle(bundleId, toAdd);
         }
       }
-      // Khi edit: việc thêm/xóa catalog đã được xử lý ngay trong handleToggleCatalog
-      // Không cần gọi API lại ở đây để tránh duplicate calls
 
       toast.success(
         modalMode === "create"
@@ -785,7 +832,11 @@ const BundleManager = () => {
                           />
                           <span className="slider" />
                         </label>
-                        <span className="switch-text">
+                        <span
+                          className={`switch-text ${
+                            formData.isActive ? "active" : "inactive"
+                          }`}
+                        >
                           {formData.isActive ? "Hoạt động" : "Tạm dừng"}
                         </span>
                       </div>
@@ -809,7 +860,7 @@ const BundleManager = () => {
                       <button
                         type="button"
                         className="clear-btn"
-                        onClick={() => setSelectedCatalogs([])}
+                        onClick={handleClearAllCatalogs}
                         disabled={isSaving || selectedCatalogs.length === 0}
                       >
                         Xóa tất cả

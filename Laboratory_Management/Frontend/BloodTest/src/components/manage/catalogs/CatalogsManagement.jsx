@@ -9,8 +9,8 @@ import {
   getCatalogById,
   createCatalog,
   updateCatalog,
-  updateCatalogParameters,
-  deleteCatalogParameter,
+  addParametersToCatalog,
+  removeParametersFromCatalog,
   getAllParameters,
 } from "../../../services/TestOrderService.jsx";
 import "./CatalogsManagement.css";
@@ -28,6 +28,16 @@ const getCatalogName = (catalog) =>
 
 const getParameterId = (param) =>
   param?.parameterId ?? param?.id ?? param?.Id ?? null;
+
+const getParameterName = (param) => param?.parameterName ?? param?.name ?? "";
+
+// Helper để so sánh parameter theo tên (case-insensitive)
+const compareParameterNames = (name1, name2) => {
+  if (!name1 || !name2) return false;
+  return (
+    String(name1).trim().toLowerCase() === String(name2).trim().toLowerCase()
+  );
+};
 
 const getCatalogId = (catalog) =>
   catalog?.catalogId ?? catalog?.id ?? catalog?.Id ?? null;
@@ -54,6 +64,7 @@ const CatalogsManagement = () => {
   const [availableParameters, setAvailableParameters] = useState([]);
   const [parametersLoading, setParametersLoading] = useState(false);
   const [selectedParameters, setSelectedParameters] = useState([]);
+  const [initialParameterIds, setInitialParameterIds] = useState([]);
   const [parameterSearch, setParameterSearch] = useState("");
 
   useEffect(() => {
@@ -117,6 +128,7 @@ const CatalogsManagement = () => {
     setSelectedCatalog(null);
     setFormData({ ...DEFAULT_FORM, catalogName: "" });
     setSelectedParameters([]);
+    setInitialParameterIds([]);
     setParameterSearch("");
     setIsModalOpen(true);
   };
@@ -130,7 +142,21 @@ const CatalogsManagement = () => {
     setParameterSearch("");
     setIsDetailLoading(true);
     try {
+      // Đảm bảo đã có danh sách parameter đầy đủ để map
+      let parametersSource = availableParameters;
+      if (!parametersSource || parametersSource.length === 0) {
+        setParametersLoading(true);
+        try {
+          const { items } = await getAllParameters({ page: 1, pageSize: 1000 });
+          parametersSource = items || [];
+          setAvailableParameters(parametersSource);
+        } finally {
+          setParametersLoading(false);
+        }
+      }
+
       const detail = await getCatalogById(catalogId);
+      console.log("[CatalogsManagement] API Response detail:", detail);
       const catalogName = getCatalogName(detail) || getCatalogName(catalog);
       setFormData({
         testName: catalogName,
@@ -138,7 +164,72 @@ const CatalogsManagement = () => {
         description: detail?.description || catalog.description || "",
         price: detail?.price ?? catalog.price ?? "",
       });
-      setSelectedParameters(detail?.parameters || catalog.parameters || []);
+
+      // Lấy parameters từ API response
+      const detailParameters = detail?.parameters || [];
+      console.log(
+        "[CatalogsManagement] Parameters from API:",
+        detailParameters
+      );
+      console.log(
+        "[CatalogsManagement] Available parameters count:",
+        parametersSource.length
+      );
+
+      // Map parameters: tìm trong availableParameters dựa trên parameterName
+      const mappedParameters = detailParameters
+        .map((apiParam) => {
+          const apiParamName = getParameterName(apiParam);
+          console.log(
+            "[CatalogsManagement] Looking for parameter:",
+            apiParamName
+          );
+
+          // Tìm trong availableParameters theo tên
+          const matchedParam = parametersSource.find((availParam) =>
+            compareParameterNames(getParameterName(availParam), apiParamName)
+          );
+
+          if (matchedParam) {
+            console.log(
+              "[CatalogsManagement] Found match:",
+              getParameterId(matchedParam),
+              getParameterName(matchedParam)
+            );
+            return matchedParam; // Dùng parameter từ availableParameters (có đầy đủ ID và thông tin)
+          } else {
+            console.log(
+              "[CatalogsManagement] No match found for:",
+              apiParamName
+            );
+            // Nếu không tìm thấy, vẫn giữ parameter từ API nhưng cần có ID để hiển thị
+            // Tạm thời tạo một object có đủ thông tin từ API
+            return {
+              ...apiParam,
+              id: null, // Không có ID, sẽ bị filter ra
+              parameterId: null,
+            };
+          }
+        })
+        .filter((param) => {
+          // Chỉ giữ lại những parameter có ID (đã match được)
+          const hasId = getParameterId(param) != null;
+          if (!hasId) {
+            console.log(
+              "[CatalogsManagement] Filtering out parameter without ID:",
+              getParameterName(param)
+            );
+          }
+          return hasId;
+        });
+
+      console.log("[CatalogsManagement] Mapped parameters:", mappedParameters);
+      setSelectedParameters(mappedParameters);
+      setInitialParameterIds(
+        mappedParameters
+          .map((param) => getParameterId(param))
+          .filter((id) => id != null)
+      );
     } catch (error) {
       console.error("Error loading catalog detail:", error);
       toast.error("Không thể tải thông tin mục xét nghiệm");
@@ -149,7 +240,15 @@ const CatalogsManagement = () => {
         description: catalog.description || "",
         price: catalog.price ?? "",
       });
-      setSelectedParameters(catalog.parameters || []);
+      const fallbackParameters = catalog.parameters || [];
+      setSelectedParameters(
+        fallbackParameters.filter((param) => getParameterId(param) != null)
+      );
+      setInitialParameterIds(
+        fallbackParameters
+          .map((param) => getParameterId(param))
+          .filter((id) => id != null)
+      );
     } finally {
       setIsDetailLoading(false);
     }
@@ -160,6 +259,7 @@ const CatalogsManagement = () => {
     setSelectedCatalog(null);
     setFormData(DEFAULT_FORM);
     setSelectedParameters([]);
+    setInitialParameterIds([]);
     setIsSaving(false);
     setIsDetailLoading(false);
   };
@@ -178,7 +278,28 @@ const CatalogsManagement = () => {
     });
   };
 
-  const handleToggleParameter = async (parameter) => {
+  const handleRemoveSelectedParameter = (parameter) => {
+    const paramId = getParameterId(parameter);
+    const fallbackKey = parameter?.parameterName || parameter?.name;
+    setSelectedParameters((prev) =>
+      prev.filter((item) => {
+        if (paramId) {
+          return getParameterId(item) !== paramId;
+        }
+        return (
+          (item?.parameterName || item?.name) !== fallbackKey ||
+          (!fallbackKey && item !== parameter)
+        );
+      })
+    );
+  };
+
+  const handleClearSelectedParameters = () => {
+    if (selectedParameters.length === 0) return;
+    setSelectedParameters([]);
+  };
+
+  const handleToggleParameter = (parameter) => {
     const paramId = getParameterId(parameter);
     if (!paramId) return;
     const exists = selectedParameters.some(
@@ -186,26 +307,10 @@ const CatalogsManagement = () => {
     );
 
     if (exists) {
-      // Uncheck: Xóa parameter khỏi danh sách
+      // Uncheck: Xóa parameter khỏi danh sách (sẽ xử lý API khi lưu)
       setSelectedParameters((prev) =>
         prev.filter((item) => getParameterId(item) !== paramId)
       );
-
-      // Nếu đang ở chế độ edit và có catalogId, gọi API DELETE để xóa parameter
-      if (modalMode === "edit" && selectedCatalog) {
-        const catalogId = getCatalogId(selectedCatalog);
-        if (catalogId) {
-          try {
-            await deleteCatalogParameter(catalogId, paramId);
-            toast.success("Đã xóa chỉ số xét nghiệm khỏi mục xét nghiệm");
-          } catch (error) {
-            console.error("Error deleting parameter:", error);
-            toast.error("Không thể xóa chỉ số xét nghiệm");
-            // Rollback: thêm lại parameter vào danh sách
-            setSelectedParameters((prev) => [...prev, parameter]);
-          }
-        }
-      }
     } else {
       // Check: Thêm parameter vào danh sách
       setSelectedParameters((prev) => [...prev, parameter]);
@@ -267,13 +372,33 @@ const CatalogsManagement = () => {
       }
 
       // Sync danh sách parameters
-      // Khi edit: việc xóa parameter đã được xử lý ngay bằng DELETE trong handleToggleParameter
-      // Khi save: gọi PUT để đảm bảo danh sách parameters được sync đúng với selectedParameters
       if (catalogId) {
         const parameterIds = selectedParameters
           .map((param) => getParameterId(param))
           .filter(Boolean);
-        await updateCatalogParameters(catalogId, parameterIds);
+
+        if (modalMode === "create") {
+          if (parameterIds.length) {
+            await addParametersToCatalog(catalogId, parameterIds);
+          }
+        } else {
+          const initialSet = initialParameterIds.map((id) => String(id));
+          const currentSet = parameterIds.map((id) => String(id));
+
+          const paramsToAdd = parameterIds.filter(
+            (id) => !initialSet.includes(String(id))
+          );
+          const paramsToRemove = initialParameterIds.filter(
+            (id) => !currentSet.includes(String(id))
+          );
+
+          if (paramsToRemove.length) {
+            await removeParametersFromCatalog(catalogId, paramsToRemove);
+          }
+          if (paramsToAdd.length) {
+            await addParametersToCatalog(catalogId, paramsToAdd);
+          }
+        }
       }
 
       toast.success(
@@ -469,104 +594,166 @@ const CatalogsManagement = () => {
               {isDetailLoading && (
                 <p className="form-hint">Đang tải dữ liệu mục xét nghiệm...</p>
               )}
-              <div className="form-section">
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label">Tên mục xét nghiệm</label>
-                    <input
-                      type="text"
-                      name="testName"
-                      className="form-input"
-                      placeholder="VD: Xét nghiệm máu toàn bộ"
-                      value={formData.testName}
-                      onChange={handleFormChange}
-                      disabled={isSaving}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Giá (VNĐ)</label>
-                    <input
-                      type="number"
-                      name="price"
-                      className="form-input"
-                      placeholder="150000"
-                      value={formData.price}
-                      onChange={handleFormChange}
-                      disabled={isSaving}
-                    />
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Mô tả</label>
-                  <textarea
-                    name="description"
-                    className="form-textarea"
-                    placeholder="Nhập mô tả chi tiết cho mục xét nghiệm"
-                    value={formData.description}
-                    onChange={handleFormChange}
-                    disabled={isSaving}
-                  />
-                </div>
-              </div>
-
-              <div className="parameter-selector">
-                <div className="parameter-selector-header">
-                  <div>
-                    <h4>Chỉ số xét nghiệm</h4>
-                    <p>Chọn những chỉ số sẽ áp dụng cho mục xét nghiệm này</p>
-                  </div>
-                  <div className="search-box compact">
-                    <FiSearch size={16} />
-                    <input
-                      type="text"
-                      placeholder="Tìm kiếm chỉ số..."
-                      value={parameterSearch}
-                      onChange={(e) => setParameterSearch(e.target.value)}
-                    />
-                  </div>
-                </div>
-                <div className="parameters-selection">
-                  {parametersLoading ? (
-                    <div className="loading-container small">
-                      <div className="loading-spinner"></div>
-                      <p>Đang tải chỉ số...</p>
+              <div className="catalog-form-content">
+                <div className="catalog-form-left">
+                  <div className="form-section">
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label className="form-label">Tên mục xét nghiệm</label>
+                        <input
+                          type="text"
+                          name="testName"
+                          className="form-input"
+                          placeholder="VD: Xét nghiệm máu toàn bộ"
+                          value={formData.testName}
+                          onChange={handleFormChange}
+                          disabled={isSaving}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">Giá (VNĐ)</label>
+                        <input
+                          type="number"
+                          name="price"
+                          className="form-input"
+                          placeholder="150000"
+                          value={formData.price}
+                          onChange={handleFormChange}
+                          disabled={isSaving}
+                        />
+                      </div>
                     </div>
-                  ) : filteredAvailableParameters.length > 0 ? (
-                    filteredAvailableParameters.map((param) => {
-                      const paramId = getParameterId(param);
-                      const isSelected = selectedParameters.some(
-                        (item) => getParameterId(item) === paramId
-                      );
-                      return (
-                        <div
-                          key={paramId}
-                          className={`parameter-item ${
-                            isSelected ? "selected" : ""
-                          }`}
-                          onClick={() => handleToggleParameter(param)}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            readOnly
-                          />
-                          <div className="parameter-info">
-                            <span className="parameter-title">
-                              {param.parameterName || param.name}
-                            </span>
-                            <span className="parameter-meta">
-                              {param.unit} • {param.referenceRange}
-                            </span>
-                          </div>
+
+                    <div className="form-group">
+                      <label className="form-label">Mô tả</label>
+                      <textarea
+                        name="description"
+                        className="form-textarea"
+                        placeholder="Nhập mô tả chi tiết cho mục xét nghiệm"
+                        value={formData.description}
+                        onChange={handleFormChange}
+                        disabled={isSaving}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-section selected-summary">
+                    <div className="selected-summary-header">
+                      <h3>Chỉ số đã chọn ({selectedParameters.length})</h3>
+                      <button
+                        type="button"
+                        className="clear-btn"
+                        onClick={handleClearSelectedParameters}
+                        disabled={isSaving || selectedParameters.length === 0}
+                      >
+                        Xóa tất cả
+                      </button>
+                    </div>
+                    <div className="selected-summary-list">
+                      {selectedParameters.length > 0 ? (
+                        selectedParameters.map((param) => {
+                          const paramId = getParameterId(param);
+                          return (
+                            <div
+                              key={paramId || param.parameterName}
+                              className="selected-summary-item"
+                            >
+                              <div>
+                                <span>
+                                  {param.parameterName || param.name || "-"}
+                                </span>
+                                <p>
+                                  {param.unit
+                                    ? `${param.unit} • ${
+                                        param.referenceRange || ""
+                                      }`
+                                    : param.referenceRange || ""}
+                                </p>
+                              </div>
+                              <button
+                                onClick={() =>
+                                  handleRemoveSelectedParameter(param)
+                                }
+                                disabled={isSaving}
+                              >
+                                <FiX size={14} />
+                              </button>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <p className="empty-text">
+                          Chưa có chỉ số nào được chọn
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="catalog-form-right">
+                  <div className="parameter-selector">
+                    <div className="parameter-selector-header">
+                      <div className="parameter-selector-title">
+                        <h4>Chỉ số xét nghiệm</h4>
+                        <p>
+                          Chọn những chỉ số sẽ áp dụng cho mục xét nghiệm này
+                        </p>
+                      </div>
+                    </div>
+                    <div className="parameter-selector-search">
+                      <div className="search-box compact">
+                        <FiSearch size={16} />
+                        <input
+                          type="text"
+                          placeholder="Tìm kiếm chỉ số..."
+                          value={parameterSearch}
+                          onChange={(e) => setParameterSearch(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div className="parameters-selection">
+                      {parametersLoading ? (
+                        <div className="loading-container small">
+                          <div className="loading-spinner"></div>
+                          <p>Đang tải chỉ số...</p>
                         </div>
-                      );
-                    })
-                  ) : (
-                    <p className="empty-text">
-                      Không có chỉ số nào phù hợp với tìm kiếm
-                    </p>
-                  )}
+                      ) : filteredAvailableParameters.length > 0 ? (
+                        filteredAvailableParameters.map((param) => {
+                          const paramId = getParameterId(param);
+                          const isSelected = selectedParameters.some(
+                            (item) => getParameterId(item) === paramId
+                          );
+                          return (
+                            <div
+                              key={paramId}
+                              className={`parameter-item ${
+                                isSelected ? "selected" : ""
+                              }`}
+                              onClick={() => handleToggleParameter(param)}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                readOnly
+                              />
+                              <div className="parameter-info">
+                                <span className="parameter-title">
+                                  {param.parameterName || param.name}
+                                </span>
+                                <span className="parameter-meta">
+                                  {param.unit} • {param.referenceRange}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <p className="empty-text">
+                          Không có chỉ số nào phù hợp với tìm kiếm
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

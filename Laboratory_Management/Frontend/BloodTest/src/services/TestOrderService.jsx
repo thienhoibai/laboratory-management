@@ -12,7 +12,8 @@ import {
   getCatalogById as getCatalogByIdAPI,
   createCatalog as createCatalogAPI,
   updateCatalog as updateCatalogAPI,
-  updateCatalogParameters as updateCatalogParametersAPI,
+  addParametersToCatalog as addParametersToCatalogAPI,
+  removeParametersFromCatalog as removeParametersFromCatalogAPI,
   deleteCatalogParameter as deleteCatalogParameterAPI,
   getAllParameters as getAllParametersAPI,
   getParameterById as getParameterByIdAPI,
@@ -106,9 +107,51 @@ export const getBundleById = async (id) => {
 };
 
 export const createBundle = async (payload) => {
-  const response = await createBundleAPI(payload);
-  const data = response?.data;
-  return data?.data || data;
+  try {
+    const response = await createBundleAPI(payload);
+
+    // Xử lý trường hợp 204 No Content - API thành công nhưng không trả về data
+    if (response?.status === 204) {
+      console.log(
+        "[Service] createBundle returned 204 No Content - success but no data"
+      );
+
+      // Thử lấy bundleId từ Location header nếu có
+      const location =
+        response?.headers?.location || response?.headers?.Location;
+      if (location) {
+        const bundleIdMatch = location.match(/\/(\d+)$/);
+        if (bundleIdMatch) {
+          const bundleId = parseInt(bundleIdMatch[1]);
+          return { id: bundleId, bundleId: bundleId };
+        }
+      }
+
+      // Nếu không có Location header, trả về null để component xử lý
+      return null;
+    }
+
+    const data = response?.data;
+    return data?.data || data;
+  } catch (error) {
+    // Xử lý trường hợp 204 trong error response
+    if (error.response?.status === 204) {
+      console.log(
+        "[Service] createBundle error response 204 - treating as success"
+      );
+      const location =
+        error.response?.headers?.location || error.response?.headers?.Location;
+      if (location) {
+        const bundleIdMatch = location.match(/\/(\d+)$/);
+        if (bundleIdMatch) {
+          const bundleId = parseInt(bundleIdMatch[1]);
+          return { id: bundleId, bundleId: bundleId };
+        }
+      }
+      return null;
+    }
+    throw error;
+  }
 };
 
 export const updateBundle = async (id, payload) => {
@@ -263,9 +306,16 @@ export const updateCatalog = async (id, payload) => {
   return data?.data || data;
 };
 
-export const updateCatalogParameters = async (id, parameterIds = []) => {
+export const addParametersToCatalog = async (id, parameterIds = []) => {
   if (!id) throw new Error("Catalog ID is required");
-  const response = await updateCatalogParametersAPI(id, parameterIds);
+  const response = await addParametersToCatalogAPI(id, parameterIds);
+  const data = response?.data;
+  return data?.data || data;
+};
+
+export const removeParametersFromCatalog = async (id, parameterIds = []) => {
+  if (!id) throw new Error("Catalog ID is required");
+  const response = await removeParametersFromCatalogAPI(id, parameterIds);
   const data = response?.data;
   return data?.data || data;
 };

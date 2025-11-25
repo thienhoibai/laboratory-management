@@ -160,8 +160,9 @@
 }
 
 .bundle-price {
-  font-weight: 700;
-  color: #16a34a;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #2e7d32;
 }
 
 .status-badge {
@@ -331,11 +332,19 @@
   gap: 8px;
 }
 
+.switch-container {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+}
+
 .switch {
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  flex-shrink: 0;
+  z-index: 1;
 }
 
 .switch input {
@@ -351,6 +360,7 @@
   background: #cbd5f5;
   border-radius: 999px;
   transition: background 0.2s ease;
+  flex-shrink: 0;
 }
 
 .slider::after {
@@ -375,8 +385,25 @@
 }
 
 .switch-text {
-  font-size: 13px;
-  color: #475569;
+  font-size: 14px;
+  font-weight: 500;
+  transition: color 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: fit-content;
+  position: relative;
+  z-index: 2;
+  margin-left: 0;
+}
+
+/* Màu xanh khi Hoạt động */
+.switch-text.active {
+  color: #059669;
+}
+
+/* Màu đỏ khi Tạm dừng */
+.switch-text.inactive {
+  color: #dc2626;
 }
 
 .parameter-selector {
@@ -491,11 +518,28 @@
 }
 
 .clear-btn {
-  border: none;
-  background: none;
-  color: #dc2626;
+  border: 1px solid #1f2937 !important;
+  background: none !important;
+  color: #dc2626 !important;
   font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.clear-btn:hover:not(:disabled) {
+  color: #dc2626 !important;
+  border-color: #dc2626 !important;
+  background: rgba(220, 38, 38, 0.08) !important;
+}
+
+.clear-btn:disabled {
+  color: #9ca3af !important;
+  border-color: #d1d5db !important;
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .modal-footer {
