@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿  using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using TestOrder.Application.DTOs.Payment;
@@ -33,8 +33,17 @@ namespace TestOrder.Presentation.Controllers
         [Route("by-booking")]
         public async Task<IActionResult> GetPaymentByBookingId([FromQuery] Guid bookingId)
         {
-            var payment = await paymentService.GetByBookingIdAsync(bookingId);
-            return Ok(payment);
+            try
+            {
+                var payment = await paymentService.GetByBookingIdAsync(bookingId);
+                return Ok(payment);
+
+            }
+            catch (Exception ex)
+            {
+               
+                return BadRequest($"Error retrieving payment: {ex.Message}");
+            }
         }
         [HttpGet]
         [Route("id={id:int}")]
