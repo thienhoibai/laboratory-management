@@ -24,8 +24,8 @@ namespace BlogService.Presentation.Controllers
     [FromQuery] Guid? authorId,
     [FromQuery] int? status,
     [FromQuery] string? search,
-    [FromQuery] int page = 1,
-    [FromQuery] int pageSize = 10)
+    [FromQuery] int page,
+    [FromQuery] int pageSize)
         {
             var totalItems = await _service.GetAllWithCategoryAsync(authorId, status, 1, int.MaxValue,search)
                 .ContinueWith(t => t.Result.Count);
