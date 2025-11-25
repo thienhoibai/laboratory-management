@@ -1,3 +1,5 @@
+﻿using Patient.Domain.Enums;
+
 namespace Patient.Application.Patients.DTOs.Responses;
 
 public record PatientDetailDto(
@@ -5,7 +7,7 @@ public record PatientDetailDto(
     string? FullName,
     DateOnly? DateOfBirth,
     byte Gender,
-    string? BloodType,
+    BloodType BloodType, // Changed from string? to BloodType enum
     string? Phone,
     string? Email,
     string? Address,

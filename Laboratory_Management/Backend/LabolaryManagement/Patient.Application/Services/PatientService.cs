@@ -212,7 +212,7 @@ public class PatientService : IPatientService
         if (request.FullName != null) entity.FullName = request.FullName;
         if (request.DateOfBirth.HasValue) entity.DateOfBirth = request.DateOfBirth;
         if (request.Gender.HasValue) entity.Gender = request.Gender.Value;
-        if (request.BloodType != null) entity.BloodType = request.BloodType;
+        if (request.BloodType.HasValue) entity.BloodType = request.BloodType.Value; // Fixed: use .HasValue and .Value for nullable enum
         if (request.Phone != null) entity.Phone = request.Phone;
         if (request.Email != null) entity.Email = request.Email;
         if (request.Address != null) entity.Address = request.Address;
