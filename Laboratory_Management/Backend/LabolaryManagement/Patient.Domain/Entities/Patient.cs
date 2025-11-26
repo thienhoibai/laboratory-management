@@ -1,4 +1,5 @@
 ﻿using System;
+using Patient.Domain.Enums;
 
 namespace Patient.Domain.Entities;
 
@@ -11,11 +12,11 @@ public class PatientEntity
     public string? Phone { get; set; }
     public string? Email { get; set; }
     public string? Address { get; set; }
-    public string? CitizenId { get; set; } // Đổi từ IdNumber → CitizenId
+    public string? CitizenId { get; set; }
     public string? InsuranceNumber { get; set; }
 
     public byte Gender { get; set; }
-    public string? BloodType { get; set; } // Thêm blood_type từ database
+    public BloodType BloodType { get; set; } // Changed from string? to BloodType enum
 
     // Searchable columns (computed, không lưu trong DB mới)
     public string? FullNameNorm { get; set; }

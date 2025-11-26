@@ -32,6 +32,13 @@ namespace Common.Errors
         // Google auth
         public const string InvalidGoogleToken = "INVALID_GOOGLE_TOKEN";
         public const string AccountLinkRequired = "ACCOUNT_LINK_REQUIRED";
+        
+        // Patient validation
+        public const string DuplicateCitizenId = "DUPLICATE_CITIZEN_ID";
+        public const string DuplicateInsuranceNumber = "DUPLICATE_INSURANCE_NUMBER";
+        public const string InvalidFullName = "INVALID_FULL_NAME";
+        public const string InvalidDateOfBirth = "INVALID_DATE_OF_BIRTH";
+        public const string InvalidAge = "INVALID_AGE";
     }
 
     public record ErrorDefinition(string Code, int Status, string Title, string Type);
@@ -45,6 +52,9 @@ namespace Common.Errors
             { ErrorCodes.InvalidResetToken,   new("INVALID_RESET_TOKEN", 400, "Invalid reset token", "https://api.example.com/errors/invalid-request") },
             { ErrorCodes.ResetTokenExpired,   new("RESET_TOKEN_EXPIRED", 400, "Reset token expired", "https://api.example.com/errors/invalid-request") },
             { ErrorCodes.ResetTokenUsed,      new("RESET_TOKEN_USED", 400, "Reset token used", "https://api.example.com/errors/invalid-request") },
+            { ErrorCodes.InvalidFullName,     new("INVALID_FULL_NAME", 422, "Full name is required", "https://api.example.com/errors/validation") },
+            { ErrorCodes.InvalidDateOfBirth,  new("INVALID_DATE_OF_BIRTH", 422, "Date of birth is required", "https://api.example.com/errors/validation") },
+            { ErrorCodes.InvalidAge,          new("INVALID_AGE", 422, "Invalid age", "https://api.example.com/errors/validation") },
 
             // 401
             { ErrorCodes.InvalidCredentials,  new("AUTH_INVALID_CREDENTIALS", 401, "Unauthorized", "https://api.example.com/errors/auth") },
@@ -60,8 +70,10 @@ namespace Common.Errors
 
             // 409
             { ErrorCodes.Conflict,            new("RESOURCE_CONFLICT", 409, "Conflict", "https://api.example.com/errors/conflict") },
-            { ErrorCodes.DuplicateEmail,      new("DUPLICATE_EMAIL", 409, "Conflict", "https://api.example.com/errors/conflict") },
-            { ErrorCodes.DuplicateUsername,   new("DUPLICATE_USERNAME", 409, "Conflict", "https://api.example.com/errors/conflict") },
+            { ErrorCodes.DuplicateEmail,      new("DUPLICATE_EMAIL", 409, "Email already exists", "https://api.example.com/errors/conflict") },
+            { ErrorCodes.DuplicateUsername,   new("DUPLICATE_USERNAME", 409, "Username already exists", "https://api.example.com/errors/conflict") },
+            { ErrorCodes.DuplicateCitizenId,  new("DUPLICATE_CITIZEN_ID", 409, "Citizen ID already exists", "https://api.example.com/errors/conflict") },
+            { ErrorCodes.DuplicateInsuranceNumber, new("DUPLICATE_INSURANCE_NUMBER", 409, "Insurance number already exists", "https://api.example.com/errors/conflict") },
             { ErrorCodes.RoleNameExists,      new("RESOURCE_CONFLICT", 409, "Role name already exists", "https://api.example.com/errors/conflict") },
             { ErrorCodes.AccountLinkRequired, new("ACCOUNT_LINK_REQUIRED", 409, "Account link required", "https://api.example.com/errors/conflict") },
 

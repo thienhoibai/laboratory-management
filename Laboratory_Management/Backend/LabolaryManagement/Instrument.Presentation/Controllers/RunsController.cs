@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Instrument.Application.DTOs;
+using Instrument.Application.Runs.DTOs.Requests;
 using Instrument.Application.Services;
+using Instrument.Domain.Enums;
 
 namespace Instrument.Presentation.Controllers;
 
@@ -23,7 +24,7 @@ public class RunsController : ControllerBase
         {
             var result = await _service.StartAndCompleteRunAsync(request);
             
-            if (result.Status == "FAILED")
+            if (result.Status == RunStatus.Failed)
                 return BadRequest(new { error = result.Message });
 
             return Ok(result);

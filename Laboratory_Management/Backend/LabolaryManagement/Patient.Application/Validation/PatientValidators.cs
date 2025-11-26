@@ -1,5 +1,5 @@
 ﻿using FluentValidation;
-using Patient.Application.DTOs;
+using Patient.Application.Patients.DTOs.Requests;
 
 namespace Patient.Application.Validation;
 
