@@ -28,6 +28,7 @@ namespace TestOrder.Presentation
             builder.Services.AddPooledDbContextFactory<TestOrderDBContext>(options =>
                 options.UseSqlServer(connectionString));
 
+
             // Đăng ký DbContext với Scoped lifetime để inject vào Controllers/Services
             builder.Services.AddScoped(sp =>
             {
