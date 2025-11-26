@@ -108,21 +108,13 @@ builder.Services.AddHealthChecks();
 // Security: AES-GCM PII protector
 builder.Services.AddSingleton<ISensitiveDataProtector, AesGcmProtector>();
 
-// DbContext
-var useInMemory = builder.Configuration.GetValue("UseInMemoryDb", true);
-if (useInMemory)
-{
-    builder.Services.AddDbContext<PatientDbContext>(opt => opt.UseInMemoryDatabase("PatientDb"));
-}
-else
-{
-    var conn = builder.Configuration.GetConnectionString("PatientService3");
-    if (string.IsNullOrWhiteSpace(conn))
-        conn = "Server=localhost;Database=PatientService4;Trusted_Connection=True;uid=sa;pwd=12345;TrustServerCertificate=True;";
+// DbContext - SQL Server only (removed InMemory database logic)
+var connectionString = builder.Configuration.GetConnectionString("PatientService4")
+    ?? throw new InvalidOperationException("Connection string 'PatientService4' not found in appsettings.json");
 
-    builder.Services.AddDbContext<PatientDbContext>(opt =>
-        opt.UseSqlServer(conn));
-}
+Console.WriteLine($"✅ Using SQL Server: {connectionString}");
+builder.Services.AddDbContext<PatientDbContext>(options =>
+    options.UseSqlServer(connectionString));
 
 builder.Services.AddScoped<IPatientService, PatientService>();
 
@@ -170,13 +162,13 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Ensure DB exists when using real SQL (DB created manually via script) -> do not run EF migrations
-if (!useInMemory)
+// Ensure database is created
+using (var scope = app.Services.CreateScope())
 {
-    using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<PatientDbContext>();
     db.Database.SetCommandTimeout(TimeSpan.FromMinutes(2));
     db.Database.EnsureCreated();
+    Console.WriteLine("✅ Database connection verified and schema ensured");
 }
 
 app.MapGet("/", () => Results.Ok("Patient up"));
