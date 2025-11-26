@@ -25,7 +25,7 @@ public partial class BlogPost
 
     public int? Status { get; set; }
 
-    public string? ThumbnailUrl { get; set; }
+    public string? ImagePath { get; set; }
 
     public virtual Category? Category { get; set; }
 

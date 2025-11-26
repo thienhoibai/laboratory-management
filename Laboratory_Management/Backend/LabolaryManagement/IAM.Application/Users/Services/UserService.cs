@@ -85,7 +85,7 @@ public class UserService : IUserService
         }
 
         var roles = new[] { role.Name };
-        return OperationResult<UserDetailDto>.Success(new UserDetailDto(user.UserId, user.Username, user.Email, user.FullName, user.IsActive, user.LastLoginAt, user.CreatedAt, user.UpdatedAt, roles));
+        return OperationResult<UserDetailDto>.Success(new UserDetailDto(user.UserId, user.Username, user.Email, user.FullName, user.IsActive, user.IsLocked, user.LastLoginAt, user.CreatedAt, user.UpdatedAt, roles));
     }
 
     private static string GenerateStrongPassword()
@@ -133,7 +133,7 @@ public class UserService : IUserService
 
         var roles = await _db.UserRoles.Where(ur => ur.UserId == user.UserId)
             .Join(_db.Roles, ur => ur.RoleId, r => r.RoleId, (ur, r) => r.Name).ToArrayAsync(ct);
-        return OperationResult<UserDetailDto>.Success(new UserDetailDto(user.UserId, user.Username, user.Email, user.FullName, user.IsActive, user.LastLoginAt, user.CreatedAt, user.UpdatedAt, roles));
+        return OperationResult<UserDetailDto>.Success(new UserDetailDto(user.UserId, user.Username, user.Email, user.FullName, user.IsActive, user.IsLocked, user.LastLoginAt, user.CreatedAt, user.UpdatedAt, roles));
     }
 
     public async Task<OperationResult> DeleteAsync(Guid id, Guid actorId, CancellationToken ct = default)
@@ -153,7 +153,7 @@ public class UserService : IUserService
         if (user == null) return OperationResult<UserDetailDto>.Fail(ErrorCodes.NotFound);
         var roles = await _db.UserRoles.Where(ur => ur.UserId == user.UserId)
             .Join(_db.Roles, ur => ur.RoleId, r => r.RoleId, (ur, r) => r.Name).ToArrayAsync(ct);
-        return OperationResult<UserDetailDto>.Success(new UserDetailDto(user.UserId, user.Username, user.Email, user.FullName, user.IsActive, user.LastLoginAt, user.CreatedAt, user.UpdatedAt, roles));
+        return OperationResult<UserDetailDto>.Success(new UserDetailDto(user.UserId, user.Username, user.Email, user.FullName, user.IsActive, user.IsLocked, user.LastLoginAt, user.CreatedAt, user.UpdatedAt, roles));
     }
 
     public async Task<PageResult<UserSummaryDto>> ListAsync(int page, int pageSize, string? search, string? role, string? type, string? status, string? sortBy, string? sort, CancellationToken ct = default)
@@ -188,11 +188,12 @@ public class UserService : IUserService
                 u.Email,
                 u.FullName,
                 u.IsActive,
+                u.IsLocked,
                 u.CreatedAt,
                 u.LastLoginAt,
                 Roles = (from ur in _db.UserRoles join r in _db.Roles on ur.RoleId equals r.RoleId where ur.UserId == u.UserId select r.Name).ToArray()
             }).ToListAsync(ct);
-        var mapped = items.Select(i => new UserSummaryDto(i.UserId, i.Username, i.Email, i.FullName, i.IsActive, i.CreatedAt, i.LastLoginAt, i.Roles)).ToList();
+        var mapped = items.Select(i => new UserSummaryDto(i.UserId, i.Username, i.Email, i.FullName, i.IsActive, i.IsLocked, i.CreatedAt, i.LastLoginAt, i.Roles)).ToList();
         return PageResult<UserSummaryDto>.From(mapped, page, pageSize, total);
     }
 

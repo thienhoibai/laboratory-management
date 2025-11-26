@@ -10,6 +10,7 @@ public record UserDetailDto
     public string Email { get; init; }
     public string? FullName { get; init; }
     public bool IsActive { get; init; }
+    public bool IsLocked { get; init; }
     public DateTime? LastLoginAt { get; init; }
     public DateTime CreatedAt { get; init; }
     public DateTime UpdatedAt { get; init; }
@@ -21,6 +22,7 @@ public record UserDetailDto
         string email,
         string? fullName,
         bool isActive,
+        bool isLocked,
         DateTime? lastLoginAt,
         DateTime createdAt,
         DateTime updatedAt,
@@ -31,6 +33,7 @@ public record UserDetailDto
         Email = email;
         FullName = fullName;
         IsActive = isActive;
+        IsLocked = isLocked;
         LastLoginAt = lastLoginAt;
         CreatedAt = createdAt;
         UpdatedAt = updatedAt;
