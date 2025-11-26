@@ -12,6 +12,7 @@ import {
   addCatalogsToBundle,
   removeCatalogsFromBundle,
   getCatalogsOfBundle,
+  getBundleById,
   getAllCatalogs,
 } from "../../../services/TestOrderService.jsx";
 import "./BundleManager.css";
@@ -58,6 +59,8 @@ const BundleManager = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState("create");
+  const [createStep, setCreateStep] = useState(1); // 1: Thông tin bundle, 2: Chọn catalog
+  const [createdBundleId, setCreatedBundleId] = useState(null); // Lưu bundleId đã tạo ở step 1
   const [selectedBundle, setSelectedBundle] = useState(null);
   const [formData, setFormData] = useState({
     bundleName: "",
@@ -68,6 +71,10 @@ const BundleManager = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [initialCatalogIds, setInitialCatalogIds] = useState([]);
+  const [formErrors, setFormErrors] = useState({
+    bundleName: "",
+    price: "",
+  });
 
   const [availableCatalogs, setAvailableCatalogs] = useState([]);
   const [catalogSearch, setCatalogSearch] = useState("");
@@ -105,7 +112,6 @@ const BundleManager = () => {
       setAvailableCatalogs(items || []);
     } catch (error) {
       console.error("Error loading catalogs:", error);
-      toast.error("Không thể tải danh mục xét nghiệm");
     } finally {
       setCatalogsLoading(false);
     }
@@ -116,17 +122,24 @@ const BundleManager = () => {
     try {
       const query = { page, pageSize };
       if (searchDebounce) query.search = searchDebounce;
+      console.log("[BundleManager] fetchBundles called with query:", query);
       const { items, meta } = await getAllBundles(query);
+      console.log(
+        `[BundleManager] Received ${items?.length || 0} bundles, meta:`,
+        meta
+      );
       // Chuẩn hóa isActive cho tất cả bundles
       const normalizedBundles = (items || []).map((bundle) => ({
         ...bundle,
         isActive: normalizeIsActive(bundle),
       }));
+      console.log(
+        `[BundleManager] Setting ${normalizedBundles.length} bundles to state`
+      );
       setBundles(normalizedBundles);
       setTotal(meta?.totalItems ?? items?.length ?? 0);
     } catch (error) {
-      console.error("Error fetching bundles:", error);
-      toast.error("Không thể tải danh sách gói xét nghiệm");
+      console.error("[BundleManager] Error fetching bundles:", error);
     } finally {
       setIsLoading(false);
     }
@@ -143,12 +156,18 @@ const BundleManager = () => {
 
   const handleOpenCreateModal = () => {
     setModalMode("create");
+    setCreateStep(1);
+    setCreatedBundleId(null);
     setSelectedBundle(null);
     setFormData({
       bundleName: "",
       description: "",
       price: "",
       isActive: true,
+    });
+    setFormErrors({
+      bundleName: "",
+      price: "",
     });
     setSelectedCatalogs([]);
     setInitialCatalogIds([]);
@@ -191,6 +210,10 @@ const BundleManager = () => {
           price: bundle.price ?? "",
           isActive: bundle.isActive ?? true,
         });
+        setFormErrors({
+          bundleName: "",
+          price: "",
+        });
         setSelectedCatalogs([]);
         setInitialCatalogIds([]);
         setIsDetailLoading(false);
@@ -207,6 +230,10 @@ const BundleManager = () => {
         description: bundleInfo.description || bundle.description || "",
         price: bundleInfo.price ?? bundle.price ?? "",
         isActive: bundle.isActive ?? true, // Lấy từ bundle hiện tại vì API không trả về isActive
+      });
+      setFormErrors({
+        bundleName: "",
+        price: "",
       });
 
       // Lấy danh sách catalogs từ response
@@ -320,12 +347,15 @@ const BundleManager = () => {
       );
     } catch (error) {
       console.error("Error loading bundle detail:", error);
-      toast.error("Không thể tải thông tin gói xét nghiệm");
       setFormData({
         bundleName: bundle.bundleName || "",
         description: bundle.description || "",
         price: bundle.price ?? "",
         isActive: bundle.isActive ?? true,
+      });
+      setFormErrors({
+        bundleName: "",
+        price: "",
       });
       const fallbackCatalogs = bundle.catalogs || [];
       // Đảm bảo có danh sách catalogs đầy đủ để map
@@ -361,9 +391,16 @@ const BundleManager = () => {
     }
   };
 
-  const handleCloseModal = () => {
+  const handleCloseModal = async () => {
+    // Lưu bundleId trước khi reset state
+    const bundleIdToDelete = createdBundleId;
+    const isCreating = modalMode === "create";
+
+    // Reset state và đóng modal trước
     setIsModalOpen(false);
     setSelectedBundle(null);
+    setCreateStep(1);
+    setCreatedBundleId(null);
     setIsSaving(false);
     setSelectedCatalogs([]);
     setCatalogSearch("");
@@ -374,6 +411,40 @@ const BundleManager = () => {
       price: "",
       isActive: true,
     });
+    setFormErrors({
+      bundleName: "",
+      price: "",
+    });
+
+    // Nếu đang ở create mode và đã có bundleId, xóa bundle đã tạo
+    if (isCreating && bundleIdToDelete) {
+      try {
+        console.log(
+          "[BundleManager] Deleting bundle on close:",
+          bundleIdToDelete
+        );
+        await deleteBundle(bundleIdToDelete);
+        console.log(
+          "[BundleManager] Successfully deleted bundle:",
+          bundleIdToDelete
+        );
+        toast.success("Đã hủy tạo gói xét nghiệm");
+        // Refresh danh sách bundles sau khi xóa
+        await fetchBundles();
+      } catch (error) {
+        console.error("[BundleManager] Error deleting bundle on close:", error);
+        const message =
+          error.response?.data?.message ||
+          error.response?.data?.error ||
+          "Không thể xóa gói xét nghiệm";
+        toast.error(message);
+        // Vẫn refresh danh sách bundles dù có lỗi
+        await fetchBundles();
+      }
+    } else {
+      // Nếu không có bundle để xóa, chỉ refresh danh sách
+      await fetchBundles();
+    }
   };
 
   const handleFormChange = (e) => {
@@ -382,6 +453,13 @@ const BundleManager = () => {
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+    // Xóa error khi người dùng bắt đầu nhập
+    if (formErrors[name]) {
+      setFormErrors((prev) => ({
+        ...prev,
+        [name]: "",
+      }));
+    }
   };
 
   const handleClearAllCatalogs = () => {
@@ -420,19 +498,345 @@ const BundleManager = () => {
   }, [availableCatalogs, catalogSearch]);
 
   const validateForm = () => {
+    const errors = {
+      bundleName: "",
+      price: "",
+    };
+    let isValid = true;
+
     if (!formData.bundleName.trim()) {
-      toast.error("Tên gói xét nghiệm là bắt buộc");
-      return false;
+      errors.bundleName = "Tên gói xét nghiệm là bắt buộc";
+      isValid = false;
     }
+
     if (formData.price === "" || isNaN(Number(formData.price))) {
-      toast.error("Vui lòng nhập giá hợp lệ");
-      return false;
+      errors.price = "Vui lòng nhập giá hợp lệ";
+      isValid = false;
+    } else if (Number(formData.price) < 0) {
+      errors.price = "Giá không được âm";
+      isValid = false;
     }
-    if (selectedCatalogs.length === 0) {
-      toast.error("Vui lòng chọn ít nhất một danh mục xét nghiệm");
-      return false;
+
+    setFormErrors(errors);
+    return isValid;
+  };
+
+  const validateStep1 = () => {
+    const errors = {
+      bundleName: "",
+      price: "",
+    };
+    let isValid = true;
+
+    if (!formData.bundleName.trim()) {
+      errors.bundleName = "Tên gói xét nghiệm là bắt buộc";
+      isValid = false;
     }
-    return true;
+
+    if (formData.price === "" || isNaN(Number(formData.price))) {
+      errors.price = "Vui lòng nhập giá hợp lệ";
+      isValid = false;
+    } else if (Number(formData.price) < 0) {
+      errors.price = "Giá không được âm";
+      isValid = false;
+    }
+
+    setFormErrors(errors);
+    return isValid;
+  };
+
+  // Hàm xử lý bước 1: Tạo bundle mới hoặc cập nhật bundle đã có
+  const handleNextStep = async () => {
+    if (!validateStep1()) return;
+    setIsSaving(true);
+    try {
+      const payload = {
+        bundleName: formData.bundleName.trim(),
+        description: formData.description.trim(),
+        price: Number(formData.price) || 0,
+        isActive: Boolean(formData.isActive),
+      };
+
+      let bundleId = createdBundleId;
+
+      // Nếu đã có createdBundleId, đó là chỉnh sửa bundle đã tạo
+      if (createdBundleId) {
+        console.log(
+          "[BundleManager] Updating existing bundle:",
+          createdBundleId
+        );
+        await updateBundle(createdBundleId, payload);
+        bundleId = createdBundleId;
+      } else {
+        // Nếu chưa có, tạo bundle mới
+        console.log(
+          "[BundleManager] Creating new bundle with payload:",
+          payload
+        );
+        const created = await createBundle({
+          ...payload,
+          isActive: Boolean(formData.isActive),
+        });
+        console.log("[BundleManager] createBundle response:", created);
+
+        bundleId = getBundleId(created);
+        console.log("[BundleManager] bundleId from response:", bundleId);
+
+        // Nếu không lấy được bundleId từ response (204 No Content)
+        if (!bundleId) {
+          console.log(
+            "[BundleManager] No bundleId from create response, searching by name..."
+          );
+
+          // Thêm delay để đảm bảo bundle đã được tạo trên server
+          await new Promise((resolve) => setTimeout(resolve, 500));
+
+          // Thử tìm bundle với retry logic
+          let foundBundle = null;
+          const maxRetries = 3;
+          const bundleName = formData.bundleName.trim();
+
+          for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+              console.log(
+                `[BundleManager] Search attempt ${attempt}/${maxRetries} for bundle: "${bundleName}"`
+              );
+
+              // Thử search trước
+              const searchResult = await getAllBundles({
+                page: 1,
+                pageSize: 100,
+                search: bundleName,
+              });
+
+              console.log(
+                `[BundleManager] Search result items:`,
+                searchResult.items?.length || 0
+              );
+
+              foundBundle = searchResult.items?.find(
+                (b) => b.bundleName === bundleName
+              );
+
+              if (foundBundle) {
+                bundleId = getBundleId(foundBundle);
+                console.log(
+                  `[BundleManager] Found new bundle by name on attempt ${attempt}:`,
+                  bundleId
+                );
+                break;
+              }
+
+              // Nếu không tìm thấy với search, thử lấy tất cả bundles
+              if (attempt === maxRetries) {
+                console.log(
+                  "[BundleManager] Trying to fetch all bundles without search..."
+                );
+                const allBundles = await getAllBundles({
+                  page: 1,
+                  pageSize: 200,
+                });
+
+                console.log(
+                  `[BundleManager] All bundles count:`,
+                  allBundles.items?.length || 0
+                );
+
+                foundBundle = allBundles.items?.find(
+                  (b) => b.bundleName === bundleName
+                );
+
+                if (foundBundle) {
+                  bundleId = getBundleId(foundBundle);
+                  console.log(
+                    "[BundleManager] Found new bundle in all bundles:",
+                    bundleId
+                  );
+                  break;
+                }
+              }
+
+              // Nếu chưa tìm thấy và chưa phải lần thử cuối, đợi thêm
+              if (attempt < maxRetries) {
+                await new Promise((resolve) => setTimeout(resolve, 1000));
+              }
+            } catch (searchError) {
+              console.error(
+                `[BundleManager] Error searching for new bundle (attempt ${attempt}):`,
+                searchError
+              );
+              if (attempt < maxRetries) {
+                await new Promise((resolve) => setTimeout(resolve, 1000));
+              }
+            }
+          }
+
+          // Nếu vẫn không tìm thấy, refresh danh sách bundles hiện tại
+          if (!bundleId) {
+            console.log(
+              "[BundleManager] Still not found, refreshing current bundles list..."
+            );
+
+            // Fetch lại bundles và tìm trong response mới
+            try {
+              const refreshedBundles = await getAllBundles({
+                page: 1,
+                pageSize: 200,
+              });
+
+              const newlyCreatedBundle = refreshedBundles.items?.find(
+                (b) => b.bundleName === bundleName
+              );
+
+              if (newlyCreatedBundle) {
+                bundleId = getBundleId(newlyCreatedBundle);
+                console.log(
+                  "[BundleManager] Found new bundle in refreshed list:",
+                  bundleId
+                );
+              } else {
+                console.warn(
+                  "[BundleManager] Bundle not found even after refresh. Bundle name:",
+                  bundleName
+                );
+              }
+            } catch (refreshError) {
+              console.error(
+                "[BundleManager] Error refreshing bundles:",
+                refreshError
+              );
+            }
+          }
+        }
+
+        if (!bundleId) {
+          console.error(
+            "[BundleManager] Failed to get bundleId after all attempts."
+          );
+          throw new Error(
+            "Không xác định được ID của gói sau khi tạo. Vui lòng kiểm tra lại hoặc thử tạo lại."
+          );
+        }
+      }
+
+      // Lưu bundleId và chuyển sang step 2
+      setCreatedBundleId(bundleId);
+      setCreateStep(2);
+      // Không hiển thị toast ở đây, chỉ hiển thị khi hoàn thành ở bước 2
+    } catch (error) {
+      console.error("Error creating bundle:", error);
+      const message =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        "Có lỗi xảy ra khi tạo gói xét nghiệm";
+      toast.error(message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Hàm quay lại bước 1 để chỉnh sửa thông tin bundle
+  const handleBackToStep1 = async () => {
+    if (!createdBundleId) {
+      setCreateStep(1);
+      return;
+    }
+
+    // Load thông tin bundle đã tạo để hiển thị trong form
+    setIsDetailLoading(true);
+    try {
+      const bundleData = await getBundleById(createdBundleId);
+      if (bundleData) {
+        setFormData({
+          bundleName: bundleData.bundleName || "",
+          description: bundleData.description || "",
+          price: bundleData.price ?? "",
+          isActive: normalizeIsActive(bundleData),
+        });
+        setFormErrors({
+          bundleName: "",
+          price: "",
+        });
+      }
+
+      // Load catalogs hiện tại của bundle
+      try {
+        const bundleWithCatalogs = await getCatalogsOfBundle(createdBundleId);
+        if (bundleWithCatalogs && bundleWithCatalogs.catalogs) {
+          const catalogs = Array.isArray(bundleWithCatalogs.catalogs)
+            ? bundleWithCatalogs.catalogs
+            : [];
+          setSelectedCatalogs(catalogs);
+          const catalogIds = catalogs
+            .map((catalog) => getCatalogId(catalog))
+            .filter(Boolean);
+          setInitialCatalogIds(catalogIds);
+        }
+      } catch (catalogError) {
+        console.warn("Could not load catalogs:", catalogError);
+        setSelectedCatalogs([]);
+        setInitialCatalogIds([]);
+      }
+
+      setCreateStep(1);
+    } catch (error) {
+      console.error("Error loading bundle data:", error);
+    } finally {
+      setIsDetailLoading(false);
+    }
+  };
+
+  // Hàm xử lý bước 2: Thêm catalogs vào bundle và hoàn thành
+  const handleCompleteCreate = async () => {
+    if (!createdBundleId) {
+      return;
+    }
+
+    const currentCatalogIds = selectedCatalogs
+      .map((catalog) => getCatalogId(catalog))
+      .filter(Boolean);
+
+    // Bắt buộc phải chọn ít nhất 1 catalog
+    if (currentCatalogIds.length === 0) {
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await addCatalogsToBundle(createdBundleId, currentCatalogIds);
+      toast.success("Tạo gói xét nghiệm thành công!");
+      await fetchBundles();
+
+      // Reset state và đóng modal
+      setCreatedBundleId(null);
+      setCreateStep(1);
+      setIsModalOpen(false);
+      setSelectedBundle(null);
+      setIsSaving(false);
+      setSelectedCatalogs([]);
+      setCatalogSearch("");
+      setInitialCatalogIds([]);
+      setFormData({
+        bundleName: "",
+        description: "",
+        price: "",
+        isActive: true,
+      });
+      setFormErrors({
+        bundleName: "",
+        price: "",
+      });
+    } catch (error) {
+      console.error("Error adding catalogs to bundle:", error);
+      const message =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Có lỗi xảy ra khi thêm danh mục xét nghiệm";
+      toast.error(message);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleSaveBundle = async () => {
@@ -541,11 +945,12 @@ const BundleManager = () => {
         }
       }
 
-      toast.success(
-        modalMode === "create"
-          ? "Tạo gói xét nghiệm thành công!"
-          : "Cập nhật gói xét nghiệm thành công!"
-      );
+      // Hiển thị toast thành công
+      if (modalMode === "create") {
+        toast.success("Tạo gói xét nghiệm thành công!");
+      } else {
+        toast.success("Cập nhật gói xét nghiệm thành công!");
+      }
       await fetchBundles();
       handleCloseModal();
     } catch (error) {
@@ -573,8 +978,37 @@ const BundleManager = () => {
 
     setIsDeleting(true);
     try {
+      // Bước 1: Lấy danh sách catalogs của bundle
+      let catalogIdsToRemove = [];
+      try {
+        const bundleData = await getCatalogsOfBundle(bundleId);
+        if (
+          bundleData &&
+          bundleData.catalogs &&
+          Array.isArray(bundleData.catalogs)
+        ) {
+          catalogIdsToRemove = bundleData.catalogs
+            .map((catalog) => getCatalogId(catalog))
+            .filter(Boolean);
+        }
+      } catch (catalogError) {
+        console.warn(
+          "Could not fetch catalogs, proceeding with delete:",
+          catalogError
+        );
+      }
+
+      // Bước 2: Xóa tất cả catalogs khỏi bundle nếu có
+      if (catalogIdsToRemove.length > 0) {
+        console.log(
+          `[BundleManager] Removing ${catalogIdsToRemove.length} catalogs from bundle before delete`
+        );
+        await removeCatalogsFromBundle(bundleId, catalogIdsToRemove);
+      }
+
+      // Bước 3: Xóa bundle
       await deleteBundle(bundleId);
-      toast.success("Đã xóa gói xét nghiệm");
+      toast.success("Đã xóa gói xét nghiệm thành công!");
       fetchBundles();
       setIsDeleteModalOpen(false);
       setBundleToDelete(null);
@@ -769,21 +1203,39 @@ const BundleManager = () => {
 
       {isModalOpen && (
         <div className="modal-overlay" onClick={handleCloseModal}>
-          <div className="bundle-modal" onClick={(e) => e.stopPropagation()}>
+          <div
+            className={`bundle-modal ${
+              modalMode === "create" && createStep === 1
+                ? "step1-modal"
+                : modalMode === "create" && createStep === 2
+                ? "step2-modal"
+                : ""
+            }`}
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="modal-header">
               <div>
                 <h2>
-                  {modalMode === "create"
-                    ? "Thêm gói xét nghiệm"
+                  {modalMode === "create" && createStep === 1
+                    ? "Thêm gói xét nghiệm - Bước 1"
+                    : modalMode === "create" && createStep === 2
+                    ? "Thêm gói xét nghiệm - Bước 2"
                     : "Chỉnh sửa gói"}
                 </h2>
                 <p>
-                  {modalMode === "create"
-                    ? "Tạo mới gói và chọn danh mục xét nghiệm phù hợp"
+                  {modalMode === "create" && createStep === 1
+                    ? "Nhập thông tin cơ bản của gói xét nghiệm"
+                    : modalMode === "create" && createStep === 2
+                    ? "Chọn các danh mục xét nghiệm cho gói (bắt buộc)"
                     : "Điều chỉnh thông tin và danh mục của gói"}
                 </p>
               </div>
-              <button className="modal-close" onClick={handleCloseModal}>
+              <button
+                className="modal-close"
+                onClick={handleCloseModal}
+                disabled={isSaving}
+                title="Đóng"
+              >
                 <FiX size={20} />
               </button>
             </div>
@@ -792,19 +1244,28 @@ const BundleManager = () => {
               {isDetailLoading && (
                 <p className="form-hint">Đang tải dữ liệu gói xét nghiệm...</p>
               )}
-              <div className="bundle-form-grid">
-                <div className="bundle-form-left">
+
+              {/* Step 1: Thông tin bundle (chỉ hiển thị khi create và step 1) */}
+              {modalMode === "create" && createStep === 1 && (
+                <div className="bundle-form-single">
                   <div className="form-section">
                     <label className="form-label">Tên gói</label>
                     <input
                       type="text"
                       name="bundleName"
-                      className="form-input"
+                      className={`form-input ${
+                        formErrors.bundleName ? "error" : ""
+                      }`}
                       placeholder="VD: Gói khám tổng quát"
                       value={formData.bundleName}
                       onChange={handleFormChange}
                       disabled={isSaving}
                     />
+                    {formErrors.bundleName && (
+                      <span className="form-error">
+                        {formErrors.bundleName}
+                      </span>
+                    )}
                   </div>
                   <div className="form-section grid-2">
                     <div className="form-group">
@@ -812,12 +1273,17 @@ const BundleManager = () => {
                       <input
                         type="number"
                         name="price"
-                        className="form-input"
+                        className={`form-input ${
+                          formErrors.price ? "error" : ""
+                        }`}
                         placeholder="450000"
                         value={formData.price}
                         onChange={handleFormChange}
                         disabled={isSaving}
                       />
+                      {formErrors.price && (
+                        <span className="form-error">{formErrors.price}</span>
+                      )}
                     </div>
                     <div className="form-group switch-group">
                       <label className="form-label">Trạng thái</label>
@@ -847,136 +1313,387 @@ const BundleManager = () => {
                     <textarea
                       name="description"
                       className="form-textarea"
-                      rows={4}
+                      rows={3}
                       placeholder="Nhập mô tả cho gói xét nghiệm..."
                       value={formData.description}
                       onChange={handleFormChange}
                       disabled={isSaving}
                     />
                   </div>
-                  <div className="form-section selected-summary">
-                    <div className="selected-summary-header">
-                      <h3>Danh mục đã chọn ({selectedCatalogs.length})</h3>
-                      <button
-                        type="button"
-                        className="clear-btn"
-                        onClick={handleClearAllCatalogs}
-                        disabled={isSaving || selectedCatalogs.length === 0}
-                      >
-                        Xóa tất cả
-                      </button>
-                    </div>
-                    <div className="selected-summary-list">
-                      {selectedCatalogs.length > 0 ? (
-                        selectedCatalogs.map((catalog) => (
-                          <div
-                            key={getCatalogId(catalog)}
-                            className="selected-summary-item"
+                </div>
+              )}
+
+              {/* Step 2: Chọn catalog (chỉ hiển thị khi create và step 2) */}
+              {modalMode === "create" && createStep === 2 && (
+                <div className="step2-container">
+                  {/* Cảnh báo bắt buộc chọn catalog */}
+                  <div
+                    className="form-section step2-warning"
+                    style={{
+                      backgroundColor: "#fff3cd",
+                      border: "1px solid #ffc107",
+                      borderRadius: "8px",
+                      padding: "8px 12px",
+                      boxShadow: "0 2px 4px rgba(255, 193, 7, 0.1)",
+                    }}
+                  >
+                    <p
+                      style={{
+                        margin: 0,
+                        color: "#856404",
+                        fontSize: "12px",
+                        fontWeight: 600,
+                        lineHeight: "1.4",
+                      }}
+                    >
+                      ⚠️ Lưu ý: Bạn phải chọn ít nhất một danh mục xét nghiệm
+                    </p>
+                  </div>
+                  {/* Layout 2 cột ngang */}
+                  <div className="step2-grid">
+                    {/* Cột trái: Danh mục đã chọn */}
+                    <div className="step2-left">
+                      <div className="form-section selected-summary">
+                        <div className="selected-summary-header">
+                          <h3>Đã chọn ({selectedCatalogs.length})</h3>
+                          <button
+                            type="button"
+                            className="clear-btn"
+                            onClick={handleClearAllCatalogs}
+                            disabled={isSaving || selectedCatalogs.length === 0}
                           >
-                            <span>
-                              {catalog.testName || catalog.catalogName || "-"}
-                            </span>
-                            <button
-                              onClick={() => handleToggleCatalog(catalog)}
-                              disabled={isSaving}
-                            >
-                              <FiX size={14} />
-                            </button>
+                            Xóa tất cả
+                          </button>
+                        </div>
+                        <div className="selected-summary-list">
+                          {selectedCatalogs.length > 0 ? (
+                            selectedCatalogs.map((catalog) => (
+                              <div
+                                key={getCatalogId(catalog)}
+                                className="selected-summary-item"
+                              >
+                                <span>
+                                  {catalog.testName ||
+                                    catalog.catalogName ||
+                                    "-"}
+                                </span>
+                                <button
+                                  onClick={() => handleToggleCatalog(catalog)}
+                                  disabled={isSaving}
+                                >
+                                  <FiX size={14} />
+                                </button>
+                              </div>
+                            ))
+                          ) : (
+                            <p className="empty-text">
+                              Chưa có danh mục nào được chọn
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    {/* Cột phải: Danh sách để chọn */}
+                    <div className="step2-right">
+                      <div className="parameter-selector">
+                        <div className="parameter-selector-header">
+                          <div className="parameter-selector-title">
+                            <h4>Danh mục xét nghiệm</h4>
+                            <p>Chọn các danh mục thuộc gói</p>
                           </div>
-                        ))
-                      ) : (
-                        <p className="empty-text">
-                          Chưa có danh mục nào được chọn
-                        </p>
-                      )}
+                        </div>
+                        <div className="parameter-selector-search">
+                          <div className="search-box compact">
+                            <FiSearch size={16} />
+                            <input
+                              type="text"
+                              placeholder="Tìm kiếm danh mục..."
+                              value={catalogSearch}
+                              onChange={(e) => setCatalogSearch(e.target.value)}
+                            />
+                          </div>
+                        </div>
+                        <div className="parameters-selection">
+                          {catalogsLoading ? (
+                            <div className="loading-container small">
+                              <div className="loading-spinner"></div>
+                              <p>Đang tải danh mục...</p>
+                            </div>
+                          ) : filteredCatalogs.length > 0 ? (
+                            filteredCatalogs.map((catalog) => {
+                              const catalogId = getCatalogId(catalog);
+                              const isSelected = selectedCatalogs.some((item) =>
+                                compareCatalogIds(getCatalogId(item), catalogId)
+                              );
+
+                              return (
+                                <div
+                                  key={catalogId}
+                                  className={`parameter-item ${
+                                    isSelected ? "selected" : ""
+                                  }`}
+                                  onClick={() => handleToggleCatalog(catalog)}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    readOnly
+                                  />
+                                  <div className="parameter-info">
+                                    <span className="parameter-title">
+                                      {catalog.testName || catalog.catalogName}
+                                    </span>
+                                    <span className="parameter-meta">
+                                      {catalog.description || "Không có mô tả"}
+                                    </span>
+                                  </div>
+                                </div>
+                              );
+                            })
+                          ) : (
+                            <p className="empty-text">
+                              Không có danh mục nào phù hợp
+                            </p>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
+              )}
 
-                <div className="bundle-form-right">
-                  <div className="parameter-selector">
-                    <div className="parameter-selector-header">
-                      <div>
-                        <h4>Danh mục xét nghiệm</h4>
-                        <p>Chọn các danh mục thuộc gói</p>
-                      </div>
-                      <div className="search-box compact">
-                        <FiSearch size={16} />
+              {/* Edit mode: Hiển thị cả form và catalog selector */}
+              {modalMode === "edit" && (
+                <div className="bundle-form-grid">
+                  <div className="bundle-form-left">
+                    <div className="form-section">
+                      <label className="form-label">Tên gói</label>
+                      <input
+                        type="text"
+                        name="bundleName"
+                        className="form-input"
+                        placeholder="VD: Gói khám tổng quát"
+                        value={formData.bundleName}
+                        onChange={handleFormChange}
+                        disabled={isSaving}
+                      />
+                    </div>
+                    <div className="form-section grid-2">
+                      <div className="form-group">
+                        <label className="form-label">Giá (VNĐ)</label>
                         <input
-                          type="text"
-                          placeholder="Tìm kiếm danh mục..."
-                          value={catalogSearch}
-                          onChange={(e) => setCatalogSearch(e.target.value)}
+                          type="number"
+                          name="price"
+                          className="form-input"
+                          placeholder="450000"
+                          value={formData.price}
+                          onChange={handleFormChange}
+                          disabled={isSaving}
                         />
                       </div>
-                    </div>
-                    <div className="parameters-selection">
-                      {catalogsLoading ? (
-                        <div className="loading-container small">
-                          <div className="loading-spinner"></div>
-                          <p>Đang tải danh mục...</p>
+                      <div className="form-group switch-group">
+                        <label className="form-label">Trạng thái</label>
+                        <div className="switch-container">
+                          <label className="switch">
+                            <input
+                              type="checkbox"
+                              name="isActive"
+                              checked={formData.isActive}
+                              onChange={handleFormChange}
+                              disabled={isSaving}
+                            />
+                            <span className="slider" />
+                          </label>
+                          <span
+                            className={`switch-text ${
+                              formData.isActive ? "active" : "inactive"
+                            }`}
+                          >
+                            {formData.isActive ? "Hoạt động" : "Tạm dừng"}
+                          </span>
                         </div>
-                      ) : filteredCatalogs.length > 0 ? (
-                        filteredCatalogs.map((catalog) => {
-                          const catalogId = getCatalogId(catalog);
-                          const isSelected = selectedCatalogs.some((item) =>
-                            compareCatalogIds(getCatalogId(item), catalogId)
-                          );
-
-                          return (
+                      </div>
+                    </div>
+                    <div className="form-section">
+                      <label className="form-label">Mô tả</label>
+                      <textarea
+                        name="description"
+                        className="form-textarea"
+                        rows={4}
+                        placeholder="Nhập mô tả cho gói xét nghiệm..."
+                        value={formData.description}
+                        onChange={handleFormChange}
+                        disabled={isSaving}
+                      />
+                    </div>
+                    <div className="form-section selected-summary">
+                      <div className="selected-summary-header">
+                        <h3>Danh mục đã chọn ({selectedCatalogs.length})</h3>
+                        <button
+                          type="button"
+                          className="clear-btn"
+                          onClick={handleClearAllCatalogs}
+                          disabled={isSaving || selectedCatalogs.length === 0}
+                        >
+                          Xóa tất cả
+                        </button>
+                      </div>
+                      <div className="selected-summary-list">
+                        {selectedCatalogs.length > 0 ? (
+                          selectedCatalogs.map((catalog) => (
                             <div
-                              key={catalogId}
-                              className={`parameter-item ${
-                                isSelected ? "selected" : ""
-                              }`}
-                              onClick={() => handleToggleCatalog(catalog)}
+                              key={getCatalogId(catalog)}
+                              className="selected-summary-item"
                             >
-                              <input
-                                type="checkbox"
-                                checked={isSelected}
-                                readOnly
-                              />
-                              <div className="parameter-info">
-                                <span className="parameter-title">
-                                  {catalog.testName || catalog.catalogName}
-                                </span>
-                                <span className="parameter-meta">
-                                  {catalog.description || "Không có mô tả"}
-                                </span>
-                              </div>
+                              <span>
+                                {catalog.testName || catalog.catalogName || "-"}
+                              </span>
+                              <button
+                                onClick={() => handleToggleCatalog(catalog)}
+                                disabled={isSaving}
+                              >
+                                <FiX size={14} />
+                              </button>
                             </div>
-                          );
-                        })
-                      ) : (
-                        <p className="empty-text">
-                          Không có danh mục nào phù hợp
-                        </p>
-                      )}
+                          ))
+                        ) : (
+                          <p className="empty-text">
+                            Chưa có danh mục nào được chọn
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bundle-form-right">
+                    <div className="parameter-selector">
+                      <div className="parameter-selector-header">
+                        <div>
+                          <h4>Danh mục xét nghiệm</h4>
+                          <p>Chọn các danh mục thuộc gói</p>
+                        </div>
+                        <div className="search-box compact">
+                          <FiSearch size={16} />
+                          <input
+                            type="text"
+                            placeholder="Tìm kiếm danh mục..."
+                            value={catalogSearch}
+                            onChange={(e) => setCatalogSearch(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <div className="parameters-selection">
+                        {catalogsLoading ? (
+                          <div className="loading-container small">
+                            <div className="loading-spinner"></div>
+                            <p>Đang tải danh mục...</p>
+                          </div>
+                        ) : filteredCatalogs.length > 0 ? (
+                          filteredCatalogs.map((catalog) => {
+                            const catalogId = getCatalogId(catalog);
+                            const isSelected = selectedCatalogs.some((item) =>
+                              compareCatalogIds(getCatalogId(item), catalogId)
+                            );
+
+                            return (
+                              <div
+                                key={catalogId}
+                                className={`parameter-item ${
+                                  isSelected ? "selected" : ""
+                                }`}
+                                onClick={() => handleToggleCatalog(catalog)}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  readOnly
+                                />
+                                <div className="parameter-info">
+                                  <span className="parameter-title">
+                                    {catalog.testName || catalog.catalogName}
+                                  </span>
+                                  <span className="parameter-meta">
+                                    {catalog.description || "Không có mô tả"}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })
+                        ) : (
+                          <p className="empty-text">
+                            Không có danh mục nào phù hợp
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
 
             <div className="modal-footer">
-              <button
-                className="modal-button cancel"
-                onClick={handleCloseModal}
-                disabled={isSaving}
-              >
-                Hủy
-              </button>
-              <button
-                className="modal-button primary"
-                onClick={handleSaveBundle}
-                disabled={isSaving || isDetailLoading}
-              >
-                {isSaving
-                  ? "Đang xử lý..."
-                  : modalMode === "create"
-                  ? "Tạo gói mới"
-                  : "Cập nhật gói"}
-              </button>
+              {modalMode === "create" && createStep === 2 ? (
+                <>
+                  {/* Bước 2: Có nút Trở về, Hủy (disabled), và Hoàn thành */}
+                  <button
+                    className="modal-button secondary"
+                    onClick={handleBackToStep1}
+                    disabled={isSaving}
+                    style={{
+                      marginRight: "auto",
+                    }}
+                  >
+                    ← Trở về
+                  </button>
+                  <button
+                    className="modal-button cancel"
+                    onClick={handleCloseModal}
+                    disabled={isSaving}
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    className="modal-button primary"
+                    onClick={handleCompleteCreate}
+                    disabled={isSaving || selectedCatalogs.length === 0}
+                    title={
+                      selectedCatalogs.length === 0
+                        ? "Vui lòng chọn ít nhất một danh mục xét nghiệm"
+                        : "Hoàn thành tạo gói"
+                    }
+                  >
+                    {isSaving ? "Đang xử lý..." : "Hoàn thành"}
+                  </button>
+                </>
+              ) : (
+                <>
+                  {/* Bước 1 hoặc Edit mode: Có nút Hủy và Tiếp theo/Cập nhật */}
+                  <button
+                    className="modal-button cancel"
+                    onClick={handleCloseModal}
+                    disabled={isSaving}
+                  >
+                    Hủy
+                  </button>
+                  {modalMode === "create" && createStep === 1 ? (
+                    <button
+                      className="modal-button primary"
+                      onClick={handleNextStep}
+                      disabled={isSaving}
+                    >
+                      {isSaving ? "Đang tạo..." : "Tiếp theo →"}
+                    </button>
+                  ) : (
+                    <button
+                      className="modal-button primary"
+                      onClick={handleSaveBundle}
+                      disabled={isSaving || isDetailLoading}
+                    >
+                      {isSaving ? "Đang xử lý..." : "Cập nhật gói"}
+                    </button>
+                  )}
+                </>
+              )}
             </div>
           </div>
         </div>

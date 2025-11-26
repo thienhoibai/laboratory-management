@@ -61,8 +61,15 @@ namespace TestOrder.Presentation.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteBundleAsync(int id)
         {
-            await _service.DeleteBundleAsync(id);
-            return NoContent();
+            try
+            {
+                await _service.DeleteBundleAsync(id);
+                return NoContent();
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
         }
     }
 }

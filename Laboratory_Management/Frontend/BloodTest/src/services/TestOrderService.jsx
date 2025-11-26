@@ -47,39 +47,112 @@ export const extractItemsAndMeta = (response, fallbackQuery = {}) => {
 
 // ==================== Bundle Service ====================
 export const getAllBundles = async (params = {}) => {
-  // Gọi API để lấy bundles từ CatalogBundle
-  const catalogBundleResponse = await getAllBundlesAPI(params);
-  const catalogBundles = extractItemsAndMeta(catalogBundleResponse, params);
-
-  // Lấy thông tin isActive từ TestBundle API để merge
+  console.log("[Service] getAllBundles called with params:", params);
   try {
+    // Lấy bundles từ TestBundle API (chứa tất cả bundles, kể cả chưa có catalog)
+    console.log("[Service] Fetching bundles from TestBundle API...");
     const testBundleResponse = await getAllBundlesWithActive(params);
     const testBundles = extractItemsAndMeta(testBundleResponse, params);
+    console.log(
+      `[Service] TestBundle API returned ${testBundles.items.length} bundles`
+    );
 
-    // Merge: lấy catalogs từ CatalogBundle và isActive từ TestBundle
-    const mergedBundles = catalogBundles.items.map((catalogBundle) => {
-      const testBundle = testBundles.items.find(
-        (tb) =>
-          (tb.bundleId ?? tb.id) ===
-          (catalogBundle.bundleId ?? catalogBundle.id)
-      );
-      return {
-        ...catalogBundle,
-        isActive: testBundle?.isActive ?? catalogBundle.isActive ?? true,
+    // Lấy thông tin catalogs từ CatalogBundle API để merge
+    // Lưu ý: CatalogBundle API chỉ trả về bundles có catalogs
+    // Nên cần lấy với pageSize lớn để đảm bảo lấy được tất cả
+    let catalogBundles = { items: [], meta: { totalItems: 0 } };
+    try {
+      console.log("[Service] Fetching catalogs from CatalogBundle API...");
+      // Lấy tất cả bundles có catalogs (không giới hạn pagination)
+      const catalogBundleParams = {
+        ...params,
+        page: 1,
+        pageSize: 1000, // Lấy số lượng lớn để đảm bảo lấy được tất cả
       };
+      const catalogBundleResponse = await getAllBundlesAPI(catalogBundleParams);
+      catalogBundles = extractItemsAndMeta(
+        catalogBundleResponse,
+        catalogBundleParams
+      );
+      console.log(
+        `[Service] CatalogBundle API returned ${catalogBundles.items.length} bundles with catalogs`
+      );
+    } catch (error) {
+      console.warn(
+        "Could not fetch catalogs from CatalogBundle, using TestBundle data only:",
+        error
+      );
+    }
+
+    // Helper function để so sánh bundle ID một cách an toàn
+    const compareBundleIds = (id1, id2) => {
+      if (!id1 || !id2) return false;
+      // Convert về string để so sánh (xử lý cả số và string)
+      return String(id1) === String(id2);
+    };
+
+    // Merge: lấy tất cả bundles từ TestBundle và thêm catalogs từ CatalogBundle
+    const mergedBundles = testBundles.items.map((testBundle) => {
+      const testBundleId = testBundle.bundleId ?? testBundle.id;
+
+      // Tìm bundle tương ứng trong CatalogBundle response
+      const catalogBundle = catalogBundles.items.find((cb) => {
+        const catalogBundleId = cb.bundleId ?? cb.id;
+        return compareBundleIds(testBundleId, catalogBundleId);
+      });
+
+      // Nếu tìm thấy catalogBundle, merge catalogs
+      // Nếu không tìm thấy, bundle này chưa có catalogs (hoặc không có trong CatalogBundle response)
+      const mergedBundle = {
+        ...testBundle,
+        // Thêm catalogs từ CatalogBundle nếu có, nếu không thì dùng từ testBundle hoặc mảng rỗng
+        catalogs: catalogBundle?.catalogs ?? testBundle.catalogs ?? [],
+        // Ưu tiên isActive từ TestBundle
+        isActive: testBundle.isActive ?? catalogBundle?.isActive ?? true,
+      };
+
+      // Log để debug
+      if (catalogBundle) {
+        console.log(
+          `[Service] Merged bundle ${testBundleId}: found ${
+            catalogBundle.catalogs?.length || 0
+          } catalogs`
+        );
+      } else {
+        console.log(
+          `[Service] Bundle ${testBundleId} has no catalogs in CatalogBundle response`
+        );
+      }
+
+      return mergedBundle;
     });
+
+    console.log(
+      `[Service] getAllBundles returning ${mergedBundles.length} merged bundles`
+    );
 
     return {
       items: mergedBundles,
-      meta: catalogBundles.meta,
+      meta: testBundles.meta, // Sử dụng meta từ TestBundle vì nó chứa tất cả bundles
     };
   } catch (error) {
-    // Nếu TestBundle API lỗi, chỉ trả về dữ liệu từ CatalogBundle
-    console.warn(
-      "Could not fetch isActive from TestBundle, using CatalogBundle data only:",
-      error
-    );
-    return catalogBundles;
+    console.error("[Service] Error fetching bundles from TestBundle:", error);
+    // Fallback: thử lấy từ CatalogBundle nếu TestBundle lỗi
+    try {
+      console.log("[Service] Fallback: trying CatalogBundle API...");
+      const catalogBundleResponse = await getAllBundlesAPI(params);
+      const catalogBundles = extractItemsAndMeta(catalogBundleResponse, params);
+      console.log(
+        `[Service] Fallback returned ${catalogBundles.items.length} bundles`
+      );
+      return catalogBundles;
+    } catch (fallbackError) {
+      console.error(
+        "[Service] Error fetching bundles from both APIs:",
+        fallbackError
+      );
+      throw error; // Throw error gốc
+    }
   }
 };
 
@@ -108,7 +181,13 @@ export const getBundleById = async (id) => {
 
 export const createBundle = async (payload) => {
   try {
+    console.log("[Service] createBundle called with payload:", payload);
     const response = await createBundleAPI(payload);
+    console.log("[Service] createBundle API response:", {
+      status: response?.status,
+      headers: response?.headers,
+      data: response?.data,
+    });
 
     // Xử lý trường hợp 204 No Content - API thành công nhưng không trả về data
     if (response?.status === 204) {
@@ -118,13 +197,38 @@ export const createBundle = async (payload) => {
 
       // Thử lấy bundleId từ Location header nếu có
       const location =
-        response?.headers?.location || response?.headers?.Location;
+        response?.headers?.location ||
+        response?.headers?.Location ||
+        response?.headers?.["location"] ||
+        response?.headers?.["Location"];
+
+      console.log("[Service] Location header:", location);
+
       if (location) {
-        const bundleIdMatch = location.match(/\/(\d+)$/);
-        if (bundleIdMatch) {
-          const bundleId = parseInt(bundleIdMatch[1]);
-          return { id: bundleId, bundleId: bundleId };
+        // Thử nhiều pattern để extract ID
+        const patterns = [
+          /\/(\d+)$/, // /123
+          /\/([0-9a-fA-F-]+)$/, // UUID hoặc GUID
+          /id[=:](\d+)/i, // id=123 hoặc id:123
+        ];
+
+        for (const pattern of patterns) {
+          const match = location.match(pattern);
+          if (match && match[1]) {
+            const bundleId = match[1];
+            console.log(
+              `[Service] Extracted bundleId from Location header: ${bundleId}`
+            );
+            return { id: bundleId, bundleId: bundleId };
+          }
         }
+
+        console.warn(
+          "[Service] Location header found but couldn't extract ID:",
+          location
+        );
+      } else {
+        console.warn("[Service] No Location header in 204 response");
       }
 
       // Nếu không có Location header, trả về null để component xử lý
@@ -132,20 +236,42 @@ export const createBundle = async (payload) => {
     }
 
     const data = response?.data;
-    return data?.data || data;
+    const result = data?.data || data;
+    console.log("[Service] createBundle returning data:", result);
+    return result;
   } catch (error) {
+    console.error("[Service] createBundle error:", {
+      status: error.response?.status,
+      headers: error.response?.headers,
+      data: error.response?.data,
+      message: error.message,
+    });
+
     // Xử lý trường hợp 204 trong error response
     if (error.response?.status === 204) {
       console.log(
         "[Service] createBundle error response 204 - treating as success"
       );
       const location =
-        error.response?.headers?.location || error.response?.headers?.Location;
+        error.response?.headers?.location ||
+        error.response?.headers?.Location ||
+        error.response?.headers?.["location"] ||
+        error.response?.headers?.["Location"];
+
+      console.log("[Service] Error Location header:", location);
+
       if (location) {
-        const bundleIdMatch = location.match(/\/(\d+)$/);
-        if (bundleIdMatch) {
-          const bundleId = parseInt(bundleIdMatch[1]);
-          return { id: bundleId, bundleId: bundleId };
+        const patterns = [/\/(\d+)$/, /\/([0-9a-fA-F-]+)$/, /id[=:](\d+)/i];
+
+        for (const pattern of patterns) {
+          const match = location.match(pattern);
+          if (match && match[1]) {
+            const bundleId = match[1];
+            console.log(
+              `[Service] Extracted bundleId from error Location header: ${bundleId}`
+            );
+            return { id: bundleId, bundleId: bundleId };
+          }
         }
       }
       return null;
