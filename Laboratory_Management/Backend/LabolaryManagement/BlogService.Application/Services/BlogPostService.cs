@@ -42,7 +42,7 @@ namespace BlogService.Application.Services
                 CreatedDate = DateTime.Now,
                 IsPublished = dto.IsPublished ?? false,
                 IsApproved = false,
-                ThumbnailUrl = dto.ThumbnailUrl
+                ImagePath = dto.ImagePath,
             };
 
             await _repository.AddAsync(post);
@@ -56,7 +56,7 @@ namespace BlogService.Application.Services
                 throw new Exception("Bài viết không tồn tại.");
 
             post.Title = dto.Title ?? post.Title;
-            post.ThumbnailUrl = dto.ThumbnailUrl ?? post.ThumbnailUrl;
+            post.ImagePath = dto.ImagePath ?? post.ImagePath;
             post.Content = dto.Content ?? post.Content;
             post.CategoryId = dto.CategoryId ?? post.CategoryId;
             if (dto.AuthorId.HasValue)
@@ -89,7 +89,7 @@ namespace BlogService.Application.Services
                 UpdatedDate = p.UpdatedDate,
                 IsPublished = p.IsPublished,
                 IsApproved = p.IsApproved,
-                ThumbnailUrl = p.ThumbnailUrl
+                ImagePath = p.ImagePath
             }).ToList();
         }
         public async Task UpdatePostStatusAsync(int postId, BlogPostStatus status)

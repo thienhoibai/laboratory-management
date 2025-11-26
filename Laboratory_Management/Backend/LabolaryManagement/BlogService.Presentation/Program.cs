@@ -1,7 +1,8 @@
-﻿using BlogService.Infrastructure.Data;
+﻿using BlogService.Application.Services;
+using BlogService.Infrastructure.Data;
 using BlogService.Infrastructure.Repository;
 using Microsoft.EntityFrameworkCore;
-using BlogService.Application.Services;
+using Microsoft.Extensions.FileProviders;
 
 namespace BlogService.Presentation
 {
@@ -73,7 +74,12 @@ namespace BlogService.Presentation
             app.UseRouting();
             app.UseCors("AllowFrontend");
             app.UseAuthorization();
-
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new PhysicalFileProvider(
+        Path.Combine(builder.Environment.ContentRootPath, "Images")),
+                RequestPath = "/Images"
+            });
             app.MapControllers();
 
             app.Run();

@@ -7,6 +7,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Contracts\**" />
+    <Compile Remove="DTOs\**" />
+    <EmbeddedResource Remove="Contracts\**" />
+    <EmbeddedResource Remove="DTOs\**" />
+    <None Remove="Contracts\**" />
+    <None Remove="DTOs\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Patient.Infrastructure\Patient.Infrastructure.csproj" />
     <ProjectReference Include="..\Common\Common.csproj" />
     <ProjectReference Include="..\Contracts\Contracts.csproj" />
@@ -23,11 +32,6 @@
     <PackageReference Include="FluentValidation" Version="11.9.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
     <PackageReference Include="MassTransit.Abstractions" Version="8.3.2" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Contracts\Events\Patient\" />
-    <Folder Include="DTOs\" />
   </ItemGroup>
 
 

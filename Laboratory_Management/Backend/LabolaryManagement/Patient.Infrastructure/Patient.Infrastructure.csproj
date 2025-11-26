@@ -7,6 +7,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Notifications\**" />
+    <Compile Remove="Outbox\**" />
+    <EmbeddedResource Remove="Notifications\**" />
+    <EmbeddedResource Remove="Outbox\**" />
+    <None Remove="Notifications\**" />
+    <None Remove="Outbox\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.7" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.7" />
     <PackageReference Include="MassTransit" Version="8.3.2" />
@@ -16,11 +25,6 @@
     <ProjectReference Include="..\Patient.Domain\Patient.Domain.csproj" />
     <ProjectReference Include="..\Contracts\Contracts.csproj" />
     <ProjectReference Include="..\Messaging\Messaging.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Notifications\" />
-    <Folder Include="Outbox\" />
   </ItemGroup>
 
 </Project>
