@@ -109,6 +109,9 @@
     environment:
       ASPNETCORE_ENVIRONMENT: "Docker"
       ConnectionStrings__DefaultConnection: "Server=host.docker.internal,1433;Database=TestOder;User Id=sa;Password=12345;TrustServerCertificate=True;Encrypt=False"
+      RabbitMQ__Host: "rabbitmq"
+      RabbitMQ__User: "lab"
+      RabbitMQ__Pass: "lab123"
     depends_on:
       rabbitmq:
         condition: service_healthy
