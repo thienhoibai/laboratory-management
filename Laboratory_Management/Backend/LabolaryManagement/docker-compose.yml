@@ -109,7 +109,7 @@
     environment:
      ASPNETCORE_ENVIRONMENT: "Docker"
      TZ: Asia/Ho_Chi_Minh   # <== thêm cái nàyd
-     ConnectionStrings__DefaultConnection: "Server=host.docker.internal,1433;Database=TestOder;User Id=sa;Password=12345;TrustServerCertificate=True;Encrypt=False"
+     ConnectionStrings__DefaultConnection: "Server=host.docker.internal,1433;Database=TestOrderDB;User Id=sa;Password=12345;TrustServerCertificate=True;Encrypt=False"
     depends_on:
      rabbitmq:
        condition: service_healthy
