@@ -1,8 +1,8 @@
 ﻿
+
 using Azure;
 using Microsoft.IdentityModel.Tokens;
 using System;
-
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Security.AccessControl;
@@ -10,6 +10,8 @@ using System.Threading.Tasks;
 using TestOrder.Application.DTOs;
 using TestOrder.Application.DTOs.Bookings;
 using TestOrder.Infrastructure.Repository;
+using MassTransit;
+using Contracts.Notifications;
 
 namespace TestOrder.Application.Services.Booking
 {
@@ -360,6 +362,40 @@ namespace TestOrder.Application.Services.Booking
 
             booking.Status = (byte?)BookingStatusEnum.Confirmed;
             await _bookingRepository.UpdateAsync(booking);
+
+            // ✅ GỬI EMAIL XÁC NHẬN BOOKING
+            if (!string.IsNullOrWhiteSpace(booking.PatientEmail))
+            {
+                try
+                {
+                    var slot = await _appointmentSlotService.GetAppointmentSlotByIdAsync((Guid)booking.AppointmentSlotId!);
+                    
+                    var templateData = new Dictionary<string, string>
+                    {
+                        { "BookingCode", booking.BookingCode ?? "N/A" },
+                        { "PatientName", booking.PatientName ?? "Khách hàng" },
+                        { "PatientEmail", booking.PatientEmail },
+                        { "PatientPhone", booking.PatientPhone ?? "N/A" },
+                        { "AppointmentDate", slot?.AppointmentDate.ToString("dd/MM/yyyy") ?? "Chưa xác định" },
+                        { "AppointmentTime", slot?.TimeBlock.ToString(@"hh\:mm") ?? "Chưa xác định" }
+                    };
+
+                    await _publishEndpoint.Publish(new NotificationRequestedV1(
+                        MessageId: Guid.NewGuid().ToString(),
+                        Channel: "email",
+                        To: booking.PatientEmail,
+                        Template: "BookingConfirmation",
+                        Data: templateData
+                    ));
+
+                    Console.WriteLine($"✅ Đã gửi yêu cầu email xác nhận booking #{booking.BookingCode} tới {booking.PatientEmail}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"⚠️ Lỗi khi gửi email xác nhận booking: {ex.Message}");
+                    // Không throw exception để không ảnh hưởng đến luồng thanh toán
+                }
+            }
         }
 
 
