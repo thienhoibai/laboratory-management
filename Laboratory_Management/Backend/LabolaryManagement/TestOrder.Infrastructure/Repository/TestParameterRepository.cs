@@ -41,6 +41,10 @@ namespace TestOrder.Infrastructure.Repository
             await _context.TestParameters.AddAsync(parameter);
             await _context.SaveChangesAsync();
         }
-
+        public async Task RemoveParameterAsync(TestParameter parameter)
+        {
+            _context.TestParameters.Remove(parameter);
+            await _context.SaveChangesAsync();
+        }
     }
 }

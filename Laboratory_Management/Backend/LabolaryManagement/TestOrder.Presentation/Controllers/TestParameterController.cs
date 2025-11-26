@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using System.Threading.Tasks;
 using TestOrder.Application.DTOs;
 using TestOrder.Application.Services;
@@ -17,7 +18,9 @@ namespace TestOrder.Presentation.Controllers
         {
             _service = service;
         }
+
         [HttpGet]
+        [Authorize(Policy = "perm:TestParameter.List")]
         public async Task<IActionResult> GetAllParametersAsync(
             [FromQuery] int page,
             [FromQuery] int pageSize,
@@ -28,13 +31,16 @@ namespace TestOrder.Presentation.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize(Policy = "perm:TestParameter.View")]
         public async Task<IActionResult> GetByIdAsync(int id)
         {
             var parameter = await _service.GetByIdAsync(id);
             if (parameter == null) return NotFound();
             return Ok(parameter);
         }
+
         [HttpPost]
+        [Authorize(Policy = "perm:TestParameter.Create")]
         public async Task<IActionResult> AddParameterAsync([FromBody] TestParameterDTO parameter)
         {
             var entity = new TestParameter
@@ -48,6 +54,13 @@ namespace TestOrder.Presentation.Controllers
             await _service.AddParameterAsync(parameter);
             return Ok(entity);
         }
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> RemoveParameterAsync(int id)
+        {
+            await _service.RemoveParameterAsync(id);
+            return NoContent();
+        }
+
 
     }
 }

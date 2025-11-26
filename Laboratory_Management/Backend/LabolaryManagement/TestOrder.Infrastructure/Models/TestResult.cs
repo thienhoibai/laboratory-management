@@ -13,6 +13,8 @@ public partial class TestResult
 
     public string? ResultValue { get; set; }
 
+    public bool? IsNormal { get; set; }
+
     public virtual TestParameter? Parameter { get; set; }
 
     public virtual BookingTest? TestBookingNoNavigation { get; set; }

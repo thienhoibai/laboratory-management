@@ -45,9 +45,8 @@
       dockerfile: patient.Dockerfile
     container_name: patient.api
     environment:
-      ASPNETCORE_ENVIRONMENT: "Docker"
-      UseInMemoryDb: "false"     
-      ConnectionStrings__PatientService3: "Server=host.docker.internal,1433;Database=PatientService4;User Id=sa;Password=12345;TrustServerCertificate=True;Encrypt=False"
+      ASPNETCORE_ENVIRONMENT: "Production"
+      ConnectionStrings__PatientService4: "Server=host.docker.internal,1433;Database=PatientService4;User Id=sa;Password=12345;TrustServerCertificate=True;Encrypt=False"
       RabbitMQ__Host: "rabbitmq"
       RabbitMQ__User: "lab"
       RabbitMQ__Pass: "lab123"
@@ -60,6 +59,7 @@
         FES03/bBdxXAmpgtDTccC15qDWd112gVLcksrZEib98=
         8wCAUQo+Bggcq7suyJ2io37vmFLjOORzl7RMbhmipR0=
         W2mPvA+pi08SJGTUV43coZxqWVNP3guFg0puMHW4jdc=
+      Grpc__IamUrl: "http://iam.api:5001"
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -107,9 +107,11 @@
      dockerfile: testorder.Dockerfile
     container_name: testorder.api
     environment:
-     ASPNETCORE_ENVIRONMENT: "Docker"
-     TZ: Asia/Ho_Chi_Minh   # <== thêm cái nàyd
-     ConnectionStrings__DefaultConnection: "Server=host.docker.internal,1433;Database=TestOder;User Id=sa;Password=12345;TrustServerCertificate=True;Encrypt=False"
+      ASPNETCORE_ENVIRONMENT: "Docker"
+      ConnectionStrings__DefaultConnection: "Server=host.docker.internal,1433;Database=TestOder;User Id=sa;Password=12345;TrustServerCertificate=True;Encrypt=False"
+      RabbitMQ__Host: "rabbitmq"
+      RabbitMQ__User: "lab"
+      RabbitMQ__Pass: "lab123"
     depends_on:
      rabbitmq:
        condition: service_healthy

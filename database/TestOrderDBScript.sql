@@ -2,7 +2,7 @@
 ALTER DATABASE TestOrderDB SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
 DROP DATABASE TestOrderDB;
 
-CREATE DATABASE TestOder
+CREATE DATABASE TestOrderDB
 
 use TestOrderDB
 
@@ -50,13 +50,13 @@ CREATE TABLE Booking
     BookingCode NVARCHAR(50),
     AppointmentSlotId UNIQUEIDENTIFIER FOREIGN KEY REFERENCES AppointmentSlot(SlotId),
     CreateDate DATE DEFAULT GETDATE(),
+	CreateTime TIME DEFAULT GETDATE(),
     CreatedBy NVARCHAR(255),
     RunDate DATE,
     RanBy NVARCHAR(30),
-    BundleId INT FOREIGN KEY REFERENCES TestBundle(BundleId)
+    BundleId INT FOREIGN KEY REFERENCES TestBundle(BundleId),
+	TotalPrice float,
 );
-
-
 
 CREATE TABLE PaymentEnvoice (
     PaymentNo INT IDENTITY(1,1) PRIMARY KEY,
@@ -231,15 +231,11 @@ VALUES
 (N'Xét nghiệm tổng quát',N'Gói xét nghiệm cơ bản bao gồm công thức máu, đường huyết, chức năng gan',450000, 1),
 (N'Xét nghiệm sinh hóa',N'Đánh giá chức năng gan, thận và các chỉ số sinh hóa quan trọng',650000, 1),
 (N'Xét nghiệm toàn diện',N'Gói xét nghiệm đầy đủ nhất cho sức khỏe tổng thể',1200000, 1)
-GO
 
-INSERT INTO
+Alter TABLE TestResult
+Add isNormal bit
 
-ALTER TABLE Booking
-ADD PatientEmail nvarchar(255);
-
-
-
+delete from Booking
 		select * from Booking
 		select * from CatalogBundle
 		select * from TestCatalog

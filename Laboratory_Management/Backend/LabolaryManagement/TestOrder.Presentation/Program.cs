@@ -6,6 +6,9 @@ using TestOrder.Application.Services.InstrumentBridge;
 using TestOrder.Infrastructure.Base;
 using TestOrder.Infrastructure.Data;
 using TestOrder.Infrastructure.Repository;
+using MassTransit;
+using Contracts.Notifications;
+using RabbitMQ.Client;
 
 namespace TestOrder.Presentation
 {
@@ -24,6 +27,7 @@ namespace TestOrder.Presentation
             // Sử dụng PooledDbContextFactory cho cả Controllers và Background Services
             builder.Services.AddPooledDbContextFactory<TestOrderDBContext>(options =>
                 options.UseSqlServer(connectionString));
+
 
             // Đăng ký DbContext với Scoped lifetime để inject vào Controllers/Services
             builder.Services.AddScoped(sp =>
@@ -73,6 +77,27 @@ namespace TestOrder.Presentation
             builder.Services.AddScoped<IVnPayService, PaymentService>();
             builder.Services.AddScoped<PaymentService>();
             builder.Services.AddScoped<PaymentRepository>();
+
+            // ✅ THÊM MASSTRANSIT + RABBITMQ
+            const string notifyExchange = "lab.notify.v1";
+            builder.Services.AddMassTransit(x =>
+            {
+                x.UsingRabbitMq((context, cfg) =>
+                {
+                    var host = builder.Configuration["RabbitMQ:Host"] ?? "rabbitmq";
+                    var user = builder.Configuration["RabbitMQ:User"] ?? "guest";
+                    var pass = builder.Configuration["RabbitMQ:Pass"] ?? "guest";
+                    cfg.Host(host, h => { h.Username(user); h.Password(pass); });
+                    
+                    cfg.Message<NotificationRequestedV1>(m => m.SetEntityName(notifyExchange));
+                    cfg.Publish<NotificationRequestedV1>(p =>
+                    {
+                        p.ExchangeType = ExchangeType.Topic;
+                        p.Durable = true;
+                        p.AutoDelete = false;
+                    });
+                });
+            });
 
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();

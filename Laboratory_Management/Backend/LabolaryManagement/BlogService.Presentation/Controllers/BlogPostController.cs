@@ -2,8 +2,12 @@
 using BlogService.Infrastructure.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using BlogService.Application.DTOs;
 using BlogService.Application.Enums;
+using Swashbuckle.AspNetCore.Annotations;
+using Microsoft.AspNetCore.Hosting;
+
 
 namespace BlogService.Presentation.Controllers
 {
@@ -13,13 +17,16 @@ namespace BlogService.Presentation.Controllers
     public class BlogPostController : ControllerBase
     {
         private readonly BlogPostService _service;
+        private readonly IWebHostEnvironment _env;
 
-        public BlogPostController(BlogPostService service)
+        public BlogPostController(IWebHostEnvironment env, BlogPostService service)
         {
             _service = service;
+            _env = env;
         }
 
         [HttpGet]
+        [Authorize(Policy = "perm:BlogPost.List")]
         public async Task<IActionResult> GetAllBlogs(
     [FromQuery] Guid? authorId,
     [FromQuery] int? status,
@@ -43,6 +50,7 @@ namespace BlogService.Presentation.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize(Policy = "perm:BlogPost.View")]
         public async Task<IActionResult> GetById(int id)
         {
             var post = await _service.GetByIdAsync(id);
@@ -50,12 +58,45 @@ namespace BlogService.Presentation.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] BlogPostCreateDTO dto)
+        [Authorize(Policy = "perm:BlogPost.Create")]
+        public async Task<IActionResult> Create([FromForm] BlogPostCreateRequest request)
         {
+            string imagePath = null;
+
+            if (request.Image != null)
+            {
+                // Lấy folder Images trong project
+                var folder = Path.Combine(Directory.GetCurrentDirectory(), "Images");
+                Directory.CreateDirectory(folder); // tạo folder nếu chưa có
+
+                var fileName = Guid.NewGuid() + Path.GetExtension(request.Image.FileName);
+                var savePath = Path.Combine(folder, fileName);
+
+                using (var stream = new FileStream(savePath, FileMode.Create))
+                {
+                    await request.Image.CopyToAsync(stream);
+                }
+
+                // Lưu path để trả về database (có thể dùng relative path)
+                imagePath = Path.Combine("Images", fileName);
+            }
+
+            var dto = new BlogPostCreateDTO
+            {
+                Title = request.Title,
+                Content = request.Content,
+                AuthorId = request.AuthorId,
+                CategoryId = request.CategoryId,
+                ImagePath = imagePath
+            };
+
             await _service.AddAsync(dto);
-            return Ok("Post created successfully.");
+            return Ok(new { message = "Bài viết đã tạo thành công" });
         }
+
+
         [HttpPut("{id}")]
+        [Authorize(Policy = "perm:BlogPost.Update")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateBlogPostDTO dto)
         {
 
@@ -64,6 +105,7 @@ namespace BlogService.Presentation.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Policy = "perm:BlogPost.Delete")]
         public async Task<IActionResult> Delete(int id)
         {
             var post = await _service.GetByIdAsync(id);
@@ -73,10 +115,12 @@ namespace BlogService.Presentation.Controllers
         }
 
         [HttpGet("Approve")]
+        [Authorize(Policy = "perm:BlogPost.Approved.View")]
         public async Task<IActionResult> GetApproval() =>
             Ok(await _service.GetApprovalAsync());
 
         [HttpPut("status/{postId}")]
+        [Authorize(Policy = "perm:BlogPost.Status.Update")]
         public async Task<IActionResult> UpdateStatus(int postId, [FromBody] UpdateBlogStatusDTO dto)
         {
             await _service.UpdatePostStatusAsync(postId, dto.Status);
