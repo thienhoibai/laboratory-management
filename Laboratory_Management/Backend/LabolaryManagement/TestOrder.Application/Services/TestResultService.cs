@@ -6,31 +6,20 @@ using System.Threading.Tasks;
 using TestOrder.Infrastructure.Repository;
 using TestOrder.Application.Services.Booking;
 
+
 namespace TestOrder.Application.Services
 {
     public class TestResultService
     {
         private readonly TestResultRepository _testResultRepository;
-        private readonly TestParameterService testParameterService;
-        private readonly BookingTestService bookingTestService;
-
-        public TestResultService(
-            TestResultRepository testResultRepository,
-            TestParameterService testParameterService,
-            BookingTestService bookingTestService)
+        public TestResultService(TestResultRepository testResultRepository)
         {
             _testResultRepository = testResultRepository;
-            this.testParameterService = testParameterService;
-            this.bookingTestService = bookingTestService;
         }
 
-
-        //public async Task<IEnumerable<Infrastructure.Models.TestResult>> GetTestResultsWithParametersByBookingIdAsync(Guid bookingId)
-        //{
-        //    var bookingTests = await bookingTestService.GetBookingTestsByBookingIdAsync(bookingId);
-        //    var allTestResults = new List<Infrastructure.Models.TestResult>();
-        //}
-
-
+        public async Task<Infrastructure.Models.Result.ResultDetails?> GetTestResultByBookingId(Guid bookingId)
+        {
+            return await _testResultRepository.GetResultByBookingId(bookingId);
+        }
     }
 }

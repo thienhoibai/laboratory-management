@@ -156,5 +156,16 @@ namespace TestOrder.Application.Services
             var catalog =  await _repository.GetByIdAsync(id);
             await _repository.DeleteAsync(catalog);
         }
+
+        internal double GetPriceForMultipleTests(List<int> testIds)
+        {
+            double prices = 0d;
+            foreach (var id in testIds)
+            {
+                var catalog = _repository.GetByIdAsync(id).Result;
+                prices += catalog.Price;
+            }
+                return prices;
+        }
     }
 }
