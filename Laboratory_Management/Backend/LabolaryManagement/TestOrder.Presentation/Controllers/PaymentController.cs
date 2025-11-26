@@ -42,7 +42,7 @@ namespace TestOrder.Presentation.Controllers
             catch (Exception ex)
             {
                
-                return BadRequest($"Error retrieving payment: {ex.Message}");
+                return BadRequest($"{ex.Message}");
             }
         }
         [HttpGet]

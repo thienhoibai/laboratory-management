@@ -15,14 +15,5 @@ namespace TestOrder.Infrastructure.Repository
         {
         }
 
-        public async Task<IEnumerable<TestResult>> GetResultByBookingTestNoAsync(long bookingTestNo)
-        {
-            return await Task.Run(() =>
-            {
-                return _context.Set<TestResult>()
-                               .Where(tr => tr.TestBookingNo == bookingTestNo)
-                               .AsEnumerable();
-            });
-        }
     }
 }
