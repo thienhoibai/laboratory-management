@@ -12,12 +12,14 @@ namespace BlogService.Application.DTOs
         public string? Title { get; set; }
         public string? Content { get; set; }
         public int? CategoryId { get; set; }
+        
+        public Guid?  AuthorId { get; set; }
         public string? CategoryName { get; set; }
         public DateTime? CreatedDate { get; set; }
         public DateTime? UpdatedDate { get; set; }
         public bool? IsPublished { get; set; }
         public bool? IsApproved { get; set; }
-        public string? ThumbnailUrl { get; set; }
+        public string? ImagePath { get; set; }
 
         public int? Status { get; set; } = 0;   
     }
