@@ -198,7 +198,7 @@ export const useUpdateProfile = (
       phoneNumber: userData?.phone || "",
       email: userData?.email || "",
       address: userData?.address || "",
-      identityCard: userData?.idNumber || "",
+      identityCard: userData?.citizenId || "",
       healthInsurance: userData?.insuranceNumber || "",
     });
     setErrors({});

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { isAuthenticated } from "../../utils/auth"; // <-- login check util (returns boolean)
 import BookingNavbar from "../../components/booking/BookingNavbar";
 import BookingHeader from "../../components/booking/BookingHeader";
+import PatientSelection from "../../components/booking/PatientSelection";
 import PackageSelection from "../../components/booking/PackageSelection";
 import CatalogSelection from "../../components/booking/CatalogSelection";
 import DateTimeSelection from "../../components/booking/DateTimeSelection";
@@ -15,6 +16,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 function Booking() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const [selectedPatient, setSelectedPatient] = useState(null);
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [selectedItems, setSelectedItems] = useState(null); // payload from Package/Catalog continue
   const [selectedDateTime, setSelectedDateTime] = useState(null); // { date, time }
@@ -25,13 +27,12 @@ function Booking() {
   // const [showWarningModal, setShowWarningModal] = useState(false);
   // store payment result to show in Success
   const [paymentResult, setPaymentResult] = useState(null);
-  // QR step state
-  const [qrLoading, setQrLoading] = useState(false);
   // store bookingId from AcceptInfo after successful booking
   const [bookingId, setBookingId] = useState(null);
 
   // Reset booking to initial state (bắt đầu lại bước 1)
   const handleNewBooking = () => {
+    setSelectedPatient(null);
     setSelectedPackage(null);
     setSelectedItems(null);
     setSelectedDateTime(null);
@@ -77,6 +78,11 @@ function Booking() {
     }
   }, [searchParams, isLoggedIn, currentStep, navigate]);
 
+  const handlePatientSelect = (patient) => {
+    setSelectedPatient(patient);
+    setCurrentStep(2);
+  };
+
   const handlePackageSelect = (packageId) => {
     setSelectedPackage(packageId);
   };
@@ -86,13 +92,13 @@ function Booking() {
     // payload: { source: 'package'|'catalog', package: {...} } OR { source: 'catalog', items: [...] }
     setSelectedItems(payload);
     // chuyển sang chọn ngày & giờ
-    setCurrentStep(2);
+    setCurrentStep(3);
   };
 
   // DateTimeSelection tiếp tục -> chuyển sang AcceptInfo
   const handleContinueFromDateTime = (dateTime) => {
     setSelectedDateTime(dateTime);
-    setCurrentStep(3);
+    setCurrentStep(4);
   };
 
   // AcceptInfo tiếp tục (chỉ chuyển nội bộ sang Payment step)
@@ -101,7 +107,7 @@ function Booking() {
     if (bookingIdFromAcceptInfo) {
       setBookingId(bookingIdFromAcceptInfo);
     }
-    setCurrentStep(4);
+    setCurrentStep(5);
     // Payment step will show and Payment should trigger the warning modal
   };
 
@@ -119,9 +125,10 @@ function Booking() {
   };
 
   // back handlers
-  const backToSelection = () => setCurrentStep(1);
-  const backToDateTime = () => setCurrentStep(2);
-  const backFromPayment = () => setCurrentStep(3);
+  const backToPatientSelection = () => setCurrentStep(1);
+  const backToSelection = () => setCurrentStep(2);
+  const backToDateTime = () => setCurrentStep(3);
+  const backFromPayment = () => setCurrentStep(4);
 
   // Called by Payment component when user presses "Xác nhận thanh toán"
   // const handleRequestConfirm = () => {
@@ -156,16 +163,16 @@ function Booking() {
     );
   }
   const steps = [
-    { id: 1, label: "Chọn xét nghiệm", name: "Chọn xét nghiệm" },
-    { id: 2, label: "Chọn giờ", name: "Chọn giờ" },
-    { id: 3, label: "Xác nhận", name: "Xác nhận" },
-    { id: 4, label: "Thanh toán", name: "Thanh toán" },
+    { id: 1, label: "Chọn bệnh nhân", name: "Chọn bệnh nhân" },
+    { id: 2, label: "Chọn xét nghiệm", name: "Chọn xét nghiệm" },
+    { id: 3, label: "Chọn giờ", name: "Chọn giờ" },
+    { id: 4, label: "Xác nhận", name: "Xác nhận" },
+    { id: 5, label: "Thanh toán", name: "Thanh toán" },
     { id: 6, label: "Thành công", name: "Thành công" },
   ];
   // Nếu đã đăng nhập, hiển thị trang đặt lịch
   return (
     <div className="booking-container">
-      {currentStep !== 5}
       <BookingNavbar />
       <div className="booking-content">
         {currentStep !== 5 && (
@@ -179,6 +186,13 @@ function Booking() {
 
         {/* Render nội bộ không reload trang theo currentStep */}
         {currentStep === 1 && (
+          <PatientSelection
+            onSelectPatient={handlePatientSelect}
+            onBack={() => navigate("/")}
+          />
+        )}
+
+        {currentStep === 2 && (
           <>
             {packageMode === "preset" ? (
               <PackageSelection
@@ -187,65 +201,54 @@ function Booking() {
                 onContinue={(payload) => handleContinueFromSelection(payload)}
                 setPackageMode={setPackageMode}
                 mode={packageMode}
+                selectedPatient={selectedPatient}
               />
             ) : (
               <CatalogSelection
                 setPackageMode={setPackageMode}
                 onContinue={(payload) => handleContinueFromSelection(payload)}
+                selectedPatient={selectedPatient}
               />
             )}
           </>
         )}
 
-        {currentStep === 2 && (
+        {currentStep === 3 && (
           <DateTimeSelection
             onBack={backToSelection}
             onContinue={(dt) => handleContinueFromDateTime(dt)}
+            selectedPatient={selectedPatient}
           />
         )}
 
-        {currentStep === 3 && (
+        {currentStep === 4 && (
           <AcceptInfo
             selectedItems={selectedItems}
             selectedDateTime={selectedDateTime}
             onBack={backToDateTime}
             onProceed={handleProceedPayment}
+            selectedPatient={selectedPatient}
           />
         )}
-        {currentStep === 4 && (
+        {currentStep === 5 && (
           <Payment
             selectedItems={selectedItems}
             selectedDateTime={selectedDateTime}
             bookingId={bookingId}
             onBack={backFromPayment}
             onFinish={(result) => handlePaymentFinish(result)}
+            selectedPatient={selectedPatient}
             // onConfirmRequested={handleRequestConfirm}
           />
         )}
-        {currentStep === 5 && (
-          <QR
-            selectedItems={selectedItems}
-            selectedDateTime={selectedDateTime}
-            onConfirmPaid={() => {
-              setQrLoading(true);
-              setTimeout(() => {
-                setQrLoading(false);
-                handlePaymentFinish({
-                  status: "success",
-                  confirmedAt: Date.now(),
-                  bookingId: bookingId,
-                });
-              }, 5000);
-            }}
-            loading={qrLoading}
-          />
-        )}
+
         {currentStep === 6 && (
           <Success
             paymentResult={paymentResult}
             selectedItems={selectedItems}
             selectedDateTime={selectedDateTime}
             onNewBooking={handleNewBooking}
+            selectedPatient={selectedPatient}
           />
         )}
 

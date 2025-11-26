@@ -9,6 +9,8 @@ export default function Payment({
   selectedItems,
   selectedDateTime,
   bookingId,
+  selectedPatient,
+
   // onProceed, // legacy prop
   // onConfirm,
   // onFinish, // prop để gọi khi thanh toán thành công
@@ -19,10 +21,11 @@ export default function Payment({
     phone: "0123321132",
     paymentMethod: "VnPay",
   });
+
   // modal state moved into Payment
   const [showWarningModal, setShowWarningModal] = useState(false);
 
-  const { fullName, phone, email } = useSelector((state) => state.patient);
+  const { fullName, phone, email } = selectedPatient;
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });

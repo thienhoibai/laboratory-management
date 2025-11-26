@@ -319,12 +319,12 @@ public class PatientService : IPatientService
 
         var total = await q.LongCountAsync(ct);
         var data = await q.Skip((page - 1) * pageSize).Take(pageSize)
-            .Select(e => new { e.PatientId, e.FullName, e.DateOfBirth, e.Gender, e.BloodType, e.Phone, e.IsDeleted, e.CreatedAt, e.UpdatedAt })
+            .Select(e => new { e.PatientId, e.FullName, e.DateOfBirth, e.Gender, e.BloodType,e.Email, e.Phone, e.IsDeleted, e.CreatedAt, e.UpdatedAt })
             .ToListAsync(ct);
 
         // Trả về toàn bộ số điện thoại
         var items = data.Select(e => new PatientSummaryDto(
-            e.PatientId, e.FullName, e.DateOfBirth, e.Gender, e.BloodType, e.Phone, 
+            e.PatientId, e.FullName, e.DateOfBirth, e.Gender, e.BloodType,e.Email,e.Phone, 
             e.IsDeleted, e.CreatedAt, e.UpdatedAt)).ToList();
 
         return (items, total);
@@ -352,7 +352,7 @@ public class PatientService : IPatientService
         var total = await q.LongCountAsync(ct);
         var list = await q.Skip((page - 1) * pageSize).Take(pageSize)
             .Select(e => new PatientSummaryDto(
-                e.PatientId, e.FullName, e.DateOfBirth, e.Gender, e.BloodType, e.Phone, 
+                e.PatientId, e.FullName, e.DateOfBirth, e.Gender, e.BloodType,e.Email, e.Phone, 
                 e.IsDeleted, e.CreatedAt, e.UpdatedAt))
             .ToListAsync(ct);
         
@@ -397,6 +397,7 @@ public class PatientService : IPatientService
                 p.DateOfBirth,
                 p.Gender,
                 p.BloodType,
+                p.Email,
                 p.Phone,
                 p.IsDeleted,
                 p.CreatedAt,
@@ -455,6 +456,7 @@ public class PatientService : IPatientService
                 e.DateOfBirth, 
                 e.Gender, 
                 e.BloodType, 
+                e.Email,
                 e.Phone, 
                 e.IsDeleted, 
                 e.CreatedAt, 

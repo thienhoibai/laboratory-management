@@ -19,6 +19,7 @@ export default function BookingHistory() {
   const [Catalogs, setCatalogs] = useState({}); // map: catalogId -> catalog
   const [Payments, SetPayments] = useState({}); // map: bookingId -> payment
   const [searchParams] = useSearchParams();
+  const [Amount, setAmount] = useState();
   const patientId = searchParams.get("patientId");
 
   // pagination & loading
@@ -36,7 +37,6 @@ export default function BookingHistory() {
           `${endPoint}?patientId=${patientId}&pageNumber=1&pageSize=1000000`
         );
         const data = response.data.bookingResponses;
-        console.log(data);
         if (response.status >= 200 && response.status < 300) {
           let allItems = [];
           if (Array.isArray(data)) {
@@ -314,7 +314,7 @@ export default function BookingHistory() {
             const payS = payment
               ? paymentStatus(payment.status)
               : { text: "Chưa Thanh Toán", className: "" };
-            const derivedAmount = deriveAmount(b, payment, pkg, catalog);
+            const derivedAmount = b.totalAmount;
             const bookingStatusLower = String(b.status).toLowerCase();
             const paymentStatusLower = String(
               payment?.status || "unpaid"
@@ -465,7 +465,7 @@ export default function BookingHistory() {
                                 }
                               }}
                             >
-                              Thanh toán VNPay
+                              Thanh toán
                             </button>
                           </div>
                         )}
