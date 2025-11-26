@@ -4,6 +4,8 @@ import "./BookingHistory.css";
 import api from "../../configs/axios";
 import { formatDate, formatTime } from "../../utils/formatDate";
 import { useSearchParams } from "react-router-dom";
+import { toast } from "react-toastify";
+import TestOrderServiceAPI from "../../apis/TestOrderServiceAPI";
 
 const endPoint = "testorder/api/Booking/patient";
 const endPoint1 = "testorder/api/TestBundle";
@@ -117,14 +119,22 @@ export default function BookingHistory() {
                   const r = await api.get(
                     `testorder/api/Payment/by-booking?bookingId=${id}`
                   );
-                  if (r.status >= 200 && r.status < 300) return [id, r.data];
+                  if (r.status >= 200 && r.status < 300) {
+                    console.log("data" + r);
+                    return [id, r.data];
+                  }
                 } catch (error) {
+                  // Nếu payment không tồn tại (400 BadRequest), có nghĩa là đang chờ thanh toán
                   console.log(error);
+                  return [
+                    id,
+                    { status: "unpaid", method: "Chưa có", amount: 0 },
+                  ];
                 }
-                return [id, null];
+                return [id, { status: "unpaid", method: "Chưa có", amount: 0 }];
               })
             );
-            const payMap = Object.fromEntries(payEntries.filter(([, v]) => v));
+            const payMap = Object.fromEntries(payEntries);
             SetPayments(payMap);
           } else {
             SetPayments({});
@@ -167,8 +177,79 @@ export default function BookingHistory() {
         return { text: "Đã thanh toán", className: "badge-blue" };
       case "cancelled":
         return { text: "Đã hủy", className: "badge-red" };
+      case "unpaid":
+        return { text: "Chưa thanh toán", className: "badge-gray" };
       default:
         return { text: status, className: "" };
+    }
+  };
+
+  // Cố gắng suy ra số tiền từ nhiều nguồn khác nhau
+  const deriveAmount = (booking, payment, pkg, catalog) => {
+    // 1. Payment amount nếu có và > 0
+    if (payment && typeof payment.amount === "number" && payment.amount > 0)
+      return payment.amount;
+    // 2. Thuộc tính trực tiếp trên booking
+    const bookingAmountCandidate =
+      booking?.totalPrice ||
+      booking?.price ||
+      booking?.amount ||
+      booking?.bundlePrice ||
+      booking?.catalogPrice;
+    if (
+      typeof bookingAmountCandidate === "number" &&
+      bookingAmountCandidate > 0
+    )
+      return bookingAmountCandidate;
+    // 3. Giá từ gói
+    const bundleAmountCandidate =
+      pkg?.price ||
+      pkg?.bundlePrice ||
+      pkg?.totalPrice ||
+      pkg?.amount ||
+      pkg?.data?.price ||
+      pkg?.data?.bundlePrice;
+    if (typeof bundleAmountCandidate === "number" && bundleAmountCandidate > 0)
+      return bundleAmountCandidate;
+    // 4. Giá từ catalog
+    const catalogAmountCandidate =
+      catalog?.price ||
+      catalog?.testPrice ||
+      catalog?.totalPrice ||
+      catalog?.amount ||
+      catalog?.data?.price ||
+      catalog?.data?.testPrice;
+    if (
+      typeof catalogAmountCandidate === "number" &&
+      catalogAmountCandidate > 0
+    )
+      return catalogAmountCandidate;
+    return 0; // nếu không tìm thấy
+  };
+
+  const handlePay = async (bookingId, amount) => {
+    try {
+      if (!bookingId) return toast.error("Thiếu bookingId");
+      if (!amount || amount <= 0)
+        return toast.error("Không xác định được số tiền");
+      const resp = await TestOrderServiceAPI.bookingService.createVnPayUrl(
+        bookingId,
+        amount
+      );
+      // Giả sử API trả về { data: { paymentUrl: "..." } } hoặc trực tiếp url
+      const payUrl =
+        resp?.data?.paymentUrl ||
+        resp?.data?.url ||
+        resp?.data?.vnpUrl ||
+        resp?.data;
+      if (typeof payUrl === "string") {
+        window.location.href = payUrl;
+      } else {
+        toast.error("Không lấy được URL thanh toán");
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error(e?.response?.data?.message || "Tạo URL thanh toán thất bại");
     }
   };
 
@@ -233,6 +314,14 @@ export default function BookingHistory() {
             const payS = payment
               ? paymentStatus(payment.status)
               : { text: "Chưa Thanh Toán", className: "" };
+            const derivedAmount = deriveAmount(b, payment, pkg, catalog);
+            const bookingStatusLower = String(b.status).toLowerCase();
+            const paymentStatusLower = String(
+              payment?.status || "unpaid"
+            ).toLowerCase();
+            const shouldShowPayButton =
+              ["pending", "confirmed"].includes(bookingStatusLower) &&
+              ["unpaid", "pending"].includes(paymentStatusLower);
 
             return (
               <div
@@ -345,14 +434,14 @@ export default function BookingHistory() {
                           </span>
                         </div>
                         {/* Nếu có trường price thì hiển thị, nếu không thì bỏ qua */}
-                        {typeof payment?.amount === "number" && (
+                        {derivedAmount > 0 && (
                           <div className="info-row">
                             <div className="info-row-1">
                               <img src="src\assets\icon\Pay.svg" alt="Pay" />
                               <span className="label">Tổng tiền</span>
                             </div>
                             <span className="value">
-                              {payment.amount.toLocaleString("vi-VN")} ₫
+                              {derivedAmount.toLocaleString("vi-VN")} ₫
                             </span>
                           </div>
                         )}
@@ -362,6 +451,24 @@ export default function BookingHistory() {
                           </div>
                           <span className={`value`}>{payS.text}</span>
                         </div>
+                        {shouldShowPayButton && (
+                          <div className="info-row" style={{ marginTop: 8 }}>
+                            <button
+                              className="btn-primary-history-booking"
+                              onClick={() => {
+                                if (derivedAmount <= 0) {
+                                  toast.error(
+                                    "Không xác định được giá. Vui lòng liên hệ nhân viên."
+                                  );
+                                } else {
+                                  handlePay(b.bookingId, derivedAmount);
+                                }
+                              }}
+                            >
+                              Thanh toán VNPay
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
