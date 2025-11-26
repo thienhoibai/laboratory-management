@@ -9,6 +9,10 @@ using TestOrder.Infrastructure.Repository;
 using MassTransit;
 using Contracts.Notifications;
 using RabbitMQ.Client;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Microsoft.OpenApi.Models;
 
 namespace TestOrder.Presentation
 {
@@ -98,8 +102,148 @@ namespace TestOrder.Presentation
                 });
             });
 
+            // ===== JWT Authentication =====
+            var issuer = builder.Configuration["Jwt:Issuer"] ?? "lab-iam";
+            var audience = builder.Configuration["Jwt:Audience"] ?? "lab.api";
+            var signingKey = builder.Configuration["Jwt:SigningKey"] ?? "Jx6n2QvB5pTf8Kz3Wm9aS4Ld7Yh0Nr2Xu8Cj5Pk1Vg3Mz7Rb0Hq4Tn6Wy8Le2";
+
+            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(o =>
+                {
+                    o.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidIssuer = issuer,
+                        ValidAudience = audience,
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(signingKey)),
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidateLifetime = true,
+                        ClockSkew = TimeSpan.FromMinutes(1)
+                    };
+                });
+
+            // ===== Authorization Policies =====
+            builder.Services.AddAuthorization(options =>
+            {
+                // Booking permissions
+                string[] bookingPerms = new[]
+                {
+                    "Booking.List",
+                    "Booking.View",
+                    "Booking.View.Own",
+                    "Booking.Create",
+                    "Booking.Update",
+                    "Booking.Update.CheckIn",
+                    "Booking.Update.CheckOut",
+                    "Booking.Delete"
+                };
+
+                // TestCatalog permissions
+                string[] catalogPerms = new[]
+                {
+                    "TestCatalog.List",
+                    "TestCatalog.View",
+                    "TestCatalog.Create",
+                    "TestCatalog.Update",
+                    "TestCatalog.Delete"
+                };
+
+                // TestBundle permissions
+                string[] bundlePerms = new[]
+                {
+                    "TestBundle.List",
+                    "TestBundle.View",
+                    "TestBundle.Create",
+                    "TestBundle.Update",
+                    "TestBundle.Delete"
+                };
+
+                // AppointmentSlot permissions
+                string[] slotPerms = new[]
+                {
+                    "AppointmentSlot.List",
+                    "AppointmentSlot.View",
+                    "AppointmentSlot.Create",
+                    "AppointmentSlot.Update",
+                    "AppointmentSlot.Delete"
+                };
+
+                // TestResult permissions
+                string[] resultPerms = new[]
+                {
+                    "TestResult.List",
+                    "TestResult.View",
+                    "TestResult.Create",
+                    "TestResult.Update",
+                    "TestResult.Delete",
+                    "TestResult.Approve"
+                };
+
+                // Payment permissions
+                string[] paymentPerms = new[]
+                {
+                    "Payment.Create",
+                    "Payment.View",
+                    "Payment.Process"
+                };
+
+                var allPerms = bookingPerms
+                    .Concat(catalogPerms)
+                    .Concat(bundlePerms)
+                    .Concat(slotPerms)
+                    .Concat(resultPerms)
+                    .Concat(paymentPerms);
+
+                foreach (var p in allPerms)
+                {
+                    options.AddPolicy($"perm:{p}", policy =>
+                        policy.RequireAssertion(ctx =>
+                            ctx.User.IsInRole("Admin")
+                            || ctx.User.HasClaim("perm", p)
+                            || ctx.User.HasClaim("permissions", p)
+                            || ctx.User.HasClaim("scope", p)));
+                }
+            });
+
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+            builder.Services.AddSwaggerGen(options =>
+            {
+                options.SwaggerDoc("v1", new OpenApiInfo
+                {
+                    Title = "TestOrder API",
+                    Version = "v1",
+                    Description = "Laboratory Management - TestOrder Service API"
+                });
+
+                // Add JWT Authentication to Swagger
+                options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "Bearer",
+                    BearerFormat = "JWT",
+                    In = ParameterLocation.Header,
+                    Description = "JWT Authorization header using the Bearer scheme. \r\n\r\n" +
+                                  "Enter your token in the text input below.\r\n\r\n" +
+                                  "Example: '12345abcdef'"
+                });
+
+                options.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        Array.Empty<string>()
+                    }
+                });
+            });
 
             builder.Services.AddControllers()
                 .AddJsonOptions(x =>
@@ -139,7 +283,11 @@ namespace TestOrder.Presentation
 
             app.UseRouting();
             app.UseCors("AllowFrontend");
+            
+            // ✅ QUAN TRỌNG: Authentication phải đứng trước Authorization
+            app.UseAuthentication();
             app.UseAuthorization();
+            
             app.MapControllers();
 
             app.Run();
