@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Instrument.Infrastructure.Configs;
+using Instrument.Domain.Enums;
 using DomainInstrument = Instrument.Domain.Entities.Instrument;
 using Instrument.Domain.Entities;
 
@@ -29,7 +30,12 @@ public class InstrumentDbContext : DbContext
             entity.HasKey(e => e.RunId);
             
             entity.Property(e => e.InstrumentCode).HasMaxLength(50).IsRequired();
-            entity.Property(e => e.Status).HasMaxLength(15).IsRequired().HasDefaultValue("RUNNING");
+            
+            // Convert enum to byte in database
+            entity.Property(e => e.Status)
+                .HasConversion<byte>()
+                .HasDefaultValue(RunStatus.Running);
+            
             entity.Property(e => e.StartedAt).HasDefaultValueSql("SYSUTCDATETIME()");
             
             // Indexes

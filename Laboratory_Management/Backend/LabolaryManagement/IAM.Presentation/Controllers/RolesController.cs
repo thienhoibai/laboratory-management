@@ -1,7 +1,7 @@
 ﻿using Common.Errors;
 using Common.Web.Filters;
-using IAM.Application.Roles;
-using IAM.Application.Roles.DTOs;
+using IAM.Application.Roles.Services;
+using IAM.Application.Roles.DTOs.Requests;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;

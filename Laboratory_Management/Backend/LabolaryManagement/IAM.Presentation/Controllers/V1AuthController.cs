@@ -1,5 +1,5 @@
-﻿using IAM.Application.Auth;
-using IAM.Application.Auth.DTOs;
+﻿using IAM.Application.Auth.Services;
+using IAM.Application.Auth.DTOs.Requests;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Common.Web.Filters;

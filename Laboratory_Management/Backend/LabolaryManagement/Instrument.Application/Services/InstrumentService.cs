@@ -1,6 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Instrument.Application.DTOs;
+using Instrument.Application.Instruments.DTOs.Requests;
+using Instrument.Application.Instruments.DTOs.Responses;
+using Instrument.Application.Runs.DTOs.Responses;
 using Instrument.Infrastructure;
+using Instrument.Domain.Enums;
 using DomainInstrument = Instrument.Domain.Entities.Instrument;
 
 namespace Instrument.Application.Services;
@@ -29,7 +32,8 @@ public class InstrumentService
             i.InstrumentCode,
             i.Name,
             i.Status,
-            i.ReagentStatus
+            i.ReagentStatus,
+            i.ImageUrl
         )).ToList();
     }
 
@@ -51,6 +55,7 @@ public class InstrumentService
             instrument.Name,
             instrument.Status,
             instrument.ReagentStatus,
+            instrument.ImageUrl,
             instrument.CreatedAt
         );
     }
@@ -73,6 +78,7 @@ public class InstrumentService
             instrument.Name,
             instrument.Status,
             instrument.ReagentStatus,
+            instrument.ImageUrl,
             instrument.CreatedAt
         );
     }
@@ -93,8 +99,9 @@ public class InstrumentService
         {
             InstrumentCode = request.InstrumentCode,
             Name = request.Name,
-            Status = request.Status ?? "ONLINE",
-            ReagentStatus = "OK",
+            Status = request.Status,
+            ReagentStatus = ReagentStatus.OK,
+            ImageUrl = request.ImageUrl,
             CreatedAt = DateTime.UtcNow
         };
 
@@ -107,6 +114,7 @@ public class InstrumentService
             instrument.Name,
             instrument.Status,
             instrument.ReagentStatus,
+            instrument.ImageUrl,
             instrument.CreatedAt
         );
     }
@@ -126,25 +134,14 @@ public class InstrumentService
         if (!string.IsNullOrWhiteSpace(request.Name))
             instrument.Name = request.Name;
 
-        if (!string.IsNullOrWhiteSpace(request.Status))
-        {
-            // Validate status
-            var validStatuses = new[] { "ONLINE", "OFFLINE", "FAULT", "MAINTENANCE" };
-            if (!validStatuses.Contains(request.Status.ToUpper()))
-                throw new InvalidOperationException($"Invalid status. Valid values: {string.Join(", ", validStatuses)}");
+        if (request.Status.HasValue)
+            instrument.Status = request.Status.Value;
 
-            instrument.Status = request.Status.ToUpper();
-        }
+        if (request.ReagentStatus.HasValue)
+            instrument.ReagentStatus = request.ReagentStatus.Value;
 
-        if (!string.IsNullOrWhiteSpace(request.ReagentStatus))
-        {
-            // Validate reagent status
-            var validReagentStatuses = new[] { "OK", "LOW", "OUT" };
-            if (!validReagentStatuses.Contains(request.ReagentStatus.ToUpper()))
-                throw new InvalidOperationException($"Invalid reagent status. Valid values: {string.Join(", ", validReagentStatuses)}");
-
-            instrument.ReagentStatus = request.ReagentStatus.ToUpper();
-        }
+        if (request.ImageUrl != null)
+            instrument.ImageUrl = request.ImageUrl;
 
         await _db.SaveChangesAsync();
 
@@ -154,6 +151,7 @@ public class InstrumentService
             instrument.Name,
             instrument.Status,
             instrument.ReagentStatus,
+            instrument.ImageUrl,
             instrument.CreatedAt
         );
     }
@@ -171,7 +169,7 @@ public class InstrumentService
 
         // Kiểm tra xem máy có đang có run đang chạy không
         var hasActiveRun = await _db.InstrumentRuns
-            .AnyAsync(r => r.InstrumentCode == instrumentCode && r.Status == "RUNNING");
+            .AnyAsync(r => r.InstrumentCode == instrumentCode && r.Status == RunStatus.Running);
 
         if (hasActiveRun)
             throw new InvalidOperationException("Cannot delete instrument with active runs.");
@@ -196,7 +194,7 @@ public class InstrumentService
 
         var currentRun = await _db.InstrumentRuns
             .AsNoTracking()
-            .Where(r => r.InstrumentCode == instrumentCode && r.Status == "RUNNING")
+            .Where(r => r.InstrumentCode == instrumentCode && r.Status == RunStatus.Running)
             .OrderByDescending(r => r.StartedAt)
             .FirstOrDefaultAsync();
 

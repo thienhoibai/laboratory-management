@@ -1,6 +1,6 @@
 import React from "react";
 import "./SuccessBooking.css";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import packageIcon from "../../assets/icon/SVG_margin.svg";
 import locationIcon from "../../assets/icon/Location.svg";
 import calendarIcon from "../../assets/icon/Calender.svg";
@@ -14,8 +14,7 @@ export default function SuccessBooking({
   bookingData, // Thêm prop để nhận dữ liệu từ API
 }) {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const Amount = Number(searchParams.get("Amount"));
+  const Amount = Number(searchParams.get("Amount")) || 0;
   // Sử dụng dữ liệu từ API nếu có, nếu không dùng dữ liệu mặc định
   const orderCode =
     bookingData?.bookingCode || paymentResult?.orderCode || "XN2025010001";
@@ -23,12 +22,14 @@ export default function SuccessBooking({
 
   // Lấy tên gói/test từ API
   const pkgName = bookingData?.bundleId
-    ? bookingData.testInfo?.data.bundleName
+    ? bookingData.testInfo?.bundleName ||
+      bookingData.testInfo?.name ||
+      "Gói xét nghiệm"
     : bookingData?.testCatalogs
     ? bookingData.testInfo?.map((t, i) => (
         <div style={{ marginTop: "10px" }} key={i}>
-          <strong> {t.data.description}</strong>{" "}
-          <span style={{ color: "gray" }}>({t.data.catalogName})</span>
+          <strong>{t.description || t.testName || "Test"}</strong>{" "}
+          <span style={{ color: "gray" }}>({t.catalogName || ""})</span>
         </div>
       ))
     : selectedItems?.package?.name || "Xét nghiệm tổng quát";
@@ -58,7 +59,6 @@ export default function SuccessBooking({
       onNewBooking();
       return;
     }
-    navigate("/booking");
   };
 
   return (

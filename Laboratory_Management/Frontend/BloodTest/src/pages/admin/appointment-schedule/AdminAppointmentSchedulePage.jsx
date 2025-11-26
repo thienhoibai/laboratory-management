@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { Pagination } from "antd";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
@@ -15,7 +16,6 @@ import {
   appointmentStatuses,
   timeSlots,
   getAppointmentCountBySlot,
-  getStatusInfo,
 } from "../../../data/appointment";
 import "./AdminAppointmentSchedulePage.css";
 import api from "../../../configs/axios";
@@ -23,9 +23,10 @@ import { formatDate1 } from "../../../utils/formatDate";
 // import { CgLayoutGrid } from "react-icons/cg";
 
 const AdminAppointmentSchedulePage = () => {
+  const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState(new Date()); // Ngày hiện tại
   const [currentMonth, setCurrentMonth] = useState(new Date()); // Tháng hiện tại cho calendar picker
-  const [searchQuery, setSearchQuery] = useState("");
+  const [search, setSearchQuery] = useState("");
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
@@ -37,7 +38,7 @@ const AdminAppointmentSchedulePage = () => {
 
   const [Booking, SetBookings] = useState([]);
   const [checkingInId, setCheckingInId] = useState(null);
-  const [checkingOutId, setCheckingOutId] = useState(null); // track check-out
+  // const [checkingOutId, setCheckingOutId] = useState(null); // track check-out
   const totalFetchedRef = React.useRef(false); // Đánh dấu đã fetch total chưa
 
   // Format date to YYYY-MM-DD
@@ -139,12 +140,12 @@ const AdminAppointmentSchedulePage = () => {
     }
   };
 
-  // Handle edit appointment
-  const handleEditAppointment = (appointment) => {
-    setSelectedAppointment(appointment);
-    setEditingStatus(appointment.status);
-    setIsModalOpen(true);
-  };
+  // // Handle edit appointment
+  // const handleEditAppointment = (appointment) => {
+  //   setSelectedAppointment(appointment);
+  //   setEditingStatus(appointment.status);
+  //   setIsModalOpen(true);
+  // };
 
   // Handle close modal
   const handleCloseModal = () => {
@@ -242,44 +243,58 @@ const AdminAppointmentSchedulePage = () => {
     return nextDate <= maxDate;
   };
 
-  // Hàm để lấy tổng số items nếu API không trả về total
-  const fetchAPITotal = async () => {
-    try {
-      const response = await api.get(
-        `testorder/api/Booking/info?date=${formatDate1(
-          selectedDate
-        )}&pageSize=1000&pageNumber=1`
-      );
-      const data = response.data;
-      if (Array.isArray(data)) {
-        return data.length;
-      }
-      return 0;
-    } catch (error) {
-      console.log(error || "Lỗi");
-      return 0;
-    }
-  };
-
   const fetchAPI = async () => {
     try {
       const response = await api.get(
         `testorder/api/Booking/info?date=${formatDate1(
           selectedDate
-        )}&pageSize=${pageSize}&pageNumber=${currentPage}`
+        )}&keyword=${search}&pageSize=${pageSize}&pageNumber=${currentPage}`
       );
       const data = response.data;
-      const total = await fetchAPITotal();
       if (response.status >= 200 && response.status < 300) {
-        SetBookings(data);
-        setTotal(total);
+        // Extract bookingResponses array and totalItem
+        SetBookings(data.bookingResponses || []);
+        setTotal(data.totalItem || 0);
+      } else if (response.responseCode === -2) {
+        SetBookings([]);
+        setTotal(0);
       }
       return [];
     } catch (error) {
       console.log(error || "Lỗi");
+      SetBookings([]);
+      setTotal(0);
       return [];
     }
   };
+
+  // Map raw status to Vietnamese label & CSS class (except keeping 'Check In')
+  const mapStatus = (raw) => {
+    const s = String(raw || "").toLowerCase();
+    switch (s) {
+      case "pending":
+        return { label: "Chờ xử lý", className: "pending" };
+      case "inprogress":
+        return { label: "Đang Xét Nghiệm", className: "pending" };
+      case "confirmed":
+        return { label: "Đã xác nhận", className: "confirmed" };
+      case "checked-in":
+      case "checkedin":
+        return { label: "Check In", className: "checked-in" }; // giữ nguyên tiếng Anh theo yêu cầu
+      case "processing":
+        return { label: "Đang xử lý", className: "processing" };
+      case "checked-out":
+        return { label: "Đã Check Out", className: "checked-out" };
+      case "completed":
+        return { label: "Hoàn thành", className: "completed" };
+      case "cancelled":
+        return { label: "Đã hủy", className: "cancelled" };
+      default:
+        return { label: raw, className: "pending" };
+    }
+  };
+
+  const getStatusDisplay = (status) => mapStatus(status).label;
 
   useEffect(() => {
     // Reset totalFetchedRef khi đổi ngày
@@ -287,7 +302,7 @@ const AdminAppointmentSchedulePage = () => {
       totalFetchedRef.current = false;
     }
     fetchAPI();
-  }, [selectedDate, currentPage, pageSize]);
+  }, [selectedDate, currentPage, pageSize, search]);
 
   const handleCheckin = async (bookingId) => {
     try {
@@ -297,16 +312,27 @@ const AdminAppointmentSchedulePage = () => {
       );
       const data = response.data || {};
 
-      if (data.responseCode === 0 || data.responseCode < 0) {
+      if (data.responseCode === -2) {
         toast.error(data.message || "Không thể check-in.");
         return;
+      } else if (data.responseCode === 0) {
+        toast.success("Check in thành công!");
+        await fetchAPI();
+        try {
+          const b =
+            (Booking || []).find((x) => x.bookingId === bookingId) || {};
+          navigate(
+            `/instruments?bookingId=${bookingId}&bookingCode=${encodeURIComponent(
+              b.bookingCode || ""
+            )}&patientName=${encodeURIComponent(b.patientName || "")}`
+          );
+        } catch (error) {
+          console.log(error);
+          navigate(`/instruments?bookingId=${bookingId}`);
+        }
       }
-
-      toast.success("Check in thành công!");
-      await fetchAPI();
     } catch (err) {
-      const message =
-        err.response?.data?.message || "Check-in thất bại. Vui lòng thử lại.";
+      const message = "Bạn Chỉ Được CheckIn vào đúng ngày, giờ!!!";
       toast.error(message);
       console.error("Check-in failed:", err);
     } finally {
@@ -314,23 +340,23 @@ const AdminAppointmentSchedulePage = () => {
     }
   };
 
-  const handleCheckout = async (bookingId) => {
-    try {
-      setCheckingOutId(bookingId);
-      const response = await api.put(
-        `testorder/api/Booking/check-out?bookingId=${bookingId}`
-      );
+  // const handleCheckout = async (bookingId) => {
+  //   try {
+  //     setCheckingOutId(bookingId);
+  //     const response = await api.put(
+  //       `testorder/api/Booking/check-out?bookingId=${bookingId}`
+  //     );
 
-      if (response.status >= 200 && response.status < 300) {
-        toast.success("Check In thành công!!");
-        await fetchAPI();
-      }
-    } catch (err) {
-      console.error("Check-out failed:", err);
-    } finally {
-      setCheckingOutId(null);
-    }
-  };
+  //     if (response.status >= 200 && response.status < 300) {
+  //       toast.success("Check In thành công!!");
+  //       await fetchAPI();
+  //     }
+  //   } catch (err) {
+  //     console.error("Check-out failed:", err);
+  //   } finally {
+  //     setCheckingOutId(null);
+  //   }
+  // };
 
   return (
     <AdminLayout
@@ -459,7 +485,7 @@ const AdminAppointmentSchedulePage = () => {
               <input
                 type="text"
                 placeholder="Tìm kiếm theo tên, email, số điện thoại hoặc mã đặt lịch..."
-                value={searchQuery}
+                value={search}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
@@ -478,7 +504,7 @@ const AdminAppointmentSchedulePage = () => {
                   <th>Giờ Khám</th>
                   <th>Trạng thái</th>
                   <th>Thao Tác</th>
-                  <th>Hành động</th>
+                  {/* <th>Hành động</th> */}
                 </tr>
               </thead>
               <tbody>
@@ -488,9 +514,28 @@ const AdminAppointmentSchedulePage = () => {
                     const isConfirmed = status === "confirmed";
                     const isCheckedIn =
                       status === "checked-in" || status === "checkedin";
+                    const isInProgress = status === "inprogress";
+                    const canProcessSample = isCheckedIn || isInProgress;
                     const isCheckingIn = checkingInId === appointment.bookingId;
-                    const isCheckingOut =
-                      checkingOutId === appointment.bookingId;
+                    // const isCheckingOut =
+                    //   checkingOutId === appointment.bookingId;
+
+                    // Kiểm tra xem có instrument run đang chạy không
+                    const hasActiveRun = (() => {
+                      const storageKey = `instrument_run_${appointment.bookingId}`;
+                      const stored = localStorage.getItem(storageKey);
+                      if (!stored) return false;
+                      try {
+                        const data = JSON.parse(stored);
+                        const elapsed = Math.floor(
+                          (Date.now() - data.startTime) / 1000
+                        );
+                        const remaining = Math.max(0, 30 - elapsed);
+                        return remaining > 0 || data.phase === "running";
+                      } catch {
+                        return false;
+                      }
+                    })();
 
                     return (
                       <tr key={appointment.bookingId}>
@@ -500,7 +545,16 @@ const AdminAppointmentSchedulePage = () => {
                         <td>{appointment.bookingCode}</td>
                         <td>{appointment.slotInfo.appointmentDate}</td>
                         <td>{appointment.slotInfo.timeBlock}</td>
-                        <td>{appointment.status}</td>
+                        <td>
+                          {(() => {
+                            const m = mapStatus(appointment.status);
+                            return (
+                              <span className={`status-badge ${m.className}`}>
+                                {m.label}
+                              </span>
+                            );
+                          })()}
+                        </td>
                         <td>
                           {isConfirmed && (
                             <button
@@ -513,35 +567,42 @@ const AdminAppointmentSchedulePage = () => {
                               {isCheckingIn ? "Đang check in..." : "Check In"}
                             </button>
                           )}
-                          {isCheckedIn && (
+                          {canProcessSample && (
                             <button
                               onClick={() =>
-                                handleCheckout(appointment.bookingId)
+                                navigate(
+                                  `/instruments?bookingId=${
+                                    appointment.bookingId
+                                  }&bookingCode=${encodeURIComponent(
+                                    appointment.bookingCode || ""
+                                  )}&patientName=${encodeURIComponent(
+                                    appointment.patientName || ""
+                                  )}`
+                                )
                               }
-                              disabled={isCheckingOut}
-                              className="CheckIn-Button"
+                              className="Process-Button"
                             >
-                              {isCheckingOut
-                                ? "Đang check out..."
-                                : "Check Out"}
+                              {hasActiveRun
+                                ? "⏱️ Tiếp tục xử lý"
+                                : "🔬 Xử lý mẫu"}
                             </button>
                           )}
                         </td>
-                        <td>
+                        {/* <td>
                           <button
                             className="action-button"
                             onClick={() => handleEditAppointment(appointment)}
                           >
                             <FiEdit2 size={18} />
                           </button>
-                        </td>
+                        </td> */}
                       </tr>
                     );
                   })
                 ) : (
                   <tr>
                     <td
-                      colSpan="7"
+                      colSpan="9"
                       style={{ textAlign: "center", padding: "40px" }}
                     >
                       Không có lịch hẹn nào trong ngày này
@@ -626,7 +687,7 @@ const AdminAppointmentSchedulePage = () => {
                       className="status-dropdown-button"
                       onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
                     >
-                      <span>{getStatusInfo(editingStatus).label}</span>
+                      <span>{getStatusDisplay(editingStatus)}</span>
                       <FiChevronRight
                         style={{
                           transform: statusDropdownOpen
@@ -638,23 +699,26 @@ const AdminAppointmentSchedulePage = () => {
                     </button>
                     {statusDropdownOpen && (
                       <div className="status-dropdown-menu">
-                        {appointmentStatuses.map((status) => (
-                          <div
-                            key={status.value}
-                            className={`status-dropdown-item ${
-                              editingStatus === status.value ? "selected" : ""
-                            }`}
-                            onClick={() => {
-                              setEditingStatus(status.value);
-                              setStatusDropdownOpen(false);
-                            }}
-                          >
-                            {editingStatus === status.value && (
-                              <FiCheck size={16} />
-                            )}
-                            <span>{status.label}</span>
-                          </div>
-                        ))}
+                        {appointmentStatuses.map((status) => {
+                          const m = mapStatus(status.value);
+                          return (
+                            <div
+                              key={status.value}
+                              className={`status-dropdown-item ${
+                                editingStatus === status.value ? "selected" : ""
+                              }`}
+                              onClick={() => {
+                                setEditingStatus(status.value);
+                                setStatusDropdownOpen(false);
+                              }}
+                            >
+                              {editingStatus === status.value && (
+                                <FiCheck size={16} />
+                              )}
+                              <span>{m.label}</span>
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </div>

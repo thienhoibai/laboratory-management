@@ -143,7 +143,7 @@ function PackageSelection({
                           strokeLinejoin="round"
                         />
                       </svg>
-                      <span>{itemId.testName || itemId.description}</span>
+                      <span>{itemId.description}</span>
                     </li>
                   );
                 })}

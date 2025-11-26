@@ -339,6 +339,30 @@ export const useChangePassword = ({ open, onClose } = {}) => {
   };
 };
 
+/**
+ * Get user by ID
+ * @param {string} userId - User ID
+ * @returns {Promise<Object>} User data with fullName
+ */
+export const getUserById = async (userId) => {
+  try {
+    // Set auth token before making the request
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      setAuthToken(token);
+    }
+
+    const response = await IAMServiceAPI.GetUserById(userId);
+
+    // Handle different response structures
+    const userData = response.data?.data || response.data;
+
+    return userData;
+  } catch (error) {
+    console.error(`Error getting user ${userId}:`, error);
+    return null;
+  }
+};
 // ==================== RBAC Service Functions ====================
 // GET /api/rbac/permission-groups
 // Lấy danh sách các nhóm quyền với logic xử lý response

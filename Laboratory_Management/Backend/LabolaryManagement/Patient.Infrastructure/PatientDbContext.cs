@@ -32,7 +32,8 @@ public class PatientDbContext : DbContext
 
             b.Property(x => x.CitizenId).HasColumnName("citizen_id").HasMaxLength(12).IsFixedLength();
             b.Property(x => x.InsuranceNumber).HasColumnName("insurance_number").HasMaxLength(64);
-
+            // Map created_channel column
+            b.Property(x => x.CreatedChannel).HasColumnName("created_channel").HasMaxLength(32);
             b.Property(x => x.CreatedAt).HasColumnName("created_at");
             b.Property(x => x.CreatedByUserId).HasColumnName("created_by_user_id");
             b.Property(x => x.UpdatedAt).HasColumnName("updated_at");
@@ -44,7 +45,6 @@ public class PatientDbContext : DbContext
 
             // Ignore properties not in DB
             b.Ignore(x => x.FullNameNorm);
-            b.Ignore(x => x.CreatedChannel);
 
             b.HasQueryFilter(x => !x.IsDeleted);
             b.HasIndex(x => x.UserId).HasDatabaseName("IX_patients_user_id");
