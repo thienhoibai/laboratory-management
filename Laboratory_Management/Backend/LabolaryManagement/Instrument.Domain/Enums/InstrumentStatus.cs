@@ -3,7 +3,7 @@
 /// <summary>
 /// Trạng thái hoạt động của máy xét nghiệm
 /// </summary>
-public enum InstrumentStatus : byte
+public enum InstrumentStatus : int
 {
     /// <summary>
     /// Máy đang hoạt động bình thường

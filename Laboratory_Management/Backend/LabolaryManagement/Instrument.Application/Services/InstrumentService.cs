@@ -99,7 +99,7 @@ public class InstrumentService
         {
             InstrumentCode = request.InstrumentCode,
             Name = request.Name,
-            Status = request.Status,
+            Status =  request.Status,
             ReagentStatus = ReagentStatus.OK,
             ImageUrl = request.ImageUrl,
             CreatedAt = DateTime.UtcNow
