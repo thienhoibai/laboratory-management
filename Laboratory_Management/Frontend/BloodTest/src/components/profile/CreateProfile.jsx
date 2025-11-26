@@ -59,7 +59,7 @@ function CreateProfile() {
         <div className="profile-modal-overlay" onClick={handleCloseModal}>
           <div
             className="profile-modal-container"
-            style={{ maxHeight: "90vh", overflowY: "hidden" }}
+            style={{ maxHeight: "90vh" }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="profile-modal-header">
@@ -244,7 +244,7 @@ function CreateProfile() {
                 </div>
 
                 {/* CCCD/CMND */}
-                {/* <div className="profile-form-group">
+                <div className="profile-form-group">
                   <Form.Item
                     label={
                       <>
@@ -268,7 +268,7 @@ function CreateProfile() {
                       }}
                     />
                   </Form.Item>
-                </div> */}
+                </div>
               </div>
 
               {/* Hàng 3 */}
