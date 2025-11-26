@@ -72,5 +72,14 @@ namespace TestOrder.Application.Services
             };
             await _repository.AddParameterAsync(entity);
         }
+        public async Task RemoveParameterAsync(int id)
+        {
+            var parameter = await _repository.GetByIdAsync(id);
+            if (parameter == null)
+                throw new Exception("Parameter not found");
+
+            await _repository.RemoveParameterAsync(parameter);
+        }
+
     }
 }
