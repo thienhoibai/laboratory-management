@@ -15,9 +15,15 @@ public partial class Booking
 
     public string? PatientPhone { get; set; }
 
+    public string? PatientEmail { get; set; }
+
+    public string? BookingCode { get; set; }
+
     public Guid? AppointmentSlotId { get; set; }
 
     public DateOnly? CreateDate { get; set; }
+
+    public TimeOnly? CreateTime { get; set; }
 
     public string? CreatedBy { get; set; }
 
@@ -27,9 +33,7 @@ public partial class Booking
 
     public int? BundleId { get; set; }
 
-    public string? BookingCode { get; set; }
-
-    public string? PatientEmail { get; set; }
+    public double? TotalPrice { get; set; }
 
     public virtual AppointmentSlot? AppointmentSlot { get; set; }
 

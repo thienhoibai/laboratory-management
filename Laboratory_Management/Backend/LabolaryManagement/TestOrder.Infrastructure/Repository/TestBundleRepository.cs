@@ -53,5 +53,13 @@ namespace TestOrder.Infrastructure.Repository
             _context.TestBundles.Remove(bundle);
             await _context.SaveChangesAsync();
         }
+
+        public double GetBundlePrice(int id)
+        {
+            var bundle = _context.TestBundles.AsNoTracking().FirstOrDefault(b => b.BundleId == id);
+            if (bundle == null)
+                throw new KeyNotFoundException($"Bundle with id {id} not found.");
+            return (double)bundle.Price;
+        }
     }
 }

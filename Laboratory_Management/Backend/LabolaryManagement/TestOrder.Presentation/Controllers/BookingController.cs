@@ -36,7 +36,7 @@ namespace TestOrder.Presentation.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ResponseMessage
+                return StatusCode(400, new ResponseMessage
                 {
                     ResponseCode = ResponseCode.BadInstanceState,
                     Message = "An error occurred while processing your request: " + ex.Message

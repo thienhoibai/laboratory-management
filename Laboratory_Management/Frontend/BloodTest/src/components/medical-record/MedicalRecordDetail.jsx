@@ -243,7 +243,7 @@ export default function MedicalRecordDetail() {
             </div>
             <div className="info-content">
               <span className="info-label">Số CMND/CCCD</span>
-              <span className="info-value">{patients?.idNumber}</span>
+              <span className="info-value">{patients?.citizenId}</span>
             </div>
           </div>
 

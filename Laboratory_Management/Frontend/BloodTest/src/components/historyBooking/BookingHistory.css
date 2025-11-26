@@ -400,16 +400,14 @@
   padding: 11px 20px;
   border-radius: 8px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
-  width: 25%;
+  width: 60%;
   margin-top: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   margin: 0 auto;
-  margin-top: 20px;
   gap: 8px;
+  position: relative;
+  right: 60px;
   transition: background 0.2s;
 }
 .btn-primary-history-booking::before {

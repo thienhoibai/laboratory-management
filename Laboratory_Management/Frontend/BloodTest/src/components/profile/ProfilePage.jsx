@@ -321,7 +321,7 @@ export default function ProfilePage() {
                     </svg>
                     <div className="info-content">
                       <span className="info-label">Số CMND/CCCD</span>
-                      <span className="info-value">{userData.idNumber}</span>
+                      <span className="info-value">{userData.citizenId}</span>
                     </div>
                   </div>
 
@@ -591,7 +591,9 @@ export default function ProfilePage() {
                           <button
                             className="medical-record-view-btn"
                             onClick={() =>
-                              navigate(`/medical-record/${record.patientId}`)
+                              navigate(
+                                `/medical-record?patientId=${record.patientId}`
+                              )
                             }
                           >
                             <svg

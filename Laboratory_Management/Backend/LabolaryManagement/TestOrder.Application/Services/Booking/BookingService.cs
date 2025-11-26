@@ -1,6 +1,7 @@
 ﻿
 
 using Azure;
+using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -20,19 +21,56 @@ namespace TestOrder.Application.Services.Booking
         private readonly AppointmentSlotService _appointmentSlotService;
         private readonly BookingRepository _bookingRepository;
         private readonly CatalogBundleService _catalogBundleService;
-        private readonly IPublishEndpoint _publishEndpoint;
+        private readonly TestBundleService testBundleService;
+        private readonly TestCatalogService testCatalogService;
 
         public BookingService(BookingRepository bookingRepository,
                               BookingTestService bookingTestService,
                               AppointmentSlotService appointmentSlotService,
                               CatalogBundleService catalogBundleService,
-                              IPublishEndpoint publishEndpoint)
+                              TestBundleService testBundleService,
+                              TestCatalogService testCatalogService)
         {
             _bookingTestService = bookingTestService;
             _bookingRepository = bookingRepository;
             _appointmentSlotService = appointmentSlotService;
             _catalogBundleService = catalogBundleService;
-            _publishEndpoint = publishEndpoint;
+            this.testBundleService = testBundleService;
+            this.testCatalogService = testCatalogService;
+        }
+
+        internal async Task<BookingResponseDTO> MapToDTOAsync(Infrastructure.Models.Booking booking)
+        {
+            var response = new BookingResponseDTO
+            {
+                BookingCode = booking.BookingCode ??= "",
+                BookingId = booking.BookingId,
+                PatientId = (Guid)booking.PatientId,
+                PatientName = booking.PatientName ?? string.Empty,
+                PatientPhoneNumber = booking.PatientPhone,
+                PatientEmail = booking.PatientEmail,
+                CreatedBy = booking.CreatedBy,
+                BundleId = booking.BundleId,
+                TotalAmount = booking.TotalPrice,
+                CreatedDate = booking.CreateDate.HasValue
+                        ? booking.CreateDate.Value.ToDateTime(new TimeOnly(0, 0))
+                        : DateTime.MinValue,
+                CreatedTime = booking.CreateTime.HasValue
+                        ? booking.CreateTime.Value
+                        : TimeOnly.MinValue,
+
+                RunDate = booking.RunDate.HasValue
+                        ? booking.RunDate.Value.ToDateTime(new TimeOnly(0, 0))
+                        : (DateTime?)null,
+                RanBy = booking.RanBy ?? string.Empty,
+                Status = booking.Status.HasValue
+                        ? ((BookingStatusEnum)booking.Status.Value).ToString()
+                        : "Unknown",
+                SlotInfo = await _appointmentSlotService.GetAppointmentSlotInfo((Guid)booking.AppointmentSlotId),
+                TestCatalogs = await _bookingTestService.GetCatalogIdsByBookingIdAsync(booking.BookingId)
+            };
+            return response;
+
         }
 
 
@@ -46,53 +84,34 @@ namespace TestOrder.Application.Services.Booking
                 throw new Exception("No Appointment Slots found on this date");
             }
 
-            IEnumerable<Infrastructure.Models.Booking> bookings = new List<Infrastructure.Models.Booking>();
+            List<Infrastructure.Models.Booking> bookings = new List<Infrastructure.Models.Booking>();
             
             foreach (var slot in appointmentSlots)
             {
                 var slotBookings = await _bookingRepository.GetBookingsByAppointmentSlotSearchableAsync
                     (slot.SlotId, keyword);
 
-                bookings = bookings.Concat(slotBookings ?? Enumerable.Empty<Infrastructure.Models.Booking>());
+                if (slotBookings != null)
+                {
+                    bookings.AddRange(slotBookings);
+                }
             }
 
-            var (enumerable, totalItem) = await _bookingRepository.SortingAndPaging
+            var (pagedItems, totalItem) = await _bookingRepository.SortingAndPaging
                 (sortBy, sortDirection, pageSize, pageNumber, bookings);
-            bookings = enumerable.AsEnumerable();
+            
 
             var totalPages = (int)Math.Ceiling((double)totalItem / pageSize);
 
-            if (!bookings.Any() || bookings == null)
+            if (pagedItems == null)
             {
                 throw new Exception("No Bookings found");
             }
 
             var bookingResponses = new List<BookingResponseDTO>();
-            foreach (var booking in bookings)
+            foreach (var booking in pagedItems)
             {
-                bookingResponses.Add(new BookingResponseDTO
-                {
-                    BookingCode = booking.BookingCode ??= "",
-                    BookingId = booking.BookingId,
-                    PatientId = (Guid)booking.PatientId,
-                    PatientName = booking.PatientName ?? string.Empty,
-                    PatientPhoneNumber = booking.PatientPhone,
-                    PatientEmail = booking.PatientEmail,
-                    CreatedBy = booking.CreatedBy,
-                    BundleId = booking.BundleId,
-                    CreatedDate = booking.CreateDate.HasValue
-                        ? booking.CreateDate.Value.ToDateTime(new TimeOnly(0, 0))
-                        : DateTime.MinValue,
-                    RunDate = booking.RunDate.HasValue
-                        ? booking.RunDate.Value.ToDateTime(new TimeOnly(0, 0))
-                        : (DateTime?)null,
-                    RanBy = booking.RanBy ?? string.Empty,
-                    Status = booking.Status.HasValue
-                        ? ((BookingStatusEnum)booking.Status.Value).ToString()
-                        : "Unknown",
-                    SlotInfo = await _appointmentSlotService.GetAppointmentSlotInfo((Guid)booking.AppointmentSlotId),
-                    TestCatalogs = await _bookingTestService.GetCatalogIdsByBookingIdAsync(booking.BookingId)
-                });
+                bookingResponses.Add(MapToDTOAsync(booking).Result);
             }
 
             return new
@@ -116,29 +135,7 @@ namespace TestOrder.Application.Services.Booking
             if (booking == null)
                 throw new Exception("Booking not found");
 
-            return new BookingResponseDTO
-            {
-                BookingCode = booking.BookingCode ??="",
-                PatientId = (Guid)booking.PatientId,
-                BookingId = booking.BookingId,
-                PatientName = booking.PatientName ?? string.Empty,
-                PatientPhoneNumber = booking.PatientPhone,
-                PatientEmail = booking.PatientEmail,
-                CreatedBy = booking.CreatedBy,
-                BundleId = booking.BundleId,
-                CreatedDate = booking.CreateDate.HasValue
-                    ? booking.CreateDate.Value.ToDateTime(new TimeOnly(0, 0))
-                    : DateTime.MinValue,
-                RunDate = booking.RunDate.HasValue
-                    ? booking.RunDate.Value.ToDateTime(new TimeOnly(0, 0))
-                    : (DateTime?)null,
-                RanBy = booking.RanBy ?? string.Empty,
-                Status = booking.Status.HasValue
-                    ? ((BookingStatusEnum)booking.Status.Value).ToString()
-                    : "Unknown",
-                SlotInfo = slotInfo,
-                TestCatalogs = await _bookingTestService.GetCatalogIdsByBookingIdAsync(booking.BookingId)
-            };
+            return await MapToDTOAsync(booking);
         }
 
         public async Task<object> GetBookingsByPatientIdAsync(Guid patientId, int pageNumber, int pageSize)
@@ -153,30 +150,7 @@ namespace TestOrder.Application.Services.Booking
             {
                 foreach (var booking in bookings)
                 {
-                    bookingResponses.Add(new BookingResponseDTO
-                    {
-                        BookingCode = booking.BookingCode ??= "",
-                        PatientId = (Guid)booking.PatientId,
-                        BookingId = booking.BookingId,
-                        PatientName = booking.PatientName ?? string.Empty,
-                        PatientPhoneNumber = booking.PatientPhone,
-                        PatientEmail = booking.PatientEmail,
-                        CreatedBy = booking.CreatedBy,
-                        BundleId = booking.BundleId,
-                        CreatedDate = booking.CreateDate.HasValue
-                            ? booking.CreateDate.Value.ToDateTime(new TimeOnly(0, 0))
-                            : DateTime.MinValue,
-                        RunDate = booking.RunDate.HasValue
-                            ? booking.RunDate.Value.ToDateTime(new TimeOnly(0, 0))
-                            : (DateTime?)null,
-                        RanBy = booking.RanBy ?? string.Empty,
-                        Status = booking.Status.HasValue
-                            ? ((BookingStatusEnum)booking.Status.Value).ToString()
-                            : "Unknown",
-                        SlotInfo = await _appointmentSlotService.GetAppointmentSlotInfo((Guid)booking.AppointmentSlotId),
-                        TestCatalogs = await _bookingTestService.GetCatalogIdsByBookingIdAsync(booking.BookingId)
-
-                    });
+                    bookingResponses.Add(MapToDTOAsync(booking).Result);
                 }
             }
 
@@ -196,6 +170,9 @@ namespace TestOrder.Application.Services.Booking
 
         public async Task<ResponseMessage> CreateBookingAsync (BookingRequestDTO bookingRequest)
         {
+            double totalPrice = 0d;
+            int? bundleId = bookingRequest.BundleId.Value != 0 ? bookingRequest.BundleId.Value : null;
+
             ResponseMessage response = new ResponseMessage();
             if (!_appointmentSlotService.IsAppointmentsDateValid(bookingRequest.slotDTO.AppointmentDate))
             {
@@ -203,6 +180,7 @@ namespace TestOrder.Application.Services.Booking
                 response.Message = "Date must be 1 day in the future";
                 return response;
             }
+
 
 
 
@@ -232,20 +210,35 @@ namespace TestOrder.Application.Services.Booking
                     nextNumber = lastNumber + 1;
             }
             string nextCode = nextNumber.ToString("D6");
-            var newBooking = new Infrastructure.Models.Booking
+
+            if (bundleId != null)
             {
-                BookingId = Guid.NewGuid(),
-                PatientId = bookingRequest.PatientId,
-                PatientName = bookingRequest.PatientName,
-                PatientPhone = bookingRequest.PatientPhoneNumber,
-                PatientEmail = bookingRequest.PatientEmail,
-                CreatedBy = bookingRequest.CreatedBy,
-                CreateDate = DateOnly.FromDateTime(DateTime.Now),
-                BundleId = bookingRequest.BundleId.Value != 0 ? bookingRequest.BundleId : null,
-                AppointmentSlotId = appointmentSlot.SlotId,
-                Status = (byte?)BookingStatusEnum.Pending,
-                BookingCode = nextCode
-            };
+                totalPrice += testBundleService.GetBundlePriceByIdAsync((int)bundleId);
+            }
+
+            if (!bookingRequest.Catalogs.IsNullOrEmpty())
+            {
+                totalPrice += testCatalogService.GetPriceForMultipleTests(bookingRequest.Catalogs);
+            }
+
+
+
+            var newBooking = new Infrastructure.Models.Booking
+                {
+                    BookingId = Guid.NewGuid(),
+                    PatientId = bookingRequest.PatientId,
+                    PatientName = bookingRequest.PatientName,
+                    PatientPhone = bookingRequest.PatientPhoneNumber,
+                    PatientEmail = bookingRequest.PatientEmail,
+                    CreatedBy = bookingRequest.CreatedBy,
+                    CreateDate = DateOnly.FromDateTime(DateTime.Now),
+                    CreateTime = TimeOnly.FromDateTime(DateTime.Now),
+                    BundleId = bundleId,
+                    AppointmentSlotId = appointmentSlot.SlotId,
+                    Status = (byte?)BookingStatusEnum.Pending,
+                    BookingCode = nextCode,
+                    TotalPrice = totalPrice
+                };
 
             await _bookingRepository.AddAsync(newBooking);
             if (bookingRequest.Catalogs != null)
@@ -404,6 +397,7 @@ namespace TestOrder.Application.Services.Booking
                 }
             }
         }
+
 
     }
 }
