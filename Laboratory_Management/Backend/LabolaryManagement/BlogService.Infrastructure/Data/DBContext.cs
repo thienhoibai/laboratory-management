@@ -37,7 +37,7 @@ public partial class DBContext : DbContext
                 .HasColumnType("datetime");
             entity.Property(e => e.IsApproved).HasDefaultValue(false);
             entity.Property(e => e.IsPublished).HasDefaultValue(false);
-            entity.Property(e => e.ThumbnailUrl).HasMaxLength(500);
+            entity.Property(e => e.ImagePath).HasMaxLength(500);
             entity.Property(e => e.Title).HasMaxLength(255);
             entity.Property(e => e.UpdatedDate).HasColumnType("datetime");
 
