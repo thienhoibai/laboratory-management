@@ -1,4 +1,4 @@
-﻿namespace Instrument.Domain.Enums;
+﻿   namespace Instrument.Domain.Enums;
 
 /// <summary>
 /// Trạng thái hóa chất/reagent của máy xét nghiệm
