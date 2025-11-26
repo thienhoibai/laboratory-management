@@ -18,6 +18,8 @@ import {
   getAllParameters as getAllParametersAPI,
   getParameterById as getParameterByIdAPI,
   createParameter as createParameterAPI,
+  updateParameter as updateParameterAPI,
+  deleteParameter as deleteParameterAPI,
   bookingService as bookingServiceAPI,
 } from "../apis/TestOrderServiceAPI.jsx";
 
@@ -472,6 +474,20 @@ export const createParameter = async (payload) => {
   if (!payload) throw new Error("Payload is required");
   const response = await createParameterAPI(payload);
   return response?.data;
+};
+
+export const updateParameter = async (id, payload) => {
+  if (!id) throw new Error("Parameter ID is required");
+  const response = await updateParameterAPI(id, payload);
+  const data = response?.data;
+  return data?.data || data;
+};
+
+export const deleteParameter = async (id) => {
+  if (!id) throw new Error("Parameter ID is required");
+  const response = await deleteParameterAPI(id);
+  const data = response?.data;
+  return data?.data || data;
 };
 
 // ==================== Booking Service ====================

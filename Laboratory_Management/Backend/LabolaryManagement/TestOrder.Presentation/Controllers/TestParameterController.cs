@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using TestOrder.Application.DTOs;
 using TestOrder.Application.Services;
 using TestOrder.Infrastructure.Models;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace TestOrder.Presentation.Controllers
 {

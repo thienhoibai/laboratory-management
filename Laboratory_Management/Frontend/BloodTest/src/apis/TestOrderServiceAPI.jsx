@@ -134,6 +134,18 @@ export const createParameter = async (payload) => {
   return response;
 };
 
+export const updateParameter = async (id, payload) => {
+  if (!id) throw new Error("Parameter ID is required");
+  const response = await api.put(`${PARAMETER_BASE}/${id}`, payload);
+  return response;
+};
+
+export const deleteParameter = async (id) => {
+  if (!id) throw new Error("Parameter ID is required");
+  const response = await api.delete(`${PARAMETER_BASE}/${id}`);
+  return response;
+};
+
 // ==================== Booking Service APIs ====================
 export const bookingService = {
   // Lấy thông tin booking theo ID
