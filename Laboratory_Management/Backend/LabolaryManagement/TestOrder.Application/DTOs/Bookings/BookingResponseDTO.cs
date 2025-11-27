@@ -29,9 +29,13 @@ namespace TestOrder.Application.DTOs.Bookings
         public string PatientName { get; set; } = string.Empty;
         public string? PatientEmail { get; set; }
 
+        public double? TotalAmount { get; set; }
+
         public string? CreatedBy { get; set; }
         public int? BundleId { get; set; }
         public DateTime CreatedDate { get; set; }
+
+        public TimeOnly? CreatedTime { get; set; }
 
         public DateTime? RunDate { get; set; }
         public string RanBy { get; set; } = string.Empty;

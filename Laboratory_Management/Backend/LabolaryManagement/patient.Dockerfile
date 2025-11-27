@@ -7,6 +7,7 @@ RUN dotnet publish Patient.Presentation/Patient.Presentation.csproj -c Release -
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
 COPY --from=build /app/out .
+ENV ASPNETCORE_ENVIRONMENT=Production
 ENV ASPNETCORE_URLS=http://+:5002
 EXPOSE 5002
 ENTRYPOINT ["dotnet","Patient.Presentation.dll"]

@@ -25,7 +25,7 @@
       RabbitMQ__Pass: "lab123"
       # JWT config (must match patient.api)
       Jwt__Issuer: "lab-iam"
-      Jwt__Audience: "lab-services"
+      Jwt__Audience: "lab.api"
       Jwt__SigningKey: "Jx6n2QvB5pTf8Kz3Wm9aS4Ld7Yh0Nr2Xu8Cj5Pk1Vg3Mz7Rb0Hq4Tn6Wy8Le2"
       Jwt__AccessTokenMinutes: "60"
       Jwt__RefreshTokenDays: "14"
@@ -45,21 +45,21 @@
       dockerfile: patient.Dockerfile
     container_name: patient.api
     environment:
-      ASPNETCORE_ENVIRONMENT: "Docker"
-      UseInMemoryDb: "false"     
-      ConnectionStrings__PatientService3: "Server=host.docker.internal,1433;Database=PatientService4;User Id=sa;Password=12345;TrustServerCertificate=True;Encrypt=False"
+      ASPNETCORE_ENVIRONMENT: "Production"
+      ConnectionStrings__PatientService4: "Server=host.docker.internal,1433;Database=PatientService4;User Id=sa;Password=12345;TrustServerCertificate=True;Encrypt=False"
       RabbitMQ__Host: "rabbitmq"
       RabbitMQ__User: "lab"
       RabbitMQ__Pass: "lab123"
       # JWT config (must match iam.api)
       Jwt__Issuer: "lab-iam"
-      Jwt__Audience: "lab-services"
+      Jwt__Audience: "lab.api"
       Jwt__SigningKey: "Jx6n2QvB5pTf8Kz3Wm9aS4Ld7Yh0Nr2Xu8Cj5Pk1Vg3Mz7Rb0Hq4Tn6Wy8Le2"
       # PII encryption keys (primary first, then legacy). Keep them secret.
       PATIENT_PII_KEYS: |
         FES03/bBdxXAmpgtDTccC15qDWd112gVLcksrZEib98=
         8wCAUQo+Bggcq7suyJ2io37vmFLjOORzl7RMbhmipR0=
         W2mPvA+pi08SJGTUV43coZxqWVNP3guFg0puMHW4jdc=
+      Grpc__IamUrl: "http://iam.api:5001"
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -107,9 +107,11 @@
      dockerfile: testorder.Dockerfile
     container_name: testorder.api
     environment:
-     ASPNETCORE_ENVIRONMENT: "Docker"
-     TZ: Asia/Ho_Chi_Minh   # <== thêm cái nàyd
-     ConnectionStrings__DefaultConnection: "Server=host.docker.internal,1433;Database=TestOder;User Id=sa;Password=12345;TrustServerCertificate=True;Encrypt=False"
+      ASPNETCORE_ENVIRONMENT: "Docker"
+      ConnectionStrings__DefaultConnection: "Server=host.docker.internal,1433;Database=TestOrderDB;User Id=sa;Password=12345;TrustServerCertificate=True;Encrypt=False"
+      RabbitMQ__Host: "rabbitmq"
+      RabbitMQ__User: "lab"
+      RabbitMQ__Pass: "lab123"
     depends_on:
      rabbitmq:
        condition: service_healthy
@@ -135,7 +137,7 @@
       - "host.docker.internal:host-gateway"
 
   instrument.api:
-    build:
+    build:  
       context: .
       dockerfile: instrument.Dockerfile
     container_name: instrument.api

@@ -92,6 +92,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Persistence", "Persistence\Persistence.csproj", "{ECF39E0D-D9B6-4DF9-BCAF-6185B506D86C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PatientService", "PatientService", "{098428A2-F048-40FB-9323-0A877A1C1D2A}"
+	ProjectSection(SolutionItems) = preProject
+		Patient.Presentation\appsettings.json = Patient.Presentation\appsettings.json
+		Patient.Presentation\Patient.Presentation.http = Patient.Presentation\Patient.Presentation.http
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Patient.Application", "Patient.Application\Patient.Application.csproj", "{EE485ED9-984C-4D6C-89DD-8A84C7ED8D7E}"
 EndProject

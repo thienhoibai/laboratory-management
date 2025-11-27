@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Messaging.Email;
 using Notify.Infrastructure;
+using System.Globalization;
 using System.Text.Json;
 
 namespace Notify.App.Consumers;
@@ -22,6 +23,10 @@ public class NotificationRequestedConsumer : IConsumer<NotificationRequestedV1>
 
     public async Task Consume(ConsumeContext<NotificationRequestedV1> context)
     {
+        // ✅ Set culture to vi-VN for email template rendering
+        CultureInfo.CurrentUICulture = new CultureInfo("vi-VN");
+        CultureInfo.CurrentCulture = new CultureInfo("vi-VN");
+
         var evt = context.Message;
         // Idempotency (unique index on message_id already exists)
         var existing = await _db.Jobs.AsNoTracking().FirstOrDefaultAsync(j => j.MessageId == evt.MessageId, context.CancellationToken);

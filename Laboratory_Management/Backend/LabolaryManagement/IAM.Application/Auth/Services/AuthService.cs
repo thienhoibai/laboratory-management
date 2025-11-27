@@ -100,7 +100,7 @@ public partial class AuthService : IAuthService
         await _db.SaveChangesAsync(ct);
 
         var roles = await _db.UserRoles.Where(ur => ur.UserId == user.UserId).Join(_db.Roles, ur => ur.RoleId, r => r.RoleId, (ur, r) => r.Name).ToArrayAsync(ct);
-        var dto = new UserDetailDto(user.UserId, user.Username, user.Email, user.FullName, user.IsActive, user.LastLoginAt, user.CreatedAt, user.UpdatedAt, roles);
+        var dto = new UserDetailDto(user.UserId, user.Username, user.Email, user.FullName, user.IsActive, user.IsLocked, user.LastLoginAt, user.CreatedAt, user.UpdatedAt, roles);
         return OperationResult<UserDetailDto>.Success(dto);
     }
 

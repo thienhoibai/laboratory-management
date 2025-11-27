@@ -1,9 +1,11 @@
-﻿  using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using System.Threading.Tasks;
 using TestOrder.Application.DTOs.Payment;
 using TestOrder.Application.Services;
 using TestOrder.Application.Services.Payment;
+using System.Security.Claims;
 
 namespace TestOrder.Presentation.Controllers
 {
@@ -22,31 +24,41 @@ namespace TestOrder.Presentation.Controllers
             this.paymentService = paymentService;
         }
 
+        private Guid GetUserId()
+        {
+            var id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+                     ?? User.FindFirst("sub")?.Value;
+            return id != null && Guid.TryParse(id, out var g) ? g : Guid.Empty;
+        }
+
         [HttpGet]
         [Route("all")]
+        [Authorize(Policy = "perm:Payment.List")]
         public async Task<IActionResult> GetAllPayments([FromQuery] int pageNumber, [FromQuery] int pageSize)
         {
             var payments = await paymentService.GetAllPaymentEnvoicePaged(pageNumber, pageSize);
             return Ok(payments);
         }
+
         [HttpGet]
         [Route("by-booking")]
+        [Authorize(Policy = "perm:Payment.ByBooking.View")]
         public async Task<IActionResult> GetPaymentByBookingId([FromQuery] Guid bookingId)
         {
             try
             {
                 var payment = await paymentService.GetByBookingIdAsync(bookingId);
                 return Ok(payment);
-
             }
             catch (Exception ex)
             {
-               
                 return BadRequest($"Error retrieving payment: {ex.Message}");
             }
         }
+
         [HttpGet]
         [Route("id={id:int}")]
+        [Authorize(Policy = "perm:Payment.View")]
         public async Task<IActionResult> GetPaymentById([FromRoute] int id)
         {
             var payment = await paymentService.GetPaymentEnvoiceByIdAsync(id);
@@ -55,6 +67,7 @@ namespace TestOrder.Presentation.Controllers
 
         [HttpPost]
         [Route("vnpay-url")]
+        [Authorize(Policy = "perm:Payment.Create")]
         public IActionResult CreatePaymentUrl(PaymentRequestDTO model)
         {
             try
@@ -70,6 +83,7 @@ namespace TestOrder.Presentation.Controllers
 
         [HttpGet]
         [Route("vnpay-return")]
+        [AllowAnonymous]
         public async Task<IActionResult> VnPayReturn()
         {
             try
