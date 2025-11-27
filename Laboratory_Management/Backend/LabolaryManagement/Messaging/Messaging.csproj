@@ -20,9 +20,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Remove="Templates\Emails\BookingConfirmation.vi-VN.html" />
+    <!-- ✅ CHỈ GIỮ LẠI NHỮNG FILE THỰC SỰ KHÔNG CẦN EMBED -->
     <EmbeddedResource Remove="Templates\Emails\InviteUser.en-US.html" />
-    <EmbeddedResource Remove="Templates\Emails\ResetPassword.html" />
+    <EmbeddedResource Remove="Templates\Emails\ResetPassword.en-US.html" />
   </ItemGroup>
 
 </Project>
