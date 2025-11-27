@@ -74,10 +74,15 @@ namespace BlogService.Presentation
             app.UseRouting();
             app.UseCors("AllowFrontend");
             app.UseAuthorization();
+            var imagesPath = Path.Combine(builder.Environment.ContentRootPath, "Images");
+            if (!Directory.Exists(imagesPath))
+            {
+                Directory.CreateDirectory(imagesPath);
+            }
+
             app.UseStaticFiles(new StaticFileOptions
             {
-                FileProvider = new PhysicalFileProvider(
-        Path.Combine(builder.Environment.ContentRootPath, "Images")),
+                FileProvider = new PhysicalFileProvider(imagesPath),
                 RequestPath = "/Images"
             });
             app.MapControllers();
