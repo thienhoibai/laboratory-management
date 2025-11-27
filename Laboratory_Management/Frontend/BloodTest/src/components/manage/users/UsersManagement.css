@@ -271,6 +271,15 @@
   color: #e74c3c;
 }
 
+.action-button.role {
+  color: #10b981;
+}
+
+.action-button.role:hover:not(:disabled) {
+  background: #d1fae5;
+  color: #059669;
+}
+
 /* Pagination */
 .users-pagination {
   display: flex;
@@ -649,6 +658,86 @@
 .user-modal .modal-button.primary:active:not(:disabled) {
   transform: translateY(0);
   box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+}
+
+/* Role Checkbox List */
+.roles-checkbox-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.roles-checkbox-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.roles-checkbox-list::-webkit-scrollbar-track {
+  background: #f9fafb;
+}
+
+.roles-checkbox-list::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+.roles-checkbox-list::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+.role-checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  background: #ffffff;
+  border: none;
+  margin-bottom: 4px;
+}
+
+.role-checkbox-item:last-child {
+  margin-bottom: 0;
+}
+
+.role-checkbox-item:hover {
+  background: #f9fafb;
+}
+
+.role-checkbox-item.role-checkbox-checked,
+.role-checkbox-item:has(input:checked) {
+  background: #eff6ff;
+}
+
+.role-checkbox-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  margin: 0;
+  flex-shrink: 0;
+  accent-color: #1976d2;
+}
+
+.role-checkbox-item span {
+  font-size: 14px;
+  color: #374151;
+  font-weight: 500;
+  flex: 1;
+  line-height: 1.4;
+  user-select: none;
+}
+
+.role-checkbox-item.role-checkbox-checked span,
+.role-checkbox-item:has(input:checked) span {
+  color: #1976d2;
+  font-weight: 600;
 }
 
 /* Responsive */

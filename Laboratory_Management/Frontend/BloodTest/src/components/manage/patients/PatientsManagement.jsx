@@ -30,9 +30,7 @@ const PatientsManagement = () => {
   // Filter states
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [searchName, setSearchName] = useState("");
-  const [searchPhone, setSearchPhone] = useState("");
-  const [searchEmail, setSearchEmail] = useState("");
+  const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortDir, setSortDir] = useState("desc");
   const [searchDebounce, setSearchDebounce] = useState("");
@@ -67,24 +65,16 @@ const PatientsManagement = () => {
   // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
-      setSearchDebounce(searchName);
+      setSearchDebounce(search);
     }, 500);
     return () => clearTimeout(timer);
-  }, [searchName]);
+  }, [search]);
 
   useEffect(() => {
     if (token) setAuthToken(token);
     fetchPatients();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    page,
-    pageSize,
-    searchDebounce,
-    searchPhone,
-    searchEmail,
-    sortBy,
-    sortDir,
-  ]);
+  }, [page, pageSize, searchDebounce, sortBy, sortDir]);
 
   const fetchPatients = async () => {
     setLoading(true);
@@ -95,9 +85,22 @@ const PatientsManagement = () => {
         sortBy,
         sortDir,
       };
-      if (searchDebounce) params.name = searchDebounce;
-      if (searchPhone) params.phone = searchPhone;
-      if (searchEmail) params.email = searchEmail;
+      // Search in name, phone, or email
+      if (searchDebounce) {
+        const searchValue = searchDebounce.trim();
+        // Check if it's a phone number (all digits)
+        if (/^\d+$/.test(searchValue)) {
+          params.phone = searchValue;
+        }
+        // Check if it's an email (contains @)
+        else if (searchValue.includes("@")) {
+          params.email = searchValue;
+        }
+        // Otherwise search by name
+        else {
+          params.name = searchValue;
+        }
+      }
 
       const response = await PatientServiceAPI.GetAllPatients(params);
       if (response.status === 200 && response.data) {
@@ -768,40 +771,10 @@ const PatientsManagement = () => {
                 <FiSearch size={18} />
                 <input
                   type="text"
-                  placeholder="Tìm kiếm theo tên..."
-                  value={searchName}
+                  placeholder="Tìm kiếm theo tên, số điện thoại hoặc email..."
+                  value={search}
                   onChange={(e) => {
-                    setSearchName(e.target.value);
-                    setPage(1);
-                  }}
-                />
-              </div>
-            </div>
-
-            <div className="search-section">
-              <div className="search-box">
-                <FiSearch size={18} />
-                <input
-                  type="text"
-                  placeholder="Tìm kiếm theo số điện thoại..."
-                  value={searchPhone}
-                  onChange={(e) => {
-                    setSearchPhone(e.target.value);
-                    setPage(1);
-                  }}
-                />
-              </div>
-            </div>
-
-            <div className="search-section">
-              <div className="search-box">
-                <FiSearch size={18} />
-                <input
-                  type="text"
-                  placeholder="Tìm kiếm theo email..."
-                  value={searchEmail}
-                  onChange={(e) => {
-                    setSearchEmail(e.target.value);
+                    setSearch(e.target.value);
                     setPage(1);
                   }}
                 />

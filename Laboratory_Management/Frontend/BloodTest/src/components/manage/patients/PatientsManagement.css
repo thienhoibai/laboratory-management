@@ -63,29 +63,14 @@
 
 /* Filters Section */
 .patients-filters-section {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
   gap: 12px;
   margin-bottom: 24px;
 }
 
-@media (min-width: 1600px) {
-  .patients-filters-section {
-    grid-template-columns: repeat(3, 1fr);
-    max-width: 1200px;
-  }
-}
-
-@media (min-width: 1367px) and (max-width: 1599px) {
-  .patients-filters-section {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media (min-width: 1025px) and (max-width: 1366px) {
-  .patients-filters-section {
-    grid-template-columns: repeat(3, 1fr);
-  }
+.search-section {
+  flex: 1;
+  max-width: 500px;
 }
 
 .search-section {

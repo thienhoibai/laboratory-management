@@ -472,3 +472,14 @@ export const deleteRole = async (id) => {
   const response = await deleteRoleAPI(id);
   return response?.data;
 };
+
+// POST /api/Users/{id}/roles
+// Cập nhật role của user
+export const updateUserRoles = async (userId, roleIds) => {
+  if (!userId) throw new Error("User ID is required");
+  if (!roleIds || !Array.isArray(roleIds) || roleIds.length === 0) {
+    throw new Error("Role IDs array is required");
+  }
+  const response = await IAMServiceAPI.UpdateUserRoles(userId, roleIds);
+  return response?.data || response;
+};

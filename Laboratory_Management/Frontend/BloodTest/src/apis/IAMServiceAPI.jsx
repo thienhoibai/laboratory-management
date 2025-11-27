@@ -46,6 +46,12 @@ export const IAMServiceAPI = {
   GetUserById: async (userId) => {
     return await api.get(`${URL_User}${userId}`);
   },
+
+  UpdateUserRoles: async (userId, roleIds) => {
+    return await api.post(`${URL_User}${userId}/roles`, {
+      roleIds: Array.isArray(roleIds) ? roleIds : [roleIds],
+    });
+  },
 };
 
 // ==================== RBAC APIs ====================
