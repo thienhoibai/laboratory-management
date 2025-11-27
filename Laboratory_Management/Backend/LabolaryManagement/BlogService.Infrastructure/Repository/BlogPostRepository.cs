@@ -35,8 +35,9 @@ namespace BlogService.Infrastructure.Repository
                 );
             }
 
-            if (status.HasValue)
-                query = query.Where(p => p.Status == status.Value);
+            if (status > 0)
+                query = query.Where(p => p.Status == status);
+
 
             return await query
                 .OrderByDescending(p => p.CreatedDate)
