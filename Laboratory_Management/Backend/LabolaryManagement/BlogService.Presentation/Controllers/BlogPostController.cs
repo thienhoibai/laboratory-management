@@ -97,12 +97,50 @@ namespace BlogService.Presentation.Controllers
 
         [HttpPut("{id}")]
         [Authorize(Policy = "perm:BlogPost.Update")]
-        public async Task<IActionResult> Update(int id, [FromBody] UpdateBlogPostDTO dto)
+        public async Task<IActionResult> Update(int id, [FromForm] UpdateBlogPostRequest request)
         {
+            var post = await _service.GetByIdAsync(id);
+            if (post == null)
+                return NotFound();
+
+            string? newImagePath = post.ImagePath; 
+
+            if (request.Image != null)
+            {
+                var folder = Path.Combine(Directory.GetCurrentDirectory(), "Images");
+                Directory.CreateDirectory(folder);
+
+                var fileName = Guid.NewGuid() + Path.GetExtension(request.Image.FileName);
+                var savePath = Path.Combine(folder, fileName);
+
+                using (var stream = new FileStream(savePath, FileMode.Create))
+                {
+                    await request.Image.CopyToAsync(stream);
+                }
+
+                newImagePath = Path.Combine("Images", fileName);
+                if (!string.IsNullOrEmpty(post.ImagePath))
+                {
+                    var oldImage = Path.Combine(Directory.GetCurrentDirectory(), post.ImagePath);
+                    if (System.IO.File.Exists(oldImage))
+                        System.IO.File.Delete(oldImage);
+                }
+            }
+
+            // --- MAPPING DTO ---
+            var dto = new UpdateBlogPostDTO
+            {
+                Title = request.Title,
+                Content = request.Content,
+                CategoryId = request.CategoryId,
+                ImagePath = newImagePath
+            };
 
             await _service.UpdateAsync(dto, id);
-            return Ok(new { message = "Cập nhật bài viết thành công" });
+
+            return Ok(new { message = "Cập nhật bài viết thành công", image = newImagePath });
         }
+
 
         [HttpDelete("{id}")]
         [Authorize(Policy = "perm:BlogPost.Delete")]
