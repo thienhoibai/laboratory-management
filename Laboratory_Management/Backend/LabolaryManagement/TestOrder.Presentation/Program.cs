@@ -127,6 +127,16 @@ namespace TestOrder.Presentation
             // ===== Authorization Policies =====
             builder.Services.AddAuthorization(options =>
             {
+                // CatalogBundle permissions
+                string[] catalogBundlePerms = new[]
+                {
+                   "CatalogBundle.List",
+                   "CatalogBundle.View",
+                   "CatalogBundle.Create",
+                   "CatalogBundle.Update",
+                   "CatalogBundle.Delete"
+                };
+
                 // Booking permissions
                 string[] bookingPerms = new[]
                 {
@@ -194,7 +204,9 @@ namespace TestOrder.Presentation
                     .Concat(bundlePerms)
                     .Concat(slotPerms)
                     .Concat(resultPerms)
-                    .Concat(paymentPerms);
+                    .Concat(paymentPerms)
+                    .Concat(catalogBundlePerms);
+
 
                 foreach (var p in allPerms)
                 {
