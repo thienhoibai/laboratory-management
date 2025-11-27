@@ -27,12 +27,14 @@ namespace Messaging.Email
         {
             // Resolve template with culture fallbacks
             var culture = CultureInfo.CurrentUICulture;
+            
+            // ✅ Ưu tiên tìm theo culture cụ thể trước (vi-VN, en-US, ...)
             var candidates = new List<string>
             {
-                $"Templates/Emails/{templateName}.html",
-                $"Templates/Emails/{templateName}.{culture.Name}.html",
-                $"Templates/Emails/{templateName}.{culture.TwoLetterISOLanguageName}.html",
-                $"Templates/Emails/{templateName}.en-US.html"
+                $"Templates/Emails/{templateName}.{culture.Name}.html",                      // vi-VN
+                $"Templates/Emails/{templateName}.{culture.TwoLetterISOLanguageName}.html",  // vi
+                $"Templates/Emails/{templateName}.html",                                     // fallback no culture
+                $"Templates/Emails/{templateName}.en-US.html"                                // fallback en-US
             };
 
             string? raw = null;
