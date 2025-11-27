@@ -10,6 +10,8 @@ import {
   updateRolePermissions as updateRolePermissionsAPI,
   patchRolePermissions as patchRolePermissionsAPI,
   patchRolePermissionsByModule as patchRolePermissionsByModuleAPI,
+  createRole as createRoleAPI,
+  deleteRole as deleteRoleAPI,
 } from "../apis/IAMServiceAPI.jsx";
 import { toast } from "react-toastify";
 import { jwtDecode } from "jwt-decode";
@@ -453,4 +455,20 @@ export const patchRolePermissionsByModule = async (
   );
   const data = response?.data;
   return data?.data || data;
+};
+
+// POST /api/Roles
+// Tạo role mới
+export const createRole = async (data) => {
+  if (!data) throw new Error("Role data is required");
+  const response = await createRoleAPI(data);
+  return response?.data;
+};
+
+// DELETE /api/Roles/{id}
+// Xóa role
+export const deleteRole = async (id) => {
+  if (!id) throw new Error("Role ID is required");
+  const response = await deleteRoleAPI(id);
+  return response?.data;
 };

@@ -64,6 +64,22 @@ export const getRoles = async (params = {}) => {
   return response;
 };
 
+// POST /api/Roles
+// Tạo role mới
+export const createRole = async (data) => {
+  if (!data) throw new Error("Role data is required");
+  const response = await api.post("iam/api/Roles", data);
+  return response;
+};
+
+// DELETE /api/Roles/{id}
+// Xóa role
+export const deleteRole = async (id) => {
+  if (!id) throw new Error("Role ID is required");
+  const response = await api.delete(`iam/api/Roles/${id}`);
+  return response;
+};
+
 // GET /api/rbac/roles/{roleId}/permissions
 // Lấy danh sách quyền của một vai trò cụ thể
 export const getRolePermissions = async (roleId) => {
