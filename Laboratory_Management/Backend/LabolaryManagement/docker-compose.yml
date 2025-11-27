@@ -25,7 +25,7 @@
       RabbitMQ__Pass: "lab123"
       # JWT config (must match patient.api)
       Jwt__Issuer: "lab-iam"
-      Jwt__Audience: "lab-services"
+      Jwt__Audience: "lab.api"
       Jwt__SigningKey: "Jx6n2QvB5pTf8Kz3Wm9aS4Ld7Yh0Nr2Xu8Cj5Pk1Vg3Mz7Rb0Hq4Tn6Wy8Le2"
       Jwt__AccessTokenMinutes: "60"
       Jwt__RefreshTokenDays: "14"
@@ -52,7 +52,7 @@
       RabbitMQ__Pass: "lab123"
       # JWT config (must match iam.api)
       Jwt__Issuer: "lab-iam"
-      Jwt__Audience: "lab-services"
+      Jwt__Audience: "lab.api"
       Jwt__SigningKey: "Jx6n2QvB5pTf8Kz3Wm9aS4Ld7Yh0Nr2Xu8Cj5Pk1Vg3Mz7Rb0Hq4Tn6Wy8Le2"
       # PII encryption keys (primary first, then legacy). Keep them secret.
       PATIENT_PII_KEYS: |
@@ -108,7 +108,7 @@
     container_name: testorder.api
     environment:
       ASPNETCORE_ENVIRONMENT: "Docker"
-      ConnectionStrings__DefaultConnection: "Server=host.docker.internal,1433;Database=TestOder;User Id=sa;Password=12345;TrustServerCertificate=True;Encrypt=False"
+      ConnectionStrings__DefaultConnection: "Server=host.docker.internal,1433;Database=TestOrderDB;User Id=sa;Password=12345;TrustServerCertificate=True;Encrypt=False"
       RabbitMQ__Host: "rabbitmq"
       RabbitMQ__User: "lab"
       RabbitMQ__Pass: "lab123"
@@ -137,7 +137,7 @@
       - "host.docker.internal:host-gateway"
 
   instrument.api:
-    build:
+    build:  
       context: .
       dockerfile: instrument.Dockerfile
     container_name: instrument.api

@@ -1,6 +1,4 @@
-﻿
-
-using Azure;
+﻿using Azure;
 using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
@@ -21,22 +19,25 @@ namespace TestOrder.Application.Services.Booking
         private readonly AppointmentSlotService _appointmentSlotService;
         private readonly BookingRepository _bookingRepository;
         private readonly CatalogBundleService _catalogBundleService;
-        private readonly TestBundleService testBundleService;
-        private readonly TestCatalogService testCatalogService;
+        private readonly TestBundleService _testBundleService;
+        private readonly TestCatalogService _testCatalogService;
+        private readonly IPublishEndpoint _publishEndpoint;
 
         public BookingService(BookingRepository bookingRepository,
                               BookingTestService bookingTestService,
                               AppointmentSlotService appointmentSlotService,
                               CatalogBundleService catalogBundleService,
                               TestBundleService testBundleService,
-                              TestCatalogService testCatalogService)
+                              TestCatalogService testCatalogService,
+                              IPublishEndpoint publishEndpoint)
         {
             _bookingTestService = bookingTestService;
             _bookingRepository = bookingRepository;
             _appointmentSlotService = appointmentSlotService;
             _catalogBundleService = catalogBundleService;
-            this.testBundleService = testBundleService;
-            this.testCatalogService = testCatalogService;
+            _testBundleService = testBundleService;
+            _testCatalogService = testCatalogService;
+            _publishEndpoint = publishEndpoint;
         }
 
         internal async Task<BookingResponseDTO> MapToDTOAsync(Infrastructure.Models.Booking booking)
@@ -74,7 +75,7 @@ namespace TestOrder.Application.Services.Booking
         }
 
 
-        public async Task<object> GetAllBookingsByDateAsync 
+        public async Task<object> GetAllBookingsByDateAsync
             (DateOnly date, string? keyword, string? sortBy, string? sortDirection, int pageSize, int pageNumber)
         {
             var appointmentSlots = await _appointmentSlotService.GetAppointmentSlotsByDateAsync(date, 1, byte.MaxValue);
@@ -85,7 +86,7 @@ namespace TestOrder.Application.Services.Booking
             }
 
             List<Infrastructure.Models.Booking> bookings = new List<Infrastructure.Models.Booking>();
-            
+
             foreach (var slot in appointmentSlots)
             {
                 var slotBookings = await _bookingRepository.GetBookingsByAppointmentSlotSearchableAsync
@@ -99,7 +100,7 @@ namespace TestOrder.Application.Services.Booking
 
             var (pagedItems, totalItem) = await _bookingRepository.SortingAndPaging
                 (sortBy, sortDirection, pageSize, pageNumber, bookings);
-            
+
 
             var totalPages = (int)Math.Ceiling((double)totalItem / pageSize);
 
@@ -168,7 +169,7 @@ namespace TestOrder.Application.Services.Booking
 
         #region Create New Booking
 
-        public async Task<ResponseMessage> CreateBookingAsync (BookingRequestDTO bookingRequest)
+        public async Task<ResponseMessage> CreateBookingAsync(BookingRequestDTO bookingRequest)
         {
             double totalPrice = 0d;
             int? bundleId = bookingRequest.BundleId.Value != 0 ? bookingRequest.BundleId.Value : null;
@@ -213,32 +214,32 @@ namespace TestOrder.Application.Services.Booking
 
             if (bundleId != null)
             {
-                totalPrice += testBundleService.GetBundlePriceByIdAsync((int)bundleId);
+                totalPrice += _testBundleService.GetBundlePriceByIdAsync((int)bundleId);
             }
 
             if (!bookingRequest.Catalogs.IsNullOrEmpty())
             {
-                totalPrice += testCatalogService.GetPriceForMultipleTests(bookingRequest.Catalogs);
+                totalPrice += _testCatalogService.GetPriceForMultipleTests(bookingRequest.Catalogs);
             }
 
 
 
             var newBooking = new Infrastructure.Models.Booking
-                {
-                    BookingId = Guid.NewGuid(),
-                    PatientId = bookingRequest.PatientId,
-                    PatientName = bookingRequest.PatientName,
-                    PatientPhone = bookingRequest.PatientPhoneNumber,
-                    PatientEmail = bookingRequest.PatientEmail,
-                    CreatedBy = bookingRequest.CreatedBy,
-                    CreateDate = DateOnly.FromDateTime(DateTime.Now),
-                    CreateTime = TimeOnly.FromDateTime(DateTime.Now),
-                    BundleId = bundleId,
-                    AppointmentSlotId = appointmentSlot.SlotId,
-                    Status = (byte?)BookingStatusEnum.Pending,
-                    BookingCode = nextCode,
-                    TotalPrice = totalPrice
-                };
+            {
+                BookingId = Guid.NewGuid(),
+                PatientId = bookingRequest.PatientId,
+                PatientName = bookingRequest.PatientName,
+                PatientPhone = bookingRequest.PatientPhoneNumber,
+                PatientEmail = bookingRequest.PatientEmail,
+                CreatedBy = bookingRequest.CreatedBy,
+                CreateDate = DateOnly.FromDateTime(DateTime.Now),
+                CreateTime = TimeOnly.FromDateTime(DateTime.Now),
+                BundleId = bundleId,
+                AppointmentSlotId = appointmentSlot.SlotId,
+                Status = (byte?)BookingStatusEnum.Pending,
+                BookingCode = nextCode,
+                TotalPrice = totalPrice
+            };
 
             await _bookingRepository.AddAsync(newBooking);
             if (bookingRequest.Catalogs != null)
@@ -266,20 +267,20 @@ namespace TestOrder.Application.Services.Booking
 
             return response;
 
-        } 
+        }
 
         #endregion
 
-        public async Task<ResponseMessage> CheckInBooking (Guid bookingId)
+        public async Task<ResponseMessage> CheckInBooking(Guid bookingId)
         {
 
             DateOnly today = DateOnly.FromDateTime(DateTime.Now);
             TimeOnly now = TimeOnly.FromDateTime(DateTime.Now);
 
-            
 
 
-            var booking =  await _bookingRepository.GetByIdAsync(bookingId);
+
+            var booking = await _bookingRepository.GetByIdAsync(bookingId);
             var timeSlot = await _appointmentSlotService.GetAppointmentSlotByIdAsync((Guid)booking.AppointmentSlotId);
             TimeOnly lowerLimit = timeSlot.TimeBlock.Add(-TimeSpan.FromMinutes(30));
             TimeOnly upperLimit = timeSlot.TimeBlock.Add(TimeSpan.FromMinutes(30));
@@ -291,7 +292,7 @@ namespace TestOrder.Application.Services.Booking
                 response.InstancesCode = bookingId;
                 return response;
             }
-                
+
             if (booking.Status != (byte?)BookingStatusEnum.Confirmed)
             {
                 response.ResponseCode = ResponseCode.BadInstanceState;
@@ -300,19 +301,19 @@ namespace TestOrder.Application.Services.Booking
                 return response;
             }
             if (today == timeSlot.AppointmentDate &&
-                now >= lowerLimit && 
+                now >= lowerLimit &&
                 now <= upperLimit)
             {
-                
-                    booking.Status = (byte)BookingStatusEnum.InProgress;
-                    booking.RunDate = DateOnly.FromDateTime(DateTime.Now);
-                    await _bookingRepository.UpdateAsync(booking);
-                    response.ResponseCode = ResponseCode.Success;
-                    response.Message = "Check-in successful";
-                    response.InstancesCode = bookingId;
-                
+
+                booking.Status = (byte)BookingStatusEnum.InProgress;
+                booking.RunDate = DateOnly.FromDateTime(DateTime.Now);
+                await _bookingRepository.UpdateAsync(booking);
+                response.ResponseCode = ResponseCode.Success;
+                response.Message = "Check-in successful";
+                response.InstancesCode = bookingId;
+
             }
-            else 
+            else
             {
                 response.ResponseCode = ResponseCode.BadInstanceState;
                 response.Message = "Check-in is only allowed on the appointment date";
@@ -320,7 +321,7 @@ namespace TestOrder.Application.Services.Booking
                 return response;
             }
             return response;
-            
+
         }
 
         public async Task<ResponseMessage> CheckOutBooking(Guid bookingId)
@@ -350,10 +351,8 @@ namespace TestOrder.Application.Services.Booking
             return response;
         }
 
-        internal async Task PaymentConfirmBooking (Guid bookingId)
+        internal async Task PaymentConfirmBooking(Guid bookingId)
         {
-            ResponseMessage response = new ResponseMessage();
-
             var booking = await _bookingRepository.GetByIdAsync(bookingId);
             if (booking == null)
             {
@@ -370,23 +369,47 @@ namespace TestOrder.Application.Services.Booking
                 {
                     var slot = await _appointmentSlotService.GetAppointmentSlotByIdAsync((Guid)booking.AppointmentSlotId!);
 
+                    // Lấy thông tin bundle/test package
+                    string testPackage = "Xét nghiệm tổng quát";
+                    string totalAmount = "Đang cập nhật";
+
+                    if (booking.BundleId.HasValue)
+                    {
+                        var bundle = await _testBundleService.GetByIdAsync(booking.BundleId.Value);
+                        if (bundle != null)
+                        {
+                            testPackage = bundle.BundleName ?? "Xét nghiệm tổng quát";
+                            if (bundle.Price.HasValue)
+                            {
+                                totalAmount = $"{bundle.Price.Value:N0}đ";
+                            }
+                        }
+                    }
+                    else if (booking.TotalPrice.HasValue)
+                    {
+                        totalAmount = $"{booking.TotalPrice.Value:N0}đ";
+                    }
+
                     var templateData = new Dictionary<string, string>
                     {
                         { "BookingCode", booking.BookingCode ?? "N/A" },
+                        { "TotalAmount", totalAmount },
+                        { "TestPackage", testPackage },
+                        { "Location", "Phòng khám Xét nghiệm Y tế\n123 Nguyễn Huệ, Q.1, TP.HCM" },
                         { "PatientName", booking.PatientName ?? "Khách hàng" },
                         { "PatientEmail", booking.PatientEmail },
                         { "PatientPhone", booking.PatientPhone ?? "N/A" },
-                        { "AppointmentDate", slot?.AppointmentDate.ToString("dd/MM/yyyy") ?? "Chưa xác định" },
+                        { "AppointmentDate", slot?.AppointmentDate.ToString("'Thứ' d, dd/MM/yyyy") ?? "Chưa xác định" },
                         { "AppointmentTime", slot?.TimeBlock.ToString(@"hh\:mm") ?? "Chưa xác định" }
                     };
-                    
+
                     //await _publishEndpoint.Publish(new NotificationRequestedV1(
                     //    MessageId: Guid.NewGuid().ToString(),
                     //    Channel: "email",
                     //    To: booking.PatientEmail,
                     //    Template: "BookingConfirmation",
                     //    Data: templateData
-                    
+
 
                     Console.WriteLine($"✅ Đã gửi yêu cầu email xác nhận booking #{booking.BookingCode} tới {booking.PatientEmail}");
                 }
@@ -397,7 +420,5 @@ namespace TestOrder.Application.Services.Booking
                 }
             }
         }
-
-
     }
 }

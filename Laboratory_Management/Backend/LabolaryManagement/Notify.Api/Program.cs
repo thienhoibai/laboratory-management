@@ -1,9 +1,11 @@
 ﻿using MassTransit;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 using Messaging.Email;
 using Notify.App.Consumers;
 using Notify.Infrastructure;
 using RabbitMQ.Client;
+using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -46,6 +48,15 @@ builder.Services.AddMassTransit(x =>
 });
 
 var app = builder.Build();
+
+// ✅ Set default culture to vi-VN
+var supportedCultures = new[] { new CultureInfo("vi-VN") };
+app.UseRequestLocalization(new RequestLocalizationOptions
+{
+    DefaultRequestCulture = new RequestCulture("vi-VN"),
+    SupportedCultures = supportedCultures,
+    SupportedUICultures = supportedCultures
+});
 
 // Ensure DB exists
 using (var scope = app.Services.CreateScope())
