@@ -56,18 +56,22 @@ namespace BlogService.Application.Services
                 throw new Exception("Bài viết không tồn tại.");
 
             post.Title = dto.Title ?? post.Title;
-            post.ImagePath = dto.ImagePath ?? post.ImagePath;
             post.Content = dto.Content ?? post.Content;
             post.CategoryId = dto.CategoryId ?? post.CategoryId;
+
+            // Update ảnh nếu có ảnh mới
+            if (!string.IsNullOrEmpty(dto.ImagePath))
+                post.ImagePath = dto.ImagePath;
+
+            // Update author nếu có
             if (dto.AuthorId.HasValue)
                 post.AuthorId = dto.AuthorId.Value;
 
             post.UpdatedDate = DateTime.Now;
 
-            post.UpdatedDate = DateTime.Now;
-
             await _repository.UpdateAsync(post);
         }
+
 
         // Xóa
         public Task DeleteAsync(BlogPost post) =>
