@@ -11,8 +11,8 @@ const INSTRUMENT_BASE = "instrument/api/instruments";
 
 const unwrap = (response) => response?.data ?? response;
 
-export const getInstruments = async () => {
-  const res = await api.get(INSTRUMENT_BASE);
+export const getInstruments = async (page, pageSize) => {
+  const res = await api.get(INSTRUMENT_BASE, { page, pageSize });
   return unwrap(res);
 };
 

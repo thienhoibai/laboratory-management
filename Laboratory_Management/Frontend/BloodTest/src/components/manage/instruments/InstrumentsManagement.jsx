@@ -4,31 +4,91 @@ import AdminLayout from "../../admin/layout/AdminLayout";
 import InstrumentService from "../../../services/InstrumentService";
 import "./InstrumentsManagement.css";
 
-const machineStatusOptions = [
-  { value: "ACTIVE", label: "Đang hoạt động", badgeClass: "status-active" },
-  { value: "OFF", label: "Đang tắt", badgeClass: "status-off" },
-  { value: "ERROR", label: "Đang lỗi", badgeClass: "status-error" },
+const MACHINE_STATUS_OPTIONS = [
   {
-    value: "MAINTENANCE",
+    key: "ACTIVE",
+    rawValues: ["ACTIVE", 0],
+    label: "Đang hoạt động",
+    badge: "status-active",
+  },
+  { key: "OFF", rawValues: ["OFF", 1], label: "Đang tắt", badge: "status-off" },
+  {
+    key: "ERROR",
+    rawValues: ["ERROR", 2],
+    label: "Đang lỗi",
+    badge: "status-error",
+  },
+  {
+    key: "MAINTENANCE",
+    rawValues: ["MAINTENANCE", 3],
     label: "Đang bảo trì",
-    badgeClass: "status-maintenance",
+    badge: "status-maintenance",
   },
 ];
 
-const reagentStatusOptions = [
-  { value: "FULL", label: "Đầy đủ", badgeClass: "pill-full" },
-  { value: "LOW", label: "Sắp hết", badgeClass: "pill-low" },
-  { value: "EMPTY", label: "Đã hết", badgeClass: "pill-empty" },
+const REAGENT_STATUS_OPTIONS = [
+  { key: "FULL", rawValues: ["FULL", 0], label: "Đầy đủ", badge: "pill-full" },
+  { key: "LOW", rawValues: ["LOW", 1], label: "Sắp hết", badge: "pill-low" },
+  {
+    key: "EMPTY",
+    rawValues: ["EMPTY", 2],
+    label: "Đã hết",
+    badge: "pill-empty",
+  },
 ];
 
-const defaultForm = {
+const getStatusKey = (options, rawValue) => {
+  const matched =
+    options.find(
+      (option) =>
+        option.key === rawValue ||
+        option.rawValues.some((val) => val === rawValue)
+    ) ?? options[0];
+  return matched.key;
+};
+
+const getStatusView = (options, rawValue) => {
+  return (
+    options.find(
+      (option) =>
+        option.key === rawValue ||
+        option.rawValues.some((val) => val === rawValue)
+    ) ?? options[0]
+  );
+};
+
+const EMPTY_FORM = {
   code: "",
   name: "",
-  machineStatus: machineStatusOptions[0].value,
-  reagentStatus: reagentStatusOptions[0].value,
+  machineStatus: MACHINE_STATUS_OPTIONS[0].key,
+  reagentStatus: REAGENT_STATUS_OPTIONS[0].key,
   imageData: "",
-  imageName: "",
 };
+
+const mapInstrumentToForm = (instrument) => ({
+  code: instrument.code ?? instrument.instrumentCode ?? "",
+  name: instrument.name ?? "",
+  machineStatus: getStatusKey(
+    MACHINE_STATUS_OPTIONS,
+    instrument.machineStatus ?? instrument.status
+  ),
+  reagentStatus: getStatusKey(
+    REAGENT_STATUS_OPTIONS,
+    instrument.reagentStatus ?? instrument.reagent_status
+  ),
+  imageData: instrument.imageData ?? "",
+});
+
+const buildPayloadFromForm = (formState) => ({
+  code: formState.code.trim(),
+  name: formState.name.trim(),
+  machineStatus: formState.machineStatus,
+  reagentStatus: formState.reagentStatus,
+  imageData: formState.imageData,
+});
+
+const pickInstrumentCode = (instrument) =>
+  instrument?.code ?? instrument?.instrumentCode ?? "";
 
 const InstrumentsManagement = () => {
   const breadcrumbs = [
@@ -39,25 +99,25 @@ const InstrumentsManagement = () => {
   const [instruments, setInstruments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [modalMode, setModalMode] = useState("create");
+
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formState, setFormState] = useState(defaultForm);
+  const [modalMode, setModalMode] = useState("create"); // create | edit
+  const [formState, setFormState] = useState(EMPTY_FORM);
   const [formError, setFormError] = useState("");
   const [imagePreview, setImagePreview] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   const tableData = useMemo(() => instruments ?? [], [instruments]);
-  const getInstrumentCode = (instrument) =>
-    instrument?.code ?? instrument?.instrumentCode ?? "";
 
   useEffect(() => {
-    loadInstruments();
+    fetchInstruments();
   }, []);
 
-  const loadInstruments = async () => {
+  const fetchInstruments = async () => {
     setLoading(true);
     setError("");
     try {
@@ -70,26 +130,22 @@ const InstrumentsManagement = () => {
     }
   };
 
-  const openCreateModal = () => {
-    setModalMode("create");
-    setFormState(defaultForm);
+  const resetForm = () => {
+    setFormState(EMPTY_FORM);
     setImagePreview("");
     setFormError("");
+  };
+
+  const openCreateModal = () => {
+    resetForm();
+    setModalMode("create");
     setIsModalOpen(true);
   };
 
   const openEditModal = (instrument) => {
     setModalMode("edit");
-    const resolvedCode = getInstrumentCode(instrument);
-    setFormState({
-      code: resolvedCode,
-      name: instrument?.name ?? "",
-      machineStatus: instrument?.machineStatus ?? machineStatusOptions[0].value,
-      reagentStatus: instrument?.reagentStatus ?? reagentStatusOptions[0].value,
-      imageData: instrument?.imageData ?? "",
-      imageName: instrument?.imageName ?? "",
-    });
-    setImagePreview(instrument?.imageUrl || instrument?.imageData || "");
+    setFormState(mapInstrumentToForm(instrument));
+    setImagePreview(instrument.imageUrl || instrument.imageData || "");
     setFormError("");
     setIsModalOpen(true);
   };
@@ -97,6 +153,7 @@ const InstrumentsManagement = () => {
   const closeModal = () => {
     setIsModalOpen(false);
     setSubmitting(false);
+    resetForm();
   };
 
   const handleFormChange = (field, value) => {
@@ -106,17 +163,13 @@ const InstrumentsManagement = () => {
   const handleFileChange = (file) => {
     if (!file) {
       setImagePreview("");
-      setFormState((prev) => ({ ...prev, imageData: "", imageName: "" }));
+      setFormState((prev) => ({ ...prev, imageData: "" }));
       return;
     }
     const reader = new FileReader();
     reader.onloadend = () => {
       setImagePreview(reader.result);
-      setFormState((prev) => ({
-        ...prev,
-        imageData: reader.result,
-        imageName: file.name,
-      }));
+      setFormState((prev) => ({ ...prev, imageData: reader.result }));
     };
     reader.readAsDataURL(file);
   };
@@ -133,23 +186,17 @@ const InstrumentsManagement = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!validateForm()) return;
+
     setSubmitting(true);
     try {
-      const payload = {
-        code: formState.code.trim(),
-        name: formState.name.trim(),
-        machineStatus: formState.machineStatus,
-        reagentStatus: formState.reagentStatus,
-        imageData: formState.imageData,
-      };
-
+      const payload = buildPayloadFromForm(formState);
       if (modalMode === "create") {
         await InstrumentService.create(payload);
       } else {
         await InstrumentService.update(formState.code, payload);
       }
       closeModal();
-      loadInstruments();
+      fetchInstruments();
     } catch (err) {
       setFormError(err?.message || "Không thể lưu thiết bị.");
       setSubmitting(false);
@@ -169,25 +216,29 @@ const InstrumentsManagement = () => {
 
   const confirmDelete = async () => {
     if (!deleteTarget) return;
-    const code = getInstrumentCode(deleteTarget);
+    const code = pickInstrumentCode(deleteTarget);
     setDeleteLoading(true);
     try {
       await InstrumentService.remove(code);
       closeDeleteModal();
-      loadInstruments();
+      fetchInstruments();
     } catch (err) {
       setError(err?.message || "Không thể xóa thiết bị.");
       setDeleteLoading(false);
     }
   };
 
-  const resolveMachineStatus = (value) =>
-    machineStatusOptions.find((option) => option.value === value) ||
-    machineStatusOptions[0];
+  const getMachineStatusDisplay = (instrument) =>
+    getStatusView(
+      MACHINE_STATUS_OPTIONS,
+      instrument.machineStatus ?? instrument.status
+    );
 
-  const resolveReagentStatus = (value) =>
-    reagentStatusOptions.find((option) => option.value === value) ||
-    reagentStatusOptions[0];
+  const getReagentStatusDisplay = (instrument) =>
+    getStatusView(
+      REAGENT_STATUS_OPTIONS,
+      instrument.reagentStatus ?? instrument.reagent_status
+    );
 
   return (
     <AdminLayout pageTitle="Instruments Management" breadcrumbs={breadcrumbs}>
@@ -223,27 +274,23 @@ const InstrumentsManagement = () => {
                 </thead>
                 <tbody>
                   {tableData.map((instrument) => {
-                    const code = getInstrumentCode(instrument);
-                    const machineStatus = resolveMachineStatus(
-                      instrument.machineStatus
-                    );
-                    const reagentStatus = resolveReagentStatus(
-                      instrument.reagentStatus
-                    );
+                    const code = pickInstrumentCode(instrument);
+                    const machineStatus = getMachineStatusDisplay(instrument);
+                    const reagentStatus = getReagentStatusDisplay(instrument);
                     return (
                       <tr key={code}>
                         <td className="code-cell">{code}</td>
                         <td>{instrument.name}</td>
                         <td>
                           <span
-                            className={`status-pill ${machineStatus.badgeClass}`}
+                            className={`status-pill ${machineStatus.badge}`}
                           >
                             {machineStatus.label}
                           </span>
                         </td>
                         <td>
                           <span
-                            className={`status-pill ${reagentStatus.badgeClass}`}
+                            className={`status-pill ${reagentStatus.badge}`}
                           >
                             {reagentStatus.label}
                           </span>
@@ -261,11 +308,11 @@ const InstrumentsManagement = () => {
                               onClick={() => handleDeleteClick(instrument)}
                               disabled={
                                 deleteLoading &&
-                                code === getInstrumentCode(deleteTarget)
+                                code === pickInstrumentCode(deleteTarget)
                               }
                             >
                               {deleteLoading &&
-                              code === getInstrumentCode(deleteTarget)
+                              code === pickInstrumentCode(deleteTarget)
                                 ? "Đang xóa..."
                                 : "Xóa"}
                             </button>
@@ -295,13 +342,14 @@ const InstrumentsManagement = () => {
           imagePreview={imagePreview}
         />
       )}
+
       {isDeleteModalOpen && deleteTarget && (
         <DeleteConfirmModal
           isOpen={isDeleteModalOpen}
           onClose={closeDeleteModal}
           onConfirm={confirmDelete}
           loading={deleteLoading}
-          code={getInstrumentCode(deleteTarget)}
+          code={pickInstrumentCode(deleteTarget)}
           name={deleteTarget?.name}
         />
       )}
@@ -340,6 +388,7 @@ const InstrumentModal = ({
             ×
           </button>
         </div>
+
         <form className="modal-form" onSubmit={onSubmit}>
           <div className="modal-body">
             <div className="form-stack">
@@ -348,19 +397,18 @@ const InstrumentModal = ({
                 <input
                   id="instrument-code"
                   type="text"
-                  name="code"
                   placeholder="VD: EQ001"
                   value={formState.code}
                   onChange={(e) => onFieldChange("code", e.target.value)}
                   disabled={mode === "edit"}
                 />
               </div>
+
               <div className="form-field">
                 <label htmlFor="instrument-name">Tên máy</label>
                 <input
                   id="instrument-name"
                   type="text"
-                  name="name"
                   placeholder="VD: Máy xét nghiệm tự động"
                   value={formState.name}
                   onChange={(e) => onFieldChange("name", e.target.value)}
@@ -401,13 +449,14 @@ const InstrumentModal = ({
                       onFieldChange("machineStatus", e.target.value)
                     }
                   >
-                    {machineStatusOptions.map((status) => (
-                      <option key={status.value} value={status.value}>
+                    {MACHINE_STATUS_OPTIONS.map((status) => (
+                      <option key={status.key} value={status.key}>
                         {status.label}
                       </option>
                     ))}
                   </select>
                 </div>
+
                 <div className="form-field">
                   <label htmlFor="reagent-status">Trạng thái thuốc</label>
                   <select
@@ -417,8 +466,8 @@ const InstrumentModal = ({
                       onFieldChange("reagentStatus", e.target.value)
                     }
                   >
-                    {reagentStatusOptions.map((status) => (
-                      <option key={status.value} value={status.value}>
+                    {REAGENT_STATUS_OPTIONS.map((status) => (
+                      <option key={status.key} value={status.key}>
                         {status.label}
                       </option>
                     ))}
@@ -457,6 +506,7 @@ const DeleteConfirmModal = ({
   name,
 }) => {
   if (!isOpen) return null;
+
   const modalContent = (
     <div className="instrument-modal-backdrop" role="dialog" aria-modal="true">
       <div className="instrument-modal confirm-modal">
