@@ -48,6 +48,13 @@ namespace TestOrder.Presentation.Controllers
             await _service.AddParameterAsync(parameter);
             return Ok(entity);
         }
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> RemoveParameterAsync(int id)
+        {
+            await _service.RemoveParameterAsync(id);
+            return NoContent();
+        }
+
 
     }
 }
