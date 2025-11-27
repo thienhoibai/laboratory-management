@@ -18,7 +18,7 @@ namespace BlogService.Presentation.Controllers
         }
 
         [HttpGet("post/{postId}")]
-        //[Authorize(Policy = "perm:Comment.Post.View")]
+        [Authorize(Policy = "perm:Comment.Post.View")]
         public async Task<IActionResult> GetByPost(
             int postId,
             [FromQuery] int page = 1,
@@ -43,7 +43,7 @@ namespace BlogService.Presentation.Controllers
         }
 
         [HttpGet("{id}")]
-        //[Authorize(Policy = "perm:Comment.View")]
+        [Authorize(Policy = "perm:Comment.View")]
         public async Task<IActionResult> GetById(int id)
         {
             var comment = await _service.GetByIdAsync(id);
@@ -51,7 +51,7 @@ namespace BlogService.Presentation.Controllers
         }
 
         [HttpPost]
-        //[Authorize(Policy = "perm:Comment.Create")]
+        [Authorize(Policy = "perm:Comment.Create")]
         public async Task<IActionResult> Create([FromBody] CommentDTO dto)
         {
             await _service.AddAsync(dto);
@@ -59,7 +59,7 @@ namespace BlogService.Presentation.Controllers
         }
 
         [HttpPut("{id}")]
-        //[Authorize(Policy = "perm:Comment.Update")]
+        [Authorize(Policy = "perm:Comment.Update")]
         public async Task<IActionResult> Update(int id, [FromBody] CommentDTO dto)
         {
             await _service.UpdateAsync(id, dto);
@@ -67,7 +67,7 @@ namespace BlogService.Presentation.Controllers
         }
 
         [HttpDelete("{id}")]
-        //[Authorize(Policy = "perm:Comment.Delete")]
+        [Authorize(Policy = "perm:Comment.Delete")]
         public async Task<IActionResult> Delete(int id)
         {
             await _service.DeleteAsync(id);
@@ -75,7 +75,7 @@ namespace BlogService.Presentation.Controllers
         }
 
         [HttpGet("search")]
-        //[Authorize(Policy = "perm:Comment.Search")]
+        [Authorize(Policy = "perm:Comment.Search")]
         public async Task<IActionResult> Search([FromQuery] string keyword)
         {
             var result = await _service.SearchAsync(keyword);

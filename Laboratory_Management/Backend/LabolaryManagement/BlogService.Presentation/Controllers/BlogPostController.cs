@@ -26,7 +26,7 @@ namespace BlogService.Presentation.Controllers
         }
 
         [HttpGet]
-        //[Authorize(Policy = "perm:BlogPost.List")]
+        [Authorize(Policy = "perm:BlogPost.List")]
         public async Task<IActionResult> GetAllBlogs(
     [FromQuery] Guid? authorId,
     [FromQuery] int? status,
@@ -50,7 +50,7 @@ namespace BlogService.Presentation.Controllers
         }
 
         [HttpGet("{id}")]
-        //[Authorize(Policy = "perm:BlogPost.View")]
+        [Authorize(Policy = "perm:BlogPost.View")]
         public async Task<IActionResult> GetById(int id)
         {
             var post = await _service.GetByIdAsync(id);
@@ -58,7 +58,7 @@ namespace BlogService.Presentation.Controllers
         }
 
         [HttpPost]
-        //[Authorize(Policy = "perm:BlogPost.Create")]
+        [Authorize(Policy = "perm:BlogPost.Create")]
         public async Task<IActionResult> Create([FromForm] BlogPostCreateRequest request)
         {
             string imagePath = null;
@@ -96,7 +96,7 @@ namespace BlogService.Presentation.Controllers
 
 
         [HttpPut("{id}")]
-        //[Authorize(Policy = "perm:BlogPost.Update")]
+        [Authorize(Policy = "perm:BlogPost.Update")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateBlogPostDTO dto)
         {
 
@@ -105,7 +105,7 @@ namespace BlogService.Presentation.Controllers
         }
 
         [HttpDelete("{id}")]
-        //[Authorize(Policy = "perm:BlogPost.Delete")]
+        [Authorize(Policy = "perm:BlogPost.Delete")]
         public async Task<IActionResult> Delete(int id)
         {
             var post = await _service.GetByIdAsync(id);
@@ -115,12 +115,12 @@ namespace BlogService.Presentation.Controllers
         }
 
         [HttpGet("Approve")]
-        //[Authorize(Policy = "perm:BlogPost.Approved.View")]
+        [Authorize(Policy = "perm:BlogPost.Approved.View")]
         public async Task<IActionResult> GetApproval() =>
             Ok(await _service.GetApprovalAsync());
 
         [HttpPut("status/{postId}")]
-        //[Authorize(Policy = "perm:BlogPost.Status.Update")]
+        [Authorize(Policy = "perm:BlogPost.Status.Update")]
         public async Task<IActionResult> UpdateStatus(int postId, [FromBody] UpdateBlogStatusDTO dto)
         {
             await _service.UpdatePostStatusAsync(postId, dto.Status);
