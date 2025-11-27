@@ -157,7 +157,9 @@ namespace TestOrder.Presentation
                     "TestCatalog.View",
                     "TestCatalog.Create",
                     "TestCatalog.Update",
-                    "TestCatalog.Delete"
+                    "TestCatalog.Delete",
+                    "TestCatalog.UpdateParameter",
+                    "TestCatalog.DeleteParameter"
                 };
 
                 // TestBundle permissions
@@ -170,6 +172,24 @@ namespace TestOrder.Presentation
                     "TestBundle.Delete"
                 };
 
+                // CatalogBundle permissions
+                string[] catalogBundlePerms = new[]
+                {
+                    "CatalogBundle.List",
+                    "CatalogBundle.View",
+                    "CatalogBundle.Create",
+                    "CatalogBundle.Delete"
+                };
+
+                // TestParameter permissions
+                string[] parameterPerms = new[]
+                {
+                    "TestParameter.List",
+                    "TestParameter.View",
+                    "TestParameter.Create",
+                    "TestParameter.Delete"
+                };
+
                 // AppointmentSlot permissions
                 string[] slotPerms = new[]
                 {
@@ -177,7 +197,10 @@ namespace TestOrder.Presentation
                     "AppointmentSlot.View",
                     "AppointmentSlot.Create",
                     "AppointmentSlot.Update",
-                    "AppointmentSlot.Delete"
+                    "AppointmentSlot.Delete",
+                    "AppointmentSlot.ByDate.View",
+                    "AppointmentSlot.CountByDate.View",
+                    "AppointmentSlot.CountAll.View"
                 };
 
                 // TestResult permissions
@@ -194,14 +217,18 @@ namespace TestOrder.Presentation
                 // Payment permissions
                 string[] paymentPerms = new[]
                 {
-                    "Payment.Create",
+                    "Payment.List",
                     "Payment.View",
+                    "Payment.ByBooking.View",
+                    "Payment.Create",
                     "Payment.Process"
                 };
 
                 var allPerms = bookingPerms
                     .Concat(catalogPerms)
                     .Concat(bundlePerms)
+                    .Concat(catalogBundlePerms)
+                    .Concat(parameterPerms)
                     .Concat(slotPerms)
                     .Concat(resultPerms)
                     .Concat(paymentPerms)
