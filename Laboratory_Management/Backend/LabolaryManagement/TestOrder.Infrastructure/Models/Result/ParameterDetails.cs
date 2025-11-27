@@ -10,5 +10,10 @@ namespace TestOrder.Infrastructure.Models.Result
     {
         public string Name { get; set; } = string.Empty;
         public string Value { get; set; } = string.Empty;
+        public string Unit { get; set; } = string.Empty;
+        
+        public string ReferenceRange { get; set; } = string.Empty;
+
+        public bool? IsNormal { get; set; }
     }
 }

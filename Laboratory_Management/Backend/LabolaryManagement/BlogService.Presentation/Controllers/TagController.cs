@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace BlogService.Presentation.Controllers
 {
@@ -15,6 +16,7 @@ namespace BlogService.Presentation.Controllers
         }
 
         [HttpGet("GetAll")]
+        [Authorize(Policy = "perm:Tag.List")]
         public async Task<IActionResult> GetAllTags()
         {
             var tags = await _tagService.GetAllTags();
@@ -22,6 +24,7 @@ namespace BlogService.Presentation.Controllers
         }
 
         [HttpGet("GetById/{id}")]
+        [Authorize(Policy = "perm:Tag.View")]
         public async Task<IActionResult> GetTagById(int id)
         {
             var tag = await _tagService.GetTagById(id);
@@ -33,6 +36,7 @@ namespace BlogService.Presentation.Controllers
         }
         
         [HttpPost("Add")]
+        [Authorize(Policy = "perm:Tag.Create")]
         public async Task<IActionResult> AddTag([FromBody] string tag)
         {
             var result = await _tagService.AddTag(tag);
@@ -47,6 +51,7 @@ namespace BlogService.Presentation.Controllers
         }
 
         [HttpDelete("Delete/{id}")]
+        [Authorize(Policy = "perm:Tag.Delete")]
         public async Task<IActionResult> DeleteTag(int id)
         {
             var tag = await _tagService.GetTagById(id);
@@ -59,6 +64,7 @@ namespace BlogService.Presentation.Controllers
         }
 
         [HttpPut("Update/{id}")]
+        [Authorize(Policy = "perm:Tag.Update")]
         public async Task<IActionResult> UpdateTag(int id, [FromBody] string tagName)
         {
             var tag = await _tagService.GetTagById(id);

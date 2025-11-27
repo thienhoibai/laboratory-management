@@ -306,7 +306,7 @@ public class PatientService : IPatientService
             q = q.Where(p => p.Phone != null && p.Phone.Contains(phoneLast4));
         
         if (!string.IsNullOrWhiteSpace(idLast4)) 
-            q = q.Where(p => p.CitizenId != null && p.CitizenId.EndsWith(idLast4)); // Đổi IdNumber → CitizenId
+            q = q.Where(p => p.CitizenId != null && p.CitizenId.EndsWith(idLast4));
 
         q = sortBy?.ToLowerInvariant() switch
         {
@@ -319,12 +319,12 @@ public class PatientService : IPatientService
 
         var total = await q.LongCountAsync(ct);
         var data = await q.Skip((page - 1) * pageSize).Take(pageSize)
-            .Select(e => new { e.PatientId, e.FullName, e.DateOfBirth, e.Gender, e.BloodType,e.Email, e.Phone, e.IsDeleted, e.CreatedAt, e.UpdatedAt })
+            .Select(e => new { e.PatientId, e.FullName, e.DateOfBirth, e.Gender, e.BloodType, e.Email, e.Phone, e.IsDeleted, e.CreatedAt, e.UpdatedAt })
             .ToListAsync(ct);
 
         // Trả về toàn bộ số điện thoại
         var items = data.Select(e => new PatientSummaryDto(
-            e.PatientId, e.FullName, e.DateOfBirth, e.Gender, e.BloodType,e.Email,e.Phone, 
+            e.PatientId, e.FullName, e.DateOfBirth, e.Gender, e.BloodType, e.Email, e.Phone, 
             e.IsDeleted, e.CreatedAt, e.UpdatedAt)).ToList();
 
         return (items, total);
@@ -352,7 +352,7 @@ public class PatientService : IPatientService
         var total = await q.LongCountAsync(ct);
         var list = await q.Skip((page - 1) * pageSize).Take(pageSize)
             .Select(e => new PatientSummaryDto(
-                e.PatientId, e.FullName, e.DateOfBirth, e.Gender, e.BloodType,e.Email, e.Phone, 
+                e.PatientId, e.FullName, e.DateOfBirth, e.Gender, e.BloodType, e.Email, e.Phone, 
                 e.IsDeleted, e.CreatedAt, e.UpdatedAt))
             .ToListAsync(ct);
         
@@ -371,10 +371,10 @@ public class PatientService : IPatientService
                 DateOfBirth = p.DateOfBirth,
                 Gender = p.Gender,
                 BloodType = p.BloodType,
-                Email = p.Email,
+                Email = p.Email, // ✅ ĐÃ CÓ EMAIL
                 Phone = p.Phone,
                 Address = p.Address,
-                CitizenId = p.CitizenId, // Đổi IdNumber → CitizenId
+                CitizenId = p.CitizenId,
                 InsuranceNumber = p.InsuranceNumber,
                 CreatedAt = p.CreatedAt
             })
@@ -434,7 +434,6 @@ public class PatientService : IPatientService
         if (!string.IsNullOrWhiteSpace(insuranceNumber))
             q = q.Where(p => p.InsuranceNumber != null && p.InsuranceNumber.Contains(insuranceNumber));
         
-        // Đổi IdNumber → CitizenId
         if (!string.IsNullOrWhiteSpace(citizenId))
             q = q.Where(p => p.CitizenId != null && p.CitizenId.Contains(citizenId));
 
