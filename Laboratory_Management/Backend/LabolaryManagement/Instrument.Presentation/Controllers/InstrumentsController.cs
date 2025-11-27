@@ -30,7 +30,7 @@ public class InstrumentsController : ControllerBase
     /// <param name="runStatus">Lọc theo RunStatus (0=Running, 1=Completed, 2=Failed)</param>
     /// <param name="reagentStatus">Lọc theo ReagentStatus (0=OK, 1=Low, 2=Out)</param>
     [HttpGet]
-    //[Authorize(Policy = "perm:Instrument.List")]
+    [Authorize(Policy = "perm:Instrument.List")]
     public async Task<IActionResult> GetAll(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
@@ -56,7 +56,7 @@ public class InstrumentsController : ControllerBase
     /// GET /api/instruments/{id:int} - Lấy thông tin chi tiết máy theo ID
     /// </summary>
     [HttpGet("{id:int}")]
-    //[Authorize(Policy = "perm:Instrument.View")]
+    [Authorize(Policy = "perm:Instrument.View")]
     public async Task<IActionResult> GetById(int id)
     {
         var instrument = await _service.GetByIdAsync(id);
@@ -71,7 +71,7 @@ public class InstrumentsController : ControllerBase
     /// GET /api/instruments/{code} - Lấy thông tin chi tiết máy theo code
     /// </summary>
     [HttpGet("{code}")]
-    //[Authorize(Policy = "perm:Instrument.View")]
+    [Authorize(Policy = "perm:Instrument.View")]
     public async Task<IActionResult> GetByCode(string code)
     {
         var instrument = await _service.GetByCodeAsync(code);
@@ -98,7 +98,7 @@ public class InstrumentsController : ControllerBase
     /// Status values: 0=Online, 1=Offline, 2=Fault, 3=Maintenance
     /// </remarks>
     [HttpPost]
-    //[Authorize(Policy = "perm:Instrument.Create")]
+    [Authorize(Policy = "perm:Instrument.Create")]
     public async Task<IActionResult> Create([FromForm] InstrumentCreateHttpRequest request)
     {
         string? imagePath = null;
@@ -160,7 +160,7 @@ public class InstrumentsController : ControllerBase
     /// ReagentStatus values: 0=OK, 1=Low, 2=Out
     /// </remarks>
     [HttpPut("{code}")]
-    //[Authorize(Policy = "perm:Instrument.Update")]
+    [Authorize(Policy = "perm:Instrument.Update")]
     public async Task<IActionResult> Update(string code, [FromBody] UpdateInstrumentRequest request)
     {
         try
@@ -182,7 +182,7 @@ public class InstrumentsController : ControllerBase
     /// DELETE /api/instruments/{code} - Xóa máy xét nghiệm
     /// </summary>
     [HttpDelete("{code}")]
-    //[Authorize(Policy = "perm:Instrument.Delete")]
+    [Authorize(Policy = "perm:Instrument.Delete")]
     public async Task<IActionResult> Delete(string code)
     {
         try
