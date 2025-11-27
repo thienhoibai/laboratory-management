@@ -15,8 +15,7 @@ import {
   getRoles,
   getPermissionGroups,
   getRolePermissions,
-  updateRolePermissions,
-  patchRolePermissionsByModule,
+  patchRolePermissions,
 } from "../../../services/IAMService.jsx";
 import "./RolesManagement.css";
 
@@ -47,6 +46,7 @@ const RolesManagement = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState(null);
   const [rolePermissions, setRolePermissions] = useState([]);
+  const [initialPermissions, setInitialPermissions] = useState([]); // Lưu permissions ban đầu để so sánh
   const [isSaving, setIsSaving] = useState(false);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [expandedModules, setExpandedModules] = useState(new Set());
@@ -223,10 +223,13 @@ const RolesManagement = () => {
       });
 
       setRolePermissions(mappedPermissions);
+      // Lưu initial permissions để so sánh sau này
+      setInitialPermissions(mappedPermissions);
     } catch (error) {
       console.error("Error loading role permissions:", error);
       toast.error("Không thể tải quyền của vai trò");
       setRolePermissions([]);
+      setInitialPermissions([]);
     } finally {
       setIsDetailLoading(false);
     }
@@ -236,6 +239,7 @@ const RolesManagement = () => {
     setIsModalOpen(false);
     setSelectedRole(null);
     setRolePermissions([]);
+    setInitialPermissions([]);
     setExpandedModules(new Set());
     setIsSaving(false);
     setIsDetailLoading(false);
@@ -272,100 +276,50 @@ const RolesManagement = () => {
 
     setIsSaving(true);
     try {
-      // Lấy permission keys (hoặc IDs) từ selected permissions
-      const permissionKeys = rolePermissions
+      // Lấy permission keys từ permissions hiện tại và ban đầu
+      const currentKeys = rolePermissions
         .map((p) => getPermissionId(p))
-        .filter(Boolean);
+        .filter(Boolean)
+        .map((k) => String(k));
 
-      // Sử dụng PUT để cập nhật toàn bộ quyền
-      // API có thể expect array of permission keys hoặc IDs
-      await updateRolePermissions(roleId, permissionKeys);
-      toast.success("Cập nhật quyền thành công!");
+      const initialKeys = initialPermissions
+        .map((p) => getPermissionId(p))
+        .filter(Boolean)
+        .map((k) => String(k));
 
-      // Update permissions map for this role
-      const newPermissionsMap = { ...rolePermissionsMap };
-      newPermissionsMap[roleId] = rolePermissions;
-      setRolePermissionsMap(newPermissionsMap);
+      // Tính toán addKeys và removeKeys
+      const addKeys = currentKeys.filter(
+        (key) => !initialKeys.some((ik) => comparePermissionIds(ik, key))
+      );
+      const removeKeys = initialKeys.filter(
+        (key) => !currentKeys.some((ck) => comparePermissionIds(ck, key))
+      );
+
+      // Chỉ gọi API nếu có thay đổi
+      if (addKeys.length > 0 || removeKeys.length > 0) {
+        // Convert roleId to int
+        const roleIdInt = parseInt(roleId, 10);
+        await patchRolePermissions(roleIdInt, addKeys, removeKeys);
+        toast.success("Cập nhật quyền thành công!");
+
+        // Update permissions map for this role
+        const newPermissionsMap = { ...rolePermissionsMap };
+        newPermissionsMap[roleId] = rolePermissions;
+        setRolePermissionsMap(newPermissionsMap);
+
+        // Cập nhật initial permissions
+        setInitialPermissions(rolePermissions);
+      } else {
+        toast.info("Không có thay đổi nào");
+      }
 
       fetchRoles();
-      handleCloseModal();
     } catch (error) {
       console.error("Error updating role permissions:", error);
       const message =
         error.response?.data?.message ||
         error.response?.data?.error ||
         "Không thể cập nhật quyền";
-      toast.error(message);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  // Hàm để cập nhật quyền theo module cụ thể (sử dụng PATCH)
-  const handleUpdateModulePermissions = async (moduleName) => {
-    if (!selectedRole || isSaving) return;
-    const roleId = getRoleId(selectedRole);
-    if (!roleId) return;
-
-    const modulePerms = groupedPermissions[moduleName]?.permissions || [];
-    const modulePermissionKeys = modulePerms
-      .map((p) => getPermissionId(p))
-      .filter(Boolean);
-    const selectedKeys = rolePermissions
-      .map((p) => getPermissionId(p))
-      .filter(Boolean);
-
-    // Lấy các permission keys của module đang được chọn
-    const moduleSelectedKeys = modulePermissionKeys.filter((key) =>
-      selectedKeys.some((sk) => comparePermissionIds(sk, key))
-    );
-
-    setIsSaving(true);
-    try {
-      // Sử dụng PATCH để cập nhật quyền theo module
-      // API expect module name và array of permission keys
-      await patchRolePermissionsByModule(
-        roleId,
-        moduleName,
-        moduleSelectedKeys
-      );
-      toast.success(
-        `Đã cập nhật quyền module ${
-          groupedPermissions[moduleName]?.moduleLabel || moduleName
-        }`
-      );
-      // Refresh permissions in modal and update map
-      const permissions = await getRolePermissions(roleId);
-      const permissionsArray = Array.isArray(permissions) ? permissions : [];
-
-      // Map permissions to get labels
-      const mappedPermissions = permissionsArray.map((perm) => {
-        if (typeof perm === "string") {
-          const found = findPermissionInGroups(perm);
-          return found || { key: perm, label: perm };
-        }
-        const permKey = getPermissionId(perm);
-        if (permKey) {
-          const found = findPermissionInGroups(permKey);
-          if (found && found.label) {
-            return { ...perm, label: found.label };
-          }
-        }
-        return perm;
-      });
-
-      setRolePermissions(mappedPermissions);
-
-      // Update permissions map
-      const newPermissionsMap = { ...rolePermissionsMap };
-      newPermissionsMap[roleId] = mappedPermissions;
-      setRolePermissionsMap(newPermissionsMap);
-    } catch (error) {
-      console.error("Error updating module permissions:", error);
-      const message =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        "Không thể cập nhật quyền module";
       toast.error(message);
     } finally {
       setIsSaving(false);
@@ -676,17 +630,6 @@ const RolesManagement = () => {
                                     {allSelected
                                       ? "Bỏ chọn tất cả"
                                       : "Chọn tất cả"}
-                                  </button>
-                                  <button
-                                    className="save-module-btn"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleUpdateModulePermissions(moduleName);
-                                    }}
-                                    disabled={isSaving}
-                                    title="Lưu quyền module này"
-                                  >
-                                    Lưu
                                   </button>
                                 </div>
                               </div>

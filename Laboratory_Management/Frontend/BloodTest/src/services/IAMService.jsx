@@ -424,26 +424,32 @@ export const updateRolePermissions = async (roleId, permissions = []) => {
 
 // PATCH /api/rbac/roles/{roleId}/permissions
 // Cập nhật một phần quyền của một vai trò
-export const patchRolePermissions = async (roleId, permissions = []) => {
+// Body: { addKeys: [], removeKeys: [] }
+export const patchRolePermissions = async (
+  roleId,
+  addKeys = [],
+  removeKeys = []
+) => {
   if (!roleId) throw new Error("Role ID is required");
-  const response = await patchRolePermissionsAPI(roleId, permissions);
+  const response = await patchRolePermissionsAPI(roleId, addKeys, removeKeys);
   const data = response?.data;
   return data?.data || data;
 };
 
 // PATCH /api/rbac/roles/{roleId}/permissions/modules/{module}
 // Cập nhật quyền theo module cụ thể
+// Body: { enable: true/false }
 export const patchRolePermissionsByModule = async (
   roleId,
   module,
-  permissions = []
+  enable = true
 ) => {
   if (!roleId) throw new Error("Role ID is required");
   if (!module) throw new Error("Module is required");
   const response = await patchRolePermissionsByModuleAPI(
     roleId,
     module,
-    permissions
+    enable
   );
   const data = response?.data;
   return data?.data || data;
