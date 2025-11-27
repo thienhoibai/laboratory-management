@@ -55,6 +55,7 @@ namespace TestOrder.Presentation.Controllers
             return Ok(entity);
         }
         [HttpDelete("{id}")]
+        [Authorize(Policy = "perm:TestParameter.Delete")]
         public async Task<IActionResult> RemoveParameterAsync(int id)
         {
             await _service.RemoveParameterAsync(id);
