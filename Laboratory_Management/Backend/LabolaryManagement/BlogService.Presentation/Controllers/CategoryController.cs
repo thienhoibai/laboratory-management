@@ -20,11 +20,11 @@ namespace BlogService.Presentation.Controllers
         }
 
         [HttpGet]
-        [Authorize(Policy = "perm:BlogCategory.List")]
+        //[Authorize(Policy = "perm:BlogCategory.List")]
         public async Task<IActionResult> GetAll() => Ok(await _service.GetAllAsync());
 
         [HttpGet("{id}")]
-        [Authorize(Policy = "perm:BlogCategory.View")]
+        //[Authorize(Policy = "perm:BlogCategory.View")]
         public async Task<IActionResult> GetById(int id)
         {
             var category = await _service.GetByIdAsync(id);
@@ -32,7 +32,7 @@ namespace BlogService.Presentation.Controllers
         }
 
         [HttpPost]
-        [Authorize(Policy = "perm:BlogCategory.Create")]
+        //[Authorize(Policy = "perm:BlogCategory.Create")]
         public async Task<IActionResult> Create(CategoryDTO dto)
         {
             var category = new Category
@@ -47,7 +47,7 @@ namespace BlogService.Presentation.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize(Policy = "perm:BlogCategory.Update")]
+        //[Authorize(Policy = "perm:BlogCategory.Update")]
         public async Task<IActionResult> Update(int id, Category category)
         {
             if (id != category.CategoryId) return BadRequest();
@@ -56,7 +56,7 @@ namespace BlogService.Presentation.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Policy = "perm:BlogCategory.Delete")]
+        //[Authorize(Policy = "perm:BlogCategory.Delete")]
         public async Task<IActionResult> Delete(int id)
         {
             var category = await _service.GetByIdAsync(id);

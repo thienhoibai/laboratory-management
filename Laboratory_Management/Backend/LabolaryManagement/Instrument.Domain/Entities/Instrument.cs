@@ -9,6 +9,6 @@
         public string Name { get; set; } = "";
         public InstrumentStatus Status { get; set; } = InstrumentStatus.Online;
         public ReagentStatus ReagentStatus { get; set; } = ReagentStatus.OK;
-        public string? ImageUrl { get; set; }
+        public string? ImagePath { get; set; }
         public DateTime CreatedAt { get; set; }
     }

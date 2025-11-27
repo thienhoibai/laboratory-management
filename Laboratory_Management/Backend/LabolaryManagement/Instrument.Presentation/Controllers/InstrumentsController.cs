@@ -4,6 +4,7 @@ using Instrument.Application.Instruments.DTOs.Requests;
 using Instrument.Application.Instruments.DTOs.Responses;
 using Instrument.Application.Services;
 using Instrument.Domain.Enums;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace Instrument.Presentation.Controllers;
 
@@ -29,7 +30,7 @@ public class InstrumentsController : ControllerBase
     /// <param name="runStatus">Lọc theo RunStatus (0=Running, 1=Completed, 2=Failed)</param>
     /// <param name="reagentStatus">Lọc theo ReagentStatus (0=OK, 1=Low, 2=Out)</param>
     [HttpGet]
-    [Authorize(Policy = "perm:Instrument.List")]
+    //[Authorize(Policy = "perm:Instrument.List")]
     public async Task<IActionResult> GetAll(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
@@ -55,7 +56,7 @@ public class InstrumentsController : ControllerBase
     /// GET /api/instruments/{id:int} - Lấy thông tin chi tiết máy theo ID
     /// </summary>
     [HttpGet("{id:int}")]
-    [Authorize(Policy = "perm:Instrument.View")]
+    //[Authorize(Policy = "perm:Instrument.View")]
     public async Task<IActionResult> GetById(int id)
     {
         var instrument = await _service.GetByIdAsync(id);
@@ -70,7 +71,7 @@ public class InstrumentsController : ControllerBase
     /// GET /api/instruments/{code} - Lấy thông tin chi tiết máy theo code
     /// </summary>
     [HttpGet("{code}")]
-    [Authorize(Policy = "perm:Instrument.View")]
+    //[Authorize(Policy = "perm:Instrument.View")]
     public async Task<IActionResult> GetByCode(string code)
     {
         var instrument = await _service.GetByCodeAsync(code);
@@ -97,22 +98,50 @@ public class InstrumentsController : ControllerBase
     /// Status values: 0=Online, 1=Offline, 2=Fault, 3=Maintenance
     /// </remarks>
     [HttpPost]
-    [Authorize(Policy = "perm:Instrument.Create")]
-    public async Task<IActionResult> Create([FromBody] CreateInstrumentRequest request)
+    //[Authorize(Policy = "perm:Instrument.Create")]
+    public async Task<IActionResult> Create([FromForm] InstrumentCreateHttpRequest request)
     {
+        string? imagePath = null;
+
+        if (request.Image != null)
+        {
+            var folder = Path.Combine(Directory.GetCurrentDirectory(), "Images");
+            Directory.CreateDirectory(folder);
+
+            var fileName = Guid.NewGuid() + Path.GetExtension(request.Image.FileName);
+            var savePath = Path.Combine(folder, fileName);
+
+            using (var stream = new FileStream(savePath, FileMode.Create))
+            {
+                await request.Image.CopyToAsync(stream);
+            }
+
+            imagePath = Path.Combine("Images", fileName);
+        }
+
         try
         {
-            var instrument = await _service.CreateAsync(request);
+            // Map Presentation DTO -> Application DTO
+            var appDto = new CreateInstrumentRequest(
+                request.InstrumentCode,
+                request.Name,
+                (InstrumentStatus)request.Status,
+                imagePath);
+            
+            var instrument = await _service.CreateAsync(appDto);
+
             return CreatedAtAction(
-                nameof(GetByCode), 
-                new { code = instrument.InstrumentCode }, 
-                instrument);
+                nameof(GetByCode),
+                new { code = instrument.InstrumentCode },
+                instrument
+            );
         }
         catch (InvalidOperationException ex)
         {
             return BadRequest(new { error = ex.Message });
         }
     }
+
 
     /// <summary>
     /// PUT /api/instruments/{code} - Cập nhật thông tin máy
@@ -131,7 +160,7 @@ public class InstrumentsController : ControllerBase
     /// ReagentStatus values: 0=OK, 1=Low, 2=Out
     /// </remarks>
     [HttpPut("{code}")]
-    [Authorize(Policy = "perm:Instrument.Update")]
+    //[Authorize(Policy = "perm:Instrument.Update")]
     public async Task<IActionResult> Update(string code, [FromBody] UpdateInstrumentRequest request)
     {
         try
@@ -153,7 +182,7 @@ public class InstrumentsController : ControllerBase
     /// DELETE /api/instruments/{code} - Xóa máy xét nghiệm
     /// </summary>
     [HttpDelete("{code}")]
-    [Authorize(Policy = "perm:Instrument.Delete")]
+    //[Authorize(Policy = "perm:Instrument.Delete")]
     public async Task<IActionResult> Delete(string code)
     {
         try

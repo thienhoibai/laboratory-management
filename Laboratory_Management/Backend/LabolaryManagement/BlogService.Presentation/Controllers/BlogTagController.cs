@@ -17,7 +17,7 @@ namespace BlogService.Presentation.Controllers
 
         [HttpGet]
         [Route("GetTagsByBlogPostId/{blogPostId}")]
-        [Authorize(Policy = "perm:BlogTag.BlogPost.View")]
+        //[Authorize(Policy = "perm:BlogTag.BlogPost.View")]
         public async Task<IActionResult> GetTagsByBlogPostId(int blogPostId)
         {
             var result = await _blogTagService.GetTagsByBlogPostIdAsync(blogPostId);
@@ -26,7 +26,7 @@ namespace BlogService.Presentation.Controllers
 
         [HttpGet]
         [Route("GetPostsByTagId/{tagId}")]
-        [Authorize(Policy = "perm:BlogTag.Tag.View")]
+        //[Authorize(Policy = "perm:BlogTag.Tag.View")]
         public async Task<IActionResult> GetPostsByTagId(int tagId)
         {
             var result = await _blogTagService.GetPostsByTagIdAsync(tagId);
@@ -35,7 +35,7 @@ namespace BlogService.Presentation.Controllers
 
         [HttpPost]
         [Route("AddTagsToBlogPost/{blogPostId}")]
-        [Authorize(Policy = "perm:BlogTag.Create")]
+        //[Authorize(Policy = "perm:BlogTag.Create")]
         public async Task<IActionResult> AddTagsToBlogPost(int blogPostId, [FromBody] List<int> tagIds)
         {
             await _blogTagService.AddTagsToBlogPostAsync(blogPostId, tagIds);
@@ -44,7 +44,7 @@ namespace BlogService.Presentation.Controllers
 
         [HttpDelete]
         [Route("RemoveTagForBlogPost")]
-        [Authorize(Policy = "perm:BlogTag.Delete")]
+        //[Authorize(Policy = "perm:BlogTag.Delete")]
         public async Task<IActionResult> RemoveTagForBlogPost([FromQuery]int blogPostId, [FromQuery] int tagId)
         {
             await _blogTagService.RemoveTagForBlogPostAsync(blogPostId, tagId);

@@ -369,7 +369,7 @@ namespace TestOrder.Application.Services.Booking
                 try
                 {
                     var slot = await _appointmentSlotService.GetAppointmentSlotByIdAsync((Guid)booking.AppointmentSlotId!);
-                    
+
                     var templateData = new Dictionary<string, string>
                     {
                         { "BookingCode", booking.BookingCode ?? "N/A" },
@@ -379,14 +379,14 @@ namespace TestOrder.Application.Services.Booking
                         { "AppointmentDate", slot?.AppointmentDate.ToString("dd/MM/yyyy") ?? "Chưa xác định" },
                         { "AppointmentTime", slot?.TimeBlock.ToString(@"hh\:mm") ?? "Chưa xác định" }
                     };
-
-                    await _publishEndpoint.Publish(new NotificationRequestedV1(
-                        MessageId: Guid.NewGuid().ToString(),
-                        Channel: "email",
-                        To: booking.PatientEmail,
-                        Template: "BookingConfirmation",
-                        Data: templateData
-                    ));
+                    
+                    //await _publishEndpoint.Publish(new NotificationRequestedV1(
+                    //    MessageId: Guid.NewGuid().ToString(),
+                    //    Channel: "email",
+                    //    To: booking.PatientEmail,
+                    //    Template: "BookingConfirmation",
+                    //    Data: templateData
+                    
 
                     Console.WriteLine($"✅ Đã gửi yêu cầu email xác nhận booking #{booking.BookingCode} tới {booking.PatientEmail}");
                 }

@@ -33,7 +33,7 @@ public class InstrumentService
             i.Name,
             i.Status,
             i.ReagentStatus,
-            i.ImageUrl
+            i.ImagePath
         )).ToList();
     }
 
@@ -94,7 +94,7 @@ public class InstrumentService
             i.Name,
             i.Status,
             i.ReagentStatus,
-            i.ImageUrl
+            i.ImagePath
         )).ToList();
 
         return (items, total);
@@ -118,7 +118,7 @@ public class InstrumentService
             instrument.Name,
             instrument.Status,
             instrument.ReagentStatus,
-            instrument.ImageUrl,
+            instrument.ImagePath,
             instrument.CreatedAt
         );
     }
@@ -141,7 +141,7 @@ public class InstrumentService
             instrument.Name,
             instrument.Status,
             instrument.ReagentStatus,
-            instrument.ImageUrl,
+            instrument.ImagePath,
             instrument.CreatedAt
         );
     }
@@ -164,7 +164,7 @@ public class InstrumentService
             Name = request.Name,
             Status =  request.Status,
             ReagentStatus = ReagentStatus.OK,
-            ImageUrl = request.ImageUrl,
+            ImagePath = request.ImagePath,
             CreatedAt = DateTime.UtcNow
         };
 
@@ -177,7 +177,7 @@ public class InstrumentService
             instrument.Name,
             instrument.Status,
             instrument.ReagentStatus,
-            instrument.ImageUrl,
+            instrument.ImagePath,
             instrument.CreatedAt
         );
     }
@@ -203,8 +203,8 @@ public class InstrumentService
         if (request.ReagentStatus.HasValue)
             instrument.ReagentStatus = request.ReagentStatus.Value;
 
-        if (request.ImageUrl != null)
-            instrument.ImageUrl = request.ImageUrl;
+        if (request.ImagePath != null)
+            instrument.ImagePath = request.ImagePath;
 
         await _db.SaveChangesAsync();
 
@@ -214,7 +214,7 @@ public class InstrumentService
             instrument.Name,
             instrument.Status,
             instrument.ReagentStatus,
-            instrument.ImageUrl,
+            instrument.ImagePath,
             instrument.CreatedAt
         );
     }

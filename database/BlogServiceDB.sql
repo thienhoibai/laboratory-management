@@ -1,6 +1,7 @@
 ﻿USE master;
 ALTER DATABASE BlogServiceDB SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
 DROP DATABASE BlogServiceDB;
+Create Database BlogServiceDB;
 use BlogServiceDB
 CREATE TABLE Category (
   CategoryId INT IDENTITY(1,1) PRIMARY KEY,
@@ -19,9 +20,10 @@ CREATE TABLE BlogPost(
  UpdatedDate DATETIME NULL,
  IsPublished BIT DEFAULT 0,
  IsApproved BIT DEFAULT 0,
- ThumbnailUrl NVARCHAR(500),
+ ImagePath NVARCHAR(500),
  Status INT DEFAULT 0  -- 0 = Chờ duyệt, 1 = Đã duyệt, 2 = Đã hủy
-
+ );
+ 
 CREATE TABLE Tag(
  TagId INT IDENTITY(1,1) PRIMARY KEY,
  TagName NVARCHAR(50)
@@ -41,7 +43,7 @@ CREATE TABLE Comment(
  CreatedDate DATETIME DEFAULT GETDATE(),
  IsUpdated BIT DEFAULT 0
 );
- ALTER TABLE BlogPost
+ 
 
 --------------------------------------------------
 -- THÊM DỮ LIỆU
@@ -58,7 +60,7 @@ VALUES
 
 
 -- BlogPost (5)
-INSERT INTO BlogPost (Title, Content, AuthorId, CategoryId, IsPublished, IsApproved, ThumbnailUrl, Status)
+INSERT INTO BlogPost (Title, Content, AuthorId, CategoryId, IsPublished, IsApproved, ImagePath, Status)
 VALUES
 (N'Xét nghiệm máu tổng quát gồm những gì?',
  N'Bài viết mô tả các chỉ số CBC, HGB, WBC,...',
@@ -110,3 +112,4 @@ VALUES
 (2, NEWID(), N'Hy vọng thêm nhiều thông tin hơn.'),
 (4, NEWID(), N'Tôi bị tiểu đường, chỉ số HbA1c rất quan trọng.'),
 (5, NEWID(), N'Lúc xét nghiệm men gan của tôi tăng cao, rất lo lắng.');
+select * from BlogPost
