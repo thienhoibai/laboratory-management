@@ -5,6 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />
     <ProjectReference Include="..\Instrument.Infrastructure\Instrument.Infrastructure.csproj" />
     <ProjectReference Include="..\Instrument.Application\Instrument.Application.csproj" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.0" />
