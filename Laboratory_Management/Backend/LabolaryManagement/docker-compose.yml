@@ -161,7 +161,7 @@
       rabbitmq:
         condition: service_healthy
     ports: ["5008:5008"]
-    volumes:
+    volumes: 
       - ./Instrument.Presentation/Images:/app/Images  # ✅ Bind mount - file sẽ sync với máy local
     extra_hosts:
       - "host.docker.internal:host-gateway"
