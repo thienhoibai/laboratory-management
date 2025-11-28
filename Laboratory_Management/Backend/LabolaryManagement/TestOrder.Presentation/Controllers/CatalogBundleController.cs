@@ -20,7 +20,7 @@ namespace TestOrder.API.Controllers
         }
 
         [HttpGet]
-        [Authorize(Policy = "perm:CatalogBundle.List")]
+        
         public async Task<IActionResult> GetAll()
         {
             var result = await _service.GetAllAsync();
@@ -28,7 +28,7 @@ namespace TestOrder.API.Controllers
         }
 
         [HttpGet("{bundleId}")]
-        [Authorize(Policy = "perm:CatalogBundle.View")]
+        
         public async Task<IActionResult> GetCatalogsByBundle(int bundleId)
         {
             var result = await _service.GetCatalogsByBundleAsync(bundleId);
