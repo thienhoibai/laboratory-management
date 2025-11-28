@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { startInstrumentRun } from "../../../apis/InstrumentAPI";
 import AdminLayout from "../../admin/layout/AdminLayout";
+import { setAuthToken } from "../../../utils/auth";
 import { FiDroplet, FiCheckCircle } from "react-icons/fi";
 import "./InstrumentRun.css";
 import bloodCellsGif from "../../../assets/gif/red-blood-cells.gif";

@@ -6,6 +6,7 @@ import { formatDate, formatTime } from "../../utils/formatDate";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import TestOrderServiceAPI from "../../apis/TestOrderServiceAPI";
+import { setAuthToken } from "../../utils/auth";
 
 const endPoint = "testorder/api/Booking/patient";
 const endPoint1 = "testorder/api/TestBundle";
@@ -32,6 +33,8 @@ export default function BookingHistory() {
     const fetchAPi = async () => {
       try {
         setLoading(true);
+        const token = localStorage.getItem("accessToken");
+        if (token) setAuthToken(token);
         // Fetch all data with large pageSize
         const response = await api.get(
           `${endPoint}?patientId=${patientId}&pageNumber=1&pageSize=1000000`
@@ -73,6 +76,8 @@ export default function BookingHistory() {
 
           // Fetch packages by bundleId in parallel
           if (bundleIds.length) {
+            const token = localStorage.getItem("accessToken");
+            if (token) setAuthToken(token);
             const pkgEntries = await Promise.all(
               bundleIds.map(async (id) => {
                 try {
@@ -92,6 +97,8 @@ export default function BookingHistory() {
 
           // Fetch catalogs by catalogId in parallel
           if (catalogIds.length) {
+            const token = localStorage.getItem("accessToken");
+            if (token) setAuthToken(token);
             const catalogEntries = await Promise.all(
               catalogIds.map(async (id) => {
                 try {
@@ -113,6 +120,8 @@ export default function BookingHistory() {
 
           // Fetch payments by bookingId in parallel
           if (bookingIds.length) {
+            const token = localStorage.getItem("accessToken");
+            if (token) setAuthToken(token);
             const payEntries = await Promise.all(
               bookingIds.map(async (id) => {
                 try {
@@ -232,6 +241,8 @@ export default function BookingHistory() {
       if (!bookingId) return toast.error("Thiếu bookingId");
       if (!amount || amount <= 0)
         return toast.error("Không xác định được số tiền");
+      const token = localStorage.getItem("accessToken");
+      if (token) setAuthToken(token);
       const resp = await TestOrderServiceAPI.bookingService.createVnPayUrl(
         bookingId,
         amount
