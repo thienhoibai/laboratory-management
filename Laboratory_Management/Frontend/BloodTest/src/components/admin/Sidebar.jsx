@@ -22,7 +22,6 @@ const iconMap = {
   users: <FiUsers />,
   roles: <FiBriefcase />,
   instruments: <FiPackage />,
-  reagents: <FiPackage />,
   blogs: <FiBook />,
   patients: <FiUsers />,
   packages: <FiBox />,

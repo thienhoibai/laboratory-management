@@ -18,7 +18,6 @@ import AdminDashboardPage from "./pages/admin/dashboard/AdminDashboardPage";
 import AdminUsersPage from "./pages/admin/user/AdminUsersPage";
 import AdminRolesPage from "./pages/admin/roles/AdminRolesPage";
 import AdminInstrumentsPage from "./pages/admin/instruments/AdminInstrumentsPage";
-import AdminReagentsPage from "./pages/admin/reagents/AdminReagentsPage";
 import AdminBlogsPage from "./pages/admin/blogs/AdminBlogsPage";
 import AdminPatientsPage from "./pages/admin/patients/AdminPatientsPage";
 import AdminTestOrdersPage from "./pages/admin/test-orders/AdminTestOrdersPage";
@@ -104,10 +103,6 @@ function App() {
     {
       path: "/instruments",
       element: <AdminInstrumentsPage />,
-    },
-    {
-      path: "/reagents",
-      element: <AdminReagentsPage />,
     },
     {
       path: "/blogs",

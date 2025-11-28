@@ -9,7 +9,9 @@ using TestOrder.Infrastructure.Repository;
 using MassTransit;
 using Contracts.Notifications;
 using RabbitMQ.Client;
+using Common.Authorization; // ✅ Thêm
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization; // ✅ Thêm
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
@@ -124,115 +126,10 @@ namespace TestOrder.Presentation
                     };
                 });
 
-            // ===== Authorization Policies =====
-            builder.Services.AddAuthorization(options =>
-            {
-                // Booking permissions
-                string[] bookingPerms = new[]
-                {
-                    "Booking.List",
-                    "Booking.View",
-                    "Booking.View.Own",
-                    "Booking.Create",
-                    "Booking.Update",
-                    "Booking.Update.CheckIn",
-                    "Booking.Update.CheckOut",
-                    "Booking.Delete"
-                };
-
-                // TestCatalog permissions
-                string[] catalogPerms = new[]
-                {
-                    "TestCatalog.List",
-                    "TestCatalog.View",
-                    "TestCatalog.Create",
-                    "TestCatalog.Update",
-                    "TestCatalog.Delete",
-                    "TestCatalog.UpdateParameter",
-                    "TestCatalog.DeleteParameter"
-                };
-
-                // TestBundle permissions
-                string[] bundlePerms = new[]
-                {
-                    "TestBundle.List",
-                    "TestBundle.View",
-                    "TestBundle.Create",
-                    "TestBundle.Update",
-                    "TestBundle.Delete"
-                };
-
-                // CatalogBundle permissions
-                string[] catalogBundlePerms = new[]
-                {
-                    "CatalogBundle.List",
-                    "CatalogBundle.View",
-                    "CatalogBundle.Create",
-                    "CatalogBundle.Delete"
-                };
-
-                // TestParameter permissions
-                string[] parameterPerms = new[]
-                {
-                    "TestParameter.List",
-                    "TestParameter.View",
-                    "TestParameter.Create",
-                    "TestParameter.Delete"
-                };
-
-                // AppointmentSlot permissions
-                string[] slotPerms = new[]
-                {
-                    "AppointmentSlot.List",
-                    "AppointmentSlot.View",
-                    "AppointmentSlot.Create",
-                    "AppointmentSlot.Update",
-                    "AppointmentSlot.Delete",
-                    "AppointmentSlot.ByDate.View",
-                    "AppointmentSlot.CountByDate.View",
-                    "AppointmentSlot.CountAll.View"
-                };
-
-                // TestResult permissions
-                string[] resultPerms = new[]
-                {
-                    "TestResult.List",
-                    "TestResult.View",
-                    "TestResult.Create",
-                    "TestResult.Update",
-                    "TestResult.Delete",
-                    "TestResult.Approve"
-                };
-
-                // Payment permissions
-                string[] paymentPerms = new[]
-                {
-                    "Payment.List",
-                    "Payment.View",
-                    "Payment.ByBooking.View",
-                    "Payment.Create",
-                    "Payment.Process"
-                };
-
-                var allPerms = bookingPerms
-                    .Concat(catalogPerms)
-                    .Concat(bundlePerms)
-                    .Concat(catalogBundlePerms)
-                    .Concat(parameterPerms)
-                    .Concat(slotPerms)
-                    .Concat(resultPerms)
-                    .Concat(paymentPerms);
-
-                foreach (var p in allPerms)
-                {
-                    options.AddPolicy($"perm:{p}", policy =>
-                        policy.RequireAssertion(ctx =>
-                            ctx.User.IsInRole("Admin")
-                            || ctx.User.HasClaim("perm", p)
-                            || ctx.User.HasClaim("permissions", p)
-                            || ctx.User.HasClaim("scope", p)));
-                }
-            });
+            // ✅ ===== DYNAMIC AUTHORIZATION =====
+            builder.Services.AddSingleton<IAuthorizationPolicyProvider, DynamicAuthorizationPolicyProvider>();
+            builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
+            builder.Services.AddAuthorization();
 
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(options =>

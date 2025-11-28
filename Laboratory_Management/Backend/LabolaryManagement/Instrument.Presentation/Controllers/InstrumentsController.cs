@@ -29,7 +29,6 @@ public class InstrumentsController : ControllerBase
     /// <param name="runStatus">Lọc theo RunStatus (0=Running, 1=Completed, 2=Failed)</param>
     /// <param name="reagentStatus">Lọc theo ReagentStatus (0=OK, 1=Low, 2=Out)</param>
     [HttpGet]
-    [Authorize(Policy = "perm:Instrument.List")]
     public async Task<IActionResult> GetAll(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
@@ -55,7 +54,7 @@ public class InstrumentsController : ControllerBase
     /// GET /api/instruments/{id:int} - Lấy thông tin chi tiết máy theo ID
     /// </summary>
     [HttpGet("{id:int}")]
-    [Authorize(Policy = "perm:Instrument.View")]
+
     public async Task<IActionResult> GetById(int id)
     {
         var instrument = await _service.GetByIdAsync(id);
@@ -70,7 +69,7 @@ public class InstrumentsController : ControllerBase
     /// GET /api/instruments/{code} - Lấy thông tin chi tiết máy theo code
     /// </summary>
     [HttpGet("{code}")]
-    [Authorize(Policy = "perm:Instrument.View")]
+    
     public async Task<IActionResult> GetByCode(string code)
     {
         var instrument = await _service.GetByCodeAsync(code);

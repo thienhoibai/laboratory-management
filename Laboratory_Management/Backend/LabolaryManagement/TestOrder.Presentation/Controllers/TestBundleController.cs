@@ -67,8 +67,15 @@ namespace TestOrder.Presentation.Controllers
         [Authorize(Policy = "perm:TestBundle.Delete")]
         public async Task<IActionResult> DeleteBundleAsync(int id)
         {
-            await _service.DeleteBundleAsync(id);
-            return NoContent();
+            try
+            {
+                await _service.DeleteBundleAsync(id);
+                return NoContent();
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
         }
     }
 }

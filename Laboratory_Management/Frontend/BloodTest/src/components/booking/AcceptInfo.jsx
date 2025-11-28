@@ -1,23 +1,25 @@
 import "./AcceptInfo.css";
 import React, { useEffect } from "react";
 import { CiCalendar } from "react-icons/ci";
-import { useSelector } from "react-redux";
 import { IoMdTime } from "react-icons/io";
 import { HiOutlineLocationMarker } from "react-icons/hi";
 import api from "../../configs/axios";
 import { jwtDecode } from "jwt-decode";
-import { setAuthToken } from "../../utils/auth";
-import { setPatient } from "../../data/patientSlice";
-import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import { formatDate1 } from "../../utils/formatDate";
 // import { toast } from "react-toastify";
 
 const endPoint = "testorder/api/Booking";
 
-function AcceptInfo({ selectedItems, selectedDateTime, onBack, onProceed }) {
+function AcceptInfo({
+  selectedItems,
+  selectedDateTime,
+  onBack,
+  onProceed,
+  selectedPatient,
+}) {
   // selectedItems: { source:'package', package: {...}, total } OR { source:'catalog', items:[{name,price}], total }
-  const dispatch = useDispatch();
+  // Không cần dispatch nữa vì không fetch patient
 
   let headerTitle = "Xét nghiệm đã chọn";
   let itemList = [];
@@ -29,7 +31,7 @@ function AcceptInfo({ selectedItems, selectedDateTime, onBack, onProceed }) {
   } else if (selectedItems.source === "package") {
     const pkg = selectedItems.package || null;
     headerTitle = pkg ? pkg.title : headerTitle;
-
+    selectedPatient;
     // pkg.includes có thể là mảng object (catalog) hoặc mảng id
     if (pkg && Array.isArray(pkg.includes)) {
       const first = pkg.includes[0];
@@ -129,28 +131,8 @@ function AcceptInfo({ selectedItems, selectedDateTime, onBack, onProceed }) {
     timeBlock: formatTimeBlock(selectedDateTime?.time),
   };
 
-  const { patientId, fullName, phone, email } = useSelector(
-    (state) => state.patient
-  );
-
-  useEffect(() => {
-    const fetchPatient = async () => {
-      const token = localStorage.getItem("accessToken");
-      if (!token) return; // nếu chưa login thì bỏ qua
-      setAuthToken(token);
-
-      try {
-        const res = await api.get("patient/v1/patients/me");
-        if (res.status === 200 && res.data?.data) {
-          dispatch(setPatient(res.data.data));
-        }
-      } catch (err) {
-        console.warn(err);
-      }
-    };
-
-    fetchPatient();
-  }, [dispatch]);
+  // Lấy thông tin bệnh nhân từ props (bắt buộc phải truyền từ Booking.jsx)
+  const { patientId, fullName, phone, email } = selectedPatient || {};
 
   const handleBooking = async () => {
     if (!patientId || !fullName || !phone || !email) {
@@ -164,8 +146,8 @@ function AcceptInfo({ selectedItems, selectedDateTime, onBack, onProceed }) {
         patientName: fullName,
         patientEmail: email,
         createdBy: decode.sub,
-        bundleId: bundleId,
-        catalogs: catalogs,
+        bundleId: bundleId > 0 ? bundleId : 0,
+        catalogs: bundleId > 0 ? [] : catalogs,
         slotDTO: slotDTO,
       });
       if (response.status >= 200 && response.status < 300) {
