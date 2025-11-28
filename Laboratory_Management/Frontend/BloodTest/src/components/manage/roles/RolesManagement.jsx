@@ -7,6 +7,8 @@ import {
   FiChevronDown,
   FiChevronUp,
   FiShield,
+  FiPlus,
+  FiTrash2,
 } from "react-icons/fi";
 import { Pagination } from "antd";
 import { setAuthToken } from "../../../utils/auth";
@@ -15,8 +17,9 @@ import {
   getRoles,
   getPermissionGroups,
   getRolePermissions,
-  updateRolePermissions,
-  patchRolePermissionsByModule,
+  patchRolePermissions,
+  createRole,
+  deleteRole,
 } from "../../../services/IAMService.jsx";
 import "./RolesManagement.css";
 
@@ -47,9 +50,28 @@ const RolesManagement = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState(null);
   const [rolePermissions, setRolePermissions] = useState([]);
+  const [initialPermissions, setInitialPermissions] = useState([]); // Lưu permissions ban đầu để so sánh
   const [isSaving, setIsSaving] = useState(false);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [expandedModules, setExpandedModules] = useState(new Set());
+
+  // Create role modal states
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [createFormData, setCreateFormData] = useState({
+    name: "",
+    description: "",
+    isDefault: false,
+  });
+  const [createFormErrors, setCreateFormErrors] = useState({
+    name: "",
+    description: "",
+  });
+
+  // Delete role modal states
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [roleToDelete, setRoleToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
@@ -223,10 +245,13 @@ const RolesManagement = () => {
       });
 
       setRolePermissions(mappedPermissions);
+      // Lưu initial permissions để so sánh sau này
+      setInitialPermissions(mappedPermissions);
     } catch (error) {
       console.error("Error loading role permissions:", error);
       toast.error("Không thể tải quyền của vai trò");
       setRolePermissions([]);
+      setInitialPermissions([]);
     } finally {
       setIsDetailLoading(false);
     }
@@ -236,6 +261,7 @@ const RolesManagement = () => {
     setIsModalOpen(false);
     setSelectedRole(null);
     setRolePermissions([]);
+    setInitialPermissions([]);
     setExpandedModules(new Set());
     setIsSaving(false);
     setIsDetailLoading(false);
@@ -272,100 +298,50 @@ const RolesManagement = () => {
 
     setIsSaving(true);
     try {
-      // Lấy permission keys (hoặc IDs) từ selected permissions
-      const permissionKeys = rolePermissions
+      // Lấy permission keys từ permissions hiện tại và ban đầu
+      const currentKeys = rolePermissions
         .map((p) => getPermissionId(p))
-        .filter(Boolean);
+        .filter(Boolean)
+        .map((k) => String(k));
 
-      // Sử dụng PUT để cập nhật toàn bộ quyền
-      // API có thể expect array of permission keys hoặc IDs
-      await updateRolePermissions(roleId, permissionKeys);
-      toast.success("Cập nhật quyền thành công!");
+      const initialKeys = initialPermissions
+        .map((p) => getPermissionId(p))
+        .filter(Boolean)
+        .map((k) => String(k));
 
-      // Update permissions map for this role
-      const newPermissionsMap = { ...rolePermissionsMap };
-      newPermissionsMap[roleId] = rolePermissions;
-      setRolePermissionsMap(newPermissionsMap);
+      // Tính toán addKeys và removeKeys
+      const addKeys = currentKeys.filter(
+        (key) => !initialKeys.some((ik) => comparePermissionIds(ik, key))
+      );
+      const removeKeys = initialKeys.filter(
+        (key) => !currentKeys.some((ck) => comparePermissionIds(ck, key))
+      );
+
+      // Chỉ gọi API nếu có thay đổi
+      if (addKeys.length > 0 || removeKeys.length > 0) {
+        // Convert roleId to int
+        const roleIdInt = parseInt(roleId, 10);
+        await patchRolePermissions(roleIdInt, addKeys, removeKeys);
+        toast.success("Cập nhật quyền thành công!");
+
+        // Update permissions map for this role
+        const newPermissionsMap = { ...rolePermissionsMap };
+        newPermissionsMap[roleId] = rolePermissions;
+        setRolePermissionsMap(newPermissionsMap);
+
+        // Cập nhật initial permissions
+        setInitialPermissions(rolePermissions);
+      } else {
+        toast.info("Không có thay đổi nào");
+      }
 
       fetchRoles();
-      handleCloseModal();
     } catch (error) {
       console.error("Error updating role permissions:", error);
       const message =
         error.response?.data?.message ||
         error.response?.data?.error ||
         "Không thể cập nhật quyền";
-      toast.error(message);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  // Hàm để cập nhật quyền theo module cụ thể (sử dụng PATCH)
-  const handleUpdateModulePermissions = async (moduleName) => {
-    if (!selectedRole || isSaving) return;
-    const roleId = getRoleId(selectedRole);
-    if (!roleId) return;
-
-    const modulePerms = groupedPermissions[moduleName]?.permissions || [];
-    const modulePermissionKeys = modulePerms
-      .map((p) => getPermissionId(p))
-      .filter(Boolean);
-    const selectedKeys = rolePermissions
-      .map((p) => getPermissionId(p))
-      .filter(Boolean);
-
-    // Lấy các permission keys của module đang được chọn
-    const moduleSelectedKeys = modulePermissionKeys.filter((key) =>
-      selectedKeys.some((sk) => comparePermissionIds(sk, key))
-    );
-
-    setIsSaving(true);
-    try {
-      // Sử dụng PATCH để cập nhật quyền theo module
-      // API expect module name và array of permission keys
-      await patchRolePermissionsByModule(
-        roleId,
-        moduleName,
-        moduleSelectedKeys
-      );
-      toast.success(
-        `Đã cập nhật quyền module ${
-          groupedPermissions[moduleName]?.moduleLabel || moduleName
-        }`
-      );
-      // Refresh permissions in modal and update map
-      const permissions = await getRolePermissions(roleId);
-      const permissionsArray = Array.isArray(permissions) ? permissions : [];
-
-      // Map permissions to get labels
-      const mappedPermissions = permissionsArray.map((perm) => {
-        if (typeof perm === "string") {
-          const found = findPermissionInGroups(perm);
-          return found || { key: perm, label: perm };
-        }
-        const permKey = getPermissionId(perm);
-        if (permKey) {
-          const found = findPermissionInGroups(permKey);
-          if (found && found.label) {
-            return { ...perm, label: found.label };
-          }
-        }
-        return perm;
-      });
-
-      setRolePermissions(mappedPermissions);
-
-      // Update permissions map
-      const newPermissionsMap = { ...rolePermissionsMap };
-      newPermissionsMap[roleId] = mappedPermissions;
-      setRolePermissionsMap(newPermissionsMap);
-    } catch (error) {
-      console.error("Error updating module permissions:", error);
-      const message =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        "Không thể cập nhật quyền module";
       toast.error(message);
     } finally {
       setIsSaving(false);
@@ -454,6 +430,140 @@ const RolesManagement = () => {
       .length;
   };
 
+  // Create role handlers
+  const handleOpenCreateModal = () => {
+    setCreateFormData({
+      name: "",
+      description: "",
+      isDefault: false,
+    });
+    setCreateFormErrors({
+      name: "",
+      description: "",
+    });
+    setIsCreateModalOpen(true);
+  };
+
+  const handleCloseCreateModal = () => {
+    setIsCreateModalOpen(false);
+    setCreateFormData({
+      name: "",
+      description: "",
+      isDefault: false,
+    });
+    setCreateFormErrors({
+      name: "",
+      description: "",
+    });
+  };
+
+  const handleCreateFormChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setCreateFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+    // Clear error when user types
+    if (createFormErrors[name]) {
+      setCreateFormErrors((prev) => ({
+        ...prev,
+        [name]: "",
+      }));
+    }
+  };
+
+  const validateCreateForm = () => {
+    const errors = {
+      name: "",
+      description: "",
+    };
+    let isValid = true;
+
+    if (!createFormData.name.trim()) {
+      errors.name = "Tên vai trò là bắt buộc";
+      isValid = false;
+    } else if (createFormData.name.trim().length < 2) {
+      errors.name = "Tên vai trò phải có ít nhất 2 ký tự";
+      isValid = false;
+    }
+
+    if (!createFormData.description.trim()) {
+      errors.description = "Mô tả là bắt buộc";
+      isValid = false;
+    } else if (createFormData.description.trim().length < 5) {
+      errors.description = "Mô tả phải có ít nhất 5 ký tự";
+      isValid = false;
+    }
+
+    setCreateFormErrors(errors);
+    return isValid;
+  };
+
+  const handleCreateRole = async () => {
+    if (!validateCreateForm()) {
+      toast.error("Vui lòng điền đầy đủ thông tin hợp lệ");
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      const payload = {
+        name: createFormData.name.trim(),
+        description: createFormData.description.trim(),
+        isDefault: createFormData.isDefault,
+      };
+
+      await createRole(payload);
+      toast.success("Tạo vai trò thành công!");
+      handleCloseCreateModal();
+      fetchRoles();
+    } catch (error) {
+      console.error("Error creating role:", error);
+      const message =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Không thể tạo vai trò";
+      toast.error(message);
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  // Delete role handlers
+  const handleDeleteRole = (role) => {
+    setRoleToDelete(role);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleCancelDelete = () => {
+    setIsDeleteModalOpen(false);
+    setRoleToDelete(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!roleToDelete) return;
+    const roleId = getRoleId(roleToDelete);
+    if (!roleId) return;
+
+    setIsDeleting(true);
+    try {
+      await deleteRole(roleId);
+      toast.success("Đã xóa vai trò thành công!");
+      fetchRoles();
+      setIsDeleteModalOpen(false);
+      setRoleToDelete(null);
+    } catch (error) {
+      console.error("Error deleting role:", error);
+      const message =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Không thể xóa vai trò";
+      toast.error(message);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <AdminLayout pageTitle="Quản lý quyền truy cập" breadcrumbs={breadcrumbs}>
       <div className="roles-container">
@@ -462,6 +572,10 @@ const RolesManagement = () => {
             <h1>Quản lý quyền truy cập</h1>
             <p>Quản lý vai trò và quyền truy cập của người dùng</p>
           </div>
+          <button className="add-role-button" onClick={handleOpenCreateModal}>
+            <FiPlus size={20} />
+            <span>Tạo vai trò</span>
+          </button>
         </div>
 
         <div className="roles-content">
@@ -569,13 +683,22 @@ const RolesManagement = () => {
                         </span>
                       </td>
                       <td>
-                        <button
-                          className="action-button edit"
-                          onClick={() => handleOpenEditModal(role)}
-                          title="Chỉnh sửa quyền"
-                        >
-                          <FiEdit2 size={18} />
-                        </button>
+                        <div className="action-buttons">
+                          <button
+                            className="action-button edit"
+                            onClick={() => handleOpenEditModal(role)}
+                            title="Chỉnh sửa quyền"
+                          >
+                            <FiEdit2 size={18} />
+                          </button>
+                          <button
+                            className="action-button delete"
+                            onClick={() => handleDeleteRole(role)}
+                            title="Xóa vai trò"
+                          >
+                            <FiTrash2 size={18} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -677,17 +800,6 @@ const RolesManagement = () => {
                                       ? "Bỏ chọn tất cả"
                                       : "Chọn tất cả"}
                                   </button>
-                                  <button
-                                    className="save-module-btn"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleUpdateModulePermissions(moduleName);
-                                    }}
-                                    disabled={isSaving}
-                                    title="Lưu quyền module này"
-                                  >
-                                    Lưu
-                                  </button>
                                 </div>
                               </div>
 
@@ -783,6 +895,155 @@ const RolesManagement = () => {
                   disabled={isSaving || isDetailLoading}
                 >
                   {isSaving ? "Đang lưu..." : "Lưu thay đổi"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Create Role Modal */}
+        {isCreateModalOpen && (
+          <div className="modal-overlay" onClick={handleCloseCreateModal}>
+            <div
+              className="roles-modal create-role-modal"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="modal-header">
+                <h2>Tạo vai trò mới</h2>
+                <button
+                  className="modal-close"
+                  onClick={handleCloseCreateModal}
+                >
+                  <FiX size={20} />
+                </button>
+              </div>
+
+              <div className="modal-body">
+                <div className="form-group">
+                  <label className="form-label">
+                    Tên vai trò <span className="required">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    className={`form-input ${
+                      createFormErrors.name ? "error" : ""
+                    }`}
+                    placeholder="Nhập tên vai trò"
+                    value={createFormData.name}
+                    onChange={handleCreateFormChange}
+                    disabled={isCreating}
+                  />
+                  {createFormErrors.name && (
+                    <span className="form-error">{createFormErrors.name}</span>
+                  )}
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">
+                    Mô tả <span className="required">*</span>
+                  </label>
+                  <textarea
+                    name="description"
+                    className={`form-textarea ${
+                      createFormErrors.description ? "error" : ""
+                    }`}
+                    placeholder="Nhập mô tả vai trò"
+                    value={createFormData.description}
+                    onChange={handleCreateFormChange}
+                    disabled={isCreating}
+                    rows={3}
+                  />
+                  {createFormErrors.description && (
+                    <span className="form-error">
+                      {createFormErrors.description}
+                    </span>
+                  )}
+                </div>
+
+                <div className="form-group checkbox-form-group">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      name="isDefault"
+                      checked={createFormData.isDefault}
+                      onChange={handleCreateFormChange}
+                      disabled={isCreating}
+                      className="custom-checkbox"
+                    />
+                    <span className="checkbox-custom"></span>
+                    <span className="checkbox-text">Vai trò mặc định</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button
+                  className="modal-button cancel"
+                  onClick={handleCloseCreateModal}
+                  disabled={isCreating}
+                >
+                  Hủy
+                </button>
+                <button
+                  className="modal-button primary"
+                  onClick={handleCreateRole}
+                  disabled={isCreating}
+                >
+                  {isCreating ? "Đang tạo..." : "Tạo vai trò"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {isDeleteModalOpen && roleToDelete && (
+          <div className="modal-overlay" onClick={handleCancelDelete}>
+            <div
+              className="roles-modal delete-confirm-modal"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="modal-header">
+                <h2>Xác nhận xóa</h2>
+                <button className="modal-close" onClick={handleCancelDelete}>
+                  <FiX size={20} />
+                </button>
+              </div>
+
+              <div className="modal-body">
+                <p>
+                  Bạn có chắc chắn muốn xóa vai trò{" "}
+                  <strong>
+                    {roleToDelete.name || roleToDelete.roleName || "-"}
+                  </strong>{" "}
+                  không?
+                </p>
+                <p
+                  style={{
+                    color: "#ef4444",
+                    fontSize: "14px",
+                    marginTop: "8px",
+                  }}
+                >
+                  Hành động này không thể hoàn tác.
+                </p>
+              </div>
+
+              <div className="modal-footer">
+                <button
+                  className="modal-button cancel"
+                  onClick={handleCancelDelete}
+                  disabled={isDeleting}
+                >
+                  Hủy
+                </button>
+                <button
+                  className="modal-button delete-button"
+                  onClick={handleConfirmDelete}
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? "Đang xóa..." : "Xóa"}
                 </button>
               </div>
             </div>

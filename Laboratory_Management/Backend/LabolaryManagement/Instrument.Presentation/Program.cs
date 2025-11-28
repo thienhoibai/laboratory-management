@@ -1,6 +1,8 @@
 ﻿using Instrument.Application.Results;
 using Instrument.Application.Services;
+using Common.Authorization; // ✅ Thêm namespace Common.Authorization
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization; // ✅ Thêm namespace Authorization
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
@@ -41,40 +43,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-// ===== Authorization Policies =====
-builder.Services.AddAuthorization(options =>
-{
-    // Instrument permissions
-    string[] instrumentPerms = new[]
-    {
-        "Instrument.List",
-        "Instrument.View",
-        "Instrument.Create",
-        "Instrument.Update",
-        "Instrument.Delete"
-    };
-
-    // Run permissions
-    string[] runPerms = new[]
-    {
-        "Run.Start",
-        "Run.View",
-        "Run.Complete",
-        "Run.Cancel"
-    };
-
-    var allPerms = instrumentPerms.Concat(runPerms);
-
-    foreach (var p in allPerms)
-    {
-        options.AddPolicy($"perm:{p}", policy =>
-            policy.RequireAssertion(ctx =>
-                ctx.User.IsInRole("Admin")
-                || ctx.User.HasClaim("perm", p)
-                || ctx.User.HasClaim("permissions", p)
-                || ctx.User.HasClaim("scope", p)));
-    }
-});
+// ✅ ===== DYNAMIC AUTHORIZATION =====
+// Thay thế static policy registration bằng dynamic policy provider
+builder.Services.AddSingleton<IAuthorizationPolicyProvider, DynamicAuthorizationPolicyProvider>();
+builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
+builder.Services.AddAuthorization();
 
 builder.Services.AddCors(options =>
 {
@@ -105,7 +78,6 @@ builder.Services.AddSwaggerGen(options =>
         Description = "Laboratory Management - Instrument Service API"
     });
 
-    // Add JWT Authentication to Swagger
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -144,7 +116,6 @@ if (app.Environment.IsDevelopment() || isDocker)
     app.UseSwaggerUI();
 }
 
-// Do not redirect to HTTPS inside container (no dev certs)
 if (!isDocker)
 {
     app.UseHttpsRedirection();
@@ -159,7 +130,6 @@ app.UseStaticFiles(new StaticFileOptions
 app.UseRouting();
 app.UseCors("AllowFrontend");
 
-// ✅ QUAN TRỌNG: Authentication phải đứng trước Authorization
 app.UseAuthentication();
 app.UseAuthorization();
 

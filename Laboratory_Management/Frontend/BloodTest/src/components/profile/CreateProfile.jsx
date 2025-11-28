@@ -59,7 +59,7 @@ function CreateProfile() {
         <div className="profile-modal-overlay" onClick={handleCloseModal}>
           <div
             className="profile-modal-container"
-            style={{ maxHeight: "90vh", overflowY: "hidden" }}
+            style={{ maxHeight: "90vh" }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="profile-modal-header">
@@ -235,16 +235,16 @@ function CreateProfile() {
                     ]}
                   >
                     <Select placeholder="Chọn nhóm máu">
-                      <Option value="A">A</Option>
-                      <Option value="B">B</Option>
-                      <Option value="AB">AB</Option>
-                      <Option value="O">O</Option>
+                      <Option value="0">A</Option>
+                      <Option value="1">B</Option>
+                      <Option value="2">AB</Option>
+                      <Option value="3">O</Option>
                     </Select>
                   </Form.Item>
                 </div>
 
                 {/* CCCD/CMND */}
-                {/* <div className="profile-form-group">
+                <div className="profile-form-group">
                   <Form.Item
                     label={
                       <>
@@ -268,7 +268,7 @@ function CreateProfile() {
                       }}
                     />
                   </Form.Item>
-                </div> */}
+                </div>
               </div>
 
               {/* Hàng 3 */}

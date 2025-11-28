@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import "./PackageSelection.css";
 import api from "../../configs/axios";
+import { setAuthToken } from "../../utils/auth";
 
 const EndPoint = "testorder/api/CatalogBundle";
 
@@ -18,6 +19,8 @@ function PackageSelection({
     if (loading.current) {
       const fetchAPI = async () => {
         try {
+          const token = localStorage.getItem("accessToken");
+          if (token) setAuthToken(token);
           const response = await api.get(EndPoint);
           if (response.status >= 200 && response.status < 300) {
             setPackages(response.data || []);

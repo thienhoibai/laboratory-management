@@ -1,9 +1,11 @@
 ﻿using BlogService.Application.Services;
 using BlogService.Infrastructure.Data;
 using BlogService.Infrastructure.Repository;
+using Common.Authorization; // ✅ Thêm
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization; // ✅ Thêm
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
@@ -56,77 +58,10 @@ namespace BlogService.Presentation
                     };
                 });
 
-            // ===== Authorization Policies =====
-            builder.Services.AddAuthorization(options =>
-            {
-                // BlogPost permissions
-                string[] blogPostPerms = new[]
-                {
-                    "BlogPost.List",
-                    "BlogPost.View",
-                    "BlogPost.Create",
-                    "BlogPost.Update",
-                    "BlogPost.Delete",
-                    "BlogPost.Approved.View",
-                    "BlogPost.Status.Update"
-                };
-
-                // BlogCategory permissions
-                string[] categoryPerms = new[]
-                {
-                    "BlogCategory.List",
-                    "BlogCategory.View",
-                    "BlogCategory.Create",
-                    "BlogCategory.Update",
-                    "BlogCategory.Delete"
-                };
-
-                // Tag permissions
-                string[] tagPerms = new[]
-                {
-                    "Tag.List",
-                    "Tag.View",
-                    "Tag.Create",
-                    "Tag.Update",
-                    "Tag.Delete"
-                };
-
-                // BlogTag permissions
-                string[] blogTagPerms = new[]
-                {
-                    "BlogTag.BlogPost.View",
-                    "BlogTag.Tag.View",
-                    "BlogTag.Create",
-                    "BlogTag.Delete"
-                };
-
-                // Comment permissions
-                string[] commentPerms = new[]
-                {
-                    "Comment.Post.View",
-                    "Comment.View",
-                    "Comment.Create",
-                    "Comment.Update",
-                    "Comment.Delete",
-                    "Comment.Search"
-                };
-
-                var allPerms = blogPostPerms
-                    .Concat(categoryPerms)
-                    .Concat(tagPerms)
-                    .Concat(blogTagPerms)
-                    .Concat(commentPerms);
-
-                foreach (var p in allPerms)
-                {
-                    options.AddPolicy($"perm:{p}", policy =>
-                        policy.RequireAssertion(ctx =>
-                            ctx.User.IsInRole("Admin")
-                            || ctx.User.HasClaim("perm", p)
-                            || ctx.User.HasClaim("permissions", p)
-                            || ctx.User.HasClaim("scope", p)));
-                }
-            });
+            // ✅ ===== DYNAMIC AUTHORIZATION =====
+            builder.Services.AddSingleton<IAuthorizationPolicyProvider, DynamicAuthorizationPolicyProvider>();
+            builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
+            builder.Services.AddAuthorization();
 
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(options =>

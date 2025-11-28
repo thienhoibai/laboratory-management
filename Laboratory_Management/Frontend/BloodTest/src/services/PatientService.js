@@ -34,16 +34,16 @@ export const useCreatePatient = () => {
       setAuthToken(token);
 
       const data = {
-        fullName: values.fullName,
-        dateOfBirth: dayjs(values.dateOfBirth).format("YYYY-MM-DD"),
-        gender: values.gender,
-        bloodType: values.bloodType,
-        phone: values.phoneNumber,
-        email: values.email,
-        address: values.address,
-        citizenId: values.identityCard,
-        insuranceNumber: values.healthInsurance,
-        createdChannel: "self",
+        FullName: values.fullName,
+        DateOfBirth: dayjs(values.dateOfBirth).format("YYYY-MM-DD"),
+        Gender: parseInt(values.gender, 10), // Convert string to number
+        BloodType: parseInt(values.bloodType, 10), // Convert string to number
+        Phone: values.phoneNumber,
+        Email: values.email,
+        Address: values.address,
+        CitizenId: values.identityCard,
+        InsuranceNumber: values.healthInsurance || "", // Handle empty string
+        CreatedChannel: "self",
       };
 
       const response = await PatientServiceAPI.CreateProfile(data);
@@ -161,14 +161,14 @@ export const useUpdateProfile = (
 
     if (Object.keys(newErrors).length === 0) {
       const data = {
-        fullName: formData.fullName,
-        dateOfBirth: formData.dateOfBirth,
-        gender: formData.gender === "1" ? 1 : formData.gender === "0" ? 0 : 2,
-        phone: formData.phoneNumber,
-        email: formData.email,
-        address: formData.address,
-        idNumber: formData.identityCard,
-        insuranceNumber: formData.healthInsurance,
+        FullName: formData.fullName,
+        DateOfBirth: formData.dateOfBirth,
+        Gender: formData.gender === "1" ? 1 : formData.gender === "0" ? 0 : 2,
+        Phone: formData.phoneNumber,
+        Email: formData.email,
+        Address: formData.address,
+        CitizenId: formData.identityCard,
+        InsuranceNumber: formData.healthInsurance || "",
       };
 
       try {
@@ -198,7 +198,7 @@ export const useUpdateProfile = (
       phoneNumber: userData?.phone || "",
       email: userData?.email || "",
       address: userData?.address || "",
-      identityCard: userData?.idNumber || "",
+      identityCard: userData?.citizenId || "",
       healthInsurance: userData?.insuranceNumber || "",
     });
     setErrors({});
@@ -235,15 +235,15 @@ export const useAddMedicalRecords = (
       const token = localStorage.getItem("accessToken");
       setAuthToken(token);
       const data = {
-        fullName: values.fullName,
-        dateOfBirth: dayjs(values.dateOfBirth).format("YYYY-MM-DD"),
-        gender: values.gender,
-        phone: values.phoneNumber,
-        email: values.email,
-        address: values.address,
-        citizenId: values.identityCard,
-        insuranceNumber: values.healthInsurance,
-        createdChannel: "self",
+        FullName: values.fullName,
+        DateOfBirth: dayjs(values.dateOfBirth).format("YYYY-MM-DD"),
+        Gender: parseInt(values.gender, 10),
+        Phone: values.phoneNumber,
+        Email: values.email,
+        Address: values.address,
+        CitizenId: values.identityCard,
+        InsuranceNumber: values.healthInsurance || "",
+        CreatedChannel: "self",
       };
       const response = await PatientServiceAPI.AddNewProfile(data);
       if (response.status >= 200 && response.status < 300) {

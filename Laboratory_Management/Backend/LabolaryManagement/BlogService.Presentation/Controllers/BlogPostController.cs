@@ -26,7 +26,7 @@ namespace BlogService.Presentation.Controllers
         }
 
         [HttpGet]
-        [Authorize(Policy = "perm:BlogPost.List")]
+     
         public async Task<IActionResult> GetAllBlogs(
     [FromQuery] Guid? authorId,
     [FromQuery] int? status,
@@ -50,7 +50,7 @@ namespace BlogService.Presentation.Controllers
         }
 
         [HttpGet("{id}")]
-        [Authorize(Policy = "perm:BlogPost.View")]
+      
         public async Task<IActionResult> GetById(int id)
         {
             var post = await _service.GetByIdAsync(id);

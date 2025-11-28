@@ -29,7 +29,7 @@ namespace TestOrder.Infrastructure.Repository
             }
             var totalItems = await query.CountAsync();
             var items = await query
-                .OrderBy(b => b.BookingCode)
+                .OrderByDescending(b => b.BookingCode)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
