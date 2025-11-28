@@ -251,6 +251,8 @@ const AdminAppointmentSchedulePage = () => {
   };
 
   const fetchAPI = async () => {
+    const token = localStorage.getItem("accessToken");
+    setAuthToken(token);
     try {
       const token = localStorage.getItem("accessToken");
       if (token) setAuthToken(token);
@@ -314,6 +316,8 @@ const AdminAppointmentSchedulePage = () => {
   }, [selectedDate, currentPage, pageSize, search]);
 
   const handleCheckin = async (bookingId) => {
+    const token = localStorage.getItem("accessToken");
+    setAuthToken(token);
     try {
       setCheckingInId(bookingId);
       const token = localStorage.getItem("accessToken");

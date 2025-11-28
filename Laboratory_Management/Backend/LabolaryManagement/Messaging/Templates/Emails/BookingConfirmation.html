@@ -1,330 +1,132 @@
 ﻿<!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Đặt lịch thành công</title>
-  <style>
-      * {
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
-      }
-
-      body {
-          font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-          background-color: #eef2f7;
-          padding: 24px;
-          color: #1e293b;
-      }
-
-      .container {
-          max-width: 640px;
-          margin: auto;
-          background: #fff;
-          border-radius: 16px;
-          overflow: hidden;
-          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-          animation: fadeIn 0.5s ease;
-      }
-
-      /* ---------------- HEADER ---------------- */
-      .header {
-          background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-          padding: 40px 24px;
-          text-align: center;
-          color: #fff;
-      }
-
-      .success-icon {
-          width: 70px;
-          height: 70px;
-          background: #10b981;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 34px;
-          margin: 0 auto 20px;
-          box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
-      }
-
-      .header h1 {
-          font-size: 30px;
-          font-weight: 700;
-          margin-bottom: 6px;
-      }
-
-      .header p {
-          font-size: 15px;
-          opacity: 0.9;
-      }
-
-      /* ---------------- CONTENT ---------------- */
-      .content {
-          padding: 28px 24px;
-      }
-
-      .booking-code-highlight {
-          background: linear-gradient(135deg, #4f46e5, #7c3aed);
-          padding: 20px;
-          border-radius: 14px;
-          color: #fff;
-          margin-bottom: 20px;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-      }
-
-          .booking-code-highlight .label {
-              font-size: 13px;
-              opacity: 0.85;
-          }
-
-          .booking-code-highlight .value {
-              font-size: 22px;
-              font-weight: 700;
-              letter-spacing: 1.5px;
-          }
-
-      /* Info Card */
-      .info-card {
-          background: #f8fafc;
-          border: 1px solid #e5e7eb;
-          border-radius: 12px;
-          padding: 18px 20px;
-          margin-bottom: 20px;
-      }
-
-      .info-row {
-          display: flex;
-          justify-content: space-between;
-          padding: 14px 0;
-          border-bottom: 1px solid #e5e7eb;
-      }
-
-          .info-row:last-child {
-              border-bottom: none;
-          }
-
-      .info-label {
-          color: #64748b;
-          font-size: 15px;
-          display: flex;
-          align-items: center;
-          gap: 10px;
-      }
-
-      .info-value {
-          font-size: 15px;
-          font-weight: 600;
-          color: #1e293b;
-      }
-
-      /* ---------------- Customer Info ---------------- */
-      .customer-info {
-          padding: 22px 20px;
-          border-radius: 12px;
-          border: 1px solid #e5e7eb;
-          background: #ffffff;
-          margin-bottom: 24px;
-      }
-
-      .section-title {
-          font-size: 18px;
-          font-weight: 700;
-          color: #1e293b;
-          margin-bottom: 14px;
-          padding-bottom: 6px;
-          border-bottom: 2px solid #e2e8f0;
-      }
-
-      .customer-row {
-          display: flex;
-          justify-content: space-between;
-          padding: 10px 0;
-      }
-
-      .customer-label {
-          color: #64748b;
-          font-size: 15px;
-      }
-
-      .customer-value {
-          font-size: 15px;
-          font-weight: 600;
-          color: #1e293b;
-      }
-
-      /* ---------------- Notes ---------------- */
-      .notes {
-          background: linear-gradient(135deg, #e0e7ff, #ede9fe);
-          padding: 20px;
-          border-left: 4px solid #6366f1;
-          border-radius: 12px;
-      }
-
-          .notes h3 {
-              font-size: 17px;
-              font-weight: 700;
-              margin-bottom: 12px;
-              color: #4338ca;
-          }
-
-          .notes ul {
-              list-style: none;
-              padding-left: 0;
-          }
-
-          .notes li {
-              position: relative;
-              padding: 8px 0 8px 22px;
-              font-size: 15px;
-              color: #475569;
-          }
-
-              .notes li::before {
-                  content: "";
-                  width: 8px;
-                  height: 8px;
-                  background: #6366f1;
-                  border-radius: 50%;
-                  position: absolute;
-                  left: 6px;
-                  top: 14px;
-              }
-
-      /* ---------------- Footer ---------------- */
-      .footer {
-          padding: 24px;
-          background: #f8fafc;
-          border-top: 1px solid #e5e7eb;
-          text-align: center;
-      }
-
-          .footer p {
-              font-size: 13px;
-              color: #64748b;
-              margin: 6px 0;
-          }
-
-          .footer a {
-              font-weight: 600;
-              color: #4f46e5;
-              text-decoration: none;
-          }
-
-          .footer .hotline {
-              font-size: 15px;
-              font-weight: 600;
-              color: #1e293b;
-              margin-bottom: 6px;
-          }
-
-      /* Animation */
-      @keyframes fadeIn {
-          from {
-              opacity: 0;
-              transform: translateY(6px);
-          }
-
-          to {
-              opacity: 1;
-              transform: translateY(0);
-          }
-      }
-
-      /* Responsive */
-      @media (max-width: 600px) {
-          .booking-code-highlight {
-              flex-direction: column;
-              gap: 14px;
-              text-align: center;
-          }
-      }
-
-  </style>
+    <meta charset="UTF-8">
+    <title>Đặt lịch thành công</title>
 </head>
-<body>
-  <div class="container">
-    <!-- Header -->
-    <div class="header">
-      <div class="success-icon">✓</div>
-      <h1>Đặt lịch thành công!</h1>
-      <p>Cảm ơn bạn đã đặt lịch. Chúng tôi đã gửi xác nhận đến email của bạn.</p>
-    </div>
+<body style="margin:0; padding:0; background:#eef2f7; font-family:Arial,Helvetica,sans-serif;">
 
-    <!-- Content -->
-    <div class="content">
-      <!-- Booking Code & Amount -->
-      <div class="booking-code-highlight">
-        <div>
-          <div class="label">Mã đặt lịch</div>
-          <div class="value">{{BookingCode}}</div>
-        </div>
-        <div>
-          <div class="label">Tổng thanh toán</div>
-          <div class="value">{{TotalAmount}}</div>
-        </div>
-      </div>
+    <table width="100%" cellpadding="0" cellspacing="0" style="padding:24px 0;">
+        <tr>
+            <td align="center">
 
-      <!-- Booking Details -->
-      <div class="info-card">
-        <div class="info-row">
-          <div class="info-label code">Gói xét nghiệm</div>
-          <div class="info-value">{{TestPackage}}</div>
-        </div>
-        <div class="info-row">
-          <div class="info-label location">Địa điểm</div>
-          <div class="info-value">{{Location}}</div>
-        </div>
-        <div class="info-row">
-          <div class="info-label date">Ngày khám</div>
-          <div class="info-value">{{AppointmentDate}}</div>
-        </div>
-        <div class="info-row">
-          <div class="info-label time">Giờ khám</div>
-          <div class="info-value">{{AppointmentTime}}</div>
-        </div>
-      </div>
+                <!-- Container -->
+                <table width="640" cellpadding="0" cellspacing="0" style="background:#ffffff; border-radius:12px; overflow:hidden; box-shadow:0 4px 16px rgba(0,0,0,0.1);">
 
-      <!-- Customer Info -->
-      <div class="customer-info">
-        <h2 class="section-title">Thông tin khách hàng</h2>
-        <div class="customer-row">
-          <div class="customer-label">Họ và tên:</div>
-          <div class="customer-value">{{PatientName}}</div>
-        </div>
-        <div class="customer-row">
-          <div class="customer-label">Email:</div>
-          <div class="customer-value">{{PatientEmail}}</div>
-        </div>
-        <div class="customer-row">
-          <div class="customer-label">Số điện thoại:</div>
-          <div class="customer-value">{{PatientPhone}}</div>
-        </div>
-      </div>
+                    <!-- HEADER -->
+                    <tr>
+                        <td style="background:#5b50ea; text-align:center; padding:40px 24px; color:#ffffff;">
+                            <div style="width:70px; height:70px; background:#10b981; border-radius:50%; margin:auto; font-size:34px; line-height:70px; color:#ffffff; margin-bottom:20px;">
+                                ✓
+                            </div>
+                            <h1 style="font-size:28px; margin:0; font-weight:bold;">Đặt lịch thành công!</h1>
+                            <p style="font-size:15px; opacity:0.9; margin-top:8px;">Cảm ơn bạn đã đặt lịch. Chúng tôi đã gửi xác nhận đến email của bạn.</p>
+                        </td>
+                    </tr>
 
-      <!-- Important Notes -->
-      <div class="notes">
-        <h3>Lưu ý quan trọng</h3>
-        <ul>
-          <li>Vui lòng đến trước 15 phút để làm thủ tục</li>
-          <li>Nhịn ăn 8-12 tiếng trước khi xét nghiệm (nếu xét nghiệm máu)</li>
-          <li>Mang theo CMND/CCCD và mã đặt lịch khi đến khám</li>
-          <li>Kết quả xét nghiệm sẽ có trong 24-48 giờ</li>
-        </ul>
-      </div>
-    </div>
+                    <!-- Booking Code -->
+                    <tr>
+                        <td style="padding:24px;">
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background:#5b50ea; color:#ffffff; border-radius:14px; padding:20px;">
+                                <tr>
+                                    <td style="font-size:13px; opacity:0.85;">Mã đặt lịch</td>
+                                    <td style="font-size:13px; opacity:0.85; text-align:right;">Tổng thanh toán</td>
+                                </tr>
+                                <tr>
+                                    <td style="font-size:22px; font-weight:bold; letter-spacing:1px;">{{BookingCode}}</td>
+                                    <td style="font-size:22px; font-weight:bold; letter-spacing:1px; text-align:right;">{{TotalAmount}}</td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
 
-    <!-- Footer -->
-    <div class="footer">
-      <p class="hotline">Cần hỗ trợ? Liên hệ hotline: <strong>1900 1234</strong></p>
-      <p>Hoặc email: <a href="mailto:support@xetnghiem.vn">support@xetnghiem.vn</a></p>
-      <p style="margin-top: 20px; color: #a0aec0; font-size: 11px;">
-        Email này được gửi tự động, vui lòng không trả lời.
-      </p>
-    </div>
-  </div>
+                    <!-- Booking Details -->
+                    <tr>
+                        <td style="padding:0 24px;">
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc; border:1px solid #e5e7eb; border-radius:12px; padding:20px;">
+
+                                <tr>
+                                    <td style="padding:12px 0; border-bottom:1px solid #e5e7eb; color:#64748b;">Gói xét nghiệm</td>
+                                    <td style="padding:12px 0; border-bottom:1px solid #e5e7eb; text-align:right; font-weight:bold; color:#1e293b;">{{TestPackage}}</td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding:12px 0; border-bottom:1px solid #e5e7eb; color:#64748b;">Địa điểm</td>
+                                    <td style="padding:12px 0; border-bottom:1px solid #e5e7eb; text-align:right; font-weight:bold;">{{Location}}</td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding:12px 0; border-bottom:1px solid #e5e7eb; color:#64748b;">Ngày khám</td>
+                                    <td style="padding:12px 0; border-bottom:1px solid #e5e7eb; text-align:right; font-weight:bold;">{{AppointmentDate}}</td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding:12px 0; color:#64748b;">Giờ khám</td>
+                                    <td style="padding:12px 0; text-align:right; font-weight:bold;">{{AppointmentTime}}</td>
+                                </tr>
+
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Customer Info -->
+                    <tr>
+                        <td style="padding:24px;">
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff; border-radius:12px; border:1px solid #e5e7eb; padding:20px;">
+                                <tr>
+                                    <td colspan="2" style="font-size:18px; font-weight:bold; color:#1e293b; padding-bottom:10px; border-bottom:2px solid #e2e8f0;">
+                                        Thông tin khách hàng
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding:12px 0; color:#64748b;">Họ và tên:</td>
+                                    <td style="padding:12px 0; text-align:right; font-weight:bold; color:#1e293b;">{{PatientName}}</td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding:12px 0; color:#64748b;">Email:</td>
+                                    <td style="padding:12px 0; text-align:right; font-weight:bold; color:#1e293b;">{{PatientEmail}}</td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding:12px 0; color:#64748b;">Số điện thoại:</td>
+                                    <td style="padding:12px 0; text-align:right; font-weight:bold; color:#1e293b;">{{PatientPhone}}</td>
+                                </tr>
+
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Notes -->
+                    <tr>
+                        <td style="padding:0 24px 24px 24px;">
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background:#e5e7ff; border-left:4px solid #6366f1; border-radius:8px; padding:20px;">
+                                <tr><td style="font-size:17px; font-weight:bold; color:#4338ca; padding-bottom:10px;">Lưu ý quan trọng</td></tr>
+
+                                <tr><td style="padding:6px 0; font-size:15px; color:#475569;">• Vui lòng đến trước 15 phút để làm thủ tục</td></tr>
+                                <tr><td style="padding:6px 0; font-size:15px; color:#475569;">• Nhịn ăn 8-12 tiếng trước khi xét nghiệm</td></tr>
+                                <tr><td style="padding:6px 0; font-size:15px; color:#475569;">• Mang theo CMND/CCCD và mã đặt lịch khi đến khám</td></tr>
+                                <tr><td style="padding:6px 0; font-size:15px; color:#475569;">• Kết quả xét nghiệm sẽ có trong 24-48 giờ</td></tr>
+
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- FOOTER -->
+                    <tr>
+                        <td style="background:#f8fafc; padding:24px; text-align:center;">
+                            <p style="margin:0; font-size:15px; font-weight:bold; color:#1e293b;">Cần hỗ trợ? Hotline: 1900 1234</p>
+                            <p style="margin:6px 0; font-size:13px; color:#64748b;">Email: support@xetnghiem.vn</p>
+                            <p style="margin-top:18px; font-size:11px; color:#a0aec0;">Email này được gửi tự động, vui lòng không trả lời.</p>
+                        </td>
+                    </tr>
+
+                </table>
+
+            </td>
+        </tr>
+    </table>
+
 </body>
 </html>
