@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using System.Threading.Tasks;
 using TestOrder.Application.DTOs;
 using TestOrder.Application.Services;
@@ -17,7 +18,9 @@ namespace TestOrder.Presentation.Controllers
         {
             _service = service;
         }
+
         [HttpGet]
+        [Authorize(Policy = "perm:TestBundle.List")]
         public async Task<IActionResult> GetAllBundleAsync(
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10,
@@ -28,13 +31,16 @@ namespace TestOrder.Presentation.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize(Policy = "perm:TestBundle.View")]
         public async Task<IActionResult> GetByIdAsync(int id)
         {
             var bundle = await _service.GetByIdAsync(id);
             if (bundle == null) return NotFound();
             return Ok(bundle);
         }
+
         [HttpPost]
+        [Authorize(Policy = "perm:TestBundle.Create")]
         public async Task<IActionResult> Create(TestBundleDTO dto)
         {
             var entity = new TestBundle
@@ -46,19 +52,19 @@ namespace TestOrder.Presentation.Controllers
             };
 
             await _service.AddBundleAsync(dto);
-
             return Ok(entity);
-            
-            
         }
 
         [HttpPut("{id}")]
+        [Authorize(Policy = "perm:TestBundle.Update")]
         public async Task<IActionResult> UpdateBundleAsync(int id, [FromBody] UpdateBundleDTO model)
         {
             await _service.UpdateBundleAsync(id, model.BundleName, model.Description, model.Price);
             return NoContent();
         }
+
         [HttpDelete("{id}")]
+        [Authorize(Policy = "perm:TestBundle.Delete")]
         public async Task<IActionResult> DeleteBundleAsync(int id)
         {
             await _service.DeleteBundleAsync(id);

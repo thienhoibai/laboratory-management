@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using System.Threading.Tasks;
 using TestOrder.Application.DTOs;
 using TestOrder.Application.Services;
@@ -19,6 +20,7 @@ namespace TestOrder.API.Controllers
         }
 
         [HttpGet]
+        [Authorize(Policy = "perm:CatalogBundle.List")]
         public async Task<IActionResult> GetAll()
         {
             var result = await _service.GetAllAsync();
@@ -26,6 +28,7 @@ namespace TestOrder.API.Controllers
         }
 
         [HttpGet("{bundleId}")]
+        [Authorize(Policy = "perm:CatalogBundle.View")]
         public async Task<IActionResult> GetCatalogsByBundle(int bundleId)
         {
             var result = await _service.GetCatalogsByBundleAsync(bundleId);
@@ -35,6 +38,7 @@ namespace TestOrder.API.Controllers
         }
 
         [HttpPost]
+        [Authorize(Policy = "perm:CatalogBundle.Create")]
         public async Task<IActionResult> AddCatalogToBundle([FromBody] CatalogBundleDTO dto)
         {
             try
@@ -48,8 +52,8 @@ namespace TestOrder.API.Controllers
             }
         }
 
-
         [HttpDelete("{bundleId}")]
+        [Authorize(Policy = "perm:CatalogBundle.Delete")]
         public async Task<IActionResult> RemoveCatalogFromBundle(int bundleId, List<int> catalogId)
         {
             await _service.RemoveCatalogFromBundleAsync(bundleId, catalogId);
