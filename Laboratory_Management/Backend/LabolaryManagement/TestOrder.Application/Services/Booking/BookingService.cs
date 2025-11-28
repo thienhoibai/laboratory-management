@@ -282,9 +282,8 @@ namespace TestOrder.Application.Services.Booking
         public async Task<ResponseMessage> CheckInBooking (Guid bookingId)
         {
 
-            DateOnly today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(DateTime.UtcNow, timeZoneById));
-            TimeOnly now = TimeOnly.FromDateTime(TimeZoneInfo.ConvertTime(DateTime.UtcNow, timeZoneById));
-
+            DateOnly today = DateOnly.FromDateTime(DateTime.Now);
+            TimeOnly now = TimeOnly.FromDateTime(DateTime.Now);
             
 
 
