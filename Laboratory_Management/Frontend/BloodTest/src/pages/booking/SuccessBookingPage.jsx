@@ -4,6 +4,7 @@ import SuccessBooking from "../../components/booking/SuccessBooking";
 import Navbar from "../../components/navbar/Navbar";
 import { bookingService } from "../../services/TestOrderService.jsx";
 import { toast } from "react-toastify";
+import { setAuthToken } from "../../utils/auth.js";
 
 export default function SuccessBookingPage() {
   const [searchParams] = useSearchParams();
@@ -12,6 +13,8 @@ export default function SuccessBookingPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    setAuthToken(token);
     const fetchBookingData = async () => {
       // Lấy bookingId từ URL params
       const bookingId = searchParams.get("bookingId");

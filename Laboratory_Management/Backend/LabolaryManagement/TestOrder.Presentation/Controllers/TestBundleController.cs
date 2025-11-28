@@ -20,7 +20,7 @@ namespace TestOrder.Presentation.Controllers
         }
 
         [HttpGet]
-        [Authorize(Policy = "perm:TestBundle.List")]
+
         public async Task<IActionResult> GetAllBundleAsync(
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10,
@@ -31,7 +31,6 @@ namespace TestOrder.Presentation.Controllers
         }
 
         [HttpGet("{id}")]
-        [Authorize(Policy = "perm:TestBundle.View")]
         public async Task<IActionResult> GetByIdAsync(int id)
         {
             var bundle = await _service.GetByIdAsync(id);
