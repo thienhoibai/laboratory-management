@@ -112,6 +112,10 @@
       RabbitMQ__Host: "rabbitmq"
       RabbitMQ__User: "lab"
       RabbitMQ__Pass: "lab123"
+      # JWT config (must match iam.api)
+      Jwt__Issuer: "lab-iam"
+      Jwt__Audience: "lab.api"
+      Jwt__SigningKey: "Jx6n2QvB5pTf8Kz3Wm9aS4Ld7Yh0Nr2Xu8Cj5Pk1Vg3Mz7Rb0Hq4Tn6Wy8Le2"
     depends_on:
      rabbitmq:
        condition: service_healthy
@@ -129,6 +133,10 @@
     environment:
       ASPNETCORE_ENVIRONMENT: "Docker"
       ConnectionStrings__DefaultConnection: "Server=host.docker.internal,1433;Database=BlogServiceDB;User Id=sa;Password=12345;TrustServerCertificate=True;Encrypt=False"
+      # JWT config (must match iam.api)
+      Jwt__Issuer: "lab-iam"
+      Jwt__Audience: "lab.api"
+      Jwt__SigningKey: "Jx6n2QvB5pTf8Kz3Wm9aS4Ld7Yh0Nr2Xu8Cj5Pk1Vg3Mz7Rb0Hq4Tn6Wy8Le2"
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -145,6 +153,10 @@
       ASPNETCORE_ENVIRONMENT: "Docker"
       ConnectionStrings__InstrumentDb: "Server=host.docker.internal,1433;Database=InstrumentDB;User Id=sa;Password=12345;TrustServerCertificate=True;Encrypt=False"
       TestOrderBaseUrl: "http://testorder.api:5003"
+      # JWT config (must match iam.api)
+      Jwt__Issuer: "lab-iam"
+      Jwt__Audience: "lab.api"
+      Jwt__SigningKey: "Jx6n2QvB5pTf8Kz3Wm9aS4Ld7Yh0Nr2Xu8Cj5Pk1Vg3Mz7Rb0Hq4Tn6Wy8Le2"
     depends_on:
       rabbitmq:
         condition: service_healthy
