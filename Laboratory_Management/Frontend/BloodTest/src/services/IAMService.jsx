@@ -105,10 +105,17 @@ export const useLoginWithPassword = () => {
         localStorage.setItem("expiresAt", data.expiresAt);
         localStorage.setItem("permissions", JSON.stringify(perm) || []);
         setUserData(data);
-        if (role === "Customer" || role === "Patient") {
+        if (role === "Customer") {
           toast.success("Đăng nhập thành công!");
           navigate("/");
-        } else if (role === "Admin" || role === "Manager" || role === "Staff") {
+        } else if (
+          role === "Admin" ||
+          role === "Manager" ||
+          role === "LabUser" ||
+          role === "Receptionist" ||
+          role === "LabBlogger" ||
+          role === "Technician"
+        ) {
           toast.success("Đăng nhập thành công!");
           navigate("/dashboard");
         }
@@ -158,10 +165,17 @@ export const useLoginWithGoogle = () => {
         localStorage.setItem("expiresAt", data.expiresAt);
         localStorage.setItem("permissions", JSON.stringify(perm) || []);
         setUserData(data);
-        if (role === "Customer" || role === "Patient") {
+        if (role === "Customer") {
           toast.success("Đăng nhập thành công!");
           navigate("/");
-        } else if (role === "Admin" || role === "Manager" || role === "Staff") {
+        } else if (
+          role === "Admin" ||
+          role === "Manager" ||
+          role === "LabUser" ||
+          role === "Receptionist" ||
+          role === "LabBlogger" ||
+          role === "Technician"
+        ) {
           toast.success("Đăng nhập thành công!");
           navigate("/dashboard");
         }
