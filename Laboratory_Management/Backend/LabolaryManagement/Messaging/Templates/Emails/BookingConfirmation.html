@@ -5,222 +5,244 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Đặt lịch thành công</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
-      background-color: #f0f4f8;
-      color: #1a202c;
-      line-height: 1.6;
-      padding: 20px;
-    }
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-      background-color: #ffffff;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-    .header {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      padding: 40px 20px;
-      text-align: center;
-      color: #ffffff;
-    }
-    .success-icon {
-      width: 60px;
-      height: 60px;
-      background-color: #48bb78;
-      border-radius: 50%;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 20px;
-      font-size: 32px;
-    }
-    .header h1 {
-      font-size: 28px;
-      font-weight: 700;
-      margin-bottom: 10px;
-    }
-    .header p {
-      font-size: 14px;
-      opacity: 0.9;
-    }
-    .content {
-      padding: 30px 20px;
-    }
-    .info-card {
-      background-color: #f7fafc;
-      border-radius: 8px;
-      padding: 20px;
-      margin-bottom: 20px;
-      border: 1px solid #e2e8f0;
-    }
-    .info-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 12px 0;
-      border-bottom: 1px solid #e2e8f0;
-    }
-    .info-row:last-child {
-      border-bottom: none;
-    }
-    .info-label {
-      color: #718096;
-      font-size: 14px;
-      display: flex;
-      align-items: center;
-    }
-    .info-label::before {
-      content: '';
-      display: inline-block;
-      width: 20px;
-      height: 20px;
-      margin-right: 8px;
-      background-size: contain;
-      background-repeat: no-repeat;
-    }
-    .info-label.code::before {
-      content: '📋';
-    }
-    .info-label.location::before {
-      content: '📍';
-    }
-    .info-label.date::before {
-      content: '📅';
-    }
-    .info-label.time::before {
-      content: '🕐';
-    }
-    .info-value {
-      color: #1a202c;
-      font-weight: 600;
-      font-size: 14px;
-      text-align: right;
-    }
-    .booking-code-highlight {
-      display: flex;
-      justify-content: space-between;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 16px 20px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-    }
-    .booking-code-highlight .label {
-      font-size: 12px;
-      opacity: 0.9;
-      margin-bottom: 4px;
-    }
-    .booking-code-highlight .value {
-      font-size: 20px;
-      font-weight: 700;
-      letter-spacing: 2px;
-    }
-    .section-title {
-      font-size: 16px;
-      font-weight: 700;
-      color: #2d3748;
-      margin-bottom: 12px;
-      padding-bottom: 8px;
-      border-bottom: 2px solid #e2e8f0;
-    }
-    .customer-info {
-      background-color: #ffffff;
-      border-radius: 8px;
-      padding: 20px;
-      margin-bottom: 20px;
-      border: 1px solid #e2e8f0;
-    }
-    .customer-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 10px 0;
-    }
-    .customer-label {
-      color: #718096;
-      font-size: 14px;
-    }
-    .customer-value {
-      color: #1a202c;
-      font-weight: 500;
-      font-size: 14px;
-      text-align: right;
-    }
-    .notes {
-      background: linear-gradient(135deg, #e0e7ff 0%, #e7e5ff 100%);
-      border-radius: 8px;
-      padding: 20px;
-      border-left: 4px solid #667eea;
-    }
-    .notes h3 {
-      color: #4c51bf;
-      font-size: 16px;
-      margin-bottom: 12px;
-      font-weight: 700;
-    }
-    .notes ul {
-      list-style: none;
-      padding: 0;
-    }
-    .notes li {
-      padding: 8px 0 8px 24px;
-      position: relative;
-      font-size: 14px;
-      color: #4a5568;
-    }
-    .notes li::before {
-      content: '•';
-      position: absolute;
-      left: 8px;
-      color: #667eea;
-      font-size: 18px;
-      font-weight: bold;
-    }
-    .footer {
-      background-color: #f7fafc;
-      padding: 30px 20px;
-      text-align: center;
-      border-top: 1px solid #e2e8f0;
-    }
-    .footer p {
-      color: #718096;
-      font-size: 12px;
-      margin: 8px 0;
-    }
-    .footer a {
-      color: #667eea;
-      text-decoration: none;
-      font-weight: 600;
-    }
-    .footer .hotline {
-      font-size: 14px;
-      color: #2d3748;
-      margin-top: 12px;
-    }
-    @media only screen and (max-width: 600px) {
+      * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+      }
+
       body {
-        padding: 10px;
+          font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+          background-color: #eef2f7;
+          padding: 24px;
+          color: #1e293b;
       }
+
+      .container {
+          max-width: 640px;
+          margin: auto;
+          background: #fff;
+          border-radius: 16px;
+          overflow: hidden;
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+          animation: fadeIn 0.5s ease;
+      }
+
+      /* ---------------- HEADER ---------------- */
+      .header {
+          background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+          padding: 40px 24px;
+          text-align: center;
+          color: #fff;
+      }
+
+      .success-icon {
+          width: 70px;
+          height: 70px;
+          background: #10b981;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 34px;
+          margin: 0 auto 20px;
+          box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+      }
+
       .header h1 {
-        font-size: 24px;
+          font-size: 30px;
+          font-weight: 700;
+          margin-bottom: 6px;
       }
-      .booking-code-highlight .value {
-        font-size: 16px;
+
+      .header p {
+          font-size: 15px;
+          opacity: 0.9;
       }
+
+      /* ---------------- CONTENT ---------------- */
+      .content {
+          padding: 28px 24px;
+      }
+
+      .booking-code-highlight {
+          background: linear-gradient(135deg, #4f46e5, #7c3aed);
+          padding: 20px;
+          border-radius: 14px;
+          color: #fff;
+          margin-bottom: 20px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+      }
+
+          .booking-code-highlight .label {
+              font-size: 13px;
+              opacity: 0.85;
+          }
+
+          .booking-code-highlight .value {
+              font-size: 22px;
+              font-weight: 700;
+              letter-spacing: 1.5px;
+          }
+
+      /* Info Card */
+      .info-card {
+          background: #f8fafc;
+          border: 1px solid #e5e7eb;
+          border-radius: 12px;
+          padding: 18px 20px;
+          margin-bottom: 20px;
+      }
+
       .info-row {
-        flex-direction: column;
+          display: flex;
+          justify-content: space-between;
+          padding: 14px 0;
+          border-bottom: 1px solid #e5e7eb;
       }
+
+          .info-row:last-child {
+              border-bottom: none;
+          }
+
+      .info-label {
+          color: #64748b;
+          font-size: 15px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+      }
+
       .info-value {
-        text-align: left;
-        margin-top: 4px;
+          font-size: 15px;
+          font-weight: 600;
+          color: #1e293b;
       }
-    }
+
+      /* ---------------- Customer Info ---------------- */
+      .customer-info {
+          padding: 22px 20px;
+          border-radius: 12px;
+          border: 1px solid #e5e7eb;
+          background: #ffffff;
+          margin-bottom: 24px;
+      }
+
+      .section-title {
+          font-size: 18px;
+          font-weight: 700;
+          color: #1e293b;
+          margin-bottom: 14px;
+          padding-bottom: 6px;
+          border-bottom: 2px solid #e2e8f0;
+      }
+
+      .customer-row {
+          display: flex;
+          justify-content: space-between;
+          padding: 10px 0;
+      }
+
+      .customer-label {
+          color: #64748b;
+          font-size: 15px;
+      }
+
+      .customer-value {
+          font-size: 15px;
+          font-weight: 600;
+          color: #1e293b;
+      }
+
+      /* ---------------- Notes ---------------- */
+      .notes {
+          background: linear-gradient(135deg, #e0e7ff, #ede9fe);
+          padding: 20px;
+          border-left: 4px solid #6366f1;
+          border-radius: 12px;
+      }
+
+          .notes h3 {
+              font-size: 17px;
+              font-weight: 700;
+              margin-bottom: 12px;
+              color: #4338ca;
+          }
+
+          .notes ul {
+              list-style: none;
+              padding-left: 0;
+          }
+
+          .notes li {
+              position: relative;
+              padding: 8px 0 8px 22px;
+              font-size: 15px;
+              color: #475569;
+          }
+
+              .notes li::before {
+                  content: "";
+                  width: 8px;
+                  height: 8px;
+                  background: #6366f1;
+                  border-radius: 50%;
+                  position: absolute;
+                  left: 6px;
+                  top: 14px;
+              }
+
+      /* ---------------- Footer ---------------- */
+      .footer {
+          padding: 24px;
+          background: #f8fafc;
+          border-top: 1px solid #e5e7eb;
+          text-align: center;
+      }
+
+          .footer p {
+              font-size: 13px;
+              color: #64748b;
+              margin: 6px 0;
+          }
+
+          .footer a {
+              font-weight: 600;
+              color: #4f46e5;
+              text-decoration: none;
+          }
+
+          .footer .hotline {
+              font-size: 15px;
+              font-weight: 600;
+              color: #1e293b;
+              margin-bottom: 6px;
+          }
+
+      /* Animation */
+      @keyframes fadeIn {
+          from {
+              opacity: 0;
+              transform: translateY(6px);
+          }
+
+          to {
+              opacity: 1;
+              transform: translateY(0);
+          }
+      }
+
+      /* Responsive */
+      @media (max-width: 600px) {
+          .booking-code-highlight {
+              flex-direction: column;
+              gap: 14px;
+              text-align: center;
+          }
+      }
+
   </style>
 </head>
 <body>

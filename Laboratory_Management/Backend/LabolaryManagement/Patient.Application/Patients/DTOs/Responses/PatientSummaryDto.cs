@@ -7,8 +7,8 @@ public record PatientSummaryDto(
     string? FullName,
     DateOnly? DateOfBirth,
     byte Gender,
-    BloodType BloodType,
-    string? Email,
+    BloodType BloodType, // Changed from string? to BloodType enum
+    string? email,
     string? Phone,
     bool IsDeleted,
     DateTime CreatedAt,

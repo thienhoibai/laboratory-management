@@ -19,7 +19,6 @@ export default function BookingHistory() {
   const [Catalogs, setCatalogs] = useState({}); // map: catalogId -> catalog
   const [Payments, SetPayments] = useState({}); // map: bookingId -> payment
   const [searchParams] = useSearchParams();
-  const [Amount, setAmount] = useState();
   const patientId = searchParams.get("patientId");
 
   // pagination & loading
@@ -182,49 +181,6 @@ export default function BookingHistory() {
       default:
         return { text: status, className: "" };
     }
-  };
-
-  // Cố gắng suy ra số tiền từ nhiều nguồn khác nhau
-  const deriveAmount = (booking, payment, pkg, catalog) => {
-    // 1. Payment amount nếu có và > 0
-    if (payment && typeof payment.amount === "number" && payment.amount > 0)
-      return payment.amount;
-    // 2. Thuộc tính trực tiếp trên booking
-    const bookingAmountCandidate =
-      booking?.totalPrice ||
-      booking?.price ||
-      booking?.amount ||
-      booking?.bundlePrice ||
-      booking?.catalogPrice;
-    if (
-      typeof bookingAmountCandidate === "number" &&
-      bookingAmountCandidate > 0
-    )
-      return bookingAmountCandidate;
-    // 3. Giá từ gói
-    const bundleAmountCandidate =
-      pkg?.price ||
-      pkg?.bundlePrice ||
-      pkg?.totalPrice ||
-      pkg?.amount ||
-      pkg?.data?.price ||
-      pkg?.data?.bundlePrice;
-    if (typeof bundleAmountCandidate === "number" && bundleAmountCandidate > 0)
-      return bundleAmountCandidate;
-    // 4. Giá từ catalog
-    const catalogAmountCandidate =
-      catalog?.price ||
-      catalog?.testPrice ||
-      catalog?.totalPrice ||
-      catalog?.amount ||
-      catalog?.data?.price ||
-      catalog?.data?.testPrice;
-    if (
-      typeof catalogAmountCandidate === "number" &&
-      catalogAmountCandidate > 0
-    )
-      return catalogAmountCandidate;
-    return 0; // nếu không tìm thấy
   };
 
   const handlePay = async (bookingId, amount) => {
@@ -414,7 +370,7 @@ export default function BookingHistory() {
                               : b.catalogId
                               ? catalog?.catalogName ||
                                 `Dịch vụ #${b.catalogId}`
-                              : "Không có thông tin"}
+                              : "Xét nghiệm đơn lẻ"}
                           </span>
                         </div>
                         {/* Nếu có thêm thông tin về dịch vụ hoặc catalog, có thể hiển thị ở đây */}
@@ -474,13 +430,16 @@ export default function BookingHistory() {
                   </div>
 
                   {/* result area: chỉ hiển thị nếu có status completed/cancelled */}
-                  <h3>Kết quả xét nghiệm</h3>
+                  <strong>
+                    <h2>Kết quả xét nghiệm</h2>
+                  </strong>
                   <div className="result-area" style={{ marginTop: 20 }}>
                     {String(b.status).toLowerCase() === "completed" ? (
                       <div className="result-box ready">
                         <img
                           src="src\assets\icon\Document_Border.svg"
                           alt="Document_Borders"
+                          className="img-doc"
                         />{" "}
                         <br />
                         <strong style={{ fontSize: "18px" }}>
