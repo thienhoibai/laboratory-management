@@ -19,7 +19,8 @@ namespace TestOrder.Infrastructure.Repository
         {
         }
 
-        public async Task<(IEnumerable<Booking>? items, int totalItems)> GetBookingsByPatientIdAsync(Guid patientId, int pageNumber, int pageSize)
+        public async Task<(IEnumerable<Booking>? items, int totalItems)> GetBookingsByPatientIdAsync
+            (Guid patientId, int pageNumber, int pageSize, byte? filterStatus)
         {
             var query = _context.Set<Booking>()
                 .Where(b => b.PatientId == patientId);
@@ -27,9 +28,15 @@ namespace TestOrder.Infrastructure.Repository
             {
                 throw new ArgumentException("No bookings found for the specified patient ID.");
             }
+
+            if (filterStatus.HasValue)
+            {
+                query = query.Where(b => b.Status == filterStatus.Value);
+            }
+
             var totalItems = await query.CountAsync();
             var items = await query
-                .OrderBy(b => b.BookingCode)
+                .OrderByDescending(b => b.BookingCode)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();

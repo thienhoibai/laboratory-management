@@ -1,4 +1,7 @@
 ﻿using Azure;
+using Contracts.Notifications;
+using MassTransit;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
@@ -8,8 +11,7 @@ using System.Threading.Tasks;
 using TestOrder.Application.DTOs;
 using TestOrder.Application.DTOs.Bookings;
 using TestOrder.Infrastructure.Repository;
-using MassTransit;
-using Contracts.Notifications;
+using TimeZoneConverter;
 
 namespace TestOrder.Application.Services.Booking
 {
@@ -22,14 +24,17 @@ namespace TestOrder.Application.Services.Booking
         private readonly TestBundleService _testBundleService;
         private readonly TestCatalogService _testCatalogService;
         private readonly IPublishEndpoint _publishEndpoint;
+        private readonly IConfiguration configuration;
 
+        private TimeZoneInfo timeZoneById;
         public BookingService(BookingRepository bookingRepository,
                               BookingTestService bookingTestService,
                               AppointmentSlotService appointmentSlotService,
                               CatalogBundleService catalogBundleService,
                               TestBundleService testBundleService,
                               TestCatalogService testCatalogService,
-                              IPublishEndpoint publishEndpoint)
+                              IPublishEndpoint publishEndpoint,
+                              IConfiguration configuration)
         {
             _bookingTestService = bookingTestService;
             _bookingRepository = bookingRepository;
@@ -38,7 +43,12 @@ namespace TestOrder.Application.Services.Booking
             _testBundleService = testBundleService;
             _testCatalogService = testCatalogService;
             _publishEndpoint = publishEndpoint;
+            this.configuration = configuration ?? throw new ArgumentNullException(nameof(configuration), "Configuration cannot be null.");
+
+            timeZoneById = TZConvert.GetTimeZoneInfo(configuration.GetValue<string>("TimeZoneId") ?? "SE Asia Standard Time");
         }
+
+        
 
         internal async Task<BookingResponseDTO> MapToDTOAsync(Infrastructure.Models.Booking booking)
         {
@@ -53,13 +63,9 @@ namespace TestOrder.Application.Services.Booking
                 CreatedBy = booking.CreatedBy,
                 BundleId = booking.BundleId,
                 TotalAmount = booking.TotalPrice,
-                CreatedDate = booking.CreateDate.HasValue
-                        ? booking.CreateDate.Value.ToDateTime(new TimeOnly(0, 0))
+                CreatedAt = booking.CreateAt.HasValue
+                        ? booking.CreateAt.Value
                         : DateTime.MinValue,
-                CreatedTime = booking.CreateTime.HasValue
-                        ? booking.CreateTime.Value
-                        : TimeOnly.MinValue,
-
                 RunDate = booking.RunDate.HasValue
                         ? booking.RunDate.Value.ToDateTime(new TimeOnly(0, 0))
                         : (DateTime?)null,
@@ -139,9 +145,11 @@ namespace TestOrder.Application.Services.Booking
             return await MapToDTOAsync(booking);
         }
 
-        public async Task<object> GetBookingsByPatientIdAsync(Guid patientId, int pageNumber, int pageSize)
+        public async Task<object> GetBookingsByPatientIdAsync(Guid patientId, int pageNumber, int pageSize, byte? filterStatus)
         {
-            var (bookings, totalItem) = await _bookingRepository.GetBookingsByPatientIdAsync(patientId, pageNumber, pageSize);
+
+
+            var (bookings, totalItem) = await _bookingRepository.GetBookingsByPatientIdAsync(patientId, pageNumber, pageSize, filterStatus);
 
             var totalPages = (int)Math.Ceiling((double)totalItem / pageSize);
 
@@ -232,8 +240,7 @@ namespace TestOrder.Application.Services.Booking
                     PatientPhone = bookingRequest.PatientPhoneNumber,
                     PatientEmail = bookingRequest.PatientEmail,
                     CreatedBy = bookingRequest.CreatedBy,
-                    CreateDate = DateOnly.FromDateTime(DateTime.Now),
-                    CreateTime = TimeOnly.FromDateTime(DateTime.Now),
+                    CreateAt = TimeZoneInfo.ConvertTime(DateTime.UtcNow, timeZoneById),
                     BundleId = bundleId,
                     AppointmentSlotId = appointmentSlot.SlotId,
                     Status = (byte?)BookingStatusEnum.Pending,
@@ -274,8 +281,8 @@ namespace TestOrder.Application.Services.Booking
         public async Task<ResponseMessage> CheckInBooking (Guid bookingId)
         {
 
-            DateOnly today = DateOnly.FromDateTime(DateTime.Now);
-            TimeOnly now = TimeOnly.FromDateTime(DateTime.Now);
+            DateOnly today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(DateTime.UtcNow, timeZoneById));
+            TimeOnly now = TimeOnly.FromDateTime(TimeZoneInfo.ConvertTime(DateTime.UtcNow, timeZoneById));
 
             
 
@@ -306,7 +313,7 @@ namespace TestOrder.Application.Services.Booking
             {
                 
                     booking.Status = (byte)BookingStatusEnum.InProgress;
-                    booking.RunDate = DateOnly.FromDateTime(DateTime.Now);
+                    booking.RunDate = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(DateTime.UtcNow, timeZoneById));
                     await _bookingRepository.UpdateAsync(booking);
                     response.ResponseCode = ResponseCode.Success;
                     response.Message = "Check-in successful";
@@ -358,9 +365,11 @@ namespace TestOrder.Application.Services.Booking
             {
                 throw new Exception("Booking not found");
             }
-
-            booking.Status = (byte?)BookingStatusEnum.Confirmed;
-            await _bookingRepository.UpdateAsync(booking);
+            if (booking.Status == (byte)BookingStatusEnum.Pending)
+            {
+                booking.Status = (byte?)BookingStatusEnum.Confirmed;
+                await _bookingRepository.UpdateAsync(booking);
+            }
 
             // ✅ GỬI EMAIL XÁC NHẬN BOOKING
             if (!string.IsNullOrWhiteSpace(booking.PatientEmail))
@@ -368,11 +377,11 @@ namespace TestOrder.Application.Services.Booking
                 try
                 {
                     var slot = await _appointmentSlotService.GetAppointmentSlotByIdAsync((Guid)booking.AppointmentSlotId!);
-                    
+
                     // Lấy thông tin bundle/test package
                     string testPackage = "Xét nghiệm tổng quát";
                     string totalAmount = "Đang cập nhật";
-                    
+
                     if (booking.BundleId.HasValue)
                     {
                         var bundle = await _testBundleService.GetByIdAsync(booking.BundleId.Value);
@@ -389,7 +398,7 @@ namespace TestOrder.Application.Services.Booking
                     {
                         totalAmount = $"{booking.TotalPrice.Value:N0}đ";
                     }
-                    
+
                     var templateData = new Dictionary<string, string>
                     {
                         { "BookingCode", booking.BookingCode ?? "N/A" },
