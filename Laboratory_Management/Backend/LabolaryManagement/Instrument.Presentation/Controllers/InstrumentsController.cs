@@ -14,10 +14,12 @@ namespace Instrument.Presentation.Controllers;
 public class InstrumentsController : ControllerBase
 {
     private readonly InstrumentService _service;
+    private readonly ILogger<InstrumentsController> _logger;
 
-    public InstrumentsController(InstrumentService service)
+    public InstrumentsController(InstrumentService service, ILogger<InstrumentsController> logger)
     {
         _service = service;
+        _logger = logger;
     }
 
     /// <summary>
@@ -40,7 +42,7 @@ public class InstrumentsController : ControllerBase
     {
         var (items, total) = await _service.GetAllWithFilterAsync(
             page, pageSize, search, status, runStatus, reagentStatus);
-        
+
         return Ok(new
         {
             total,
@@ -59,7 +61,7 @@ public class InstrumentsController : ControllerBase
     public async Task<IActionResult> GetById(int id)
     {
         var instrument = await _service.GetByIdAsync(id);
-        
+
         if (instrument == null)
             return NotFound(new { error = $"Instrument with ID {id} not found." });
 
@@ -70,11 +72,11 @@ public class InstrumentsController : ControllerBase
     /// GET /api/instruments/{code} - Lấy thông tin chi tiết máy theo code
     /// </summary>
     [HttpGet("{code}")]
-    
+
     public async Task<IActionResult> GetByCode(string code)
     {
         var instrument = await _service.GetByCodeAsync(code);
-        
+
         if (instrument == null)
             return NotFound(new { error = $"Instrument '{code}' not found." });
 
@@ -104,23 +106,72 @@ public class InstrumentsController : ControllerBase
 
         if (request.Image != null)
         {
-            // Folder trong container, đã map ra host
-            var folder = "/app/Images";
-
-            Directory.CreateDirectory(folder);
-
-            var fileName = Guid.NewGuid() + Path.GetExtension(request.Image.FileName);
-            var savePath = Path.Combine(folder, fileName);  // Windows/Linux path tự động xử lý
-
-            using (var stream = new FileStream(savePath, FileMode.Create))
+            try
             {
-                await request.Image.CopyToAsync(stream);
+                _logger.LogInformation("🔵 Starting image upload process...");
+                _logger.LogInformation($"📊 Image name: {request.Image.FileName}");
+                _logger.LogInformation($"📊 Image size: {request.Image.Length} bytes");
+                _logger.LogInformation($"📊 Content type: {request.Image.ContentType}");
+
+                // Lấy đường dẫn tuyệt đối
+                var currentDir = Directory.GetCurrentDirectory();
+                _logger.LogInformation($"📁 Current directory: {currentDir}");
+
+                var folder = Path.Combine(currentDir, "Images");
+                _logger.LogInformation($"📁 Target folder: {folder}");
+
+                // Tạo thư mục nếu chưa có
+                if (!Directory.Exists(folder))
+                {
+                    Directory.CreateDirectory(folder);
+                    _logger.LogInformation($"✅ Created directory: {folder}");
+                }
+                else
+                {
+                    _logger.LogInformation($"✅ Directory already exists: {folder}");
+                }
+
+                // Tạo tên file unique
+                var fileName = $"{Guid.NewGuid()}{Path.GetExtension(request.Image.FileName)}";
+                var savePath = Path.Combine(folder, fileName);
+
+                _logger.LogInformation($"💾 Saving to: {savePath}");
+
+                // Lưu file
+                using (var stream = new FileStream(savePath, FileMode.Create))
+                {
+                    await request.Image.CopyToAsync(stream);
+                    await stream.FlushAsync();
+                }
+
+                // Verify file đã được tạo
+                if (System.IO.File.Exists(savePath))
+                {
+                    var fileInfo = new FileInfo(savePath);
+                    _logger.LogInformation($"✅ File saved successfully!");
+                    _logger.LogInformation($"📊 File size on disk: {fileInfo.Length} bytes");
+                    _logger.LogInformation($"📊 File created at: {fileInfo.CreationTime}");
+                }
+                else
+                {
+                    _logger.LogError($"❌ File NOT found after saving: {savePath}");
+                    return BadRequest(new { error = "Failed to save image file" });
+                }
+
+                // Path lưu vào DB
+                imagePath = $"Images/{fileName}";
+                _logger.LogInformation($"💾 Image path for DB: {imagePath}");
             }
-
-            // path lưu vào DB → chuẩn URL
-            imagePath = $"Images/{fileName}";
-
-
+            catch (Exception ex)
+            {
+                _logger.LogError($"❌ Error saving image: {ex.Message}");
+                _logger.LogError($"Stack trace: {ex.StackTrace}");
+                return BadRequest(new { error = $"Failed to save image: {ex.Message}" });
+            }
+        }
+        else
+        {
+            _logger.LogInformation("ℹ️ No image provided");
         }
 
         try
@@ -131,8 +182,11 @@ public class InstrumentsController : ControllerBase
                 request.Name,
                 (InstrumentStatus)request.Status,
                 imagePath);
-            
+
             var instrument = await _service.CreateAsync(appDto);
+
+            _logger.LogInformation($"✅ Instrument created: {instrument.InstrumentCode}");
+            _logger.LogInformation($"📷 Image path in DB: {instrument.ImagePath ?? "none"}");
 
             return CreatedAtAction(
                 nameof(GetByCode),
@@ -142,6 +196,7 @@ public class InstrumentsController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
+            _logger.LogError($"❌ Error creating instrument: {ex.Message}");
             return BadRequest(new { error = ex.Message });
         }
     }
@@ -170,7 +225,7 @@ public class InstrumentsController : ControllerBase
         try
         {
             var instrument = await _service.UpdateAsync(code, request);
-            
+
             if (instrument == null)
                 return NotFound(new { error = $"Instrument '{code}' not found." });
 
@@ -192,7 +247,7 @@ public class InstrumentsController : ControllerBase
         try
         {
             var deleted = await _service.DeleteAsync(code);
-            
+
             if (!deleted)
                 return NotFound(new { error = $"Instrument '{code}' not found." });
 
@@ -211,7 +266,7 @@ public class InstrumentsController : ControllerBase
     public async Task<IActionResult> GetStatus(string code)
     {
         var status = await _service.GetStatusAsync(code);
-        
+
         if (status == null)
             return NotFound(new { error = $"Instrument '{code}' not found." });
 

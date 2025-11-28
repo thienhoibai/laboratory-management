@@ -314,6 +314,8 @@ const AdminAppointmentSchedulePage = () => {
   }, [selectedDate, currentPage, pageSize, search]);
 
   const handleCheckin = async (bookingId) => {
+    const token = localStorage.getItem("accessToken");
+    setAuthToken(token);
     try {
       setCheckingInId(bookingId);
       const token = localStorage.getItem("accessToken");

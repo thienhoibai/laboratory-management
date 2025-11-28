@@ -119,15 +119,14 @@ const InstrumentRun = () => {
         );
 
         const data = await startInstrumentRun(bookingId);
-        const status = (data?.status || data?.Status || "")
-          .toString()
-          .toUpperCase();
+        console.log(data);
+        const status = data?.status || data?.Status || "";
         const msg = String(data?.message || data?.Message || "");
         setMessage(msg);
 
         // Simulate progress finishing quickly after response
         setProgress(100);
-        if (status === "COMPLETED") {
+        if (status === 1) {
           setPhase("done");
         } else {
           setPhase("error");
@@ -177,6 +176,8 @@ const InstrumentRun = () => {
 
   // Khi phase done, gọi API lấy kết quả thực tế
   useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    setAuthToken(token);
     if (phase === "done" && bookingId) {
       const storageKey = `instrument_run_${bookingId}`;
       localStorage.removeItem(storageKey);

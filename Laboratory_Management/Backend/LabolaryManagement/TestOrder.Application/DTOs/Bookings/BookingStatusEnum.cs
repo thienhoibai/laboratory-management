@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,6 +15,6 @@ namespace TestOrder.Application.DTOs.Bookings
 
         Completed = 5,
         Cancelled = 6
-
+        
     }
 }
