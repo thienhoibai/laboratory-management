@@ -42,6 +42,8 @@ function MedicalRecordDetail() {
       if (!patientId) return;
       try {
         setLoading(true);
+        const token = localStorage.getItem("accessToken");
+        if (token) setAuthToken(token);
         const response = await api.get(
           `testorder/api/Booking/patient?patientId=${patientId}&pageNumber=1&pageSize=1000`
         );

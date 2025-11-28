@@ -22,6 +22,7 @@ import {
   deleteParameter as deleteParameterAPI,
   bookingService as bookingServiceAPI,
 } from "../apis/TestOrderServiceAPI.jsx";
+import { setAuthToken } from "../utils/auth";
 
 // ==================== Helper Functions ====================
 export const extractItemsAndMeta = (response, fallbackQuery = {}) => {
@@ -51,6 +52,8 @@ export const extractItemsAndMeta = (response, fallbackQuery = {}) => {
 export const getAllBundles = async (params = {}) => {
   console.log("[Service] getAllBundles called with params:", params);
   try {
+    const token = localStorage.getItem("accessToken");
+    if (token) setAuthToken(token);
     // Lấy bundles từ TestBundle API (chứa tất cả bundles, kể cả chưa có catalog)
     console.log("[Service] Fetching bundles from TestBundle API...");
     const testBundleResponse = await getAllBundlesWithActive(params);
@@ -161,6 +164,8 @@ export const getAllBundles = async (params = {}) => {
 export const getBundleById = async (id) => {
   if (!id) throw new Error("Bundle ID is required");
   try {
+    const token = localStorage.getItem("accessToken");
+    if (token) setAuthToken(token);
     const response = await getBundleByIdAPI(id);
     if (response?.status === 204 || !response?.data) {
       console.warn(
@@ -183,6 +188,8 @@ export const getBundleById = async (id) => {
 
 export const createBundle = async (payload) => {
   try {
+    const token = localStorage.getItem("accessToken");
+    if (token) setAuthToken(token);
     console.log("[Service] createBundle called with payload:", payload);
     const response = await createBundleAPI(payload);
     console.log("[Service] createBundle API response:", {
@@ -284,6 +291,8 @@ export const createBundle = async (payload) => {
 
 export const updateBundle = async (id, payload) => {
   if (!id) throw new Error("Bundle ID is required");
+  const token = localStorage.getItem("accessToken");
+  if (token) setAuthToken(token);
   const response = await updateBundleAPI(id, payload);
   const data = response?.data;
   return data?.data || data;
@@ -291,6 +300,8 @@ export const updateBundle = async (id, payload) => {
 
 export const deleteBundle = async (id) => {
   if (!id) throw new Error("Bundle ID is required");
+  const token = localStorage.getItem("accessToken");
+  if (token) setAuthToken(token);
   const response = await deleteBundleAPI(id);
   const data = response?.data;
   return data?.data || data;
@@ -303,6 +314,8 @@ export const getCatalogsOfBundle = async (bundleId) => {
   );
 
   try {
+    const token = localStorage.getItem("accessToken");
+    if (token) setAuthToken(token);
     const response = await getCatalogsOfBundleAPI(bundleId);
     console.log(
       `[Service] Response from getCatalogsOfBundle:`,
@@ -361,6 +374,8 @@ export const getCatalogsOfBundle = async (bundleId) => {
 
 export const addCatalogsToBundle = async (bundleId, catalogIds = []) => {
   if (!bundleId) throw new Error("Bundle ID is required");
+  const token = localStorage.getItem("accessToken");
+  if (token) setAuthToken(token);
   const response = await addCatalogsToBundleAPI(bundleId, catalogIds);
   const data = response?.data;
   return data?.data || data;
@@ -368,6 +383,8 @@ export const addCatalogsToBundle = async (bundleId, catalogIds = []) => {
 
 export const removeCatalogsFromBundle = async (bundleId, catalogIds = []) => {
   if (!bundleId) throw new Error("Bundle ID is required");
+  const token = localStorage.getItem("accessToken");
+  if (token) setAuthToken(token);
   const response = await removeCatalogsFromBundleAPI(bundleId, catalogIds);
   const data = response?.data;
   return data?.data || data;
@@ -382,6 +399,8 @@ export const getAllCatalogs = async (params = {}) => {
     ...params,
   };
 
+  const token = localStorage.getItem("accessToken");
+  if (token) setAuthToken(token);
   const response = await getAllCatalogsAPI(queryParams);
   const data = response?.data;
 
@@ -416,12 +435,16 @@ export const getAllCatalogs = async (params = {}) => {
 
 export const getCatalogById = async (id) => {
   if (!id) throw new Error("Catalog ID is required");
+  const token = localStorage.getItem("accessToken");
+  if (token) setAuthToken(token);
   const response = await getCatalogByIdAPI(id);
   const data = response?.data;
   return data?.data || data;
 };
 
 export const createCatalog = async (payload) => {
+  const token = localStorage.getItem("accessToken");
+  if (token) setAuthToken(token);
   const response = await createCatalogAPI(payload);
   const data = response?.data;
   return data?.data || data;
@@ -429,6 +452,8 @@ export const createCatalog = async (payload) => {
 
 export const updateCatalog = async (id, payload) => {
   if (!id) throw new Error("Catalog ID is required");
+  const token = localStorage.getItem("accessToken");
+  if (token) setAuthToken(token);
   const response = await updateCatalogAPI(id, payload);
   const data = response?.data;
   return data?.data || data;
@@ -436,6 +461,8 @@ export const updateCatalog = async (id, payload) => {
 
 export const addParametersToCatalog = async (id, parameterIds = []) => {
   if (!id) throw new Error("Catalog ID is required");
+  const token = localStorage.getItem("accessToken");
+  if (token) setAuthToken(token);
   const response = await addParametersToCatalogAPI(id, parameterIds);
   const data = response?.data;
   return data?.data || data;
@@ -443,6 +470,8 @@ export const addParametersToCatalog = async (id, parameterIds = []) => {
 
 export const removeParametersFromCatalog = async (id, parameterIds = []) => {
   if (!id) throw new Error("Catalog ID is required");
+  const token = localStorage.getItem("accessToken");
+  if (token) setAuthToken(token);
   const response = await removeParametersFromCatalogAPI(id, parameterIds);
   const data = response?.data;
   return data?.data || data;
@@ -451,6 +480,8 @@ export const removeParametersFromCatalog = async (id, parameterIds = []) => {
 export const deleteCatalogParameter = async (catalogId, parameterId) => {
   if (!catalogId) throw new Error("Catalog ID is required");
   if (!parameterId) throw new Error("Parameter ID is required");
+  const token = localStorage.getItem("accessToken");
+  if (token) setAuthToken(token);
   const response = await deleteCatalogParameterAPI(catalogId, parameterId);
   const data = response?.data;
   return data?.data || data;
@@ -458,12 +489,16 @@ export const deleteCatalogParameter = async (catalogId, parameterId) => {
 
 // ==================== Parameter Service ====================
 export const getAllParameters = async (params = {}) => {
+  const token = localStorage.getItem("accessToken");
+  if (token) setAuthToken(token);
   const response = await getAllParametersAPI(params);
   return extractItemsAndMeta(response, params);
 };
 
 export const getParameterById = async (id) => {
   if (!id) throw new Error("Parameter ID is required");
+  const token = localStorage.getItem("accessToken");
+  if (token) setAuthToken(token);
   const response = await getParameterByIdAPI(id);
   const data = response?.data;
   if (data?.data) return data.data;
@@ -472,12 +507,16 @@ export const getParameterById = async (id) => {
 
 export const createParameter = async (payload) => {
   if (!payload) throw new Error("Payload is required");
+  const token = localStorage.getItem("accessToken");
+  if (token) setAuthToken(token);
   const response = await createParameterAPI(payload);
   return response?.data;
 };
 
 export const updateParameter = async (id, payload) => {
   if (!id) throw new Error("Parameter ID is required");
+  const token = localStorage.getItem("accessToken");
+  if (token) setAuthToken(token);
   const response = await updateParameterAPI(id, payload);
   const data = response?.data;
   return data?.data || data;
@@ -485,6 +524,8 @@ export const updateParameter = async (id, payload) => {
 
 export const deleteParameter = async (id) => {
   if (!id) throw new Error("Parameter ID is required");
+  const token = localStorage.getItem("accessToken");
+  if (token) setAuthToken(token);
   const response = await deleteParameterAPI(id);
   const data = response?.data;
   return data?.data || data;
@@ -494,30 +535,40 @@ export const deleteParameter = async (id) => {
 export const bookingService = {
   // Lấy thông tin booking theo ID
   getBookingById: async (bookingId) => {
+    const token = localStorage.getItem("accessToken");
+    if (token) setAuthToken(token);
     const response = await bookingServiceAPI.getBookingById(bookingId);
     return response?.data || response;
   },
 
   // Lấy thông tin test catalog
   getTestCatalog: async (catalogId) => {
+    const token = localStorage.getItem("accessToken");
+    if (token) setAuthToken(token);
     const response = await bookingServiceAPI.getTestCatalog(catalogId);
     return response?.data || response;
   },
 
   // Lấy thông tin test bundle
   getTestBundle: async (bundleId) => {
+    const token = localStorage.getItem("accessToken");
+    if (token) setAuthToken(token);
     const response = await bookingServiceAPI.getTestBundle(bundleId);
     return response?.data || response;
   },
 
   // Tạo VNPay URL
   createVnPayUrl: async (bookingId, amount) => {
+    const token = localStorage.getItem("accessToken");
+    if (token) setAuthToken(token);
     const response = await bookingServiceAPI.createVnPayUrl(bookingId, amount);
     return response?.data || response;
   },
 
   // Lấy thông tin số lượng booking của các appointment slots
   getAppointmentSlotCounts: async () => {
+    const token = localStorage.getItem("accessToken");
+    if (token) setAuthToken(token);
     const response = await bookingServiceAPI.getAppointmentSlotCounts();
     return response?.data || response;
   },

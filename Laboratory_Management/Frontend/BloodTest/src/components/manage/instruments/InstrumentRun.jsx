@@ -3,6 +3,7 @@ import api from "../../../configs/axios";
 import { useSearchParams } from "react-router-dom";
 import { startInstrumentRun } from "../../../apis/InstrumentAPI";
 import AdminLayout from "../../admin/layout/AdminLayout";
+import { setAuthToken } from "../../../utils/auth";
 import { FiDroplet, FiCheckCircle } from "react-icons/fi";
 import "./InstrumentRun.css";
 

@@ -7,6 +7,7 @@ import api from "../../configs/axios";
 import { jwtDecode } from "jwt-decode";
 import { toast } from "react-toastify";
 import { formatDate1 } from "../../utils/formatDate";
+import { setAuthToken } from "../../utils/auth";
 // import { toast } from "react-toastify";
 
 const endPoint = "testorder/api/Booking";
@@ -140,6 +141,8 @@ function AcceptInfo({
       return;
     }
     try {
+      const token = localStorage.getItem("accessToken");
+      if (token) setAuthToken(token);
       const response = await api.post(endPoint, {
         patientId: patientId,
         patientPhoneNumber: phone,

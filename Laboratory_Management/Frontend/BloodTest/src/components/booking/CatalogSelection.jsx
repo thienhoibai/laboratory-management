@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "./PackageSelection.css";
 import api from "../../configs/axios";
+import { setAuthToken } from "../../utils/auth";
 
 const endPoint = "testorder/api/TestCatalog?page=1&pageSize=20";
 
@@ -23,6 +24,8 @@ function CatalogSelection({ setPackageMode, onContinue }) {
   useEffect(() => {
     const fetchAPI = async () => {
       try {
+        const token = localStorage.getItem("accessToken");
+        if (token) setAuthToken(token);
         const response = await api.get(endPoint);
         const data = response.data;
         console.log("data" + data);
