@@ -80,6 +80,7 @@ public partial class TestOrderDBContext : DbContext
 
             entity.Property(e => e.BookingId).ValueGeneratedNever();
             entity.Property(e => e.BookingCode).HasMaxLength(50);
+            entity.Property(e => e.CancelAt).HasColumnType("datetime");
             entity.Property(e => e.CreateAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");

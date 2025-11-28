@@ -55,7 +55,9 @@ CREATE TABLE Booking
     RanBy NVARCHAR(30),
     BundleId INT FOREIGN KEY REFERENCES TestBundle(BundleId),
 	TotalPrice float,
+	CancelAt DATETIME
 );
+
 
 CREATE TABLE PaymentEnvoice (
     PaymentNo INT IDENTITY(1,1) PRIMARY KEY,

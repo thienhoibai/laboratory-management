@@ -68,6 +68,8 @@ namespace TestOrder.Presentation
             builder.Services.AddScoped<TestResultRepository>();
             builder.Services.AddScoped<TestResultService>();
 
+            builder.Services.AddHostedService<ExpiresBookingService>();
+
             // InstrumentBridge Service
             builder.Services.AddScoped<InstrumentBridgeService>();
 

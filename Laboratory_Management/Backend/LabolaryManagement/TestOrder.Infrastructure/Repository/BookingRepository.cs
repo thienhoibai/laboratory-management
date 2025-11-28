@@ -6,17 +6,26 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TestOrder.Infrastructure.Base;
+using TestOrder.Infrastructure.Enums;
 using TestOrder.Infrastructure.Models;
 
 namespace TestOrder.Infrastructure.Repository
 {
     public class BookingRepository : GenericRepository<Booking>
     {
+        
         public BookingRepository(Data.TestOrderDBContext context) : base(context)
         {
         }
         public BookingRepository() : base()
         {
+        }
+
+        public async Task<IEnumerable<Booking?>> GetPendingBookingAsync(DateTime expiryThreshold)
+        {
+            return await _context.Set<Booking>()
+                .Where(b => b.Status == (byte)BookingStatusEnum.Pending && b.CreateAt <= expiryThreshold)
+                .ToListAsync();
         }
 
         public async Task<(IEnumerable<Booking>? items, int totalItems)> GetBookingsByPatientIdAsync

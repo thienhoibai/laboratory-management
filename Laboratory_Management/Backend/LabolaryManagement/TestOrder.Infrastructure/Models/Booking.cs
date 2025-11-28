@@ -33,6 +33,8 @@ public partial class Booking
 
     public double? TotalPrice { get; set; }
 
+    public DateTime? CancelAt { get; set; }
+
     public virtual AppointmentSlot? AppointmentSlot { get; set; }
 
     public virtual ICollection<BookingTest> BookingTests { get; set; } = new List<BookingTest>();

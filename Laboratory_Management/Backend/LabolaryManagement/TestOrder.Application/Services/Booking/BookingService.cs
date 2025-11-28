@@ -10,6 +10,7 @@ using System.Security.AccessControl;
 using System.Threading.Tasks;
 using TestOrder.Application.DTOs;
 using TestOrder.Application.DTOs.Bookings;
+using TestOrder.Infrastructure.Enums;
 using TestOrder.Infrastructure.Repository;
 using TimeZoneConverter;
 
@@ -369,6 +370,10 @@ namespace TestOrder.Application.Services.Booking
             {
                 booking.Status = (byte?)BookingStatusEnum.Confirmed;
                 await _bookingRepository.UpdateAsync(booking);
+            }
+            else
+            {
+                throw new Exception("Booking is not in a state that allows payment confirmation");
             }
 
             // ✅ GỬI EMAIL XÁC NHẬN BOOKING
