@@ -282,15 +282,8 @@ namespace TestOrder.Application.Services.Booking
         public async Task<ResponseMessage> CheckInBooking (Guid bookingId)
         {
 
-            DateOnly today = DateOnly.FromDateTime(DateTime.Now);
-            TimeOnly now = TimeOnly.FromDateTime(DateTime.Now);
-            
-
-
             var booking =  await _bookingRepository.GetByIdAsync(bookingId);
             var timeSlot = await _appointmentSlotService.GetAppointmentSlotByIdAsync((Guid)booking.AppointmentSlotId);
-            TimeOnly lowerLimit = timeSlot.TimeBlock.Add(-TimeSpan.FromMinutes(30));
-            TimeOnly upperLimit = timeSlot.TimeBlock.Add(TimeSpan.FromMinutes(30));
             ResponseMessage response = new ResponseMessage();
             if (booking == null)
             {
@@ -307,26 +300,14 @@ namespace TestOrder.Application.Services.Booking
                 response.InstancesCode = bookingId;
                 return response;
             }
-            if (today == timeSlot.AppointmentDate &&
-                now >= lowerLimit && 
-                now <= upperLimit)
-            {
+
+            booking.Status = (byte)BookingStatusEnum.InProgress;
+            booking.RunDate = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(DateTime.UtcNow, timeZoneById));
+            await _bookingRepository.UpdateAsync(booking);
+            response.ResponseCode = ResponseCode.Success;
+            response.Message = "Check-in successful";
+            response.InstancesCode = bookingId;
                 
-                    booking.Status = (byte)BookingStatusEnum.InProgress;
-                    booking.RunDate = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(DateTime.UtcNow, timeZoneById));
-                    await _bookingRepository.UpdateAsync(booking);
-                    response.ResponseCode = ResponseCode.Success;
-                    response.Message = "Check-in successful";
-                    response.InstancesCode = bookingId;
-                
-            }
-            else 
-            {
-                response.ResponseCode = ResponseCode.BadInstanceState;
-                response.Message = "Check-in is only allowed on the appointment date";
-                response.InstancesCode = bookingId;
-                return response;
-            }
             return response;
             
         }
