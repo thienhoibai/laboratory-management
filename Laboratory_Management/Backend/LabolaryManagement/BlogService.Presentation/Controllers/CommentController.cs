@@ -18,7 +18,7 @@ namespace BlogService.Presentation.Controllers
         }
 
         [HttpGet("post/{postId}")]
-        [Authorize(Policy = "perm:Comment.Post.View")]
+
         public async Task<IActionResult> GetByPost(
             int postId,
             [FromQuery] int page = 1,
@@ -43,8 +43,8 @@ namespace BlogService.Presentation.Controllers
         }
 
         [HttpGet("{id}")]
-        [Authorize(Policy = "perm:Comment.View")]
-        public async Task<IActionResult> GetById(int id)
+        
+            public async Task<IActionResult> GetById(int id)
         {
             var comment = await _service.GetByIdAsync(id);
             return comment == null ? NotFound() : Ok(comment);

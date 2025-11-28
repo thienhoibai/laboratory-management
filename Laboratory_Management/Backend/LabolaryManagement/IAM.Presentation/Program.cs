@@ -10,6 +10,7 @@ using IAM.Presentation.Middlewares;
 using IAM.Application.Security;
 using IAM.Application.Users.Services;
 using Common.Web.Extensions;
+using Common.Authorization; // ✅ Thêm
 using Messaging.Email;
 using Messaging.Notifications;
 using IAM.Presentation.Grpc;
@@ -143,25 +144,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddAuthorization(options =>
-{
-    // Register explicit permission policies expected by controllers
-    string[] perms = new[]
-    {
-        "User.List","User.View","User.Create","User.Delete","User.Update",
-        "Role.Update","Role.Create","Role.Delete",
-        "User.Manage"
-    };
-    foreach (var p in perms)
-    {
-        options.AddPolicy($"perm:{p}", policy =>
-            policy.RequireAssertion(ctx =>
-                ctx.User.IsInRole("Admin")
-                || ctx.User.HasClaim("perm", p)
-                || ctx.User.HasClaim("permissions", p)
-                || ctx.User.HasClaim("scope", p)));
-    }
-});
+// ✅ ===== DYNAMIC AUTHORIZATION =====
+builder.Services.AddSingleton<IAuthorizationPolicyProvider, Common.Authorization.DynamicAuthorizationPolicyProvider>();
+builder.Services.AddSingleton<IAuthorizationHandler, Common.Authorization.PermissionAuthorizationHandler>();
+builder.Services.AddAuthorization();
 
 builder.Services.AddCors(options =>
 {

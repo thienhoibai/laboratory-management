@@ -2,7 +2,9 @@
 using Grpc.Net.Client;
 using Iam.Grpc;
 using MassTransit;
+using Common.Authorization; // ✅ Thêm
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization; // ✅ Thêm
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -42,28 +44,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddAuthorization(options =>
-{
-    string[] perms = new[]
-    {
-        "Patient.List",
-        "Patient.View", 
-        "Patient.Create",
-        "Patient.Update",
-        "Patient.Delete",
-        "Patient.Search"
-    };
-    
-    foreach (var p in perms)
-    {
-        options.AddPolicy($"perm:{p}", policy =>
-            policy.RequireAssertion(ctx =>
-                ctx.User.IsInRole("Admin")
-                || ctx.User.HasClaim("perm", p)
-                || ctx.User.HasClaim("permissions", p)
-                || ctx.User.HasClaim("scope", p)));
-    }
-});
+// ✅ ===== DYNAMIC AUTHORIZATION =====
+builder.Services.AddSingleton<IAuthorizationPolicyProvider, DynamicAuthorizationPolicyProvider>();
+builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
+builder.Services.AddAuthorization();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
