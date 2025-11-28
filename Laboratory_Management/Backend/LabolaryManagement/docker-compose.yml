@@ -107,7 +107,6 @@
      dockerfile: testorder.Dockerfile
     container_name: testorder.api
     environment:
-
      ASPNETCORE_ENVIRONMENT: "Docker"
      TZ: Asia/Ho_Chi_Minh   # <== thêm cái nàyd
      ConnectionStrings__DefaultConnection: "Server=host.docker.internal,1433;Database=TestOrderDB;User Id=sa;Password=12345;TrustServerCertificate=True;Encrypt=False"

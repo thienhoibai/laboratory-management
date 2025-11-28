@@ -898,10 +898,10 @@ export default function ProfilePage() {
             rules={[{ required: true, message: "Vui lòng chọn nhóm máu" }]}
           >
             <Select placeholder="Chọn nhóm máu">
-              <Option value="A">A</Option>
-              <Option value="B">B</Option>
-              <Option value="AB">AB</Option>
-              <Option value="O">O</Option>
+              <Option value="0">A</Option>
+              <Option value="1">B</Option>
+              <Option value="2">AB</Option>
+              <Option value="3">O</Option>
             </Select>
           </Form.Item>
           <Form.Item

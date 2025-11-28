@@ -127,6 +127,7 @@ namespace TestOrder.Presentation
             // ===== Authorization Policies =====
             builder.Services.AddAuthorization(options =>
             {
+
                 // Booking permissions
                 string[] bookingPerms = new[]
                 {
@@ -222,6 +223,7 @@ namespace TestOrder.Presentation
                     .Concat(slotPerms)
                     .Concat(resultPerms)
                     .Concat(paymentPerms);
+
 
                 foreach (var p in allPerms)
                 {

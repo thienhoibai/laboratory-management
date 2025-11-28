@@ -10,11 +10,14 @@ import {
   FiAlertTriangle,
   FiLock,
   FiUnlock,
+  FiShield,
 } from "react-icons/fi";
 import { Pagination } from "antd";
 import api from "../../../configs/axios.js";
 import { setAuthToken } from "../../../utils/auth.js";
 import { toast } from "react-toastify";
+import { getRoles } from "../../../services/IAMService.jsx";
+import { updateUserRoles } from "../../../services/IAMService.jsx";
 import "./UsersManagement.css";
 
 const endPoint = "http://localhost:8080/iam/api/Users";
@@ -91,6 +94,16 @@ const UsersManagement = () => {
 
   const [lockLoadingId, setLockLoadingId] = useState(null);
 
+  // Roles from API
+  const [rolesList, setRolesList] = useState([]);
+  const [isLoadingRoles, setIsLoadingRoles] = useState(false);
+
+  // Edit role modal states
+  const [isEditRoleModalOpen, setIsEditRoleModalOpen] = useState(false);
+  const [userToEditRole, setUserToEditRole] = useState(null);
+  const [selectedRoleIds, setSelectedRoleIds] = useState([]);
+  const [isUpdatingRoles, setIsUpdatingRoles] = useState(false);
+
   const roleMapping = {
     Manager: 2,
     Staff: 3,
@@ -108,8 +121,24 @@ const UsersManagement = () => {
   useEffect(() => {
     if (token) setAuthToken(token);
     fetchUsers();
+    fetchRolesList();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, pageSize, searchDebounce, role, status, sortBy, sortDir]);
+
+  const fetchRolesList = async () => {
+    setIsLoadingRoles(true);
+    try {
+      const { items } = await getRoles({ pageSize: 100 });
+      if (Array.isArray(items)) {
+        setRolesList(items);
+      }
+    } catch (error) {
+      console.error("Error fetching roles:", error);
+      toast.error("Không thể tải danh sách vai trò");
+    } finally {
+      setIsLoadingRoles(false);
+    }
+  };
 
   const fetchUsers = async () => {
     try {
@@ -415,6 +444,118 @@ const UsersManagement = () => {
     }
   };
 
+  const handleOpenEditRoleModal = async (user) => {
+    const id = getUserId(user);
+    if (!id) {
+      toast.error("Không tìm thấy ID người dùng");
+      return;
+    }
+
+    try {
+      // Set auth token
+      const token = localStorage.getItem("accessToken");
+      if (token) setAuthToken(token);
+
+      // Fetch user details to get current roles
+      const response = await api.get(`${endPoint}/${id}`);
+      const userData = response.data?.data || response.data || user;
+
+      setUserToEditRole(userData);
+
+      // Get current user roles - handle different response structures
+      let currentRoleIds = [];
+      if (userData.roleIds && Array.isArray(userData.roleIds)) {
+        currentRoleIds = userData.roleIds;
+      } else if (userData.roles && Array.isArray(userData.roles)) {
+        // If roles is array of objects with roleId
+        currentRoleIds = userData.roles.map((r) => r.roleId || r.id || r);
+      } else if (userData.role && typeof userData.role === "object") {
+        // If role is single object
+        currentRoleIds = [userData.role.roleId || userData.role.id];
+      } else if (userData.roles && typeof userData.roles === "string") {
+        // If roles is string, try to find roleId by name
+        const foundRole = rolesList.find((r) => r.name === userData.roles);
+        if (foundRole) currentRoleIds = [foundRole.roleId || foundRole.id];
+      } else if (userData.role && typeof userData.role === "string") {
+        // If role is string, try to find roleId by name
+        const foundRole = rolesList.find((r) => r.name === userData.role);
+        if (foundRole) currentRoleIds = [foundRole.roleId || foundRole.id];
+      }
+
+      setSelectedRoleIds(currentRoleIds);
+      setIsEditRoleModalOpen(true);
+    } catch (error) {
+      console.error("Error fetching user details:", error);
+      toast.error("Không thể tải thông tin người dùng");
+    }
+  };
+
+  const handleCloseEditRoleModal = () => {
+    setIsEditRoleModalOpen(false);
+    setUserToEditRole(null);
+    setSelectedRoleIds([]);
+  };
+
+  const handleRoleCheckboxChange = (roleId) => {
+    setSelectedRoleIds((prev) => {
+      if (prev.includes(roleId)) {
+        return prev.filter((id) => id !== roleId);
+      } else {
+        return [...prev, roleId];
+      }
+    });
+  };
+
+  const handleUpdateUserRoles = async () => {
+    if (!userToEditRole) return;
+    const id = getUserId(userToEditRole);
+    if (!id) {
+      toast.error("Không tìm thấy ID người dùng");
+      return;
+    }
+
+    if (selectedRoleIds.length === 0) {
+      toast.error("Vui lòng chọn ít nhất một vai trò");
+      return;
+    }
+
+    setIsUpdatingRoles(true);
+    try {
+      // Convert role names to roleIds if needed
+      const roleIdsToUpdate = selectedRoleIds
+        .map((roleIdOrName) => {
+          // If it's already a number, use it
+          if (typeof roleIdOrName === "number") return roleIdOrName;
+          // If it's a string that's a number, convert it
+          if (!isNaN(roleIdOrName)) return parseInt(roleIdOrName, 10);
+          // Otherwise, find the role by name
+          const foundRole = rolesList.find(
+            (r) => r.name === roleIdOrName || r.roleName === roleIdOrName
+          );
+          return foundRole?.roleId || foundRole?.id || null;
+        })
+        .filter((id) => id !== null);
+
+      if (roleIdsToUpdate.length === 0) {
+        toast.error("Không tìm thấy ID vai trò hợp lệ");
+        return;
+      }
+
+      await updateUserRoles(id, roleIdsToUpdate);
+      toast.success("Cập nhật vai trò thành công!");
+      handleCloseEditRoleModal();
+      fetchUsers();
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.errors?.[0] ||
+        "Có lỗi xảy ra khi cập nhật vai trò";
+      toast.error(errorMessage);
+    } finally {
+      setIsUpdatingRoles(false);
+    }
+  };
+
   const handleUnlockUser = async (user) => {
     const id = getUserId(user);
     if (!id) {
@@ -629,13 +770,17 @@ const UsersManagement = () => {
                 className="filter-select"
                 value={role}
                 onChange={handleRoleChange}
+                disabled={isLoadingRoles}
               >
                 <option value="">Tất cả vai trò</option>
-                <option value="Admin">Admin</option>
-                <option value="Manager">Manager</option>
-                <option value="Staff">Staff</option>
-                <option value="Patient">Patient</option>
-                <option value="Customer">Customer</option>
+                {rolesList.map((roleItem) => (
+                  <option
+                    key={roleItem.roleId || roleItem.id}
+                    value={roleItem.name}
+                  >
+                    {roleItem.name}
+                  </option>
+                ))}
               </select>
               <FiChevronDown className="select-icon" />
             </div>
@@ -733,6 +878,13 @@ const UsersManagement = () => {
                         </td>
                         <td>
                           <div className="action-buttons">
+                            <button
+                              className="action-button role"
+                              onClick={() => handleOpenEditRoleModal(user)}
+                              title="Chỉnh sửa vai trò"
+                            >
+                              <FiShield size={18} />
+                            </button>
                             <button
                               className="action-button edit"
                               onClick={() => handleOpenEditModal(user)}
@@ -1079,6 +1231,93 @@ const UsersManagement = () => {
                 style={{ backgroundColor: "#e74c3c" }}
               >
                 {isDeleting ? "Đang xóa..." : "Xóa"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Role Modal */}
+      {isEditRoleModalOpen && (
+        <div className="modal-overlay" onClick={handleCloseEditRoleModal}>
+          <div className="user-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Chỉnh sửa vai trò</h2>
+              <button
+                className="modal-close"
+                onClick={handleCloseEditRoleModal}
+              >
+                <FiX size={20} />
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label className="form-label">
+                  Người dùng:{" "}
+                  <strong>
+                    {userToEditRole?.fullName || userToEditRole?.email || "-"}
+                  </strong>
+                </label>
+              </div>
+              <div className="form-group">
+                <label className="form-label">
+                  Chọn vai trò <span style={{ color: "#ef4444" }}>*</span>
+                </label>
+                {isLoadingRoles ? (
+                  <div style={{ padding: "20px", textAlign: "center" }}>
+                    Đang tải danh sách vai trò...
+                  </div>
+                ) : (
+                  <div className="roles-checkbox-list">
+                    {rolesList.map((roleItem) => {
+                      const roleId = roleItem.roleId || roleItem.id;
+                      const roleName = roleItem.name;
+                      const isChecked =
+                        selectedRoleIds.includes(roleId) ||
+                        selectedRoleIds.includes(roleName) ||
+                        selectedRoleIds.includes(String(roleId));
+                      return (
+                        <label
+                          key={roleId}
+                          className={`role-checkbox-item ${
+                            isChecked ? "role-checkbox-checked" : ""
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => handleRoleCheckboxChange(roleId)}
+                          />
+                          <span>{roleName}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+                {selectedRoleIds.length === 0 && (
+                  <span
+                    className="error-message"
+                    style={{ marginTop: "8px", display: "block" }}
+                  >
+                    Vui lòng chọn ít nhất một vai trò
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="modal-button cancel"
+                onClick={handleCloseEditRoleModal}
+                disabled={isUpdatingRoles}
+              >
+                Hủy
+              </button>
+              <button
+                className="modal-button primary"
+                onClick={handleUpdateUserRoles}
+                disabled={isUpdatingRoles || selectedRoleIds.length === 0}
+              >
+                {isUpdatingRoles ? "Đang cập nhật..." : "Cập nhật"}
               </button>
             </div>
           </div>

@@ -59,10 +59,7 @@ export const addCatalogsToBundle = async (bundleId, catalogIds = []) => {
 
 export const removeCatalogsFromBundle = async (bundleId, catalogIds = []) => {
   if (!bundleId) throw new Error("Bundle ID is required");
-  const payload = {
-    bundleId,
-    catalogId: catalogIds,
-  };
+  const payload = Array.isArray(catalogIds) ? catalogIds : [];
   const response = await api.delete(`${CATALOG_BUNDLE_BASE}/${bundleId}`, {
     data: payload,
   });
@@ -92,10 +89,19 @@ export const updateCatalog = async (id, payload) => {
   return response;
 };
 
-export const updateCatalogParameters = async (id, parameterIds = []) => {
+export const addParametersToCatalog = async (id, parameterIds = []) => {
   if (!id) throw new Error("Catalog ID is required");
   const response = await api.put(
     `${CATALOG_BASE}/${id}/parameters`,
+    parameterIds
+  );
+  return response;
+};
+
+export const removeParametersFromCatalog = async (id, parameterIds = []) => {
+  if (!id) throw new Error("Catalog ID is required");
+  const response = await api.put(
+    `${CATALOG_BASE}/${id}/paramters-remove`,
     parameterIds
   );
   return response;
@@ -125,6 +131,18 @@ export const getParameterById = async (id) => {
 export const createParameter = async (payload) => {
   if (!payload) throw new Error("Payload is required");
   const response = await api.post(PARAMETER_BASE, payload);
+  return response;
+};
+
+export const updateParameter = async (id, payload) => {
+  if (!id) throw new Error("Parameter ID is required");
+  const response = await api.put(`${PARAMETER_BASE}/${id}`, payload);
+  return response;
+};
+
+export const deleteParameter = async (id) => {
+  if (!id) throw new Error("Parameter ID is required");
+  const response = await api.delete(`${PARAMETER_BASE}/${id}`);
   return response;
 };
 
@@ -185,7 +203,8 @@ const TestOrderServiceAPI = {
   getCatalogById,
   createCatalog,
   updateCatalog,
-  updateCatalogParameters,
+  addParametersToCatalog,
+  removeParametersFromCatalog,
   deleteCatalogParameter,
   // Parameter APIs
   getAllParameters,

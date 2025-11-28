@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import AdminLayout from "../../admin/layout/AdminLayout";
-import { FiSearch, FiPlus, FiX } from "react-icons/fi";
+import { FiSearch, FiPlus, FiX, FiTrash2 } from "react-icons/fi";
 import { Pagination } from "antd";
 import { setAuthToken } from "../../../utils/auth";
 import { toast } from "react-toastify";
 import {
   getAllParameters,
   createParameter,
+  deleteParameter,
 } from "../../../services/TestOrderService.jsx";
 import "./ParameterManagement.css";
 
@@ -20,6 +21,9 @@ const ParameterManagement = () => {
   const [total, setTotal] = useState(0);
   const [searchInput, setSearchInput] = useState("");
   const [searchDebounce, setSearchDebounce] = useState("");
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [parameterToDelete, setParameterToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -164,6 +168,44 @@ const ParameterManagement = () => {
     }
   };
 
+  // Handle delete parameter
+  const handleDeleteParameter = (parameter) => {
+    setParameterToDelete(parameter);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!parameterToDelete) return;
+    const parameterId =
+      parameterToDelete.parameterId ??
+      parameterToDelete.id ??
+      parameterToDelete.Id;
+    if (!parameterId) return;
+
+    setIsDeleting(true);
+    try {
+      await deleteParameter(parameterId);
+      toast.success("Đã xóa chỉ số xét nghiệm thành công!");
+      fetchParameters();
+      setIsDeleteModalOpen(false);
+      setParameterToDelete(null);
+    } catch (error) {
+      console.error("Error deleting parameter:", error);
+      const message =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Không thể xóa chỉ số xét nghiệm";
+      toast.error(message);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setIsDeleteModalOpen(false);
+    setParameterToDelete(null);
+  };
+
   return (
     <AdminLayout
       pageTitle="Quản lý chỉ số xét nghiệm"
@@ -225,6 +267,7 @@ const ParameterManagement = () => {
                     <th>Đơn vị</th>
                     <th>Giá trị nhỏ nhất</th>
                     <th>Giá trị lớn nhất</th>
+                    <th>Thao tác</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -244,12 +287,23 @@ const ParameterManagement = () => {
                         <td>{param.unit}</td>
                         <td>{param.minRange ?? "-"}</td>
                         <td>{param.maxRange ?? "-"}</td>
+                        <td>
+                          <div className="action-buttons">
+                            <button
+                              className="action-button delete"
+                              onClick={() => handleDeleteParameter(param)}
+                              title="Xóa chỉ số"
+                            >
+                              <FiTrash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
                       <td
-                        colSpan="5"
+                        colSpan="6"
                         style={{ textAlign: "center", padding: "40px" }}
                       >
                         {searchInput
@@ -360,6 +414,52 @@ const ParameterManagement = () => {
                 disabled={isSubmitting}
               >
                 {isSubmitting ? "Đang xử lý..." : "Thêm mới"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {isDeleteModalOpen && parameterToDelete && (
+        <div className="modal-overlay" onClick={handleCancelDelete}>
+          <div
+            className="parameter-modal delete-confirm-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-header">
+              <h2>Xác nhận xóa</h2>
+              <button className="modal-close" onClick={handleCancelDelete}>
+                <FiX size={20} />
+              </button>
+            </div>
+
+            <div className="modal-body">
+              <p>
+                Bạn có chắc chắn muốn xóa chỉ số xét nghiệm{" "}
+                <strong>{parameterToDelete.parameterName}</strong> không?
+              </p>
+              <p
+                style={{ color: "#ef4444", fontSize: "14px", marginTop: "8px" }}
+              >
+                Hành động này không thể hoàn tác.
+              </p>
+            </div>
+
+            <div className="modal-footer">
+              <button
+                className="modal-button cancel"
+                onClick={handleCancelDelete}
+                disabled={isDeleting}
+              >
+                Hủy
+              </button>
+              <button
+                className="modal-button delete-button"
+                onClick={handleConfirmDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? "Đang xóa..." : "Xóa"}
               </button>
             </div>
           </div>
