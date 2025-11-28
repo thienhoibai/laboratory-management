@@ -6,7 +6,6 @@ import AdminLayout from "../../admin/layout/AdminLayout";
 import { setAuthToken } from "../../../utils/auth";
 import { FiDroplet, FiCheckCircle } from "react-icons/fi";
 import "./InstrumentRun.css";
-import { setAuthToken } from "../../../utils/auth";
 
 // Không dùng defaultResults nữa, sẽ lấy từ API
 

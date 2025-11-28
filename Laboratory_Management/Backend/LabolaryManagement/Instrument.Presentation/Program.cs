@@ -1,8 +1,8 @@
 ﻿using Instrument.Application.Results;
 using Instrument.Application.Services;
-using Common.Authorization; // ✅ Thêm namespace Common.Authorization
+using Common.Authorization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization; // ✅ Thêm namespace Authorization
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
@@ -44,7 +44,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 // ✅ ===== DYNAMIC AUTHORIZATION =====
-// Thay thế static policy registration bằng dynamic policy provider
 builder.Services.AddSingleton<IAuthorizationPolicyProvider, DynamicAuthorizationPolicyProvider>();
 builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
 builder.Services.AddAuthorization();
@@ -120,18 +119,43 @@ if (!isDocker)
 {
     app.UseHttpsRedirection();
 }
-app.UseStaticFiles(new StaticFileOptions
-{
-    FileProvider = new PhysicalFileProvider(
-        Path.Combine(builder.Environment.ContentRootPath, "Images")),
-    RequestPath = "/Images"
-});
 
+// ✅ TẠO THƯ MỤC IMAGES TRƯỚC KHI CONFIGURE STATIC FILES
+var imagesPath = Path.Combine(builder.Environment.ContentRootPath, "Images");
+var logger = app.Services.GetRequiredService<ILogger<Program>>();
+
+logger.LogInformation($"🔍 ContentRootPath: {builder.Environment.ContentRootPath}");
+logger.LogInformation($"🔍 Images path will be: {imagesPath}");
+
+if (!Directory.Exists(imagesPath))
+{
+    Directory.CreateDirectory(imagesPath);
+    logger.LogInformation($"✅ Created Images directory at: {imagesPath}");
+}
+else
+{
+    logger.LogInformation($"✅ Images directory exists at: {imagesPath}");
+    // List existing files
+    var files = Directory.GetFiles(imagesPath);
+    logger.LogInformation($"📁 Found {files.Length} file(s) in Images directory");
+}
+
+// ✅ THỨ TỰ MIDDLEWARE QUAN TRỌNG!
 app.UseRouting();
 app.UseCors("AllowFrontend");
+
+// ✅ Configure static files AFTER Routing and CORS
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(imagesPath),
+    RequestPath = "/Images"
+});
+logger.LogInformation($"✅ Static files configured for /Images -> {imagesPath}");
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+logger.LogInformation("🚀 Instrument API is starting...");
 app.Run();
