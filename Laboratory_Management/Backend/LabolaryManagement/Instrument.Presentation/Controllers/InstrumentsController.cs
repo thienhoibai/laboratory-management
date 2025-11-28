@@ -104,23 +104,22 @@ public class InstrumentsController : ControllerBase
 
         if (request.Image != null)
         {
-            var folder = Path.Combine(Directory.GetCurrentDirectory(), "Images");
-
-            // ép thành dạng Linux
-            folder = folder.Replace("\\", "/");
+            // Folder trong container, đã map ra host
+            var folder = "/app/Images";
 
             Directory.CreateDirectory(folder);
 
             var fileName = Guid.NewGuid() + Path.GetExtension(request.Image.FileName);
-            var savePath = $"{folder}/{fileName}";
+            var savePath = Path.Combine(folder, fileName);  // Windows/Linux path tự động xử lý
 
             using (var stream = new FileStream(savePath, FileMode.Create))
             {
                 await request.Image.CopyToAsync(stream);
             }
 
-            // path lưu vào DB → dùng "/" chuẩn web
+            // path lưu vào DB → chuẩn URL
             imagePath = $"Images/{fileName}";
+
 
         }
 
