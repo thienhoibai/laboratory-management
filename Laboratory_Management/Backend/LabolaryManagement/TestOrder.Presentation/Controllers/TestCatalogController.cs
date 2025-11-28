@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using System.Threading.Tasks;
 using TestOrder.Application.DTOs;
 using TestOrder.Application.Services;
 using TestOrder.Infrastructure.Models;
-
 
 namespace TestOrder.Presentation.Controllers
 {
@@ -20,7 +20,7 @@ namespace TestOrder.Presentation.Controllers
         }
 
         [HttpGet]
-
+        [Authorize(Policy = "perm:TestCatalog.List")]
         public async Task<IActionResult> GetAllCatalogAsync(
             [FromQuery] int page,
             [FromQuery] int pageSize,
@@ -32,6 +32,7 @@ namespace TestOrder.Presentation.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize(Policy = "perm:TestCatalog.View")]
         public async Task<IActionResult> GetByIdAsync(int id)
         {
             var catalog = await _service.GetByIdAsync(id);
@@ -40,6 +41,7 @@ namespace TestOrder.Presentation.Controllers
         }
 
         [HttpPost]
+        [Authorize(Policy = "perm:TestCatalog.Create")]
         public async Task<IActionResult> AddCatalogAsync([FromBody] TestCatalogDTO catalog)
         {
             var entity = new TestCatalog
@@ -53,6 +55,7 @@ namespace TestOrder.Presentation.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Policy = "perm:TestCatalog.Update")]
         public async Task<IActionResult> UpdateCatalogAsync(int id, [FromBody] UpdateCatalogDTO model)
         {
             await _service.UpdateCatalogAsync(id, model.Description, model.Price);
@@ -60,6 +63,7 @@ namespace TestOrder.Presentation.Controllers
         }
         [HttpPut]
         [Route("{id}/parameters")]
+        [Authorize(Policy = "perm:TestCatalog.UpdateParameter")]
         public async Task<IActionResult> AddParameterAsync( int id, [FromBody] List<int>ParameterIds)
         { 
             var AddCatalog = await _service.AddParameterAsync(id, ParameterIds);
@@ -68,6 +72,7 @@ namespace TestOrder.Presentation.Controllers
 
         [HttpPut]
         [Route("{id}/paramters-remove")]
+        [Authorize(Policy = "perm:TestCatalog.DeleteParameter")]
         public async Task<IActionResult> RemoveParameterAsync(int id, [FromBody] List<int> parametersIds)
         {
             await _service.RemoveParameterAsync(id, parametersIds);
@@ -75,11 +80,11 @@ namespace TestOrder.Presentation.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Policy = "perm:TestCatalog.Delete")]
         public async Task<IActionResult> DeleteCatalogAsync(int id)
         {
             await _service.DeleteCatalogAsync(id);
             return Ok();
         }
-
     }
 }

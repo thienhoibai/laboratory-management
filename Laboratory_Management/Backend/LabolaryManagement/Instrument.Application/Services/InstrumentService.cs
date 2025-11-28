@@ -38,6 +38,69 @@ public class InstrumentService
     }
 
     /// <summary>
+    /// GET /api/instruments (with pagination & filters) - Lấy danh sách máy với phân trang, tìm kiếm và lọc
+    /// </summary>
+    public async Task<(List<InstrumentListItem> Items, long Total)> GetAllWithFilterAsync(
+        int page = 1,
+        int pageSize = 10,
+        string? search = null,
+        InstrumentStatus? status = null,
+        RunStatus? runStatus = null,
+        ReagentStatus? reagentStatus = null)
+    {
+        var query = _db.Instruments.AsNoTracking();
+
+        // Tìm kiếm theo code hoặc name
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var searchLower = search.ToLower();
+            query = query.Where(i =>
+                i.InstrumentCode.ToLower().Contains(searchLower) ||
+                i.Name.ToLower().Contains(searchLower));
+        }
+
+        // Lọc theo status
+        if (status.HasValue)
+        {
+            query = query.Where(i => i.Status == status.Value);
+        }
+
+        // Lọc theo reagentStatus
+        if (reagentStatus.HasValue)
+        {
+            query = query.Where(i => i.ReagentStatus == reagentStatus.Value);
+        }
+
+        // Lọc theo runStatus (cần join với InstrumentRuns)
+        if (runStatus.HasValue)
+        {
+            query = query.Where(i => _db.InstrumentRuns
+                .Any(r => r.InstrumentCode == i.InstrumentCode && r.Status == runStatus.Value));
+        }
+
+        // Đếm tổng số
+        var total = await query.CountAsync();
+
+        // Phân trang
+        var instruments = await query
+            .OrderBy(i => i.InstrumentCode)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        var items = instruments.Select(i => new InstrumentListItem(
+            i.InstrumentId,
+            i.InstrumentCode,
+            i.Name,
+            i.Status,
+            i.ReagentStatus,
+            i.ImageUrl
+        )).ToList();
+
+        return (items, total);
+    }
+
+    /// <summary>
     /// GET /api/instruments/{code} - Lấy thông tin chi tiết máy theo code
     /// </summary>
     public async Task<InstrumentResponse?> GetByCodeAsync(string instrumentCode)

@@ -1,6 +1,4 @@
-﻿
-
-using Azure;
+﻿using Azure;
 using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
@@ -21,8 +19,8 @@ namespace TestOrder.Application.Services.Booking
         private readonly AppointmentSlotService _appointmentSlotService;
         private readonly BookingRepository _bookingRepository;
         private readonly CatalogBundleService _catalogBundleService;
-        private readonly TestBundleService testBundleService;
-        private readonly TestCatalogService testCatalogService;
+        private readonly TestBundleService _testBundleService;
+        private readonly TestCatalogService _testCatalogService;
         private readonly IPublishEndpoint _publishEndpoint;
 
         public BookingService(BookingRepository bookingRepository,
@@ -31,14 +29,14 @@ namespace TestOrder.Application.Services.Booking
                               CatalogBundleService catalogBundleService,
                               TestBundleService testBundleService,
                               TestCatalogService testCatalogService,
-                               IPublishEndpoint publishEndpoint)
+                              IPublishEndpoint publishEndpoint)
         {
             _bookingTestService = bookingTestService;
             _bookingRepository = bookingRepository;
             _appointmentSlotService = appointmentSlotService;
             _catalogBundleService = catalogBundleService;
-            this.testBundleService = testBundleService;
-            this.testCatalogService = testCatalogService;
+            _testBundleService = testBundleService;
+            _testCatalogService = testCatalogService;
             _publishEndpoint = publishEndpoint;
         }
 
@@ -216,12 +214,12 @@ namespace TestOrder.Application.Services.Booking
 
             if (bundleId != null)
             {
-                totalPrice += testBundleService.GetBundlePriceByIdAsync((int)bundleId);
+                totalPrice += _testBundleService.GetBundlePriceByIdAsync((int)bundleId);
             }
 
             if (!bookingRequest.Catalogs.IsNullOrEmpty())
             {
-                totalPrice += testCatalogService.GetPriceForMultipleTests(bookingRequest.Catalogs);
+                totalPrice += _testCatalogService.GetPriceForMultipleTests(bookingRequest.Catalogs);
             }
 
 
@@ -355,8 +353,6 @@ namespace TestOrder.Application.Services.Booking
 
         internal async Task PaymentConfirmBooking (Guid bookingId)
         {
-            ResponseMessage response = new ResponseMessage();
-
             var booking = await _bookingRepository.GetByIdAsync(bookingId);
             if (booking == null)
             {
@@ -373,13 +369,37 @@ namespace TestOrder.Application.Services.Booking
                 {
                     var slot = await _appointmentSlotService.GetAppointmentSlotByIdAsync((Guid)booking.AppointmentSlotId!);
                     
+                    // Lấy thông tin bundle/test package
+                    string testPackage = "Xét nghiệm tổng quát";
+                    string totalAmount = "Đang cập nhật";
+                    
+                    if (booking.BundleId.HasValue)
+                    {
+                        var bundle = await _testBundleService.GetByIdAsync(booking.BundleId.Value);
+                        if (bundle != null)
+                        {
+                            testPackage = bundle.BundleName ?? "Xét nghiệm tổng quát";
+                            if (bundle.Price.HasValue)
+                            {
+                                totalAmount = $"{bundle.Price.Value:N0}đ";
+                            }
+                        }
+                    }
+                    else if (booking.TotalPrice.HasValue)
+                    {
+                        totalAmount = $"{booking.TotalPrice.Value:N0}đ";
+                    }
+                    
                     var templateData = new Dictionary<string, string>
                     {
                         { "BookingCode", booking.BookingCode ?? "N/A" },
+                        { "TotalAmount", totalAmount },
+                        { "TestPackage", testPackage },
+                        { "Location", "Phòng khám Xét nghiệm Y tế\n123 Nguyễn Huệ, Q.1, TP.HCM" },
                         { "PatientName", booking.PatientName ?? "Khách hàng" },
                         { "PatientEmail", booking.PatientEmail },
                         { "PatientPhone", booking.PatientPhone ?? "N/A" },
-                        { "AppointmentDate", slot?.AppointmentDate.ToString("dd/MM/yyyy") ?? "Chưa xác định" },
+                        { "AppointmentDate", slot?.AppointmentDate.ToString("'Thứ' d, dd/MM/yyyy") ?? "Chưa xác định" },
                         { "AppointmentTime", slot?.TimeBlock.ToString(@"hh\:mm") ?? "Chưa xác định" }
                     };
 
@@ -400,7 +420,5 @@ namespace TestOrder.Application.Services.Booking
                 }
             }
         }
-
-
     }
 }
