@@ -4,87 +4,103 @@ import AdminLayout from "../../admin/layout/AdminLayout";
 import InstrumentService from "../../../services/InstrumentService";
 import "./InstrumentsManagement.css";
 
-const MACHINE_STATUS_OPTIONS = [
-  {
-    key: "ACTIVE",
-    rawValues: ["ACTIVE", 0],
-    label: "Đang hoạt động",
-    badge: "status-active",
-  },
-  { key: "OFF", rawValues: ["OFF", 1], label: "Đang tắt", badge: "status-off" },
-  {
-    key: "ERROR",
-    rawValues: ["ERROR", 2],
-    label: "Đang lỗi",
-    badge: "status-error",
-  },
-  {
-    key: "MAINTENANCE",
-    rawValues: ["MAINTENANCE", 3],
-    label: "Đang bảo trì",
-    badge: "status-maintenance",
-  },
-];
-
-const REAGENT_STATUS_OPTIONS = [
-  { key: "FULL", rawValues: ["FULL", 0], label: "Đầy đủ", badge: "pill-full" },
-  { key: "LOW", rawValues: ["LOW", 1], label: "Sắp hết", badge: "pill-low" },
-  {
-    key: "EMPTY",
-    rawValues: ["EMPTY", 2],
-    label: "Đã hết",
-    badge: "pill-empty",
-  },
-];
-
-const getStatusKey = (options, rawValue) => {
-  const matched =
-    options.find(
-      (option) =>
-        option.key === rawValue ||
-        option.rawValues.some((val) => val === rawValue)
-    ) ?? options[0];
-  return matched.key;
+const STATUS_CONFIG = {
+  machine: [
+    {
+      key: "ACTIVE",
+      rawValues: ["ACTIVE", 0],
+      label: "Đang hoạt động",
+      badge: "status-active",
+    },
+    {
+      key: "OFF",
+      rawValues: ["OFF", 1],
+      label: "Đang tắt",
+      badge: "status-off",
+    },
+    {
+      key: "ERROR",
+      rawValues: ["ERROR", 2],
+      label: "Đang lỗi",
+      badge: "status-error",
+    },
+    {
+      key: "MAINTENANCE",
+      rawValues: ["MAINTENANCE", 3],
+      label: "Đang bảo trì",
+      badge: "status-maintenance",
+    },
+  ],
+  reagent: [
+    {
+      key: "FULL",
+      rawValues: ["FULL", 0],
+      label: "Đầy đủ",
+      badge: "pill-full",
+    },
+    {
+      key: "LOW",
+      rawValues: ["LOW", 1],
+      label: "Sắp hết",
+      badge: "pill-low",
+    },
+    {
+      key: "EMPTY",
+      rawValues: ["EMPTY", 2],
+      label: "Đã hết",
+      badge: "pill-empty",
+    },
+  ],
 };
 
-const getStatusView = (options, rawValue) => {
-  return (
-    options.find(
-      (option) =>
-        option.key === rawValue ||
-        option.rawValues.some((val) => val === rawValue)
-    ) ?? options[0]
+const findStatusOption = (options, candidate) =>
+  options.find(
+    (option) =>
+      option.key === candidate ||
+      option.rawValues.some((value) => value === candidate)
+  ) ?? options[0];
+
+const getBackendStatusValue = (options, key) => {
+  const option = findStatusOption(options, key);
+  const numericValue = option.rawValues.find(
+    (value) => typeof value === "number"
   );
+  return typeof numericValue !== "undefined"
+    ? numericValue
+    : option.rawValues[0] ?? option.key;
 };
 
 const EMPTY_FORM = {
   code: "",
   name: "",
-  machineStatus: MACHINE_STATUS_OPTIONS[0].key,
-  reagentStatus: REAGENT_STATUS_OPTIONS[0].key,
-  imageData: "",
+  machineStatus: STATUS_CONFIG.machine[0].key,
+  reagentStatus: STATUS_CONFIG.reagent[0].key,
+  imageFile: null,
 };
 
 const mapInstrumentToForm = (instrument) => ({
   code: instrument.code ?? instrument.instrumentCode ?? "",
   name: instrument.name ?? "",
-  machineStatus: getStatusKey(
-    MACHINE_STATUS_OPTIONS,
+  machineStatus: findStatusOption(
+    STATUS_CONFIG.machine,
     instrument.machineStatus ?? instrument.status
-  ),
-  reagentStatus: getStatusKey(
-    REAGENT_STATUS_OPTIONS,
+  ).key,
+  reagentStatus: findStatusOption(
+    STATUS_CONFIG.reagent,
     instrument.reagentStatus ?? instrument.reagent_status
-  ),
-  imageData: instrument.imageData ?? "",
+  ).key,
+  imageFile: null,
 });
 
 const buildPayloadFromForm = (formState) => ({
   code: formState.code.trim(),
   name: formState.name.trim(),
-  machineStatus: formState.machineStatus,
-  reagentStatus: formState.reagentStatus,
-  imageData: formState.imageData,
+  status: getBackendStatusValue(STATUS_CONFIG.machine, formState.machineStatus),
+  reagentStatus: getBackendStatusValue(
+    STATUS_CONFIG.reagent,
+    formState.reagentStatus
+  ),
+  imageFile: formState.imageFile,
 });
 
 const pickInstrumentCode = (instrument) =>
@@ -100,6 +116,14 @@ const InstrumentsManagement = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Phân trang và bộ lọc
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [searchText, setSearchText] = useState("");
+  const [filterMachineStatus, setFilterMachineStatus] = useState(""); // "" = Tất cả
+  const [filterReagentStatus, setFilterReagentStatus] = useState(""); // "" = Tất cả
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState("create"); // create | edit
   const [formState, setFormState] = useState(EMPTY_FORM);
@@ -113,16 +137,41 @@ const InstrumentsManagement = () => {
 
   const tableData = useMemo(() => instruments ?? [], [instruments]);
 
-  useEffect(() => {
-    fetchInstruments();
-  }, []);
-
   const fetchInstruments = async () => {
     setLoading(true);
     setError("");
     try {
-      const data = await InstrumentService.list();
-      setInstruments(data);
+      const params = {
+        page: currentPage,
+        pageSize: pageSize,
+      };
+
+      // Thêm search nếu có
+      if (searchText.trim()) {
+        params.search = searchText.trim();
+      }
+
+      // Thêm filter status nếu không phải "Tất cả"
+      if (filterMachineStatus !== "") {
+        const machineStatusValue = getBackendStatusValue(
+          STATUS_CONFIG.machine,
+          filterMachineStatus
+        );
+        params.status = machineStatusValue;
+      }
+
+      if (filterReagentStatus !== "") {
+        const reagentStatusValue = getBackendStatusValue(
+          STATUS_CONFIG.reagent,
+          filterReagentStatus
+        );
+        params.reagentStatus = reagentStatusValue;
+      }
+
+      const response = await InstrumentService.list(params);
+      setInstruments(response.items || []);
+      setTotalPages(response.totalPages || 1);
+      setCurrentPage(response.currentPage || currentPage);
     } catch (err) {
       setError(err?.message || "Không thể tải danh sách thiết bị.");
     } finally {
@@ -130,7 +179,25 @@ const InstrumentsManagement = () => {
     }
   };
 
+  useEffect(() => {
+    fetchInstruments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    currentPage,
+    pageSize,
+    searchText,
+    filterMachineStatus,
+    filterReagentStatus,
+  ]);
+
+  const releasePreview = (previewUrl) => {
+    if (previewUrl && previewUrl.startsWith("blob:")) {
+      URL.revokeObjectURL(previewUrl);
+    }
+  };
+
   const resetForm = () => {
+    releasePreview(imagePreview);
     setFormState(EMPTY_FORM);
     setImagePreview("");
     setFormError("");
@@ -145,6 +212,7 @@ const InstrumentsManagement = () => {
   const openEditModal = (instrument) => {
     setModalMode("edit");
     setFormState(mapInstrumentToForm(instrument));
+    releasePreview(imagePreview);
     setImagePreview(instrument.imageUrl || instrument.imageData || "");
     setFormError("");
     setIsModalOpen(true);
@@ -161,17 +229,15 @@ const InstrumentsManagement = () => {
   };
 
   const handleFileChange = (file) => {
+    releasePreview(imagePreview);
     if (!file) {
       setImagePreview("");
-      setFormState((prev) => ({ ...prev, imageData: "" }));
+      setFormState((prev) => ({ ...prev, imageFile: null }));
       return;
     }
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagePreview(reader.result);
-      setFormState((prev) => ({ ...prev, imageData: reader.result }));
-    };
-    reader.readAsDataURL(file);
+    const previewUrl = URL.createObjectURL(file);
+    setImagePreview(previewUrl);
+    setFormState((prev) => ({ ...prev, imageFile: file }));
   };
 
   const validateForm = () => {
@@ -229,14 +295,14 @@ const InstrumentsManagement = () => {
   };
 
   const getMachineStatusDisplay = (instrument) =>
-    getStatusView(
-      MACHINE_STATUS_OPTIONS,
+    findStatusOption(
+      STATUS_CONFIG.machine,
       instrument.machineStatus ?? instrument.status
     );
 
   const getReagentStatusDisplay = (instrument) =>
-    getStatusView(
-      REAGENT_STATUS_OPTIONS,
+    findStatusOption(
+      STATUS_CONFIG.reagent,
       instrument.reagentStatus ?? instrument.reagent_status
     );
 
@@ -253,6 +319,61 @@ const InstrumentsManagement = () => {
           </button>
         </div>
 
+        {/* Bộ lọc và tìm kiếm */}
+        <div className="instruments-filters">
+          <div className="filter-group">
+            <label htmlFor="search-input">Tìm kiếm:</label>
+            <input
+              id="search-input"
+              type="text"
+              placeholder="Nhập tên hoặc mã thiết bị..."
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              className="filter-input"
+            />
+          </div>
+
+          <div className="filter-group">
+            <label htmlFor="machine-status-filter">Trạng thái máy:</label>
+            <select
+              id="machine-status-filter"
+              value={filterMachineStatus}
+              onChange={(e) => {
+                setFilterMachineStatus(e.target.value);
+                setCurrentPage(1); // Reset về trang 1 khi filter
+              }}
+              className="filter-select"
+            >
+              <option value="">Tất cả</option>
+              {STATUS_CONFIG.machine.map((status) => (
+                <option key={status.key} value={status.key}>
+                  {status.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="filter-group">
+            <label htmlFor="reagent-status-filter">Trạng thái thuốc:</label>
+            <select
+              id="reagent-status-filter"
+              value={filterReagentStatus}
+              onChange={(e) => {
+                setFilterReagentStatus(e.target.value);
+                setCurrentPage(1); // Reset về trang 1 khi filter
+              }}
+              className="filter-select"
+            >
+              <option value="">Tất cả</option>
+              {STATUS_CONFIG.reagent.map((status) => (
+                <option key={status.key} value={status.key}>
+                  {status.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
         <div className="instruments-card">
           {loading && <p className="state-text">Đang tải danh sách...</p>}
           {!loading && error && <p className="error-text">{error}</p>}
@@ -261,69 +382,124 @@ const InstrumentsManagement = () => {
           )}
 
           {!loading && !error && tableData.length > 0 && (
-            <div className="table-wrapper">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Mã máy</th>
-                    <th>Tên máy</th>
-                    <th>Trạng thái máy</th>
-                    <th>Trạng thái thuốc</th>
-                    <th>Hành động</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {tableData.map((instrument) => {
-                    const code = pickInstrumentCode(instrument);
-                    const machineStatus = getMachineStatusDisplay(instrument);
-                    const reagentStatus = getReagentStatusDisplay(instrument);
-                    return (
-                      <tr key={code}>
-                        <td className="code-cell">{code}</td>
-                        <td>{instrument.name}</td>
-                        <td>
-                          <span
-                            className={`status-pill ${machineStatus.badge}`}
-                          >
-                            {machineStatus.label}
-                          </span>
-                        </td>
-                        <td>
-                          <span
-                            className={`status-pill ${reagentStatus.badge}`}
-                          >
-                            {reagentStatus.label}
-                          </span>
-                        </td>
-                        <td>
-                          <div className="action-buttons">
-                            <button
-                              className="ghost-btn"
-                              onClick={() => openEditModal(instrument)}
+            <>
+              <div className="table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Mã máy</th>
+                      <th>Tên máy</th>
+                      <th>Trạng thái máy</th>
+                      <th>Trạng thái thuốc</th>
+                      <th>Hành động</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tableData.map((instrument) => {
+                      const code = pickInstrumentCode(instrument);
+                      const machineStatus = getMachineStatusDisplay(instrument);
+                      const reagentStatus = getReagentStatusDisplay(instrument);
+                      return (
+                        <tr key={code}>
+                          <td className="code-cell">{code}</td>
+                          <td>{instrument.name}</td>
+                          <td>
+                            <span
+                              className={`status-pill ${machineStatus.badge}`}
                             >
-                              Sửa
-                            </button>
-                            <button
-                              className="danger-btn"
-                              onClick={() => handleDeleteClick(instrument)}
-                              disabled={
-                                deleteLoading &&
+                              {machineStatus.label}
+                            </span>
+                          </td>
+                          <td>
+                            <span
+                              className={`status-pill ${reagentStatus.badge}`}
+                            >
+                              {reagentStatus.label}
+                            </span>
+                          </td>
+                          <td>
+                            <div className="action-buttons">
+                              <button
+                                className="ghost-btn"
+                                onClick={() => openEditModal(instrument)}
+                              >
+                                Sửa
+                              </button>
+                              <button
+                                className="danger-btn"
+                                onClick={() => handleDeleteClick(instrument)}
+                                disabled={
+                                  deleteLoading &&
+                                  code === pickInstrumentCode(deleteTarget)
+                                }
+                              >
+                                {deleteLoading &&
                                 code === pickInstrumentCode(deleteTarget)
-                              }
-                            >
-                              {deleteLoading &&
-                              code === pickInstrumentCode(deleteTarget)
-                                ? "Đang xóa..."
-                                : "Xóa"}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                                  ? "Đang xóa..."
+                                  : "Xóa"}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Phân trang */}
+              <div className="pagination">
+                <div className="pagination-controls">
+                  <button
+                    className="ghost-btn"
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                  >
+                    Đầu
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    Trước
+                  </button>
+                  <span className="page-info">
+                    Trang {currentPage} / {totalPages}
+                  </span>
+                  <button
+                    className="ghost-btn"
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    disabled={currentPage >= totalPages}
+                  >
+                    Sau
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage >= totalPages}
+                  >
+                    Cuối
+                  </button>
+                </div>
+                <div className="page-size-selector">
+                  <label htmlFor="page-size">Số dòng:</label>
+                  <select
+                    id="page-size"
+                    value={pageSize}
+                    onChange={(e) => {
+                      setPageSize(Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                  >
+                    <option value={5}>5</option>
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                  </select>
+                </div>
+              </div>
+            </>
           )}
         </div>
       </div>
@@ -449,7 +625,7 @@ const InstrumentModal = ({
                       onFieldChange("machineStatus", e.target.value)
                     }
                   >
-                    {MACHINE_STATUS_OPTIONS.map((status) => (
+                    {STATUS_CONFIG.machine.map((status) => (
                       <option key={status.key} value={status.key}>
                         {status.label}
                       </option>
@@ -466,7 +642,7 @@ const InstrumentModal = ({
                       onFieldChange("reagentStatus", e.target.value)
                     }
                   >
-                    {REAGENT_STATUS_OPTIONS.map((status) => (
+                    {STATUS_CONFIG.reagent.map((status) => (
                       <option key={status.key} value={status.key}>
                         {status.label}
                       </option>

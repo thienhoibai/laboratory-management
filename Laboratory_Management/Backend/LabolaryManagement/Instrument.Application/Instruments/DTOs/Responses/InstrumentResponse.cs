@@ -8,7 +8,7 @@ public record InstrumentResponse(
     string Name,
     InstrumentStatus Status,
     ReagentStatus ReagentStatus,
-    string? ImageUrl,
+    string? ImagePath,
     DateTime CreatedAt
 );
 

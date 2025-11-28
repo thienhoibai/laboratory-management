@@ -47,11 +47,73 @@ const mapInstrumentShape = (instrument = {}) => {
   };
 };
 
+const buildInstrumentPayload = (
+  { code, name, status, reagentStatus, imageFile },
+  isUpdate = false
+) => {
+  // Nếu có file ảnh, sử dụng FormData
+  if (imageFile instanceof File) {
+    const formData = new FormData();
+    // Chỉ gửi code khi tạo mới, không gửi khi update (vì đã có trong URL)
+    // Backend expect PascalCase: InstrumentCode, Name, Status, ReagentStatus, Image
+    if (code && !isUpdate) {
+      formData.append("InstrumentCode", code);
+    }
+    if (name) {
+      formData.append("Name", name);
+    }
+    if (typeof status !== "undefined") {
+      // Backend expect enum (số), gửi số trực tiếp
+      formData.append("Status", status);
+    }
+    if (typeof reagentStatus !== "undefined") {
+      // Backend expect enum (số), gửi số trực tiếp
+      formData.append("ReagentStatus", reagentStatus);
+    }
+    formData.append("Image", imageFile); // Backend expect "Image" not "imageFile"
+
+    // Debug: Log FormData contents
+    console.log("FormData contents:");
+    for (let pair of formData.entries()) {
+      console.log(
+        pair[0] +
+          ": " +
+          (pair[1] instanceof File ? `File(${pair[1].name})` : pair[1])
+      );
+    }
+
+    return formData;
+  }
+
+  // Nếu không có file, sử dụng JSON
+  const payload = {};
+  // Chỉ gửi code khi tạo mới, không gửi khi update (vì đã có trong URL)
+  if (code && !isUpdate) payload.InstrumentCode = code;
+  if (name) payload.Name = name;
+  if (typeof status !== "undefined") payload.Status = status;
+  if (typeof reagentStatus !== "undefined")
+    payload.ReagentStatus = reagentStatus;
+  if (typeof imageFile === "string" && imageFile) {
+    payload.ImagePath = imageFile;
+  }
+
+  return payload;
+};
+
 const InstrumentService = {
-  async list() {
+  async list(params = {}) {
     try {
-      const data = await getInstruments();
-      return normalizeListResponse(data).map(mapInstrumentShape);
+      const data = await getInstruments(params);
+      const items = normalizeListResponse(data).map(mapInstrumentShape);
+
+      // Trả về cả dữ liệu và thông tin phân trang
+      return {
+        items,
+        totalPages: data?.totalPages || 1,
+        totalElements: data?.totalElements || items.length,
+        currentPage: data?.currentPage || params.page || 1,
+        pageSize: data?.pageSize || params.pageSize || 10,
+      };
     } catch (error) {
       throw formatError(error);
     }
@@ -75,7 +137,8 @@ const InstrumentService = {
 
   async create(payload) {
     try {
-      return await createInstrument(payload);
+      const jsonPayload = buildInstrumentPayload(payload);
+      return await createInstrument(jsonPayload);
     } catch (error) {
       throw formatError(error);
     }
@@ -83,7 +146,15 @@ const InstrumentService = {
 
   async update(code, payload) {
     try {
-      return await updateInstrumentByCode(code, payload);
+      // Update endpoint chỉ nhận JSON với ImagePath (string), không hỗ trợ file upload
+      // Nếu có file mới, cần upload riêng trước hoặc bỏ qua
+      // eslint-disable-next-line no-unused-vars
+      const { imageFile, ...restPayload } = payload;
+      const jsonPayload = buildInstrumentPayload(
+        { ...restPayload, code },
+        true
+      );
+      return await updateInstrumentByCode(code, jsonPayload);
     } catch (error) {
       throw formatError(error);
     }

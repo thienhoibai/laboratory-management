@@ -106,17 +106,23 @@ public class InstrumentsController : ControllerBase
         if (request.Image != null)
         {
             var folder = Path.Combine(Directory.GetCurrentDirectory(), "Images");
+
+            // ép thành dạng Linux
+            folder = folder.Replace("\\", "/");
+
             Directory.CreateDirectory(folder);
 
             var fileName = Guid.NewGuid() + Path.GetExtension(request.Image.FileName);
-            var savePath = Path.Combine(folder, fileName);
+            var savePath = $"{folder}/{fileName}";
 
             using (var stream = new FileStream(savePath, FileMode.Create))
             {
                 await request.Image.CopyToAsync(stream);
             }
 
-            imagePath = Path.Combine("Images", fileName);
+            // path lưu vào DB → dùng "/" chuẩn web
+            imagePath = $"Images/{fileName}";
+
         }
 
         try

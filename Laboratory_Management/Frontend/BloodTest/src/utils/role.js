@@ -91,10 +91,19 @@ export const isStaff = () => {
   return getCurrentUserRole() === "Staff";
 };
 
+
+export const isLabBlogger = () => {
+  return getCurrentUserRole() === "LabBlogger";
+};
+
+export const isTechnician = () => {
+  return getCurrentUserRole() === "Technician";
+};
 // Check if user can access management pages
 export const canAccessManagement = () => {
   const role = getCurrentUserRole();
-  return role === "Admin" || role === "Manager" || role === "Staff";
+  return role === "Admin" || role === "Manager" || role === "Staff" || role === "LabBlogger" ||
+  role === "Technician";
 };
 
 // Get menu items based on user role

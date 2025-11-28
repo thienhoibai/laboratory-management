@@ -106,7 +106,13 @@ export const useLoginWithPassword = () => {
         if (role === "Customer" || role === "Patient") {
           toast.success("Đăng nhập thành công!");
           navigate("/");
-        } else if (role === "Admin" || role === "Manager" || role === "Staff") {
+        } else if (
+          role === "Admin" ||
+          role === "Manager" ||
+          role === "Staff" ||
+          role === "LabBlogger" ||
+          role === "Technician"
+        ) {
           toast.success("Đăng nhập thành công!");
           navigate("/dashboard");
         }
@@ -159,7 +165,13 @@ export const useLoginWithGoogle = () => {
         if (role === "Customer" || role === "Patient") {
           toast.success("Đăng nhập thành công!");
           navigate("/");
-        } else if (role === "Admin" || role === "Manager" || role === "Staff") {
+        } else if (
+          role === "Admin" ||
+          role === "Manager" ||
+          role === "Staff" ||
+          role === "LabBlogger" ||
+          role === "Technician"
+        ) {
           toast.success("Đăng nhập thành công!");
           navigate("/dashboard");
         }
