@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { isAuthenticated } from "../../utils/auth"; // <-- login check util (returns boolean)
-import BookingNavbar from "../../components/booking/BookingNavbar";
+import Navbar from "../../components/navbar/Navbar";
 import BookingHeader from "../../components/booking/BookingHeader";
 import PatientSelection from "../../components/booking/PatientSelection";
 import PackageSelection from "../../components/booking/PackageSelection";
@@ -157,7 +157,7 @@ function Booking() {
     // EARLY RETURN: khi isLoggedIn === false, component sẽ return LoginRequirement và không render phần booking
     return (
       <div className="booking-container">
-        <BookingNavbar />
+        <Navbar />
         <LoginRequirement />
       </div>
     );
@@ -173,7 +173,7 @@ function Booking() {
   // Nếu đã đăng nhập, hiển thị trang đặt lịch
   return (
     <div className="booking-container">
-      <BookingNavbar />
+      <Navbar />
       <div className="booking-content">
         {currentStep !== 5 && (
           <BookingHeader

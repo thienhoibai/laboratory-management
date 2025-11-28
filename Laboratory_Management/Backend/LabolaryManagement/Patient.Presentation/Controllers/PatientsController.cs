@@ -99,7 +99,7 @@ public class PatientsController : ControllerBase
     {
         var userId = GetUserId(User);
         if (userId == Guid.Empty) return Unauthorized();
-        var res = await _service.DeleteAsync(id, userId, null, null, ct);
+        var res = await _service.DeleteAsync(id, userId, null, null, ct   );
         if (!res.Succeeded)
         {
             if (res.Error == Common.Errors.ErrorCodes.Forbidden) return Forbid();
