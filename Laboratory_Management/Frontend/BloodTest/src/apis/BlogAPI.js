@@ -1,4 +1,5 @@
-import api from "../configs/axios";
+import api, { publicApi } from "../configs/axios";
+import { setAuthToken } from "../utils/auth";
 
 /**
  * Blog API Service
@@ -14,11 +15,12 @@ const BlogAPI = {
    * @param {number} params.status - Status filter (0: pending, 1: approved, 2: rejected)
    * @param {string} params.search - Search term for filtering blogs
    * @param {string} params.authorId - Author ID filter
+   * @param {number} params.categoryId - Category ID filter
    * @returns {Promise} Array of blog posts
    */
   getAllBlogs: async (params = {}) => {
     try {
-      const { page = 1, pageSize = 100, status, authorId, search } = params;
+      const { page = 1, pageSize = 100, status, authorId, search, categoryId } = params;
       let url = `blog/api/BlogPost?page=${page}&pageSize=${pageSize}`;
       
       if (status !== undefined && status !== null) {
@@ -27,6 +29,10 @@ const BlogAPI = {
       
       if (authorId) {
         url += `&authorId=${authorId}`;
+      }
+      
+      if (categoryId !== undefined && categoryId !== null) {
+        url += `&categoryId=${categoryId}`;
       }
       
       if (search && search.trim() !== "") {
@@ -42,29 +48,134 @@ const BlogAPI = {
   },
 
   /**
+   * Get approved blog posts with search (for public display)
+   * @param {number} page - Page number
+   * @param {number} pageSize - Page size
+   * @param {string} search - Search term
+   * @returns {Promise} Array of approved blog posts
+   */
+  getApprovedBlogsWithSearch: async (page = 1, pageSize = 100, search = "") => {
+    try {
+      const { page: p = 1, pageSize: ps = 100 } = { page, pageSize };
+      let url = `blog/api/BlogPost?page=${p}&pageSize=${ps}&status=1`;
+      
+      if (search && search.trim() !== "") {
+        url += `&search=${encodeURIComponent(search.trim())}`;
+      }
+      
+      // Try with token first if available
+      const token = localStorage.getItem("accessToken");
+      if (token) {
+        try {
+          const response = await api.get(url);
+          return response.data;
+        } catch (authError) {
+          // If 401, try without auth
+          if (authError.response?.status === 401) {
+            console.warn("Auth failed, trying public access for blogs");
+            const response = await publicApi.get(url);
+            return response.data;
+          }
+          throw authError;
+        }
+      }
+      
+      // Use publicApi for public requests (no auth required)
+      const response = await publicApi.get(url);
+      return response.data;
+    } catch (error) {
+      // If still 401, return empty array instead of throwing
+      if (error.response?.status === 401) {
+        console.warn("Blog API requires authentication, returning empty array");
+        return { items: [], data: [] };
+      }
+      console.error("Error fetching approved blogs with search:", error);
+      throw error;
+    }
+  },
+
+  /**
    * Get approved blog posts (for public display)
    * @param {number} page - Page number
    * @param {number} pageSize - Page size
+   * @param {number} categoryId - Optional category ID filter
    * @returns {Promise} Array of approved blog posts
    */
-  getApprovedBlogs: async (page = 1, pageSize = 100) => {
+  getApprovedBlogs: async (page = 1, pageSize = 100, categoryId = null) => {
     try {
-      // Use getAllBlogs with status=1 (approved)
-      return await BlogAPI.getAllBlogs({ page, pageSize, status: 1 });
+      const { page: p = 1, pageSize: ps = 100 } = { page, pageSize };
+      let url = `blog/api/BlogPost?page=${p}&pageSize=${ps}&status=1`;
+      
+      // Ensure categoryId is properly formatted
+      if (categoryId !== undefined && categoryId !== null && categoryId !== 'null' && categoryId !== '') {
+        // Convert to number if it's a string
+        const normalizedCategoryId = typeof categoryId === 'string' 
+          ? parseInt(categoryId, 10) 
+          : categoryId;
+        
+        if (!isNaN(normalizedCategoryId)) {
+          url += `&categoryId=${normalizedCategoryId}`;
+          console.log("Adding categoryId to URL:", normalizedCategoryId);
+        }
+      }
+      
+      // Try with token first if available
+      const token = localStorage.getItem("accessToken");
+      if (token) {
+        try {
+          const response = await api.get(url);
+          return response.data;
+        } catch (authError) {
+          // If 401, try without auth
+          if (authError.response?.status === 401) {
+            console.warn("Auth failed, trying public access for blogs");
+            const response = await publicApi.get(url);
+            return response.data;
+          }
+          throw authError;
+        }
+      }
+      
+      // Use publicApi for public requests (no auth required)
+      const response = await publicApi.get(url);
+      return response.data;
     } catch (error) {
+      // If still 401, return empty array instead of throwing
+      if (error.response?.status === 401) {
+        console.warn("Blog API requires authentication, returning empty array");
+        return { items: [], data: [] };
+      }
       console.error("Error fetching approved blogs:", error);
       throw error;
     }
   },
 
   /**
-   * Get a single blog post by ID
+   * Get a single blog post by ID (public endpoint for approved blogs)
    * @param {number} id - Blog post ID
    * @returns {Promise} Blog post object
    */
   getBlogById: async (id) => {
     try {
-      const response = await api.get(`blog/api/BlogPost/${id}`);
+      // Try with token first if available
+      const token = localStorage.getItem("accessToken");
+      if (token) {
+        try {
+          const response = await api.get(`blog/api/BlogPost/${id}`);
+          return response.data;
+        } catch (authError) {
+          // If 401, try without auth
+          if (authError.response?.status === 401) {
+            console.warn("Auth failed, trying public access for blog detail");
+            const response = await publicApi.get(`blog/api/BlogPost/${id}`);
+            return response.data;
+          }
+          throw authError;
+        }
+      }
+      
+      // Use publicApi for public requests (no auth required)
+      const response = await publicApi.get(`blog/api/BlogPost/${id}`);
       return response.data;
     } catch (error) {
       console.error(`Error fetching blog ${id}:`, error);
@@ -157,14 +268,37 @@ const BlogAPI = {
   },
 
   /**
-   * Get all categories
+   * Get all categories (public endpoint)
    * @returns {Promise<Array|Object>} Category response data
    */
   getAllCategories: async () => {
     try {
-      const response = await api.get("blog/api/Category");
+      // Try with token first if available
+      const token = localStorage.getItem("accessToken");
+      if (token) {
+        try {
+          const response = await api.get("blog/api/Category");
+          return response.data;
+        } catch (authError) {
+          // If 401, try without auth
+          if (authError.response?.status === 401) {
+            console.warn("Auth failed, trying public access for categories");
+            const response = await publicApi.get("blog/api/Category");
+            return response.data;
+          }
+          throw authError;
+        }
+      }
+      
+      // Use publicApi for public requests (no auth required)
+      const response = await publicApi.get("blog/api/Category");
       return response.data;
     } catch (error) {
+      // If still 401, return empty array instead of throwing
+      if (error.response?.status === 401) {
+        console.warn("Category API requires authentication, returning empty array");
+        return [];
+      }
       console.error("Error fetching categories:", error);
       throw error;
     }
@@ -185,6 +319,157 @@ const BlogAPI = {
       return response.data;
     } catch (error) {
       console.error("Error fetching blog image:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Comment API Methods
+   */
+
+  /**
+   * Get comments by post ID
+   * @param {number|string} postId - Blog post ID
+   * @returns {Promise} Array of comments
+   */
+  getCommentsByPostId: async (postId) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (token) setAuthToken(token);
+      // Try with auth first, fallback to public if 401
+      try {
+        const response = await api.get(`blog/api/Comment/post/${postId}`);
+        return response.data;
+      } catch (authError) {
+        if (authError.response?.status === 401) {
+          // Try public access for viewing comments
+          const response = await publicApi.get(`blog/api/Comment/post/${postId}`);
+          return response.data;
+        }
+        throw authError;
+      }
+    } catch (error) {
+      // If still 401, return empty array instead of throwing
+      if (error.response?.status === 401) {
+        console.warn("Comment API requires authentication, returning empty array");
+        return [];
+      }
+      console.error(`Error fetching comments for post ${postId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get a single comment by ID
+   * @param {number|string} commentId - Comment ID
+   * @returns {Promise} Comment object
+   */
+  getCommentById: async (commentId) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (token) setAuthToken(token);
+      const response = await api.get(`blog/api/Comment/${commentId}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching comment ${commentId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Create a new comment
+   * @param {Object} commentData - Comment data
+   * @param {number|string} commentData.postId - Blog post ID
+   * @param {string} commentData.content - Comment content
+   * @returns {Promise} Created comment
+   */
+  createComment: async (commentData) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        throw new Error("Authentication required to create comment");
+      }
+      setAuthToken(token);
+      const response = await api.post("blog/api/Comment", commentData);
+      return response.data;
+    } catch (error) {
+      console.error("Error creating comment:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Update an existing comment
+   * @param {number|string} commentId - Comment ID
+   * @param {Object} commentData - Updated comment data
+   * @param {string} commentData.content - Updated comment content
+   * @returns {Promise} Updated comment
+   */
+  updateComment: async (commentId, commentData) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        throw new Error("Authentication required to update comment");
+      }
+      setAuthToken(token);
+      const response = await api.put(`blog/api/Comment/${commentId}`, commentData);
+      return response.data;
+    } catch (error) {
+      console.error(`Error updating comment ${commentId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Delete a comment
+   * @param {number|string} commentId - Comment ID
+   * @returns {Promise} Delete confirmation
+   */
+  deleteComment: async (commentId) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        throw new Error("Authentication required to delete comment");
+      }
+      setAuthToken(token);
+      const response = await api.delete(`blog/api/Comment/${commentId}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error deleting comment ${commentId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Search comments
+   * @param {Object} params - Search parameters
+   * @param {string} params.search - Search term
+   * @param {number|string} params.postId - Optional post ID filter
+   * @returns {Promise} Array of matching comments
+   */
+  searchComments: async (params = {}) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (token) setAuthToken(token);
+      const { search, postId } = params;
+      let url = "blog/api/Comment/search";
+      
+      const queryParams = [];
+      if (search && search.trim() !== "") {
+        queryParams.push(`search=${encodeURIComponent(search.trim())}`);
+      }
+      if (postId) {
+        queryParams.push(`postId=${postId}`);
+      }
+      
+      if (queryParams.length > 0) {
+        url += `?${queryParams.join("&")}`;
+      }
+      
+      const response = await api.get(url);
+      return response.data;
+    } catch (error) {
+      console.error("Error searching comments:", error);
       throw error;
     }
   },

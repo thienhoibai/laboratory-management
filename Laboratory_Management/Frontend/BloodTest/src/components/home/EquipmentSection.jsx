@@ -17,35 +17,22 @@ export default function EquipmentSection() {
 
   const fetchEquipments = async () => {
     try {
-      // Thử lấy token nếu có (user đã login)
+      // Thử lấy token nếu có (user đã login) và set vào header
       const token = localStorage.getItem("accessToken");
       if (token) {
         setAuthToken(token);
-        const response = await InstrumentService.list({
-          pageSize: 100,
-          page: 1,
-        });
-        const items = response.items || [];
-        console.log("Fetched equipments:", items);
-        // Log image data for debugging
-        items.forEach((item, index) => {
-          console.log(`Equipment ${index}:`, {
-            name: item.name,
-            code: item.code,
-            imageUrl: item.imageUrl,
-            imagePath: item.imagePath,
-            imageData: item.imageData ? "Base64 data present" : "No base64",
-            fullItem: item,
-          });
-        });
-        setEquipments(items);
-      } else {
-        // Nếu chưa login, không hiển thị dữ liệu
-        setEquipments([]);
       }
+      
+      // Gọi API ngay cả khi không có token (public endpoint)
+      const response = await InstrumentService.list({
+        pageSize: 100,
+        page: 1,
+      });
+      const items = response.items || [];
+      setEquipments(items);
     } catch (error) {
       console.error("Error fetching equipments:", error);
-      // Nếu có lỗi (401, 403...), không hiển thị dữ liệu mẫu
+      // Nếu có lỗi (401, 403...), không hiển thị dữ liệu
       setEquipments([]);
     } finally {
       setLoading(false);
