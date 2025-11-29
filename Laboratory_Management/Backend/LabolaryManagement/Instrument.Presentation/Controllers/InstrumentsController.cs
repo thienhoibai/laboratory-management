@@ -6,6 +6,7 @@ using Instrument.Application.Services;
 using Instrument.Domain.Enums;
 using Swashbuckle.AspNetCore.Annotations;
 
+
 namespace Instrument.Presentation.Controllers;
 
 [ApiController]
@@ -181,6 +182,8 @@ public class InstrumentsController : ControllerBase
                 request.InstrumentCode,
                 request.Name,
                 (InstrumentStatus)request.Status,
+                (ReagentStatus)request.ReagentStatus,
+
                 imagePath);
 
             var instrument = await _service.CreateAsync(appDto);
@@ -220,22 +223,45 @@ public class InstrumentsController : ControllerBase
     /// </remarks>
     [HttpPut("{code}")]
     [Authorize(Policy = "perm:Instrument.Update")]
-    public async Task<IActionResult> Update(string code, [FromBody] UpdateInstrumentRequest request)
+    public async Task<IActionResult> Update(string code, [FromForm] UpdateInstrumentHttpRequest request)
     {
         try
         {
             var instrument = await _service.UpdateAsync(code, request);
+            string? imagePath = null;
+
+            // Nếu có upload file → lưu file
+            if (request.Image != null)
+            {
+                var fileName = $"{Guid.NewGuid()}_{request.Image.FileName}";
+                var savePath = Path.Combine("/images/instruments", fileName);
+
+                Directory.CreateDirectory(Path.GetDirectoryName(savePath)!);
+                using var stream = new FileStream(savePath, FileMode.Create);
+                await request.Image.CopyToAsync(stream);
+
+                imagePath = $"/images/instruments/{fileName}";
+            }
+            var appRequest = new Instrument.Application.Instruments.DTOs.Requests.UpdateInstrumentRequest(
+            request.Name,
+            request.Status,
+            request.ReagentStatus,
+            imagePath
+);
+
+            var instrument = await _service.UpdateAsync(code, appRequest);
 
             if (instrument == null)
                 return NotFound(new { error = $"Instrument '{code}' not found." });
 
             return Ok(instrument);
         }
-        catch (InvalidOperationException ex)
+        catch (Exception ex)
         {
             return BadRequest(new { error = ex.Message });
         }
     }
+
 
     /// <summary>
     /// DELETE /api/instruments/{code} - Xóa máy xét nghiệm
