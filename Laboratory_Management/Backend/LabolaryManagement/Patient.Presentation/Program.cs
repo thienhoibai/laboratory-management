@@ -52,30 +52,30 @@ builder.Services.AddAuthorization();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    options.SwaggerDoc("v1", new OpenApiInfo
-    {
-        Title = "Patient API",
-        Version = "v1",
-        Description = "Laboratory Management - Patient Service API"
-    });
+options.SwaggerDoc("v1", new OpenApiInfo
+{
+    Title = "Patient API",
+    Version = "v1",
+    Description = "Laboratory Management - Patient Service API"
+});
 
-    // Add JWT Authentication
-    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Name = "Authorization",
-        Type = SecuritySchemeType.Http,
-        Scheme = "Bearer",
-        BearerFormat = "JWT",
-        In = ParameterLocation.Header,
-        Description = "JWT Authorization header using the Bearer scheme. \r\n\r\n" +
-                      "Enter your token in the text input below.\r\n\r\n" +
-                      "Example: '12345abcdef'"
-    });
+// Add JWT Authentication
+options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+{
+    Name = "Authorization",
+    Type = SecuritySchemeType.Http,
+    Scheme = "Bearer",
+    BearerFormat = "JWT",
+    In = ParameterLocation.Header,
+    Description = "JWT Authorization header using the Bearer scheme. \r\n\r\n" +
+                  "Enter your token in the text input below.\r\n\r\n" +
+                  "Example: '12345abcdef'"
+});
 
-    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
-            new OpenApiSecurityScheme
+        new OpenApiSecurityScheme
             {
                 Reference = new OpenApiReference
                 {
@@ -115,8 +115,8 @@ builder.Services.AddMassTransit(x =>
         cfg.Message<NotificationRequestedV1>(m => m.SetEntityName(notifyExchange));
         cfg.Publish<NotificationRequestedV1>(p =>
         {
-            p.ExchangeType = ExchangeType.Topic; 
-            p.Durable = true; 
+            p.ExchangeType = ExchangeType.Topic;
+            p.Durable = true;
             p.AutoDelete = false;
         });
     });

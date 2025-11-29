@@ -106,6 +106,19 @@ public class InstrumentBridgeService
                 continue;
             }
 
+            // Lấy thông tin MinRange và MaxRange từ TestParameter
+            var parameter = await _db.Set<TestParameter>()
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.ParameterId == item.ParameterId);
+
+            // Tính toán IsNormal: true nếu giá trị nằm trong khoảng [MinRange, MaxRange]
+            bool? isNormal = null;
+            if (parameter?.MinRange.HasValue == true && parameter?.MaxRange.HasValue == true)
+            {
+                var resultValue = (double)item.Value;
+                isNormal = resultValue >= parameter.MinRange.Value && resultValue <= parameter.MaxRange.Value;
+            }
+
             // Upsert theo (TestBookingNo, ParameterId)
             var existing = await _db.Set<TestResult>()
                 .FirstOrDefaultAsync(r => r.TestBookingNo == item.TestBookingNo 
@@ -119,12 +132,14 @@ public class InstrumentBridgeService
                 {
                     TestBookingNo = item.TestBookingNo,
                     ParameterId = item.ParameterId,
-                    ResultValue = valueStr
+                    ResultValue = valueStr,
+                    IsNormal = isNormal
                 });
             }
             else
             {
                 existing.ResultValue = valueStr;
+                existing.IsNormal = isNormal;
                 _db.Update(existing);
             }
 

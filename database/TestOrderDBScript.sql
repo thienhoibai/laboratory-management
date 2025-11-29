@@ -1,6 +1,6 @@
 ﻿USE master;
-ALTER DATABASE TestOrderDB SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
-DROP DATABASE TestOrderDB;
+ALTER DATABASE TestOder SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+DROP DATABASE TestOder;
 
 CREATE DATABASE TestOrderDB
 
@@ -231,6 +231,23 @@ VALUES
 (N'Xét nghiệm tổng quát',N'Gói xét nghiệm cơ bản bao gồm công thức máu, đường huyết, chức năng gan',450000, 1),
 (N'Xét nghiệm sinh hóa',N'Đánh giá chức năng gan, thận và các chỉ số sinh hóa quan trọng',650000, 1),
 (N'Xét nghiệm toàn diện',N'Gói xét nghiệm đầy đủ nhất cho sức khỏe tổng thể',1200000, 1)
+
+INSERT INTO CatalogBundle (BundleId, CatalogId)
+VAlUES
+(1,1),
+(1,2),
+(1,3),
+(2,2),
+(2,4),
+(2,5),
+(2,6),
+(3,1),
+(3,2),
+(3,3),
+(3,4),
+(3,5),
+(3,6),
+(3,7);
 
 Alter TABLE TestResult
 Add isNormal bit

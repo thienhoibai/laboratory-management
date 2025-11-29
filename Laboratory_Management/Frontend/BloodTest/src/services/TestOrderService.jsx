@@ -12,13 +12,17 @@ import {
   getCatalogById as getCatalogByIdAPI,
   createCatalog as createCatalogAPI,
   updateCatalog as updateCatalogAPI,
-  updateCatalogParameters as updateCatalogParametersAPI,
+  addParametersToCatalog as addParametersToCatalogAPI,
+  removeParametersFromCatalog as removeParametersFromCatalogAPI,
   deleteCatalogParameter as deleteCatalogParameterAPI,
   getAllParameters as getAllParametersAPI,
   getParameterById as getParameterByIdAPI,
   createParameter as createParameterAPI,
+  updateParameter as updateParameterAPI,
+  deleteParameter as deleteParameterAPI,
   bookingService as bookingServiceAPI,
 } from "../apis/TestOrderServiceAPI.jsx";
+import { setAuthToken } from "../utils/auth";
 
 // ==================== Helper Functions ====================
 export const extractItemsAndMeta = (response, fallbackQuery = {}) => {
@@ -46,45 +50,122 @@ export const extractItemsAndMeta = (response, fallbackQuery = {}) => {
 
 // ==================== Bundle Service ====================
 export const getAllBundles = async (params = {}) => {
-  // Gọi API để lấy bundles từ CatalogBundle
-  const catalogBundleResponse = await getAllBundlesAPI(params);
-  const catalogBundles = extractItemsAndMeta(catalogBundleResponse, params);
-
-  // Lấy thông tin isActive từ TestBundle API để merge
+  console.log("[Service] getAllBundles called with params:", params);
   try {
+    const token = localStorage.getItem("accessToken");
+    if (token) setAuthToken(token);
+    // Lấy bundles từ TestBundle API (chứa tất cả bundles, kể cả chưa có catalog)
+    console.log("[Service] Fetching bundles from TestBundle API...");
     const testBundleResponse = await getAllBundlesWithActive(params);
     const testBundles = extractItemsAndMeta(testBundleResponse, params);
+    console.log(
+      `[Service] TestBundle API returned ${testBundles.items.length} bundles`
+    );
 
-    // Merge: lấy catalogs từ CatalogBundle và isActive từ TestBundle
-    const mergedBundles = catalogBundles.items.map((catalogBundle) => {
-      const testBundle = testBundles.items.find(
-        (tb) =>
-          (tb.bundleId ?? tb.id) ===
-          (catalogBundle.bundleId ?? catalogBundle.id)
-      );
-      return {
-        ...catalogBundle,
-        isActive: testBundle?.isActive ?? catalogBundle.isActive ?? true,
+    // Lấy thông tin catalogs từ CatalogBundle API để merge
+    // Lưu ý: CatalogBundle API chỉ trả về bundles có catalogs
+    // Nên cần lấy với pageSize lớn để đảm bảo lấy được tất cả
+    let catalogBundles = { items: [], meta: { totalItems: 0 } };
+    try {
+      console.log("[Service] Fetching catalogs from CatalogBundle API...");
+      // Lấy tất cả bundles có catalogs (không giới hạn pagination)
+      const catalogBundleParams = {
+        ...params,
+        page: 1,
+        pageSize: 1000, // Lấy số lượng lớn để đảm bảo lấy được tất cả
       };
+      const catalogBundleResponse = await getAllBundlesAPI(catalogBundleParams);
+      catalogBundles = extractItemsAndMeta(
+        catalogBundleResponse,
+        catalogBundleParams
+      );
+      console.log(
+        `[Service] CatalogBundle API returned ${catalogBundles.items.length} bundles with catalogs`
+      );
+    } catch (error) {
+      console.warn(
+        "Could not fetch catalogs from CatalogBundle, using TestBundle data only:",
+        error
+      );
+    }
+
+    // Helper function để so sánh bundle ID một cách an toàn
+    const compareBundleIds = (id1, id2) => {
+      if (!id1 || !id2) return false;
+      // Convert về string để so sánh (xử lý cả số và string)
+      return String(id1) === String(id2);
+    };
+
+    // Merge: lấy tất cả bundles từ TestBundle và thêm catalogs từ CatalogBundle
+    const mergedBundles = testBundles.items.map((testBundle) => {
+      const testBundleId = testBundle.bundleId ?? testBundle.id;
+
+      // Tìm bundle tương ứng trong CatalogBundle response
+      const catalogBundle = catalogBundles.items.find((cb) => {
+        const catalogBundleId = cb.bundleId ?? cb.id;
+        return compareBundleIds(testBundleId, catalogBundleId);
+      });
+
+      // Nếu tìm thấy catalogBundle, merge catalogs
+      // Nếu không tìm thấy, bundle này chưa có catalogs (hoặc không có trong CatalogBundle response)
+      const mergedBundle = {
+        ...testBundle,
+        // Thêm catalogs từ CatalogBundle nếu có, nếu không thì dùng từ testBundle hoặc mảng rỗng
+        catalogs: catalogBundle?.catalogs ?? testBundle.catalogs ?? [],
+        // Ưu tiên isActive từ TestBundle
+        isActive: testBundle.isActive ?? catalogBundle?.isActive ?? true,
+      };
+
+      // Log để debug
+      if (catalogBundle) {
+        console.log(
+          `[Service] Merged bundle ${testBundleId}: found ${
+            catalogBundle.catalogs?.length || 0
+          } catalogs`
+        );
+      } else {
+        console.log(
+          `[Service] Bundle ${testBundleId} has no catalogs in CatalogBundle response`
+        );
+      }
+
+      return mergedBundle;
     });
+
+    console.log(
+      `[Service] getAllBundles returning ${mergedBundles.length} merged bundles`
+    );
 
     return {
       items: mergedBundles,
-      meta: catalogBundles.meta,
+      meta: testBundles.meta, // Sử dụng meta từ TestBundle vì nó chứa tất cả bundles
     };
   } catch (error) {
-    // Nếu TestBundle API lỗi, chỉ trả về dữ liệu từ CatalogBundle
-    console.warn(
-      "Could not fetch isActive from TestBundle, using CatalogBundle data only:",
-      error
-    );
-    return catalogBundles;
+    console.error("[Service] Error fetching bundles from TestBundle:", error);
+    // Fallback: thử lấy từ CatalogBundle nếu TestBundle lỗi
+    try {
+      console.log("[Service] Fallback: trying CatalogBundle API...");
+      const catalogBundleResponse = await getAllBundlesAPI(params);
+      const catalogBundles = extractItemsAndMeta(catalogBundleResponse, params);
+      console.log(
+        `[Service] Fallback returned ${catalogBundles.items.length} bundles`
+      );
+      return catalogBundles;
+    } catch (fallbackError) {
+      console.error(
+        "[Service] Error fetching bundles from both APIs:",
+        fallbackError
+      );
+      throw error; // Throw error gốc
+    }
   }
 };
 
 export const getBundleById = async (id) => {
   if (!id) throw new Error("Bundle ID is required");
   try {
+    const token = localStorage.getItem("accessToken");
+    if (token) setAuthToken(token);
     const response = await getBundleByIdAPI(id);
     if (response?.status === 204 || !response?.data) {
       console.warn(
@@ -106,13 +187,112 @@ export const getBundleById = async (id) => {
 };
 
 export const createBundle = async (payload) => {
-  const response = await createBundleAPI(payload);
-  const data = response?.data;
-  return data?.data || data;
+  try {
+    const token = localStorage.getItem("accessToken");
+    if (token) setAuthToken(token);
+    console.log("[Service] createBundle called with payload:", payload);
+    const response = await createBundleAPI(payload);
+    console.log("[Service] createBundle API response:", {
+      status: response?.status,
+      headers: response?.headers,
+      data: response?.data,
+    });
+
+    // Xử lý trường hợp 204 No Content - API thành công nhưng không trả về data
+    if (response?.status === 204) {
+      console.log(
+        "[Service] createBundle returned 204 No Content - success but no data"
+      );
+
+      // Thử lấy bundleId từ Location header nếu có
+      const location =
+        response?.headers?.location ||
+        response?.headers?.Location ||
+        response?.headers?.["location"] ||
+        response?.headers?.["Location"];
+
+      console.log("[Service] Location header:", location);
+
+      if (location) {
+        // Thử nhiều pattern để extract ID
+        const patterns = [
+          /\/(\d+)$/, // /123
+          /\/([0-9a-fA-F-]+)$/, // UUID hoặc GUID
+          /id[=:](\d+)/i, // id=123 hoặc id:123
+        ];
+
+        for (const pattern of patterns) {
+          const match = location.match(pattern);
+          if (match && match[1]) {
+            const bundleId = match[1];
+            console.log(
+              `[Service] Extracted bundleId from Location header: ${bundleId}`
+            );
+            return { id: bundleId, bundleId: bundleId };
+          }
+        }
+
+        console.warn(
+          "[Service] Location header found but couldn't extract ID:",
+          location
+        );
+      } else {
+        console.warn("[Service] No Location header in 204 response");
+      }
+
+      // Nếu không có Location header, trả về null để component xử lý
+      return null;
+    }
+
+    const data = response?.data;
+    const result = data?.data || data;
+    console.log("[Service] createBundle returning data:", result);
+    return result;
+  } catch (error) {
+    console.error("[Service] createBundle error:", {
+      status: error.response?.status,
+      headers: error.response?.headers,
+      data: error.response?.data,
+      message: error.message,
+    });
+
+    // Xử lý trường hợp 204 trong error response
+    if (error.response?.status === 204) {
+      console.log(
+        "[Service] createBundle error response 204 - treating as success"
+      );
+      const location =
+        error.response?.headers?.location ||
+        error.response?.headers?.Location ||
+        error.response?.headers?.["location"] ||
+        error.response?.headers?.["Location"];
+
+      console.log("[Service] Error Location header:", location);
+
+      if (location) {
+        const patterns = [/\/(\d+)$/, /\/([0-9a-fA-F-]+)$/, /id[=:](\d+)/i];
+
+        for (const pattern of patterns) {
+          const match = location.match(pattern);
+          if (match && match[1]) {
+            const bundleId = match[1];
+            console.log(
+              `[Service] Extracted bundleId from error Location header: ${bundleId}`
+            );
+            return { id: bundleId, bundleId: bundleId };
+          }
+        }
+      }
+      return null;
+    }
+    throw error;
+  }
 };
 
 export const updateBundle = async (id, payload) => {
   if (!id) throw new Error("Bundle ID is required");
+  const token = localStorage.getItem("accessToken");
+  if (token) setAuthToken(token);
   const response = await updateBundleAPI(id, payload);
   const data = response?.data;
   return data?.data || data;
@@ -120,6 +300,8 @@ export const updateBundle = async (id, payload) => {
 
 export const deleteBundle = async (id) => {
   if (!id) throw new Error("Bundle ID is required");
+  const token = localStorage.getItem("accessToken");
+  if (token) setAuthToken(token);
   const response = await deleteBundleAPI(id);
   const data = response?.data;
   return data?.data || data;
@@ -132,6 +314,8 @@ export const getCatalogsOfBundle = async (bundleId) => {
   );
 
   try {
+    const token = localStorage.getItem("accessToken");
+    if (token) setAuthToken(token);
     const response = await getCatalogsOfBundleAPI(bundleId);
     console.log(
       `[Service] Response from getCatalogsOfBundle:`,
@@ -190,6 +374,8 @@ export const getCatalogsOfBundle = async (bundleId) => {
 
 export const addCatalogsToBundle = async (bundleId, catalogIds = []) => {
   if (!bundleId) throw new Error("Bundle ID is required");
+  const token = localStorage.getItem("accessToken");
+  if (token) setAuthToken(token);
   const response = await addCatalogsToBundleAPI(bundleId, catalogIds);
   const data = response?.data;
   return data?.data || data;
@@ -197,6 +383,8 @@ export const addCatalogsToBundle = async (bundleId, catalogIds = []) => {
 
 export const removeCatalogsFromBundle = async (bundleId, catalogIds = []) => {
   if (!bundleId) throw new Error("Bundle ID is required");
+  const token = localStorage.getItem("accessToken");
+  if (token) setAuthToken(token);
   const response = await removeCatalogsFromBundleAPI(bundleId, catalogIds);
   const data = response?.data;
   return data?.data || data;
@@ -211,6 +399,8 @@ export const getAllCatalogs = async (params = {}) => {
     ...params,
   };
 
+  const token = localStorage.getItem("accessToken");
+  if (token) setAuthToken(token);
   const response = await getAllCatalogsAPI(queryParams);
   const data = response?.data;
 
@@ -245,12 +435,16 @@ export const getAllCatalogs = async (params = {}) => {
 
 export const getCatalogById = async (id) => {
   if (!id) throw new Error("Catalog ID is required");
+  const token = localStorage.getItem("accessToken");
+  if (token) setAuthToken(token);
   const response = await getCatalogByIdAPI(id);
   const data = response?.data;
   return data?.data || data;
 };
 
 export const createCatalog = async (payload) => {
+  const token = localStorage.getItem("accessToken");
+  if (token) setAuthToken(token);
   const response = await createCatalogAPI(payload);
   const data = response?.data;
   return data?.data || data;
@@ -258,14 +452,27 @@ export const createCatalog = async (payload) => {
 
 export const updateCatalog = async (id, payload) => {
   if (!id) throw new Error("Catalog ID is required");
+  const token = localStorage.getItem("accessToken");
+  if (token) setAuthToken(token);
   const response = await updateCatalogAPI(id, payload);
   const data = response?.data;
   return data?.data || data;
 };
 
-export const updateCatalogParameters = async (id, parameterIds = []) => {
+export const addParametersToCatalog = async (id, parameterIds = []) => {
   if (!id) throw new Error("Catalog ID is required");
-  const response = await updateCatalogParametersAPI(id, parameterIds);
+  const token = localStorage.getItem("accessToken");
+  if (token) setAuthToken(token);
+  const response = await addParametersToCatalogAPI(id, parameterIds);
+  const data = response?.data;
+  return data?.data || data;
+};
+
+export const removeParametersFromCatalog = async (id, parameterIds = []) => {
+  if (!id) throw new Error("Catalog ID is required");
+  const token = localStorage.getItem("accessToken");
+  if (token) setAuthToken(token);
+  const response = await removeParametersFromCatalogAPI(id, parameterIds);
   const data = response?.data;
   return data?.data || data;
 };
@@ -273,6 +480,8 @@ export const updateCatalogParameters = async (id, parameterIds = []) => {
 export const deleteCatalogParameter = async (catalogId, parameterId) => {
   if (!catalogId) throw new Error("Catalog ID is required");
   if (!parameterId) throw new Error("Parameter ID is required");
+  const token = localStorage.getItem("accessToken");
+  if (token) setAuthToken(token);
   const response = await deleteCatalogParameterAPI(catalogId, parameterId);
   const data = response?.data;
   return data?.data || data;
@@ -280,12 +489,16 @@ export const deleteCatalogParameter = async (catalogId, parameterId) => {
 
 // ==================== Parameter Service ====================
 export const getAllParameters = async (params = {}) => {
+  const token = localStorage.getItem("accessToken");
+  if (token) setAuthToken(token);
   const response = await getAllParametersAPI(params);
   return extractItemsAndMeta(response, params);
 };
 
 export const getParameterById = async (id) => {
   if (!id) throw new Error("Parameter ID is required");
+  const token = localStorage.getItem("accessToken");
+  if (token) setAuthToken(token);
   const response = await getParameterByIdAPI(id);
   const data = response?.data;
   if (data?.data) return data.data;
@@ -294,38 +507,68 @@ export const getParameterById = async (id) => {
 
 export const createParameter = async (payload) => {
   if (!payload) throw new Error("Payload is required");
+  const token = localStorage.getItem("accessToken");
+  if (token) setAuthToken(token);
   const response = await createParameterAPI(payload);
   return response?.data;
+};
+
+export const updateParameter = async (id, payload) => {
+  if (!id) throw new Error("Parameter ID is required");
+  const token = localStorage.getItem("accessToken");
+  if (token) setAuthToken(token);
+  const response = await updateParameterAPI(id, payload);
+  const data = response?.data;
+  return data?.data || data;
+};
+
+export const deleteParameter = async (id) => {
+  if (!id) throw new Error("Parameter ID is required");
+  const token = localStorage.getItem("accessToken");
+  if (token) setAuthToken(token);
+  const response = await deleteParameterAPI(id);
+  const data = response?.data;
+  return data?.data || data;
 };
 
 // ==================== Booking Service ====================
 export const bookingService = {
   // Lấy thông tin booking theo ID
   getBookingById: async (bookingId) => {
+    const token = localStorage.getItem("accessToken");
+    if (token) setAuthToken(token);
     const response = await bookingServiceAPI.getBookingById(bookingId);
     return response?.data || response;
   },
 
   // Lấy thông tin test catalog
   getTestCatalog: async (catalogId) => {
+    const token = localStorage.getItem("accessToken");
+    if (token) setAuthToken(token);
     const response = await bookingServiceAPI.getTestCatalog(catalogId);
     return response?.data || response;
   },
 
   // Lấy thông tin test bundle
   getTestBundle: async (bundleId) => {
+    const token = localStorage.getItem("accessToken");
+    if (token) setAuthToken(token);
     const response = await bookingServiceAPI.getTestBundle(bundleId);
     return response?.data || response;
   },
 
   // Tạo VNPay URL
   createVnPayUrl: async (bookingId, amount) => {
+    const token = localStorage.getItem("accessToken");
+    if (token) setAuthToken(token);
     const response = await bookingServiceAPI.createVnPayUrl(bookingId, amount);
     return response?.data || response;
   },
 
   // Lấy thông tin số lượng booking của các appointment slots
   getAppointmentSlotCounts: async () => {
+    const token = localStorage.getItem("accessToken");
+    if (token) setAuthToken(token);
     const response = await bookingServiceAPI.getAppointmentSlotCounts();
     return response?.data || response;
   },

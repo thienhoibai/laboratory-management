@@ -6,6 +6,6 @@ public record UpdateInstrumentRequest(
     string? Name,
     InstrumentStatus? Status,
     ReagentStatus? ReagentStatus,
-    string? ImageUrl
+    string? ImagePath
 );
 

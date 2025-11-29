@@ -6,6 +6,6 @@ public record CreateInstrumentRequest(
     string InstrumentCode,
     string Name,
     InstrumentStatus Status = InstrumentStatus.Online,
-    string? ImageUrl = null
+    string? ImagePath = null
 );
 

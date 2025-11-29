@@ -10,7 +10,6 @@ const rolePermissions = {
     "users",
     "roles",
     "instruments",
-    "reagents",
     "blogs",
     "patients",
     "packages",
@@ -23,21 +22,16 @@ const rolePermissions = {
     "dashboard",
     "users",
     "instruments",
-    "reagents",
     "blogs",
     "patients",
     "catalogs",
     "parameter",
     "appointment-schedule",
   ],
-  Staff: [
-    "instruments",
-    "reagents",
-    "blogs",
-    "patients",
-    "packages",
-    "appointment-schedule",
-  ],
+  Receptionist: ["dashboard", "patients", "appointment-schedule"],
+  LabBlogger: ["dashboard", "blogs"],
+  Technician: ["dashboard", "instruments"],
+  LabUser: ["dashboard", "patients", "appointment-schedule"],
 };
 
 // Get current user role from token
@@ -48,9 +42,8 @@ export const getCurrentUserRole = () => {
 
     const decoded = jwtDecode(token);
     const role =
-      decoded[
-        "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
-      ] || decoded.role;
+      decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] ||
+      decoded.role;
 
     return role || null;
   } catch (error) {
@@ -91,10 +84,25 @@ export const isStaff = () => {
   return getCurrentUserRole() === "Staff";
 };
 
+
+export const isLabBlogger = () => {
+  return getCurrentUserRole() === "LabBlogger";
+};
+
+export const isTechnician = () => {
+  return getCurrentUserRole() === "Technician";
+};
 // Check if user can access management pages
 export const canAccessManagement = () => {
   const role = getCurrentUserRole();
-  return role === "Admin" || role === "Manager" || role === "Staff";
+  return (
+    role === "Admin" ||
+    role === "Manager" ||
+    role === "LabUser" ||
+    role === "Receptionist" ||
+    role === "LabBlogger" ||
+    role === "Technician"
+  );
 };
 
 // Get menu items based on user role
@@ -102,18 +110,62 @@ export const getMenuItems = () => {
   const permissions = getUserPermissions();
 
   const allMenuItems = [
-    { path: "/dashboard", icon: "dashboard", name: "Tổng quan", permission: "dashboard" },
-    { path: "/appointment-schedule", icon: "appointment-schedule", name: "Lịch xét nghiệm", permission: "appointment-schedule" },
+    {
+      path: "/dashboard",
+      icon: "dashboard",
+      name: "Tổng quan",
+      permission: "dashboard",
+    },
+    {
+      path: "/appointment-schedule",
+      icon: "appointment-schedule",
+      name: "Lịch xét nghiệm",
+      permission: "appointment-schedule",
+    },
     { path: "/users", icon: "users", name: "Người dùng", permission: "users" },
-    { path: "/roles", icon: "roles", name: "Quyền truy cập", permission: "roles" },
-    { path: "/instruments", icon: "instruments", name: "Thiết bị", permission: "instruments" },
-    { path: "/reagents", icon: "reagents", name: "Thuốc thử", permission: "reagents" },
+    {
+      path: "/roles",
+      icon: "roles",
+      name: "Quyền truy cập",
+      permission: "roles",
+    },
+    {
+      path: "/instruments",
+      icon: "instruments",
+      name: "Thiết bị",
+      permission: "instruments",
+    },
     { path: "/blogs", icon: "blogs", name: "Bài viết", permission: "blogs" },
-    { path: "/patients", icon: "patients", name: "Bệnh nhân", permission: "patients" },
-    { path: "/packages", icon: "packages", name: "Gói xét nghiệm", permission: "packages" },
-    { path: "/catalogs", icon: "catalogs", name: "Mục xét nghiệm", permission: "catalogs" },
-    { path: "/parameter", icon: "parameter", name: "Chỉ số xét nghiệm", permission: "parameter" },
-    { path: "/reports", icon: "reports", name: "Báo cáo", permission: "reports" },
+    {
+      path: "/patients",
+      icon: "patients",
+      name: "Bệnh nhân",
+      permission: "patients",
+    },
+    {
+      path: "/packages",
+      icon: "packages",
+      name: "Gói xét nghiệm",
+      permission: "packages",
+    },
+    {
+      path: "/catalogs",
+      icon: "catalogs",
+      name: "Mục xét nghiệm",
+      permission: "catalogs",
+    },
+    {
+      path: "/parameter",
+      icon: "parameter",
+      name: "Chỉ số xét nghiệm",
+      permission: "parameter",
+    },
+    {
+      path: "/reports",
+      icon: "reports",
+      name: "Báo cáo",
+      permission: "reports",
+    },
   ];
 
   return allMenuItems.filter((item) => permissions.includes(item.permission));
@@ -129,4 +181,3 @@ export default {
   canAccessManagement,
   getMenuItems,
 };
-

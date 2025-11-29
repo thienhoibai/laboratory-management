@@ -3,14 +3,19 @@ import { Pagination, Spin } from "antd";
 import "./BookingHistory.css";
 import api from "../../configs/axios";
 import { formatDate, formatTime } from "../../utils/formatDate";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
-const endPoint = "testorder/api/Booking/patient";
-const endPoint1 = "testorder/api/TestBundle";
-const endPointCatalog = "testorder/api/TestCatalog";
+import TestOrderServiceAPI from "../../apis/TestOrderServiceAPI";
+import { setAuthToken } from "../../utils/auth";
 
-export default function BookingHistory() {
+function BookingHistory() {
+  const endPoint = "testorder/api/Booking/patient";
+  const endPoint1 = "testorder/api/TestBundle";
+  const endPointCatalog = "testorder/api/TestCatalog";
+
   const [expanded, setExpanded] = useState({});
+  const navigate = useNavigate();
   const [BookingHistory, setBookingHistory] = useState([]);
   const [allBookings, setAllBookings] = useState([]); // Store all bookings
   const [Package, setPackage] = useState({}); // map: bundleId -> package
@@ -29,12 +34,13 @@ export default function BookingHistory() {
     const fetchAPi = async () => {
       try {
         setLoading(true);
+        const token = localStorage.getItem("accessToken");
+        if (token) setAuthToken(token);
         // Fetch all data with large pageSize
         const response = await api.get(
           `${endPoint}?patientId=${patientId}&pageNumber=1&pageSize=1000000`
         );
         const data = response.data.bookingResponses;
-        console.log(data);
         if (response.status >= 200 && response.status < 300) {
           let allItems = [];
           if (Array.isArray(data)) {
@@ -71,6 +77,8 @@ export default function BookingHistory() {
 
           // Fetch packages by bundleId in parallel
           if (bundleIds.length) {
+            const token = localStorage.getItem("accessToken");
+            if (token) setAuthToken(token);
             const pkgEntries = await Promise.all(
               bundleIds.map(async (id) => {
                 try {
@@ -90,6 +98,8 @@ export default function BookingHistory() {
 
           // Fetch catalogs by catalogId in parallel
           if (catalogIds.length) {
+            const token = localStorage.getItem("accessToken");
+            if (token) setAuthToken(token);
             const catalogEntries = await Promise.all(
               catalogIds.map(async (id) => {
                 try {
@@ -111,20 +121,30 @@ export default function BookingHistory() {
 
           // Fetch payments by bookingId in parallel
           if (bookingIds.length) {
+            const token = localStorage.getItem("accessToken");
+            if (token) setAuthToken(token);
             const payEntries = await Promise.all(
               bookingIds.map(async (id) => {
                 try {
                   const r = await api.get(
                     `testorder/api/Payment/by-booking?bookingId=${id}`
                   );
-                  if (r.status >= 200 && r.status < 300) return [id, r.data];
+                  if (r.status >= 200 && r.status < 300) {
+                    console.log("data" + r);
+                    return [id, r.data];
+                  }
                 } catch (error) {
+                  // Nếu payment không tồn tại (400 BadRequest), có nghĩa là đang chờ thanh toán
                   console.log(error);
+                  return [
+                    id,
+                    { status: "unpaid", method: "Chưa có", amount: 0 },
+                  ];
                 }
-                return [id, null];
+                return [id, { status: "unpaid", method: "Chưa có", amount: 0 }];
               })
             );
-            const payMap = Object.fromEntries(payEntries.filter(([, v]) => v));
+            const payMap = Object.fromEntries(payEntries);
             SetPayments(payMap);
           } else {
             SetPayments({});
@@ -167,8 +187,38 @@ export default function BookingHistory() {
         return { text: "Đã thanh toán", className: "badge-blue" };
       case "cancelled":
         return { text: "Đã hủy", className: "badge-red" };
+      case "unpaid":
+        return { text: "Chưa thanh toán", className: "badge-gray" };
       default:
         return { text: status, className: "" };
+    }
+  };
+
+  const handlePay = async (bookingId, amount) => {
+    try {
+      if (!bookingId) return toast.error("Thiếu bookingId");
+      if (!amount || amount <= 0)
+        return toast.error("Không xác định được số tiền");
+      const token = localStorage.getItem("accessToken");
+      if (token) setAuthToken(token);
+      const resp = await TestOrderServiceAPI.bookingService.createVnPayUrl(
+        bookingId,
+        amount
+      );
+      // Giả sử API trả về { data: { paymentUrl: "..." } } hoặc trực tiếp url
+      const payUrl =
+        resp?.data?.paymentUrl ||
+        resp?.data?.url ||
+        resp?.data?.vnpUrl ||
+        resp?.data;
+      if (typeof payUrl === "string") {
+        window.location.href = payUrl;
+      } else {
+        toast.error("Không lấy được URL thanh toán");
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error(e?.response?.data?.message || "Tạo URL thanh toán thất bại");
     }
   };
 
@@ -233,6 +283,14 @@ export default function BookingHistory() {
             const payS = payment
               ? paymentStatus(payment.status)
               : { text: "Chưa Thanh Toán", className: "" };
+            const derivedAmount = b.totalAmount;
+            const bookingStatusLower = String(b.status).toLowerCase();
+            const paymentStatusLower = String(
+              payment?.status || "unpaid"
+            ).toLowerCase();
+            const shouldShowPayButton =
+              ["pending", "confirmed"].includes(bookingStatusLower) &&
+              ["unpaid", "pending"].includes(paymentStatusLower);
 
             return (
               <div
@@ -325,7 +383,7 @@ export default function BookingHistory() {
                               : b.catalogId
                               ? catalog?.catalogName ||
                                 `Dịch vụ #${b.catalogId}`
-                              : "Không có thông tin"}
+                              : "Xét nghiệm đơn lẻ"}
                           </span>
                         </div>
                         {/* Nếu có thêm thông tin về dịch vụ hoặc catalog, có thể hiển thị ở đây */}
@@ -345,14 +403,14 @@ export default function BookingHistory() {
                           </span>
                         </div>
                         {/* Nếu có trường price thì hiển thị, nếu không thì bỏ qua */}
-                        {typeof payment?.amount === "number" && (
+                        {derivedAmount > 0 && (
                           <div className="info-row">
                             <div className="info-row-1">
                               <img src="src\assets\icon\Pay.svg" alt="Pay" />
                               <span className="label">Tổng tiền</span>
                             </div>
                             <span className="value">
-                              {payment.amount.toLocaleString("vi-VN")} ₫
+                              {derivedAmount.toLocaleString("vi-VN")} ₫
                             </span>
                           </div>
                         )}
@@ -362,18 +420,39 @@ export default function BookingHistory() {
                           </div>
                           <span className={`value`}>{payS.text}</span>
                         </div>
+                        {shouldShowPayButton && (
+                          <div className="info-row" style={{ marginTop: 8 }}>
+                            <button
+                              className="btn-primary-history-booking"
+                              onClick={() => {
+                                if (derivedAmount <= 0) {
+                                  toast.error(
+                                    "Không xác định được giá. Vui lòng liên hệ nhân viên."
+                                  );
+                                } else {
+                                  handlePay(b.bookingId, derivedAmount);
+                                }
+                              }}
+                            >
+                              Thanh toán
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
 
                   {/* result area: chỉ hiển thị nếu có status completed/cancelled */}
-                  <h3>Kết quả xét nghiệm</h3>
+                  <strong>
+                    <h2>Kết quả xét nghiệm</h2>
+                  </strong>
                   <div className="result-area" style={{ marginTop: 20 }}>
                     {String(b.status).toLowerCase() === "completed" ? (
                       <div className="result-box ready">
                         <img
                           src="src\assets\icon\Document_Border.svg"
                           alt="Document_Borders"
+                          className="img-doc"
                         />{" "}
                         <br />
                         <strong style={{ fontSize: "18px" }}>
@@ -388,9 +467,17 @@ export default function BookingHistory() {
                         >
                           Vui lòng liên hệ phòng khám để nhận kết quả.
                         </p>
-                        <button className="btn-primary-history-booking">
+                        <button
+                          className="btn-primary-history-booking"
+                          onClick={() => {
+                            // Điều hướng sang trang MedicalRecordDetail và truyền bookingId
+                            navigate(
+                              `/medical-record?patientId=${b.patientId}&bookingId=${b.bookingId}`
+                            );
+                          }}
+                        >
                           <img
-                            src="src\assets\icon\Document_white.svg"
+                            src="src/assets/icon/Document_white.svg"
                             alt=""
                           />
                           Xem chi tiết kết quả xét nghiệm
@@ -446,3 +533,5 @@ export default function BookingHistory() {
     </div>
   );
 }
+
+export default BookingHistory;
