@@ -3,17 +3,20 @@
   display: flex;
   flex-direction: column;
   background: #f9fafb;
+  -webkit-user-select: none;
   user-select: none;
   cursor: default;
 }
 
 /* Cho phép select text trong nội dung bài viết */
 .blog-detail-body {
+  -webkit-user-select: text !important;
   user-select: text !important;
   cursor: text !important;
 }
 
 .blog-detail-body * {
+  -webkit-user-select: text !important;
   user-select: text !important;
 }
 
@@ -21,6 +24,7 @@
 .blog-detail-body button,
 .blog-detail-body a {
   cursor: pointer !important;
+  -webkit-user-select: none !important;
   user-select: none !important;
 }
 

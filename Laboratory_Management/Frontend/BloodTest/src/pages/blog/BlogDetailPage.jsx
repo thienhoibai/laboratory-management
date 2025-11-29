@@ -432,23 +432,27 @@ export default function BlogDetailPage() {
           ) : (
             <div className="blog-comments-list">
               {comments.map((comment) => {
-                // Debug: Log to check values
-                console.log("Comment check:", {
-                  commentId: comment.id,
-                  commentAuthorId: comment.authorId,
-                  currentUserId: currentUserId,
-                  isAuthenticated: isAuthenticated,
-                  authorIdType: typeof comment.authorId,
-                  userIdType: typeof currentUserId,
-                  match: String(currentUserId) === String(comment.authorId),
-                });
-
+                // Normalize IDs for comparison (remove whitespace, convert to lowercase)
+                const normalizedCurrentUserId = currentUserId ? String(currentUserId).trim().toLowerCase() : null;
+                const normalizedCommentAuthorId = comment.authorId ? String(comment.authorId).trim().toLowerCase() : null;
+                
                 const isOwner =
                   isAuthenticated &&
-                  currentUserId &&
-                  comment.authorId &&
-                  String(currentUserId).trim() ===
-                    String(comment.authorId).trim();
+                  normalizedCurrentUserId &&
+                  normalizedCommentAuthorId &&
+                  normalizedCurrentUserId === normalizedCommentAuthorId;
+                
+                // Debug log
+                if (isAuthenticated && currentUserId) {
+                  console.log("Comment ownership check:", {
+                    commentId: comment.id,
+                    commentAuthorId: comment.authorId,
+                    normalizedCommentAuthorId: normalizedCommentAuthorId,
+                    currentUserId: currentUserId,
+                    normalizedCurrentUserId: normalizedCurrentUserId,
+                    isOwner: isOwner
+                  });
+                }
 
                 return (
                   <div
@@ -487,21 +491,13 @@ export default function BlogDetailPage() {
                         <div className="blog-comment-header">
                           <div className="blog-comment-author">
                             <strong>{comment.author || "Unknown"}</strong>
-                            {isAuthenticated &&
-                              currentUserId &&
-                              comment.authorId &&
-                              String(currentUserId) ===
-                                String(comment.authorId) && (
-                                <span className="blog-comment-owner-badge">
-                                  Bạn
-                                </span>
-                              )}
+                            {isOwner && (
+                              <span className="blog-comment-owner-badge">
+                                Bạn
+                              </span>
+                            )}
                           </div>
-                          {isAuthenticated &&
-                            currentUserId &&
-                            comment.authorId &&
-                            String(currentUserId) ===
-                              String(comment.authorId) && (
+                          {isOwner && (
                               <div className="blog-comment-menu-container">
                                 <button
                                   className="blog-comment-menu-btn"
