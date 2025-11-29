@@ -182,6 +182,8 @@ public class InstrumentsController : ControllerBase
                 request.InstrumentCode,
                 request.Name,
                 (InstrumentStatus)request.Status,
+                (ReagentStatus)request.ReagentStatus,
+
                 imagePath);
             
             var instrument = await _service.CreateAsync(appDto);
