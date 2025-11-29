@@ -6,12 +6,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TestOrder.Infrastructure.Base;
+using TestOrder.Infrastructure.Enums;
 using TestOrder.Infrastructure.Models;
 
 namespace TestOrder.Infrastructure.Repository
 {
     public class BookingRepository : GenericRepository<Booking>
     {
+        
         public BookingRepository(Data.TestOrderDBContext context) : base(context)
         {
         }
@@ -19,7 +21,15 @@ namespace TestOrder.Infrastructure.Repository
         {
         }
 
-        public async Task<(IEnumerable<Booking>? items, int totalItems)> GetBookingsByPatientIdAsync(Guid patientId, int pageNumber, int pageSize)
+        public async Task<IEnumerable<Booking?>> GetPendingBookingAsync(DateTime expiryThreshold)
+        {
+            return await _context.Set<Booking>()
+                .Where(b => b.Status == (byte)BookingStatusEnum.Pending && b.CreateAt <= expiryThreshold)
+                .ToListAsync();
+        }
+
+        public async Task<(IEnumerable<Booking>? items, int totalItems)> GetBookingsByPatientIdAsync
+            (Guid patientId, int pageNumber, int pageSize, byte? filterStatus)
         {
             var query = _context.Set<Booking>()
                 .Where(b => b.PatientId == patientId);
@@ -27,6 +37,12 @@ namespace TestOrder.Infrastructure.Repository
             {
                 throw new ArgumentException("No bookings found for the specified patient ID.");
             }
+
+            if (filterStatus.HasValue)
+            {
+                query = query.Where(b => b.Status == filterStatus.Value);
+            }
+
             var totalItems = await query.CountAsync();
             var items = await query
                 .OrderByDescending(b => b.BookingCode)

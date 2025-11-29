@@ -107,7 +107,7 @@ namespace TestOrder.Presentation.Controllers
                         Amount = amount
                     };
                     string id = await paymentService.UpdatePaymentAsync(token, updatePaymentDto, vnPayResponse.IsSuccess);
-                    return Redirect($"{paymentSuccess}{id}&Amount={amount}");
+                    return Redirect($"{paymentSuccess}{id}");
                 }
                 else
                 {
