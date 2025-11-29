@@ -225,41 +225,60 @@ public class InstrumentsController : ControllerBase
     [Authorize(Policy = "perm:Instrument.Update")]
     public async Task<IActionResult> Update(string code, [FromForm] UpdateInstrumentHttpRequest request)
     {
-        try
+        // Lấy thông tin máy hiện có
+        var instrument = await _service.GetByCodeAsync(code);
+        if (instrument == null)
+            return NotFound(new { error = $"Instrument '{code}' not found." });
+
+        string? newImagePath = instrument.ImagePath;
+
+        // Nếu có upload ảnh mới
+        if (request.Image != null)
         {
-            string? imagePath = null;
+            _logger.LogInformation("🔵 Updating image...");
 
-            // Nếu có upload file → lưu file
-            if (request.Image != null)
+            var folder = Path.Combine(Directory.GetCurrentDirectory(), "Images");
+            Directory.CreateDirectory(folder);
+
+            var fileName = $"{Guid.NewGuid()}{Path.GetExtension(request.Image.FileName)}";
+            var savePath = Path.Combine(folder, fileName);
+
+            using (var stream = new FileStream(savePath, FileMode.Create))
             {
-                var fileName = $"{Guid.NewGuid()}_{request.Image.FileName}";
-                var savePath = Path.Combine("/images/instruments", fileName);
-
-                Directory.CreateDirectory(Path.GetDirectoryName(savePath)!);
-                using var stream = new FileStream(savePath, FileMode.Create);
                 await request.Image.CopyToAsync(stream);
-
-                imagePath = $"/images/instruments/{fileName}";
             }
-            var appRequest = new Instrument.Application.Instruments.DTOs.Requests.UpdateInstrumentRequest(
+
+            // Lưu đường dẫn mới vào DB
+            newImagePath = Path.Combine("Images", fileName);
+
+            // Xóa ảnh cũ nếu tồn tại
+            if (!string.IsNullOrEmpty(instrument.ImagePath))
+            {
+                var oldImage = Path.Combine(Directory.GetCurrentDirectory(), instrument.ImagePath);
+                if (System.IO.File.Exists(oldImage))
+                {
+                    System.IO.File.Delete(oldImage);
+                    _logger.LogInformation($"🗑 Deleted old image: {oldImage}");
+                }
+            }
+
+            _logger.LogInformation($"📷 Updated image: {newImagePath}");
+        }
+
+        // Map sang DTO Application
+        var appRequest = new Instrument.Application.Instruments.DTOs.Requests.UpdateInstrumentRequest(
             request.Name,
             request.Status,
             request.ReagentStatus,
-            imagePath
-);
+            newImagePath
+        );
 
-            var instrument = await _service.UpdateAsync(code, appRequest);
+        // Cập nhật instrument
+        var updated = await _service.UpdateAsync(code, appRequest);
 
-            if (instrument == null)
-                return NotFound(new { error = $"Instrument '{code}' not found." });
-
-            return Ok(instrument);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
+        return Ok(updated);
     }
+
 
 
     /// <summary>
