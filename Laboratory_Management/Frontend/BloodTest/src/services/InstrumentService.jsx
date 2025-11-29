@@ -5,7 +5,7 @@ import {
   getInstrumentById,
   getInstruments,
   updateInstrumentByCode,
-} from "../apis/InstrumentAPI";
+} from "../apis/InstrumentAPI.jsx";
 
 const formatError = (error) => {
   if (!error) return new Error("Đã có lỗi không xác định.");
@@ -31,12 +31,107 @@ const normalizeListResponse = (payload) => {
   return Array.isArray(firstArrayValue) ? firstArrayValue : [];
 };
 
+/**
+ * Helper function to build full image URL for instrument
+ * @param {string} imagePath - Image path from API (can be relative or absolute)
+ * @returns {string} Full image URL
+ */
+const buildInstrumentImageUrl = (imagePath) => {
+  if (!imagePath || imagePath.trim() === "") return "";
+
+  const trimmedPath = imagePath.trim();
+  const baseURL = "http://localhost:8080";
+
+  // If already a full URL (starts with http:// or https://), return as is
+  if (trimmedPath.startsWith("http://") || trimmedPath.startsWith("https://")) {
+    return trimmedPath;
+  }
+
+  // If starts with /, it's a relative path from root
+  if (trimmedPath.startsWith("/")) {
+    return `${baseURL}${trimmedPath}`;
+  }
+
+  // If path starts with "Images/", append directly to /instrument/
+  // Example: "Images/f4a44ab4-81cf-47de-9555-d67ccf02fbb1.jpg"
+  // Result: http://localhost:8080/instrument/Images/f4a44ab4-81cf-47de-9555-d67ccf02fbb1.jpg
+  if (trimmedPath.startsWith("Images/")) {
+    // Build URL: http://localhost:8080/instrument/Images/...
+    return `${baseURL}/instrument/${trimmedPath}`;
+  }
+
+  // Otherwise, assume it's just a filename and try common paths
+  return `${baseURL}/instrument/Images/${trimmedPath}`;
+};
+
 const mapInstrumentShape = (instrument = {}) => {
-  const code = instrument.code ?? instrument.instrumentCode ?? "";
+  const code =
+    instrument.code ??
+    instrument.instrumentCode ??
+    instrument.InstrumentCode ??
+    "";
   const machineStatus =
-    instrument.machineStatus ?? instrument.status ?? "ACTIVE";
-  const reagentStatus =
-    instrument.reagentStatus ?? instrument.reagent_status ?? "FULL";
+    instrument.machineStatus ??
+    instrument.status ??
+    instrument.Status ??
+    instrument.MachineStatus ??
+    "ACTIVE";
+
+  // Lấy reagentStatus từ nhiều nguồn có thể
+  const rawReagentStatus =
+    instrument.reagentStatus ??
+    instrument.reagent_status ??
+    instrument.ReagentStatus ??
+    instrument.Reagent_Status;
+
+  // Debug: Log để kiểm tra dữ liệu từ API
+  if (rawReagentStatus === undefined || rawReagentStatus === null) {
+    console.log("⚠️ ReagentStatus not found in instrument data:", {
+      code,
+      allKeys: Object.keys(instrument),
+      instrument,
+    });
+  }
+
+  const reagentStatus = rawReagentStatus ?? "FULL";
+
+  // Get image path from various possible fields
+  const rawImagePath =
+    instrument.imagePath ||
+    instrument.ImagePath ||
+    instrument.imageUrl ||
+    instrument.ImageUrl ||
+    "";
+  const imageUrl = buildInstrumentImageUrl(rawImagePath);
+
+  // Debug: Log image URL for troubleshooting (only if image exists)
+  if (rawImagePath) {
+    console.log("📸 Instrument Image Debug:", {
+      code,
+      name: instrument.name || instrument.Name,
+      rawImagePath,
+      builtImageUrl: imageUrl,
+      allImageFields: {
+        imagePath: instrument.imagePath,
+        ImagePath: instrument.ImagePath,
+        imageUrl: instrument.imageUrl,
+        ImageUrl: instrument.ImageUrl,
+      },
+    });
+  }
+
+  console.log("🔍 Mapped instrument:", {
+    code,
+    originalReagentStatus: rawReagentStatus,
+    mappedReagentStatus: reagentStatus,
+    allFields: {
+      reagentStatus: instrument.reagentStatus,
+      reagent_status: instrument.reagent_status,
+      ReagentStatus: instrument.ReagentStatus,
+      Reagent_Status: instrument.Reagent_Status,
+    },
+  });
+
   return {
     ...instrument,
     code,
@@ -44,6 +139,8 @@ const mapInstrumentShape = (instrument = {}) => {
     machineStatus,
     status: machineStatus,
     reagentStatus,
+    imageUrl: imageUrl, // Add built image URL
+    imagePath: rawImagePath, // Keep original path for reference
   };
 };
 
@@ -66,9 +163,19 @@ const buildInstrumentPayload = (
       // Backend expect enum (số), gửi số trực tiếp
       formData.append("Status", status);
     }
-    if (typeof reagentStatus !== "undefined") {
-      // Backend expect enum (số), gửi số trực tiếp
-      formData.append("ReagentStatus", reagentStatus);
+    if (typeof reagentStatus !== "undefined" && reagentStatus !== null) {
+      // Backend expect enum (số), gửi dưới dạng string để đảm bảo backend nhận được
+      // Một số backend yêu cầu string thay vì number trong FormData
+      formData.append("ReagentStatus", String(reagentStatus));
+      console.log("📤 Sending ReagentStatus in FormData:", {
+        original: reagentStatus,
+        type: typeof reagentStatus,
+        asString: String(reagentStatus),
+      });
+    } else {
+      console.warn(
+        "⚠️ ReagentStatus is undefined or null, not sending to backend"
+      );
     }
     formData.append("Image", imageFile); // Backend expect "Image" not "imageFile"
 
@@ -91,8 +198,18 @@ const buildInstrumentPayload = (
   if (code && !isUpdate) payload.InstrumentCode = code;
   if (name) payload.Name = name;
   if (typeof status !== "undefined") payload.Status = status;
-  if (typeof reagentStatus !== "undefined")
+  if (typeof reagentStatus !== "undefined" && reagentStatus !== null) {
     payload.ReagentStatus = reagentStatus;
+    console.log("📤 Sending ReagentStatus in JSON:", {
+      original: reagentStatus,
+      type: typeof reagentStatus,
+      value: payload.ReagentStatus,
+    });
+  } else {
+    console.warn(
+      "⚠️ ReagentStatus is undefined or null, not sending to backend"
+    );
+  }
   if (typeof imageFile === "string" && imageFile) {
     payload.ImagePath = imageFile;
   }

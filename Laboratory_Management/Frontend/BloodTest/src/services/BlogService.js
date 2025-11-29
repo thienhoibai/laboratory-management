@@ -66,6 +66,39 @@ const BlogService = {
   },
 
   /**
+   * Helper function to build full image URL
+   * @param {string} imagePath - Image path from API (can be relative or absolute)
+   * @returns {string} Full image URL
+   */
+  buildImageUrl: (imagePath) => {
+    if (!imagePath || imagePath.trim() === "") return "";
+    
+    const trimmedPath = imagePath.trim();
+    const baseURL = "http://localhost:8080";
+    
+    // If already a full URL (starts with http:// or https://), return as is
+    if (trimmedPath.startsWith("http://") || trimmedPath.startsWith("https://")) {
+      return trimmedPath;
+    }
+    
+    // If starts with /, it's a relative path from root
+    if (trimmedPath.startsWith("/")) {
+      return `${baseURL}${trimmedPath}`;
+    }
+    
+    // If path starts with "Images/", append directly to /blog/
+    // Example: "Images/f4a44ab4-81cf-47de-9555-d67ccf02fbb1.jpg"
+    // Result: http://localhost:8080/blog/Images/f4a44ab4-81cf-47de-9555-d67ccf02fbb1.jpg
+    if (trimmedPath.startsWith("Images/")) {
+      // Build URL: http://localhost:8080/blog/Images/...
+      return `${baseURL}/blog/${trimmedPath}`;
+    }
+    
+    // Otherwise, assume it's just a filename and try common paths
+    return `${baseURL}/blog/api/BlogPost/Images/${trimmedPath}`;
+  },
+
+  /**
    * Transform API blog data to UI format
    * @param {Object} apiBlog - Blog data from API
    * @returns {Object} Transformed blog object for UI
@@ -77,6 +110,28 @@ const BlogService = {
       apiBlog.tag ||
       "";
     const status = BlogService.mapStatusFromAPI(apiBlog.status);
+    
+    // Get image URL from various possible fields (including imagePath from API)
+    const rawImageUrl = apiBlog.imagePath || apiBlog.imageUrl || apiBlog.thumbnailUrl || apiBlog.img || apiBlog.image || "";
+    const imageUrl = BlogService.buildImageUrl(rawImageUrl);
+    
+    // Debug: Log image URL for troubleshooting (only if image exists)
+    if (rawImageUrl) {
+      console.log("📸 Blog Image Debug:", {
+        blogId: apiBlog.blogPostId || apiBlog.postId || apiBlog.id,
+        title: apiBlog.title,
+        rawImageUrl,
+        builtImageUrl: imageUrl,
+        allImageFields: {
+          imagePath: apiBlog.imagePath,
+          imageUrl: apiBlog.imageUrl,
+          thumbnailUrl: apiBlog.thumbnailUrl,
+          img: apiBlog.img,
+          image: apiBlog.image,
+        },
+      });
+    }
+    
     return {
       id: apiBlog.blogPostId || apiBlog.postId || apiBlog.id,
       title: apiBlog.title || "",
@@ -87,8 +142,9 @@ const BlogService = {
       tag: apiBlog.tag || categoryName,
       status,
       content: apiBlog.content || "",
-      img: apiBlog.imageUrl || apiBlog.thumbnailUrl || apiBlog.img || "",
-      thumbnailUrl: apiBlog.thumbnailUrl || apiBlog.imageUrl || "",
+      img: imageUrl,
+      thumbnailUrl: imageUrl,
+      imageUrl: imageUrl,
       createdDate: apiBlog.createdDate ? formatDate1(apiBlog.createdDate) : "",
       updatedDate: apiBlog.updatedDate ? formatDate1(apiBlog.updatedDate) : "",
       date: apiBlog.createdDate
@@ -114,7 +170,49 @@ const BlogService = {
   },
 
   /**
-   * Transform UI blog data to API format
+   * Build FormData for blog API (backend requires multipart/form-data)
+   * @param {Object} uiBlog - Blog data from UI
+   * @returns {FormData} FormData with blog fields
+   */
+  buildBlogPayload: (uiBlog) => {
+    const hasCategoryId =
+      uiBlog.categoryId !== undefined &&
+      uiBlog.categoryId !== null &&
+      uiBlog.categoryId !== "" &&
+      !Number.isNaN(Number(uiBlog.categoryId));
+    const categoryId = hasCategoryId ? Number(uiBlog.categoryId) : undefined;
+    const authorId =
+      uiBlog.authorId && uiBlog.authorId.trim() !== ""
+        ? uiBlog.authorId.trim()
+        : undefined;
+
+    const formData = new FormData();
+    
+    // Backend expect: Title, Content, CategoryId, AuthorId, Image
+    if (uiBlog.title) {
+      formData.append("Title", uiBlog.title);
+    }
+    if (uiBlog.content) {
+      formData.append("Content", uiBlog.content);
+    }
+    if (categoryId !== undefined && categoryId !== null) {
+      formData.append("CategoryId", categoryId);
+    }
+    if (authorId) {
+      formData.append("AuthorId", authorId);
+    }
+    
+    // Only append Image if there's a file
+    // For update without new image, backend will keep existing image
+    if (uiBlog.imageFile instanceof File) {
+      formData.append("Image", uiBlog.imageFile);
+    }
+
+    return formData;
+  },
+
+  /**
+   * Transform UI blog data to API format (deprecated - use buildBlogPayload instead)
    * @param {Object} uiBlog - Blog data from UI
    * @returns {Object} Transformed blog object for API
    */
@@ -355,10 +453,29 @@ const BlogService = {
       const token = localStorage.getItem("accessToken");
       if (token) setAuthToken(token);
       const apiBlog = await BlogAPI.getBlogById(id);
+      
+      console.log("🔍 Raw API Blog Response:", {
+        id,
+        apiBlog,
+        hasData: !!apiBlog,
+        imagePath: apiBlog?.imagePath,
+      });
+      
+      if (!apiBlog) {
+        throw new Error(`Blog with ID ${id} not found`);
+      }
+      
       const transformedBlog = BlogService.transformBlogFromAPI(apiBlog);
-      const enrichedBlog = await BlogService.enrichBlogWithAuthor(
-        transformedBlog
-      );
+      
+      // Try to enrich with author, but don't fail if it errors
+      let enrichedBlog = transformedBlog;
+      try {
+        enrichedBlog = await BlogService.enrichBlogWithAuthor(transformedBlog);
+      } catch (authorError) {
+        console.warn("⚠️ Could not enrich blog with author:", authorError);
+        // Continue with transformed blog without author enrichment
+      }
+      
       return enrichedBlog;
     } catch (error) {
       console.error(`BlogService - Error getting blog ${id}:`, error);
@@ -368,14 +485,14 @@ const BlogService = {
 
   /**
    * Create new blog
-   * @param {Object} blogData - Blog data from UI
+   * @param {Object} blogData - Blog data from UI (may contain imageFile)
    * @returns {Promise<Object>} Created blog in UI format
    */
   createBlog: async (blogData) => {
     try {
       const token = localStorage.getItem("accessToken");
       if (token) setAuthToken(token);
-      const apiData = BlogService.transformBlogToAPI(blogData);
+      const apiData = BlogService.buildBlogPayload(blogData);
       const createdBlog = await BlogAPI.createBlog(apiData);
       return BlogService.transformBlogFromAPI(createdBlog);
     } catch (error) {
@@ -387,14 +504,14 @@ const BlogService = {
   /**
    * Update blog
    * @param {number} id - Blog ID
-   * @param {Object} blogData - Updated blog data from UI
+   * @param {Object} blogData - Updated blog data from UI (may contain imageFile)
    * @returns {Promise<Object>} Updated blog in UI format
    */
   updateBlog: async (id, blogData) => {
     try {
       const token = localStorage.getItem("accessToken");
       if (token) setAuthToken(token);
-      const apiData = BlogService.transformBlogToAPI(blogData);
+      const apiData = BlogService.buildBlogPayload(blogData);
       const updatedBlog = await BlogAPI.updateBlog(id, apiData);
       return BlogService.transformBlogFromAPI(updatedBlog);
     } catch (error) {

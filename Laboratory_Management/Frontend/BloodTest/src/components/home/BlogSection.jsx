@@ -67,7 +67,14 @@ export default function BlogSection() {
           {blogs.map((blog) => (
             <div key={blog.id} className="blog-card">
               <Link to={`/blog/${blog.id}`} className="blog-card-link">
-                <img src={blog.img} alt={blog.title} className="blog-img" />
+                <img 
+                  src={blog.img || blog.thumbnailUrl || blog.imageUrl} 
+                  alt={blog.title} 
+                  className="blog-img"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                  }}
+                />
                 <div className="blog-card-content">
                   <div className="blog-meta">
                     <span className="blog-tag">

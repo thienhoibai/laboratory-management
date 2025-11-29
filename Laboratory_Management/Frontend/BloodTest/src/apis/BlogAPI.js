@@ -74,11 +74,12 @@ const BlogAPI = {
 
   /**
    * Create a new blog post
-   * @param {Object} blogData - Blog post data
+   * @param {FormData|Object} blogData - Blog post data (FormData for file upload or Object for JSON)
    * @returns {Promise} Created blog post
    */
   createBlog: async (blogData) => {
     try {
+      // Axios tự động xử lý FormData, không cần set Content-Type
       const response = await api.post("blog/api/BlogPost", blogData);
       return response.data;
     } catch (error) {
@@ -90,11 +91,12 @@ const BlogAPI = {
   /**
    * Update an existing blog post
    * @param {number} id - Blog post ID
-   * @param {Object} blogData - Updated blog post data
+   * @param {FormData|Object} blogData - Updated blog post data (FormData for file upload or Object for JSON)
    * @returns {Promise} Updated blog post
    */
   updateBlog: async (id, blogData) => {
     try {
+      // Axios tự động xử lý FormData, không cần set Content-Type
       const response = await api.put(`blog/api/BlogPost/${id}`, blogData);
       return response.data;
     } catch (error) {
@@ -164,6 +166,25 @@ const BlogAPI = {
       return response.data;
     } catch (error) {
       console.error("Error fetching categories:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get blog image by image path
+   * @param {string} imagePath - Image path from blog post
+   * @returns {Promise<Blob>} Image blob
+   */
+  getBlogImage: async (imagePath) => {
+    try {
+      // Try different possible endpoints
+      // If backend has a specific endpoint for images
+      const response = await api.get(`blog/api/BlogPost/image/${imagePath}`, {
+        responseType: 'blob'
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching blog image:", error);
       throw error;
     }
   },

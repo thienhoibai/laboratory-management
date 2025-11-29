@@ -92,7 +92,16 @@ export default function BlogDetailPage() {
             <span className="blog-detail-date">{post.fullDate}</span>
           </div>
 
-          <img src={post.img} alt={post.title} className="blog-detail-img" />
+          {(post.img || post.thumbnailUrl || post.imageUrl) && (
+            <img 
+              src={post.img || post.thumbnailUrl || post.imageUrl} 
+              alt={post.title} 
+              className="blog-detail-img"
+              onError={(e) => {
+                e.target.style.display = 'none';
+              }}
+            />
+          )}
 
           <div
             className="blog-detail-body"
@@ -141,9 +150,12 @@ export default function BlogDetailPage() {
                   className="blog-related-card"
                 >
                   <img
-                    src={relatedPost.img}
+                    src={relatedPost.img || relatedPost.thumbnailUrl || relatedPost.imageUrl}
                     alt={relatedPost.title}
                     className="blog-related-img"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                    }}
                   />
                   <div className="blog-related-content">
                     <div className="blog-related-date">{relatedPost.date}</div>

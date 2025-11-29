@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import api from "../../../configs/axios";
 import { useSearchParams } from "react-router-dom";
-import { startInstrumentRun } from "../../../apis/InstrumentAPI";
+import { startInstrumentRun } from "../../../apis/InstrumentAPI.jsx";
 import AdminLayout from "../../admin/layout/AdminLayout";
 import { setAuthToken } from "../../../utils/auth";
 import { FiDroplet, FiCheckCircle } from "react-icons/fi";

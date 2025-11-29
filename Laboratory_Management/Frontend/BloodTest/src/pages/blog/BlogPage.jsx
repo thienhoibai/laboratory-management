@@ -102,9 +102,12 @@ export default function BlogPage() {
                     className="blog-post-card"
                   >
                     <img
-                      src={post.img}
+                      src={post.img || post.thumbnailUrl || post.imageUrl}
                       alt={post.title}
                       className="blog-post-img"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                      }}
                     />
                     <div className="blog-post-content">
                       <div className="blog-post-meta">

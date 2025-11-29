@@ -4,18 +4,6 @@ import "./EquipmentSection.css";
 import InstrumentService from "../../services/InstrumentService";
 import { setAuthToken } from "../../utils/auth";
 
-const API_BASE_URL = "http://localhost:8080/";
-
-const STATUS_LABELS = {
-  0: "Đang hoạt động",
-  1: "Đang tắt",
-  2: "Đang lỗi",
-  3: "Đang bảo trì",
-  ACTIVE: "Đang hoạt động",
-  OFF: "Đang tắt",
-  ERROR: "Đang lỗi",
-  MAINTENANCE: "Đang bảo trì",
-};
 
 export default function EquipmentSection() {
   const [equipments, setEquipments] = useState([]);
@@ -64,75 +52,6 @@ export default function EquipmentSection() {
     }
   };
 
-  const getStatusLabel = (status) => {
-    return STATUS_LABELS[status] || "Không xác định";
-  };
-
-  const getStatusClass = (status) => {
-    if (status === 0 || status === "ACTIVE") return "status-active";
-    if (status === 1 || status === "OFF") return "status-off";
-    if (status === 2 || status === "ERROR") return "status-error";
-    if (status === 3 || status === "MAINTENANCE") return "status-maintenance";
-    return "status-unknown";
-  };
-
-  const getImageUrl = (instrument) => {
-    // Nếu có imageData (base64), sử dụng trực tiếp
-    if (instrument.imageData) {
-      // Kiểm tra xem đã có prefix data: chưa
-      if (instrument.imageData.startsWith("data:image")) {
-        return instrument.imageData;
-      }
-      // Nếu chưa có prefix, thêm vào
-      return `data:image/jpeg;base64,${instrument.imageData}`;
-    }
-
-    // Lấy code và fileName
-    const code = instrument.code || instrument.instrumentCode;
-    const fileName = instrument.imageUrl || instrument.imagePath;
-
-    // Nếu có imageUrl/imagePath là tên file
-    if (fileName) {
-      // Nếu là URL đầy đủ (bắt đầu bằng http/https), dùng trực tiếp
-      if (fileName.startsWith("http://") || fileName.startsWith("https://")) {
-        return fileName;
-      }
-
-      // Nếu là tên file (có extension), thử các endpoint
-      if (fileName.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
-        // Encode tên file để xử lý khoảng trắng và ký tự đặc biệt
-        const encodedFileName = encodeURIComponent(fileName);
-
-        // Ưu tiên 1: Endpoint API theo code (nếu có)
-        if (code) {
-          return `${API_BASE_URL}instrument/api/instruments/${code}/image`;
-        }
-
-        // Ưu tiên 2: Thử các endpoint static files phổ biến
-        const possibleEndpoints = [
-          `Images/${encodedFileName}`, // Encode để xử lý khoảng trắng
-          `Images/${fileName}`, // Không encode (thử cả hai)
-          `BlogService.Presentation/Images/${encodedFileName}`,
-          `BlogService.Presentation/Images/${fileName}`,
-          `instrument/api/instruments/image/${encodedFileName}`,
-          `instrument/api/instruments/image/${fileName}`,
-        ];
-
-        // Trả về endpoint đầu tiên
-        return `${API_BASE_URL}${possibleEndpoints[0]}`;
-      }
-
-      // Nếu không phải tên file, ghép với baseURL
-      return `${API_BASE_URL}${fileName}`;
-    }
-
-    // Nếu chỉ có code, thử endpoint API
-    if (code) {
-      return `${API_BASE_URL}instrument/api/instruments/${code}/image`;
-    }
-
-    return "";
-  };
 
   const getVisibleEquipments = () => {
     const startIndex = currentIndex;
@@ -209,20 +128,25 @@ export default function EquipmentSection() {
               Chưa có thiết bị nào.
             </p>
           ) : (
-            getVisibleEquipments().map((item) => (
+            getVisibleEquipments().map((item) => {
+              // Get image URL - ưu tiên imageUrl đã được build từ InstrumentService
+              // Fallback to imageData (base64) nếu có
+              const imageUrl = item.imageUrl || item.imageData || "";
+              
+              return (
               <div className="equipment-card" key={item.code || item.id}>
                 <div className="equipment-img-bg">
-                  {getImageUrl(item) ? (
+                  {imageUrl ? (
                     <img
-                      src={getImageUrl(item)}
+                      src={imageUrl}
                       alt={item.name}
                       className="equipment-img"
                       onError={(e) => {
-                        console.error(
-                          "Failed to load image:",
-                          getImageUrl(item),
-                          item
-                        );
+                        console.error("Failed to load instrument image:", {
+                          url: imageUrl,
+                          item: item.name,
+                          code: item.code,
+                        });
                         e.target.style.display = "none";
                         // Hiển thị placeholder khi ảnh lỗi
                         const placeholder =
@@ -237,7 +161,7 @@ export default function EquipmentSection() {
                   ) : null}
                   <div
                     className="equipment-img-placeholder"
-                    style={{ display: getImageUrl(item) ? "none" : "flex" }}
+                    style={{ display: imageUrl ? "none" : "flex" }}
                   >
                     <svg
                       width="80"
@@ -276,24 +200,15 @@ export default function EquipmentSection() {
                   </div>
                 </div>
                 <div className="equipment-info">
-                  <div className="equipment-header">
-                    <span className="equipment-name">{item.name}</span>
-                  </div>
-                  <p className="equipment-card-desc">
-                    Mã thiết bị: {item.code || item.instrumentCode}
-                  </p>
-                  <div
-                    className={`equipment-category ${getStatusClass(
-                      item.status || item.machineStatus
-                    )}`}
-                  >
-                    <span className="equipment-status-text">
-                      {getStatusLabel(item.status || item.machineStatus)}
-                    </span>
+                  <h3 className="equipment-name">{item.name}</h3>
+                  <div className="equipment-code-wrapper">
+                    <span className="equipment-code-label">Mã thiết bị:</span>
+                    <span className="equipment-code-value">{item.code || item.instrumentCode}</span>
                   </div>
                 </div>
               </div>
-            ))
+              );
+            })
           )}
         </div>
         {equipments.length > itemsPerPage && (
