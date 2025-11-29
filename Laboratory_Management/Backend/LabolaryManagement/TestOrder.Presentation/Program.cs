@@ -67,6 +67,8 @@ namespace TestOrder.Presentation
             builder.Services.AddScoped<TimeBlockRepository>();
             builder.Services.AddScoped<TestResultRepository>();
             builder.Services.AddScoped<TestResultService>();
+            builder.Services.AddScoped<TestReportRepository>();
+            builder.Services.AddScoped<TestReportService>();
 
             builder.Services.AddHostedService<ExpiresBookingService>();
 

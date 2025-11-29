@@ -129,12 +129,14 @@ CREATE TABLE TestResult
 	isNormal bit
 )
 
+
 CREATE TABLE TestReport
 (
 	DocumentId Bigint identity(1,1) PRIMARY KEY,
 	BookingId UNIQUEIDENTIFIER FOREIGN KEY REFERENCES Booking(BookingId),
 	Filename nvarchar(255) not null,
-	ResultFile nvarchar(max) not null,
+	FileType nvarchar(30),
+	ResultData VARBINARY(MAX),
 	CreatedAt date DEFAULT GETDATE(),
 )
 

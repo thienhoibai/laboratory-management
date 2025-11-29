@@ -214,16 +214,17 @@ public partial class TestOrderDBContext : DbContext
 
         modelBuilder.Entity<TestReport>(entity =>
         {
-            entity.HasKey(e => e.DocumentId).HasName("PK__TestRepo__1ABEEF0F3DBA6F1B");
+            entity.HasKey(e => e.DocumentId).HasName("PK__TestRepo__1ABEEF0FE00AED50");
 
             entity.ToTable("TestReport");
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.FileType).HasMaxLength(30);
             entity.Property(e => e.Filename).HasMaxLength(255);
 
             entity.HasOne(d => d.Booking).WithMany(p => p.TestReports)
                 .HasForeignKey(d => d.BookingId)
-                .HasConstraintName("FK__TestRepor__Booki__73BA3083");
+                .HasConstraintName("FK__TestRepor__Booki__02FC7413");
         });
 
         modelBuilder.Entity<TestResult>(entity =>
