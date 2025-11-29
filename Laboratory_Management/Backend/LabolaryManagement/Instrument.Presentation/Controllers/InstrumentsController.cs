@@ -225,41 +225,60 @@ public class InstrumentsController : ControllerBase
     [Authorize(Policy = "perm:Instrument.Update")]
     public async Task<IActionResult> Update(string code, [FromForm] UpdateInstrumentHttpRequest request)
     {
-        try
-        {
-            string? imagePath = null;
+        // Lấy thông tin máy hiện có
+        var instrument = await _service.GetByCodeAsync(code);
+        if (instrument == null)
+            return NotFound(new { error = $"Instrument '{code}' not found." });
 
-            // Nếu có upload file → lưu file
-            if (request.Image != null)
+        string? newImagePath = instrument.ImagePath;
+
+        // Nếu có upload ảnh mới
+        if (request.Image != null)
+        {
+            _logger.LogInformation("🔵 Updating image...");
+
+            var folder = Path.Combine(Directory.GetCurrentDirectory(), "Images");
+            Directory.CreateDirectory(folder);
+
+            var fileName = $"{Guid.NewGuid()}{Path.GetExtension(request.Image.FileName)}";
+            var savePath = Path.Combine(folder, fileName);
+
+            using (var stream = new FileStream(savePath, FileMode.Create))
             {
-                var fileName = $"{Guid.NewGuid()}_{request.Image.FileName}";
-                var savePath = Path.Combine("/images/instruments", fileName);
-
-                Directory.CreateDirectory(Path.GetDirectoryName(savePath)!);
-                using var stream = new FileStream(savePath, FileMode.Create);
                 await request.Image.CopyToAsync(stream);
-
-                imagePath = $"/images/instruments/{fileName}";
             }
-            var appRequest = new Instrument.Application.Instruments.DTOs.Requests.UpdateInstrumentRequest(
-            request.Name,            
-            request.Status,           
-            request.ReagentStatus,    
-            imagePath                 
-);
 
-            var instrument = await _service.UpdateAsync(code, appRequest);
+            // Lưu đường dẫn mới vào DB
+            newImagePath = Path.Combine("Images", fileName);
 
-            if (instrument == null)
-                return NotFound(new { error = $"Instrument '{code}' not found." });
+            // Xóa ảnh cũ nếu tồn tại
+            if (!string.IsNullOrEmpty(instrument.ImagePath))
+            {
+                var oldImage = Path.Combine(Directory.GetCurrentDirectory(), instrument.ImagePath);
+                if (System.IO.File.Exists(oldImage))
+                {
+                    System.IO.File.Delete(oldImage);
+                    _logger.LogInformation($"🗑 Deleted old image: {oldImage}");
+                }
+            }
 
-            return Ok(instrument);
+            _logger.LogInformation($"📷 Updated image: {newImagePath}");
         }
-        catch (Exception ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
+
+        // Map sang DTO Application
+        var appRequest = new Instrument.Application.Instruments.DTOs.Requests.UpdateInstrumentRequest(
+            request.Name,
+            request.Status,
+            request.ReagentStatus,
+            newImagePath
+        );
+
+        // Cập nhật instrument
+        var updated = await _service.UpdateAsync(code, appRequest);
+
+        return Ok(updated);
     }
+
 
 
     /// <summary>
