@@ -29,18 +29,22 @@
   color: #fff;
   border: none;
   border-radius: 8px;
-  padding: 12px 24px;
-  font-size: 1rem;
-  font-weight: 600;
+  padding: 10px 20px;
+  font-size: 0.9375rem;
+  font-weight: 500;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 8px;
-  transition: background 0.2s;
+  transition: all 0.2s ease;
 }
 
 .blogs-create-button:hover {
   background: #2563eb;
+}
+
+.blogs-create-button:active {
+  transform: scale(0.98);
 }
 
 /* Statistics Cards */
@@ -259,79 +263,84 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  padding: 6px 12px;
+  width: 36px;
+  height: 36px;
+  padding: 0;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.2s;
-  font-size: 0.85rem;
-  font-weight: 500;
+  transition: all 0.2s ease;
+  font-size: 1.125rem;
+  background: transparent;
+  color: #6b7280;
+}
+
+.blogs-action-btn svg {
+  width: 18px;
+  height: 18px;
 }
 
 .blogs-action-btn.approve-btn {
-  background: #d1fae5;
-  color: #065f46;
+  color: #10b981;
 }
 
-.blogs-action-btn.approve-btn:hover {
-  background: #a7f3d0;
-  color: #047857;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(6, 95, 70, 0.2);
+.blogs-action-btn.approve-btn:hover:not(:disabled) {
+  background: #d1fae5;
+  color: #059669;
+  transform: scale(1.1);
 }
 
 .blogs-action-btn.reject-btn {
-  background: #fee2e2;
-  color: #991b1b;
+  color: #ef4444;
 }
 
-.blogs-action-btn.reject-btn:hover {
-  background: #fecaca;
-  color: #7f1d1d;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(153, 27, 27, 0.2);
+.blogs-action-btn.reject-btn:hover:not(:disabled) {
+  background: #fee2e2;
+  color: #dc2626;
+  transform: scale(1.1);
 }
 
 .blogs-action-btn.view-btn {
-  background: #dbeafe;
-  color: #1e40af;
+  color: #3b82f6;
 }
 
 .blogs-action-btn.view-btn:hover {
-  background: #bfdbfe;
-  color: #1e3a8a;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(30, 64, 175, 0.2);
+  background: #dbeafe;
+  color: #2563eb;
+  transform: scale(1.1);
+}
+
+.blogs-action-btn.edit-btn {
+  color: #f59e0b;
+}
+
+.blogs-action-btn.edit-btn:hover {
+  background: #fef3c7;
+  color: #d97706;
+  transform: scale(1.1);
 }
 
 .blogs-action-btn.delete-btn {
-  background: #f3f4f6;
   color: #6b7280;
-  padding: 6px 8px;
 }
 
 .blogs-action-btn.delete-btn:hover {
   background: #fee2e2;
-  color: #991b1b;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(107, 114, 128, 0.2);
+  color: #ef4444;
+  transform: scale(1.1);
 }
 
 .blogs-action-btn.disabled,
 .blogs-action-btn:disabled {
-  background: #f3f4f6;
-  color: #9ca3af;
+  color: #d1d5db;
   cursor: not-allowed;
-  opacity: 0.6;
+  opacity: 0.5;
 }
 
 .blogs-action-btn.disabled:hover,
 .blogs-action-btn:disabled:hover {
-  background: #f3f4f6;
-  color: #9ca3af;
+  background: transparent;
   transform: none;
-  box-shadow: none;
 }
 
 .blogs-no-data {
@@ -786,32 +795,6 @@
   display: block;
 }
 
-.blogs-image-remove {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  background: rgba(239, 68, 68, 0.95);
-  backdrop-filter: blur(8px);
-  color: #fff;
-  border: none;
-  border-radius: 50%;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-size: 1.125rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.blogs-image-remove:hover {
-  background: #dc2626;
-  transform: scale(1.1);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
-}
-
 .blogs-image-change-btn {
   display: inline-flex;
   align-items: center;
@@ -848,15 +831,15 @@
 }
 
 .blogs-modal-cancel {
-  padding: 12px 24px;
-  border: 2px solid #e5e7eb;
+  padding: 10px 20px;
+  border: 1.5px solid #e5e7eb;
   background: #fff;
-  border-radius: 10px;
+  border-radius: 8px;
   font-size: 0.9375rem;
-  font-weight: 600;
+  font-weight: 500;
   color: #6b7280;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -866,50 +849,43 @@
   background: #f9fafb;
   border-color: #d1d5db;
   color: #374151;
-  transform: translateY(-1px);
 }
 
 .blogs-modal-cancel:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  transform: none;
 }
 
 .blogs-modal-submit {
-  padding: 12px 24px;
+  padding: 10px 24px;
   border: none;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  border-radius: 10px;
+  background: #3b82f6;
+  border-radius: 8px;
   font-size: 0.9375rem;
-  font-weight: 600;
+  font-weight: 500;
   color: #fff;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   gap: 8px;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 .blogs-modal-submit:hover:not(:disabled) {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+  background: #2563eb;
 }
 
 .blogs-modal-submit:active:not(:disabled) {
-  transform: translateY(0);
+  transform: scale(0.98);
 }
 
 .blogs-modal-submit:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
 }
 
 .blogs-modal-submit svg {
-  font-size: 1.125rem;
+  font-size: 1rem;
 }
 
 .blogs-spinner {
@@ -982,19 +958,20 @@
 
 .blogs-delete-cancel {
   padding: 10px 20px;
-  border: 1px solid #e5e7eb;
+  border: 1.5px solid #e5e7eb;
   background: #fff;
   border-radius: 8px;
-  font-size: 0.95rem;
+  font-size: 0.9375rem;
   font-weight: 500;
   color: #6b7280;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
 }
 
 .blogs-delete-cancel:hover:not(:disabled) {
   background: #f9fafb;
   border-color: #d1d5db;
+  color: #374151;
 }
 
 .blogs-delete-cancel:disabled {
@@ -1007,15 +984,19 @@
   border: none;
   background: #ef4444;
   border-radius: 8px;
-  font-size: 0.95rem;
-  font-weight: 600;
+  font-size: 0.9375rem;
+  font-weight: 500;
   color: #fff;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s ease;
 }
 
 .blogs-delete-confirm:hover:not(:disabled) {
   background: #dc2626;
+}
+
+.blogs-delete-confirm:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 .blogs-delete-confirm:disabled {

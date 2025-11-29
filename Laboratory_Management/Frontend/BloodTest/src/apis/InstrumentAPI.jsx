@@ -38,74 +38,24 @@ export const getInstrumentByCode = async (code) => {
 
 export const createInstrument = async (payload) => {
   ensureAuth();
-  console.log(
-    "Sending payload:",
-    payload instanceof FormData ? "FormData" : "JSON"
-  );
-  if (payload instanceof FormData) {
-    // Debug: Log FormData để kiểm tra
-    console.log("FormData entries:");
-    for (let pair of payload.entries()) {
-      console.log(
-        `  ${pair[0]}:`,
-        pair[1] instanceof File
-          ? `File(${pair[1].name}, ${pair[1].size} bytes, type: ${pair[1].type})`
-          : pair[1]
-      );
-    }
-  } else {
-    console.log("JSON payload:", payload);
-  }
-
   try {
-    // Axios tự động xử lý FormData, không cần config đặc biệt
-    // Nó sẽ tự động set Content-Type với boundary
     const res = await api.post(INSTRUMENT_BASE, payload);
-    console.log("✅ Success! Response from backend:", res.data);
-
-    // Kiểm tra xem ReagentStatus có khớp với giá trị đã gửi không
-    if (payload instanceof FormData) {
-      const sentReagentStatus = payload.get("ReagentStatus");
-      const receivedReagentStatus =
-        res.data?.reagentStatus ?? res.data?.ReagentStatus;
-      if (sentReagentStatus !== null && sentReagentStatus !== undefined) {
-        console.log("🔍 ReagentStatus check:", {
-          sent: sentReagentStatus,
-          received: receivedReagentStatus,
-          match: String(sentReagentStatus) === String(receivedReagentStatus),
-        });
-        if (String(sentReagentStatus) !== String(receivedReagentStatus)) {
-          console.warn(
-            "⚠️ WARNING: ReagentStatus mismatch! Sent:",
-            sentReagentStatus,
-            "but received:",
-            receivedReagentStatus
-          );
-        }
-      }
-    }
-
     return unwrap(res);
   } catch (error) {
-    console.error("❌ Error creating instrument:", error);
-    if (error.response) {
-      console.error("Error response data:", error.response.data);
-      console.error("Error status:", error.response.status);
-      console.error("Error headers:", error.response.headers);
-    } else if (error.request) {
-      console.error("No response received:", error.request);
-    } else {
-      console.error("Error message:", error.message);
-    }
+    console.error("Error creating instrument:", error);
     throw error;
   }
 };
 
 export const updateInstrumentByCode = async (code, payload) => {
   ensureAuth();
-  // Nếu payload là FormData, không cần set Content-Type (browser sẽ tự động set với boundary)
-  const res = await api.put(`${INSTRUMENT_BASE}/${code}`, payload);
-  return unwrap(res);
+  try {
+    const res = await api.put(`${INSTRUMENT_BASE}/${code}`, payload);
+    return unwrap(res);
+  } catch (error) {
+    console.error("Error updating instrument:", error);
+    throw error;
+  }
 };
 
 export const deleteInstrumentByCode = async (code) => {

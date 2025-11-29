@@ -81,9 +81,24 @@ const BlogService = {
       return trimmedPath;
     }
     
-    // If starts with /, it's a relative path from root
-    if (trimmedPath.startsWith("/")) {
-      return `${baseURL}${trimmedPath}`;
+    // Handle /app/Images/... paths - convert to /blog/Images/...
+    // Example: "/app/Images/383de81f-bd02-4151-9195-677834cd84de.jpg"
+    // Result: "http://localhost:8080/blog/Images/383de81f-bd02-4151-9195-677834cd84de.jpg"
+    if (trimmedPath.startsWith("/app/Images/")) {
+      const imageFileName = trimmedPath.replace("/app/Images/", "");
+      return `${baseURL}/blog/Images/${imageFileName}`;
+    }
+    
+    // Handle /app/Images/... without leading slash
+    if (trimmedPath.startsWith("app/Images/")) {
+      const imageFileName = trimmedPath.replace("app/Images/", "");
+      return `${baseURL}/blog/Images/${imageFileName}`;
+    }
+    
+    // If starts with /, check if it's /Images/... and convert to /blog/Images/...
+    if (trimmedPath.startsWith("/Images/")) {
+      const imageFileName = trimmedPath.replace("/Images/", "");
+      return `${baseURL}/blog/Images/${imageFileName}`;
     }
     
     // If path starts with "Images/", append directly to /blog/
@@ -92,6 +107,16 @@ const BlogService = {
     if (trimmedPath.startsWith("Images/")) {
       // Build URL: http://localhost:8080/blog/Images/...
       return `${baseURL}/blog/${trimmedPath}`;
+    }
+    
+    // If starts with /blog/, use as is
+    if (trimmedPath.startsWith("/blog/")) {
+      return `${baseURL}${trimmedPath}`;
+    }
+    
+    // If starts with /, it's a relative path from root (but not /app/ or /Images/)
+    if (trimmedPath.startsWith("/")) {
+      return `${baseURL}${trimmedPath}`;
     }
     
     // Otherwise, assume it's just a filename and try common paths
@@ -115,23 +140,6 @@ const BlogService = {
     const rawImageUrl = apiBlog.imagePath || apiBlog.imageUrl || apiBlog.thumbnailUrl || apiBlog.img || apiBlog.image || "";
     const imageUrl = BlogService.buildImageUrl(rawImageUrl);
     
-    // Debug: Log image URL for troubleshooting (only if image exists)
-    if (rawImageUrl) {
-      console.log("📸 Blog Image Debug:", {
-        blogId: apiBlog.blogPostId || apiBlog.postId || apiBlog.id,
-        title: apiBlog.title,
-        rawImageUrl,
-        builtImageUrl: imageUrl,
-        allImageFields: {
-          imagePath: apiBlog.imagePath,
-          imageUrl: apiBlog.imageUrl,
-          thumbnailUrl: apiBlog.thumbnailUrl,
-          img: apiBlog.img,
-          image: apiBlog.image,
-        },
-      });
-    }
-    
     return {
       id: apiBlog.blogPostId || apiBlog.postId || apiBlog.id,
       title: apiBlog.title || "",
@@ -145,6 +153,8 @@ const BlogService = {
       img: imageUrl,
       thumbnailUrl: imageUrl,
       imageUrl: imageUrl,
+      // Keep original imagePath for fallback
+      imagePath: apiBlog.imagePath || rawImageUrl || "",
       createdDate: apiBlog.createdDate ? formatDate1(apiBlog.createdDate) : "",
       updatedDate: apiBlog.updatedDate ? formatDate1(apiBlog.updatedDate) : "",
       date: apiBlog.createdDate
@@ -454,13 +464,6 @@ const BlogService = {
       if (token) setAuthToken(token);
       const apiBlog = await BlogAPI.getBlogById(id);
       
-      console.log("🔍 Raw API Blog Response:", {
-        id,
-        apiBlog,
-        hasData: !!apiBlog,
-        imagePath: apiBlog?.imagePath,
-      });
-      
       if (!apiBlog) {
         throw new Error(`Blog with ID ${id} not found`);
       }
@@ -472,7 +475,6 @@ const BlogService = {
       try {
         enrichedBlog = await BlogService.enrichBlogWithAuthor(transformedBlog);
       } catch (authorError) {
-        console.warn("⚠️ Could not enrich blog with author:", authorError);
         // Continue with transformed blog without author enrichment
       }
       

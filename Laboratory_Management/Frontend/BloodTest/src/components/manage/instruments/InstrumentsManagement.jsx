@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { FiUpload, FiImage, FiX } from "react-icons/fi";
+import { FiUpload, FiImage } from "react-icons/fi";
 import AdminLayout from "../../admin/layout/AdminLayout";
 import InstrumentService from "../../../services/InstrumentService";
 import "./InstrumentsManagement.css";
@@ -80,15 +80,25 @@ const EMPTY_FORM = {
 };
 
 const mapInstrumentToForm = (instrument) => ({
-  code: instrument.code ?? instrument.instrumentCode ?? instrument.InstrumentCode ?? "",
+  code:
+    instrument.code ??
+    instrument.instrumentCode ??
+    instrument.InstrumentCode ??
+    "",
   name: instrument.name ?? instrument.Name ?? "",
   machineStatus: findStatusOption(
     STATUS_CONFIG.machine,
-    instrument.machineStatus ?? instrument.status ?? instrument.Status ?? instrument.MachineStatus
+    instrument.machineStatus ??
+      instrument.status ??
+      instrument.Status ??
+      instrument.MachineStatus
   ).key,
   reagentStatus: findStatusOption(
     STATUS_CONFIG.reagent,
-    instrument.reagentStatus ?? instrument.reagent_status ?? instrument.ReagentStatus ?? instrument.Reagent_Status
+    instrument.reagentStatus ??
+      instrument.reagent_status ??
+      instrument.ReagentStatus ??
+      instrument.Reagent_Status
   ).key,
   imageFile: null,
 });
@@ -210,16 +220,41 @@ const InstrumentsManagement = () => {
     setIsModalOpen(true);
   };
 
-  const openEditModal = (instrument) => {
+  const openEditModal = async (instrument) => {
+    const code = pickInstrumentCode(instrument);
+    if (!code) {
+      setFormError("Không xác định được mã thiết bị");
+      return;
+    }
+
     setModalMode("edit");
-    setFormState(mapInstrumentToForm(instrument));
-    releasePreview(imagePreview);
-    // Use imageUrl from InstrumentService (already built from imagePath)
-    // Fallback to imageData (base64) if imageUrl not available
-    const previewImage = instrument.imageUrl || instrument.imageData || "";
-    setImagePreview(previewImage);
     setFormError("");
     setIsModalOpen(true);
+
+    try {
+      // Fetch fresh data from API to ensure we have the latest imagePath
+      // getByCode already maps the instrument and builds imageUrl
+      const freshInstrument = await InstrumentService.getByCode(code);
+
+      setFormState(mapInstrumentToForm(freshInstrument));
+      releasePreview(imagePreview);
+
+      // Use imageUrl from fresh instrument (already built from imagePath)
+      // Fallback to imageData (base64) if imageUrl not available
+      const previewImage =
+        freshInstrument.imageUrl || freshInstrument.imageData || "";
+      setImagePreview(previewImage);
+    } catch (error) {
+      console.error("Error loading instrument detail:", error);
+      // Fallback to using instrument from list if API call fails
+      setFormState(mapInstrumentToForm(instrument));
+      releasePreview(imagePreview);
+      const previewImage = instrument.imageUrl || instrument.imageData || "";
+      setImagePreview(previewImage);
+      setFormError(
+        "Không thể tải chi tiết thiết bị. Hiển thị thông tin từ danh sách."
+      );
+    }
   };
 
   const closeModal = () => {
@@ -265,8 +300,9 @@ const InstrumentsManagement = () => {
       } else {
         await InstrumentService.update(formState.code, payload);
       }
+      // Refresh the list to get updated data
+      await fetchInstruments();
       closeModal();
-      fetchInstruments();
     } catch (err) {
       setFormError(err?.message || "Không thể lưu thiết bị.");
       setSubmitting(false);
@@ -301,19 +337,19 @@ const InstrumentsManagement = () => {
   const getMachineStatusDisplay = (instrument) =>
     findStatusOption(
       STATUS_CONFIG.machine,
-      instrument.machineStatus ?? 
-      instrument.status ?? 
-      instrument.Status ?? 
-      instrument.MachineStatus
+      instrument.machineStatus ??
+        instrument.status ??
+        instrument.Status ??
+        instrument.MachineStatus
     );
 
   const getReagentStatusDisplay = (instrument) =>
     findStatusOption(
       STATUS_CONFIG.reagent,
-      instrument.reagentStatus ?? 
-      instrument.reagent_status ?? 
-      instrument.ReagentStatus ?? 
-      instrument.Reagent_Status
+      instrument.reagentStatus ??
+        instrument.reagent_status ??
+        instrument.ReagentStatus ??
+        instrument.Reagent_Status
     );
 
   return (
@@ -574,15 +610,6 @@ const InstrumentModal = ({
     onFileChange(file);
   };
 
-  const handleRemoveImage = () => {
-    // Reset file input
-    const fileInput = document.getElementById("instrumentImageFile");
-    if (fileInput) {
-      fileInput.value = "";
-    }
-    onFileChange(null);
-  };
-
   const title = mode === "create" ? "Thêm thiết bị mới" : "Chỉnh sửa thiết bị";
   const submitLabel = mode === "create" ? "Thêm" : "Cập nhật";
 
@@ -601,7 +628,10 @@ const InstrumentModal = ({
             <div className="form-stack">
               <div className="form-field">
                 <label htmlFor="instrument-code">
-                  Mã máy {mode === "create" && <span className="required-star">*</span>}
+                  Mã máy{" "}
+                  {mode === "create" && (
+                    <span className="required-star">*</span>
+                  )}
                 </label>
                 <input
                   id="instrument-code"
@@ -615,7 +645,10 @@ const InstrumentModal = ({
 
               <div className="form-field">
                 <label htmlFor="instrument-name">
-                  Tên máy {mode === "create" && <span className="required-star">*</span>}
+                  Tên máy{" "}
+                  {mode === "create" && (
+                    <span className="required-star">*</span>
+                  )}
                 </label>
                 <input
                   id="instrument-name"
@@ -628,7 +661,10 @@ const InstrumentModal = ({
 
               <div className="form-field upload-field">
                 <label>
-                  <FiImage /> Hình ảnh thiết bị {mode === "create" && <span className="required-star">*</span>}
+                  <FiImage /> Hình ảnh thiết bị{" "}
+                  {mode === "create" && (
+                    <span className="required-star">*</span>
+                  )}
                 </label>
                 {!imagePreview ? (
                   <div className="instrument-image-upload-area">
@@ -640,12 +676,17 @@ const InstrumentModal = ({
                       onChange={handleFileInput}
                       className="instrument-file-input-hidden"
                     />
-                    <label htmlFor="instrumentImageFile" className="instrument-image-upload-label">
+                    <label
+                      htmlFor="instrumentImageFile"
+                      className="instrument-image-upload-label"
+                    >
                       <div className="instrument-upload-icon">
                         <FiUpload />
                       </div>
                       <div className="instrument-upload-text">
-                        <span className="instrument-upload-primary">Nhấp để tải ảnh lên</span>
+                        <span className="instrument-upload-primary">
+                          Nhấp để tải ảnh lên
+                        </span>
                         <span className="instrument-upload-secondary">
                           hoặc kéo thả ảnh vào đây
                         </span>
@@ -658,20 +699,24 @@ const InstrumentModal = ({
                 ) : (
                   <div className="instrument-image-preview-wrapper">
                     <div className="instrument-image-preview">
-                      <img src={imagePreview} alt="Preview" />
-                      <button
-                        type="button"
-                        className="instrument-image-remove"
-                        onClick={handleRemoveImage}
-                        title="Xóa ảnh"
-                      >
-                        <FiX />
-                      </button>
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        onError={(e) => {
+                          console.error("Failed to load instrument image:", {
+                            attemptedUrl: imagePreview,
+                            code: formState.code,
+                          });
+                          e.target.style.display = "none";
+                        }}
+                      />
                     </div>
                     <button
                       type="button"
                       className="instrument-image-change-btn"
-                      onClick={() => document.getElementById("instrumentImageFile")?.click()}
+                      onClick={() =>
+                        document.getElementById("instrumentImageFile")?.click()
+                      }
                     >
                       <FiUpload /> Thay đổi ảnh
                     </button>

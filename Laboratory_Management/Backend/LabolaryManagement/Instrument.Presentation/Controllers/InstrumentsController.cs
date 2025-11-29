@@ -227,7 +227,6 @@ public class InstrumentsController : ControllerBase
     {
         try
         {
-            var instrument = await _service.UpdateAsync(code, request);
             string? imagePath = null;
 
             // Nếu có upload file → lưu file

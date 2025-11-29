@@ -337,20 +337,6 @@ const BlogsManagement = () => {
     }
   };
 
-  // Remove image
-  const handleRemoveImage = () => {
-    // Revoke preview URL to free memory
-    if (imagePreview && imagePreview.startsWith("blob:")) {
-      URL.revokeObjectURL(imagePreview);
-    }
-    setImagePreview("");
-    setFormData((prev) => ({ ...prev, imageFile: null, img: "" }));
-    // Reset file input
-    const fileInput = document.querySelector('input[type="file"][name="imageFile"]');
-    if (fileInput) {
-      fileInput.value = "";
-    }
-  };
 
   // Form validation
   const validateForm = () => {
@@ -539,17 +525,8 @@ const BlogsManagement = () => {
       // Fetch fresh blog data from API to ensure we have the latest imagePath
       const blogDetail = await BlogService.getBlogById(blogId);
       
-      console.log("📖 Blog Detail Loaded:", {
-        blogId,
-        blogDetail,
-        hasData: !!blogDetail && Object.keys(blogDetail).length > 0,
-        imageUrl: blogDetail?.img || blogDetail?.thumbnailUrl || blogDetail?.imageUrl,
-        allFields: blogDetail,
-      });
-      
       // Check if blogDetail is valid
       if (!blogDetail || Object.keys(blogDetail).length === 0) {
-        console.warn("⚠️ Blog detail is empty, using blog from list");
         setViewingBlog(blog);
         setIsViewDetailOpen(true);
         return;
@@ -558,9 +535,8 @@ const BlogsManagement = () => {
       setViewingBlog(blogDetail);
       setIsViewDetailOpen(true);
     } catch (error) {
-      console.error("❌ Error loading blog detail:", error);
+      console.error("Error loading blog detail:", error);
       // Fallback to using blog from list if API call fails
-      console.log("🔄 Falling back to blog from list:", blog);
       setViewingBlog(blog);
       setIsViewDetailOpen(true);
       toast.warning("Không thể tải chi tiết bài viết. Hiển thị thông tin từ danh sách.");
@@ -877,14 +853,6 @@ const BlogsManagement = () => {
                   <div className="blogs-image-preview-wrapper">
                     <div className="blogs-image-preview">
                       <img src={imagePreview} alt="Preview" />
-                      <button
-                        type="button"
-                        className="blogs-image-remove"
-                        onClick={handleRemoveImage}
-                        title="Xóa ảnh"
-                      >
-                        <FiX />
-                      </button>
                     </div>
                     <button
                       type="button"
@@ -1099,51 +1067,37 @@ const BlogsManagement = () => {
             </div>
 
             <div className="blogs-view-content">
-              {(viewingBlog.img || viewingBlog.thumbnailUrl || viewingBlog.imageUrl) && (
-                <div className="blogs-view-image">
-                  <img 
-                    src={viewingBlog.img || viewingBlog.thumbnailUrl || viewingBlog.imageUrl} 
-                    alt={viewingBlog.title || "Blog image"}
-                    onError={(e) => {
-                      const img = e.target;
-                      const container = img.closest('.blogs-view-image');
-                      if (container) {
-                        img.style.display = 'none';
-                        const errorDiv = container.querySelector('.blogs-image-error');
-                        if (errorDiv) {
-                          errorDiv.classList.add('show');
-                          // Show URL in error message
-                          const urlSpan = errorDiv.querySelector('.blogs-image-error-url');
-                          if (urlSpan) {
-                            urlSpan.textContent = `URL: ${img.src}`;
+              {(() => {
+                // Get image URL - check all possible fields including imagePath
+                const imageUrl = viewingBlog.img || 
+                                viewingBlog.thumbnailUrl || 
+                                viewingBlog.imageUrl ||
+                                (viewingBlog.imagePath ? BlogService.buildImageUrl(viewingBlog.imagePath) : null);
+                
+                return imageUrl ? (
+                  <div className="blogs-view-image">
+                    <img 
+                      src={imageUrl} 
+                      alt={viewingBlog.title || "Blog image"}
+                      onError={(e) => {
+                        const img = e.target;
+                        const container = img.closest('.blogs-view-image');
+                        if (container) {
+                          img.style.display = 'none';
+                          const errorDiv = container.querySelector('.blogs-image-error');
+                          if (errorDiv) {
+                            errorDiv.classList.add('show');
                           }
                         }
-                        // Log error for debugging
-                        console.error("❌ Failed to load blog image:", {
-                          attemptedUrl: img.src,
-                          blogId: viewingBlog.id,
-                          blogTitle: viewingBlog.title,
-                          allImageFields: {
-                            img: viewingBlog.img,
-                            thumbnailUrl: viewingBlog.thumbnailUrl,
-                            imageUrl: viewingBlog.imageUrl,
-                          }
-                        });
-                      }
-                    }}
-                    onLoad={() => {
-                      console.log("✅ Blog image loaded successfully:", {
-                        url: viewingBlog.img || viewingBlog.thumbnailUrl || viewingBlog.imageUrl,
-                        blogId: viewingBlog.id,
-                      });
-                    }}
-                  />
-                  <div className="blogs-image-error">
-                    <FiImage />
-                    <span>Không thể tải hình ảnh</span>
+                      }}
+                    />
+                    <div className="blogs-image-error">
+                      <FiImage />
+                      <span>Không thể tải hình ảnh</span>
+                    </div>
                   </div>
-                </div>
-              )}
+                ) : null;
+              })()}
 
               <div className="blogs-view-info">
                 <div className="blogs-view-row">

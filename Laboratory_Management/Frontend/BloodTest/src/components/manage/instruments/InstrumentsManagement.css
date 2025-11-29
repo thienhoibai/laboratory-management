@@ -156,23 +156,28 @@
 }
 
 .primary-btn {
-  background-color: #005dff;
+  background-color: #3b82f6;
   color: #fff;
   border: none;
-  border-radius: 10px;
-  padding: 12px 22px;
-  font-weight: 600;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 0.9375rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .primary-btn:disabled {
-  opacity: 0.7;
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
 .primary-btn:hover:not(:disabled) {
-  background-color: #0043c7;
+  background-color: #2563eb;
+}
+
+.primary-btn:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 .instruments-card {
@@ -317,10 +322,11 @@ tbody tr:last-child {
 
 .ghost-btn,
 .danger-btn {
-  border-radius: 10px;
-  border: 1px solid transparent;
+  border-radius: 8px;
+  border: 1.5px solid transparent;
   padding: 8px 16px;
-  font-weight: 600;
+  font-weight: 500;
+  font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -328,28 +334,30 @@ tbody tr:last-child {
 .ghost-btn {
   background: #fff;
   border-color: #e5e7eb;
-  color: #111827;
+  color: #374151;
 }
 
 .ghost-btn:hover {
   border-color: #d1d5db;
-  background: #f3f4f6;
+  background: #f9fafb;
   color: #111827;
 }
 
 .danger-btn {
-  background: #fee2e2;
-  color: #b91c1c;
-  border: none;
+  background: #fff;
+  border-color: #fee2e2;
+  color: #dc2626;
 }
 
 .danger-btn:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
 .danger-btn:hover:not(:disabled) {
-  background: #fecaca;
+  background: #fee2e2;
+  border-color: #fecaca;
+  color: #b91c1c;
 }
 
 .instrument-modal-backdrop {
@@ -657,32 +665,6 @@ tbody tr:last-child {
   display: block;
 }
 
-.instrument-image-remove {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  background: rgba(239, 68, 68, 0.95);
-  backdrop-filter: blur(8px);
-  color: #fff;
-  border: none;
-  border-radius: 50%;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-size: 1.125rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.instrument-image-remove:hover {
-  background: #dc2626;
-  transform: scale(1.1);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
-}
-
 .instrument-image-change-btn {
   display: inline-flex;
   align-items: center;
@@ -801,18 +783,35 @@ tbody tr:last-child {
 
 .modal-footer .ghost-btn {
   padding: 10px 20px;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 0.9375rem;
+  font-weight: 500;
   min-width: 100px;
-  border-radius: 10px;
+  border-radius: 8px;
 }
 
 .modal-footer .primary-btn {
   padding: 10px 24px;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 0.9375rem;
+  font-weight: 500;
   min-width: 120px;
-  border-radius: 10px;
+  border-radius: 8px;
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.modal-footer .primary-btn:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.modal-footer .primary-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.modal-footer .primary-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .modal-body p {
