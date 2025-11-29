@@ -1,11 +1,14 @@
-﻿using Instrument.Infrastructure;
-using Microsoft.EntityFrameworkCore;
-using Instrument.Application.Results;
+﻿using Instrument.Application.Results;
 using Instrument.Application.Services;
+using Common.Authorization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
+using Instrument.Infrastructure;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,40 +43,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-// ===== Authorization Policies =====
-builder.Services.AddAuthorization(options =>
-{
-    // Instrument permissions
-    string[] instrumentPerms = new[]
-    {
-        "Instrument.List",
-        "Instrument.View",
-        "Instrument.Create",
-        "Instrument.Update",
-        "Instrument.Delete"
-    };
-
-    // Run permissions
-    string[] runPerms = new[]
-    {
-        "Run.Start",
-        "Run.View",
-        "Run.Complete",
-        "Run.Cancel"
-    };
-
-    var allPerms = instrumentPerms.Concat(runPerms);
-
-    foreach (var p in allPerms)
-    {
-        options.AddPolicy($"perm:{p}", policy =>
-            policy.RequireAssertion(ctx =>
-                ctx.User.IsInRole("Admin")
-                || ctx.User.HasClaim("perm", p)
-                || ctx.User.HasClaim("permissions", p)
-                || ctx.User.HasClaim("scope", p)));
-    }
-});
+// ✅ ===== DYNAMIC AUTHORIZATION =====
+builder.Services.AddSingleton<IAuthorizationPolicyProvider, DynamicAuthorizationPolicyProvider>();
+builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
+builder.Services.AddAuthorization();
 
 builder.Services.AddCors(options =>
 {
@@ -104,7 +77,6 @@ builder.Services.AddSwaggerGen(options =>
         Description = "Laboratory Management - Instrument Service API"
     });
 
-    // Add JWT Authentication to Swagger
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -143,18 +115,47 @@ if (app.Environment.IsDevelopment() || isDocker)
     app.UseSwaggerUI();
 }
 
-// Do not redirect to HTTPS inside container (no dev certs)
 if (!isDocker)
 {
     app.UseHttpsRedirection();
 }
 
+// ✅ TẠO THƯ MỤC IMAGES TRƯỚC KHI CONFIGURE STATIC FILES
+var imagesPath = Path.Combine(builder.Environment.ContentRootPath, "Images");
+var logger = app.Services.GetRequiredService<ILogger<Program>>();
+
+logger.LogInformation($"🔍 ContentRootPath: {builder.Environment.ContentRootPath}");
+logger.LogInformation($"🔍 Images path will be: {imagesPath}");
+
+if (!Directory.Exists(imagesPath))
+{
+    Directory.CreateDirectory(imagesPath);
+    logger.LogInformation($"✅ Created Images directory at: {imagesPath}");
+}
+else
+{
+    logger.LogInformation($"✅ Images directory exists at: {imagesPath}");
+    // List existing files
+    var files = Directory.GetFiles(imagesPath);
+    logger.LogInformation($"📁 Found {files.Length} file(s) in Images directory");
+}
+
+// ✅ THỨ TỰ MIDDLEWARE QUAN TRỌNG!
 app.UseRouting();
 app.UseCors("AllowFrontend");
 
-// ✅ QUAN TRỌNG: Authentication phải đứng trước Authorization
+// ✅ Configure static files AFTER Routing and CORS
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(imagesPath),
+    RequestPath = "/Images"
+});
+logger.LogInformation($"✅ Static files configured for /Images -> {imagesPath}");
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+logger.LogInformation("🚀 Instrument API is starting...");
 app.Run();

@@ -16,14 +16,20 @@ export default function BlogSection() {
   const loadBlogs = async () => {
     try {
       setLoading(true);
-      // Lấy 3 bài blog đã được duyệt mới nhất
-      const blogsData = await BlogService.getApprovedBlogs(1, 3);
-
-      setBlogs(blogsData);
       setError(null);
+
+      // Lấy 3 bài blog đã được duyệt (status = 1) mới nhất
+      const blogsData = await BlogService.getApprovedBlogs(1, 100);
+
+      // Đảm bảo chỉ lấy 3 bài mới nhất
+      const latestBlogs = Array.isArray(blogsData) ? blogsData.slice(0, 3) : [];
+
+      setBlogs(latestBlogs);
+      console.log("123" + blogsData);
     } catch (err) {
       console.error("Error loading blogs:", err);
       setError("Không thể tải bài viết. Vui lòng thử lại sau.");
+      setBlogs([]);
     } finally {
       setLoading(false);
     }

@@ -252,7 +252,7 @@ public class PatientService : IPatientService
     public async Task<OperationResult> DeleteAsync(
         Guid patientId, Guid actorUserId, string? reason = null, string? actorIp = null, CancellationToken ct = default)
     {
-        var entity = await _db.Patients.FirstOrDefaultAsync(p => p.PatientId == patientId && !p.IsDeleted, ct);
+        var entity = await _db.Patients.FirstOrDefaultAsync(p => p.PatientId == patientId && !p.IsDeleted);
         if (entity == null) return OperationResult.Fail(ErrorCodes.NotFound);
 
         if (entity.UserId.HasValue && entity.UserId != actorUserId)

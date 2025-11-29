@@ -19,6 +19,7 @@
   <ItemGroup>
     <ProjectReference Include="..\TestOrder.Application\TestOrder.Application.csproj" />
     <ProjectReference Include="..\Contracts\Contracts.csproj" />
+    <ProjectReference Include="..\Common\Common.csproj" />
   </ItemGroup>
 
 </Project>

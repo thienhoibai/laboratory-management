@@ -1,6 +1,7 @@
 import BlogAPI from "../apis/BlogAPI";
 import { formatDate1 } from "../utils/formatDate";
 import { getUserById } from "./IAMService.jsx";
+import { setAuthToken } from "../utils/auth";
 
 /**
  * Blog Service
@@ -246,6 +247,8 @@ const BlogService = {
    */
   getAllBlogs: async (params = {}) => {
     try {
+      const token = localStorage.getItem("accessToken");
+      if (token) setAuthToken(token);
       const apiResponse = await BlogAPI.getAllBlogs(params);
       const apiBlogs = BlogService.extractBlogList(apiResponse);
       const transformedBlogs = apiBlogs.map((blog) =>
@@ -266,6 +269,8 @@ const BlogService = {
 
   getAllBlogsById: async (authorId) => {
     try {
+      const token = localStorage.getItem("accessToken");
+      if (token) setAuthToken(token);
       const apiResponse = await BlogAPI.getAllBlogs({ authorId });
       if (apiResponse.status >= 200 && apiResponse.status < 300) {
         const apiBlogs = BlogService.extractBlogList(apiResponse);
@@ -293,6 +298,8 @@ const BlogService = {
    */
   getApprovedBlogs: async (page = 1, pageSize = 100) => {
     try {
+      const token = localStorage.getItem("accessToken");
+      if (token) setAuthToken(token);
       const apiResponse = await BlogAPI.getApprovedBlogs(page, pageSize);
       const apiBlogs = BlogService.extractBlogList(apiResponse);
       const transformedBlogs = apiBlogs.map((blog) =>
@@ -303,12 +310,12 @@ const BlogService = {
       const enrichedBlogs = await Promise.all(
         transformedBlogs.map((blog) => BlogService.enrichBlogWithAuthor(blog))
       );
-
-      // Sort by createdDate descending (newest first)
+      
+      // Sort by blogPostId/id descending (newest first - highest ID)
       enrichedBlogs.sort((a, b) => {
-        const dateA = new Date(a.createdDate || 0);
-        const dateB = new Date(b.createdDate || 0);
-        return dateB - dateA;
+        const idA = a.id || 0;
+        const idB = b.id || 0;
+        return idB - idA;
       });
 
       // Slice to exact pageSize to ensure correct number of blogs
@@ -325,6 +332,8 @@ const BlogService = {
    */
   getCategories: async () => {
     try {
+      const token = localStorage.getItem("accessToken");
+      if (token) setAuthToken(token);
       const apiResponse = await BlogAPI.getAllCategories();
       const apiCategories = BlogService.extractCategoryList(apiResponse);
       return apiCategories.map((category) =>
@@ -343,6 +352,8 @@ const BlogService = {
    */
   getBlogById: async (id) => {
     try {
+      const token = localStorage.getItem("accessToken");
+      if (token) setAuthToken(token);
       const apiBlog = await BlogAPI.getBlogById(id);
       const transformedBlog = BlogService.transformBlogFromAPI(apiBlog);
       const enrichedBlog = await BlogService.enrichBlogWithAuthor(
@@ -362,6 +373,8 @@ const BlogService = {
    */
   createBlog: async (blogData) => {
     try {
+      const token = localStorage.getItem("accessToken");
+      if (token) setAuthToken(token);
       const apiData = BlogService.transformBlogToAPI(blogData);
       const createdBlog = await BlogAPI.createBlog(apiData);
       return BlogService.transformBlogFromAPI(createdBlog);
@@ -379,6 +392,8 @@ const BlogService = {
    */
   updateBlog: async (id, blogData) => {
     try {
+      const token = localStorage.getItem("accessToken");
+      if (token) setAuthToken(token);
       const apiData = BlogService.transformBlogToAPI(blogData);
       const updatedBlog = await BlogAPI.updateBlog(id, apiData);
       return BlogService.transformBlogFromAPI(updatedBlog);
@@ -395,6 +410,8 @@ const BlogService = {
    */
   deleteBlog: async (id) => {
     try {
+      const token = localStorage.getItem("accessToken");
+      if (token) setAuthToken(token);
       return await BlogAPI.deleteBlog(id);
     } catch (error) {
       console.error(`BlogService - Error deleting blog ${id}:`, error);
@@ -409,6 +426,8 @@ const BlogService = {
    */
   approveBlog: async (id) => {
     try {
+      const token = localStorage.getItem("accessToken");
+      if (token) setAuthToken(token);
       return await BlogAPI.approveBlog(id);
     } catch (error) {
       console.error(`BlogService - Error approving blog ${id}:`, error);
@@ -423,6 +442,8 @@ const BlogService = {
    */
   rejectBlog: async (id) => {
     try {
+      const token = localStorage.getItem("accessToken");
+      if (token) setAuthToken(token);
       return await BlogAPI.rejectBlog(id);
     } catch (error) {
       console.error(`BlogService - Error rejecting blog ${id}:`, error);

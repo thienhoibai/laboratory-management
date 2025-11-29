@@ -82,7 +82,7 @@ namespace TestOrder.Application.Services.Booking
         }
 
 
-        public async Task<object> GetAllBookingsByDateAsync 
+        public async Task<object> GetAllBookingsByDateAsync
             (DateOnly date, string? keyword, string? sortBy, string? sortDirection, int pageSize, int pageNumber)
         {
             var appointmentSlots = await _appointmentSlotService.GetAppointmentSlotsByDateAsync(date, 1, byte.MaxValue);
@@ -93,7 +93,7 @@ namespace TestOrder.Application.Services.Booking
             }
 
             List<Infrastructure.Models.Booking> bookings = new List<Infrastructure.Models.Booking>();
-            
+
             foreach (var slot in appointmentSlots)
             {
                 var slotBookings = await _bookingRepository.GetBookingsByAppointmentSlotSearchableAsync
@@ -107,7 +107,7 @@ namespace TestOrder.Application.Services.Booking
 
             var (pagedItems, totalItem) = await _bookingRepository.SortingAndPaging
                 (sortBy, sortDirection, pageSize, pageNumber, bookings);
-            
+
 
             var totalPages = (int)Math.Ceiling((double)totalItem / pageSize);
 
@@ -178,7 +178,7 @@ namespace TestOrder.Application.Services.Booking
 
         #region Create New Booking
 
-        public async Task<ResponseMessage> CreateBookingAsync (BookingRequestDTO bookingRequest)
+        public async Task<ResponseMessage> CreateBookingAsync(BookingRequestDTO bookingRequest)
         {
             double totalPrice = 0d;
             int? bundleId = bookingRequest.BundleId.Value != 0 ? bookingRequest.BundleId.Value : null;
@@ -275,11 +275,11 @@ namespace TestOrder.Application.Services.Booking
 
             return response;
 
-        } 
+        }
 
         #endregion
 
-        public async Task<ResponseMessage> CheckInBooking (Guid bookingId)
+        public async Task<ResponseMessage> CheckInBooking(Guid bookingId)
         {
 
             var booking =  await _bookingRepository.GetByIdAsync(bookingId);
@@ -292,7 +292,7 @@ namespace TestOrder.Application.Services.Booking
                 response.InstancesCode = bookingId;
                 return response;
             }
-                
+
             if (booking.Status != (byte?)BookingStatusEnum.Confirmed)
             {
                 response.ResponseCode = ResponseCode.BadInstanceState;
@@ -309,7 +309,7 @@ namespace TestOrder.Application.Services.Booking
             response.InstancesCode = bookingId;
                 
             return response;
-            
+
         }
 
         public async Task<ResponseMessage> CheckOutBooking(Guid bookingId)
@@ -339,7 +339,7 @@ namespace TestOrder.Application.Services.Booking
             return response;
         }
 
-        internal async Task PaymentConfirmBooking (Guid bookingId)
+        internal async Task PaymentConfirmBooking(Guid bookingId)
         {
             var booking = await _bookingRepository.GetByIdAsync(bookingId);
             if (booking == null)
@@ -397,13 +397,13 @@ namespace TestOrder.Application.Services.Booking
                         { "AppointmentTime", slot?.TimeBlock.ToString(@"hh\:mm") ?? "Chưa xác định" }
                     };
 
-                    await _publishEndpoint.Publish(new NotificationRequestedV1(
-                        MessageId: Guid.NewGuid().ToString(),
-                        Channel: "email",
-                        To: booking.PatientEmail,
-                        Template: "BookingConfirmation",
-                        Data: templateData
-                    ));
+                    //await _publishEndpoint.Publish(new NotificationRequestedV1(
+                    //    MessageId: Guid.NewGuid().ToString(),
+                    //    Channel: "email",
+                    //    To: booking.PatientEmail,
+                    //    Template: "BookingConfirmation",
+                    //    Data: templateData
+
 
                     Console.WriteLine($"✅ Đã gửi yêu cầu email xác nhận booking #{booking.BookingCode} tới {booking.PatientEmail}");
                 }

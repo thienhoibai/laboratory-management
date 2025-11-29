@@ -10,6 +10,8 @@ import {
   updateRolePermissions as updateRolePermissionsAPI,
   patchRolePermissions as patchRolePermissionsAPI,
   patchRolePermissionsByModule as patchRolePermissionsByModuleAPI,
+  createRole as createRoleAPI,
+  deleteRole as deleteRoleAPI,
 } from "../apis/IAMServiceAPI.jsx";
 import { toast } from "react-toastify";
 import { jwtDecode } from "jwt-decode";
@@ -103,10 +105,17 @@ export const useLoginWithPassword = () => {
         localStorage.setItem("expiresAt", data.expiresAt);
         localStorage.setItem("permissions", JSON.stringify(perm) || []);
         setUserData(data);
-        if (role === "Customer" || role === "Patient") {
+        if (role === "Customer") {
           toast.success("Đăng nhập thành công!");
           navigate("/");
-        } else if (role === "Admin" || role === "Manager" || role === "Staff") {
+        } else if (
+          role === "Admin" ||
+          role === "Manager" ||
+          role === "LabUser" ||
+          role === "Receptionist" ||
+          role === "LabBlogger" ||
+          role === "Technician"
+        ) {
           toast.success("Đăng nhập thành công!");
           navigate("/dashboard");
         }
@@ -156,10 +165,17 @@ export const useLoginWithGoogle = () => {
         localStorage.setItem("expiresAt", data.expiresAt);
         localStorage.setItem("permissions", JSON.stringify(perm) || []);
         setUserData(data);
-        if (role === "Customer" || role === "Patient") {
+        if (role === "Customer") {
           toast.success("Đăng nhập thành công!");
           navigate("/");
-        } else if (role === "Admin" || role === "Manager" || role === "Staff") {
+        } else if (
+          role === "Admin" ||
+          role === "Manager" ||
+          role === "LabUser" ||
+          role === "Receptionist" ||
+          role === "LabBlogger" ||
+          role === "Technician"
+        ) {
           toast.success("Đăng nhập thành công!");
           navigate("/dashboard");
         }
@@ -424,27 +440,60 @@ export const updateRolePermissions = async (roleId, permissions = []) => {
 
 // PATCH /api/rbac/roles/{roleId}/permissions
 // Cập nhật một phần quyền của một vai trò
-export const patchRolePermissions = async (roleId, permissions = []) => {
+// Body: { addKeys: [], removeKeys: [] }
+export const patchRolePermissions = async (
+  roleId,
+  addKeys = [],
+  removeKeys = []
+) => {
   if (!roleId) throw new Error("Role ID is required");
-  const response = await patchRolePermissionsAPI(roleId, permissions);
+  const response = await patchRolePermissionsAPI(roleId, addKeys, removeKeys);
   const data = response?.data;
   return data?.data || data;
 };
 
 // PATCH /api/rbac/roles/{roleId}/permissions/modules/{module}
 // Cập nhật quyền theo module cụ thể
+// Body: { enable: true/false }
 export const patchRolePermissionsByModule = async (
   roleId,
   module,
-  permissions = []
+  enable = true
 ) => {
   if (!roleId) throw new Error("Role ID is required");
   if (!module) throw new Error("Module is required");
   const response = await patchRolePermissionsByModuleAPI(
     roleId,
     module,
-    permissions
+    enable
   );
   const data = response?.data;
   return data?.data || data;
+};
+
+// POST /api/Roles
+// Tạo role mới
+export const createRole = async (data) => {
+  if (!data) throw new Error("Role data is required");
+  const response = await createRoleAPI(data);
+  return response?.data;
+};
+
+// DELETE /api/Roles/{id}
+// Xóa role
+export const deleteRole = async (id) => {
+  if (!id) throw new Error("Role ID is required");
+  const response = await deleteRoleAPI(id);
+  return response?.data;
+};
+
+// POST /api/Users/{id}/roles
+// Cập nhật role của user
+export const updateUserRoles = async (userId, roleIds) => {
+  if (!userId) throw new Error("User ID is required");
+  if (!roleIds || !Array.isArray(roleIds) || roleIds.length === 0) {
+    throw new Error("Role IDs array is required");
+  }
+  const response = await IAMServiceAPI.UpdateUserRoles(userId, roleIds);
+  return response?.data || response;
 };

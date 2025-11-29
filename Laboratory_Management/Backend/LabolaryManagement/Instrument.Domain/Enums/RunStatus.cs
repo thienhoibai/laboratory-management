@@ -3,7 +3,7 @@
 /// <summary>
 /// Trạng thái của một lần chạy xét nghiệm (run)
 /// </summary>
-public enum RunStatus : byte
+public enum RunStatus : int
 {
     /// <summary>
     /// Đang chạy

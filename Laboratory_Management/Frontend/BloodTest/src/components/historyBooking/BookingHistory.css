@@ -335,6 +335,7 @@
   text-align: center;
   border: 2px dashed;
 }
+
 .result-box p {
   margin: 0 0 4px 0;
   font-size: 14px;
@@ -363,8 +364,64 @@
 
 /* Ready result box (completed with results) */
 .result-box.ready {
-  background: #fff;
-  border-color: #6b7280;
+  background: #fcfdff;
+  border: 1px solid;
+  box-shadow: 0 2px 12px rgba(43, 120, 246, 0.07);
+  color: #222;
+  padding: 40px 0 32px 0;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
+}
+.result-box img {
+  height: 80px;
+  width: 80px;
+}
+.result-box.ready strong {
+  font-size: 20px;
+  font-weight: 700;
+  color: #222;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.result-box.ready p {
+  color: #737373;
+  font-size: 15px;
+  margin: 0 0 24px 0;
+  font-weight: 400;
+}
+
+.result-box.ready .btn-primary-history-booking {
+  margin-top: 8px;
+  background: #397af8;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 10px 32px;
+  box-shadow: 0 2px 8px rgba(43, 120, 246, 0.1);
+  transition: background 0.18s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  left: 0;
+  position: static;
+}
+.result-box.ready .btn-primary-history-booking img {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  background: none;
+  padding: 0;
+}
+.result-box.ready .btn-primary-history-booking:hover {
+  background: #2456b6;
 }
 .result-box.cancelled {
   background-color: #fdf2f2;
@@ -394,23 +451,12 @@
 
 /* Primary button */
 .btn-primary-history-booking {
-  background: #2563eb;
-  color: #fff;
-  border: none;
-  padding: 11px 20px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-  width: 25%;
-  margin-top: 12px;
   display: flex;
-  align-items: center;
   justify-content: center;
-  margin: 0 auto;
-  margin-top: 20px;
-  gap: 8px;
-  transition: background 0.2s;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+  width: 60%;
 }
 .btn-primary-history-booking::before {
   font-size: 16px;

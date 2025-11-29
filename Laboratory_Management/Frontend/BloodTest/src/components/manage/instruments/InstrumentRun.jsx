@@ -1,34 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
+import api from "../../../configs/axios";
 import { useSearchParams } from "react-router-dom";
 import { startInstrumentRun } from "../../../apis/InstrumentAPI";
 import AdminLayout from "../../admin/layout/AdminLayout";
+import { setAuthToken } from "../../../utils/auth";
 import { FiDroplet, FiCheckCircle } from "react-icons/fi";
 import "./InstrumentRun.css";
-import bloodCellsGif from "../../../assets/gif/red-blood-cells.gif";
 
-const defaultResults = [
-  {
-    label: "Huyết Sắc Tố (Hemoglobin)",
-    unit: "g/dL",
-    range: "12-16 g/dL",
-    value: 14.2,
-  },
-  { label: "Hồng Cầu (RBC)", unit: "M/µL", range: "4.5-5.5 M/µL", value: 5.1 },
-  { label: "Trắng Cầu (WBC)", unit: "K/µL", range: "4.5-11 K/µL", value: 7.3 },
-  {
-    label: "Tiểu Cầu (Platelets)",
-    unit: "K/µL",
-    range: "150-400 K/µL",
-    value: 245,
-  },
-  { label: "Glucose", unit: "mg/dL", range: "70-100 mg/dL", value: 92 },
-  {
-    label: "Cholesterol Tổng",
-    unit: "mg/dL",
-    range: "< 200 mg/dL",
-    value: 185,
-  },
-];
+// Không dùng defaultResults nữa, sẽ lấy từ API
 
 const InstrumentRun = () => {
   // const navigate = useNavigate();
@@ -41,7 +20,7 @@ const InstrumentRun = () => {
   const [phase, setPhase] = useState("pending"); // pending -> running -> done | error
   const [message, setMessage] = useState("");
   const [progress, setProgress] = useState(0);
-  const [results, setResults] = useState(defaultResults);
+  const [results, setResults] = useState([]); // [{catalogName, parameters: [{name, value, unit, referenceRange}]}]
   const breadcrumbs = useMemo(
     () => [
       { name: "Phòng Xét Nghiệm", link: "/instruments" },
@@ -140,15 +119,14 @@ const InstrumentRun = () => {
         );
 
         const data = await startInstrumentRun(bookingId);
-        const status = (data?.status || data?.Status || "")
-          .toString()
-          .toUpperCase();
+        console.log(data);
+        const status = data?.status || data?.Status || "";
         const msg = String(data?.message || data?.Message || "");
         setMessage(msg);
 
         // Simulate progress finishing quickly after response
         setProgress(100);
-        if (status === "COMPLETED") {
+        if (status === 1) {
           setPhase("done");
         } else {
           setPhase("error");
@@ -196,10 +174,31 @@ const InstrumentRun = () => {
     run();
   }, [seconds, phase, bookingId]);
 
+  // Khi phase done, gọi API lấy kết quả thực tế
   useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    setAuthToken(token);
     if (phase === "done" && bookingId) {
       const storageKey = `instrument_run_${bookingId}`;
       localStorage.removeItem(storageKey);
+
+      // Gọi API lấy kết quả
+      const fetchResults = async () => {
+        try {
+          const res = await api.get(
+            `/testorder/api/TestResult/booking/${bookingId}`
+          );
+          if (res.data && Array.isArray(res.data.catalogs)) {
+            setResults(res.data.catalogs);
+            console.log("Result: " + results);
+          } else {
+            setResults([]);
+          }
+        } catch (e) {
+          setResults([]);
+        }
+      };
+      fetchResults();
     }
   }, [phase, bookingId]);
 
@@ -268,24 +267,78 @@ const InstrumentRun = () => {
               <div className="bar" style={{ width: `${progress}%` }} />
             </div>
 
-            <div className="ir-grid">
-              {results.map((r, idx) => (
-                <div key={idx} className="ir-metric">
-                  <div className="ir-metric-top">
-                    <div className="ir-metric-title">{r.label}</div>
-                    <FiCheckCircle
-                      className={`ir-metric-icon ${
-                        phase === "done" ? "done" : "pending"
-                      }`}
-                    />
-                  </div>
-                  <div className="ir-metric-range">Chuẩn: {r.range}</div>
-                  <div className="ir-metric-value">
-                    {r.value} <span>{r.unit}</span>
-                  </div>
-                </div>
-              ))}
-              {phase === "done" && (
+            {/* Nếu phase là running, hiển thị đang chạy */}
+            {phase === "running" && (
+              <div className="ir-grid">
+                <div>Đang chạy xét nghiệm...</div>
+              </div>
+            )}
+
+            {/* Nếu phase là done, hiển thị kết quả thật */}
+            {phase === "done" && (
+              <div className="ir-results-list">
+                {results.length === 0 ? (
+                  <div>Không có kết quả xét nghiệm.</div>
+                ) : (
+                  results.map((catalog, idx) => (
+                    <div
+                      key={catalog.catalogId || idx}
+                      className="ir-catalog-block"
+                    >
+                      <div className="ir-catalog-title">
+                        <strong>{catalog.catalogName}</strong>
+                        <span
+                          style={{ marginLeft: 8, color: "#888", fontSize: 13 }}
+                        >
+                          {catalog.catalogDescription}
+                        </span>
+                      </div>
+                      {/* Bảng kết quả chỉ số */}
+                      <div style={{ overflowX: "auto" }}>
+                        <table className="ir-params-table">
+                          <thead>
+                            <tr>
+                              <th>Tên chỉ số</th>
+                              <th>Kết quả</th>
+                              <th>Đơn vị</th>
+                              <th>Giá trị tham chiếu</th>
+                              <th>Trạng thái</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {Array.isArray(catalog.parameters) &&
+                            catalog.parameters.length > 0 ? (
+                              catalog.parameters.map((param, pidx) => (
+                                <tr key={pidx}>
+                                  <td>{param.name}</td>
+                                  <strong>
+                                    {" "}
+                                    <td>{param.value}</td>
+                                  </strong>
+                                  <td>{param.unit}</td>
+                                  <td>{param.referenceRange}</td>
+                                  <td>
+                                    <span className="ir-param-status">
+                                      {param.isNormal === false
+                                        ? "Bất thường"
+                                        : param.isNormal === true
+                                        ? "Bình thường"
+                                        : "—"}
+                                    </span>
+                                  </td>
+                                </tr>
+                              ))
+                            ) : (
+                              <tr>
+                                <td colSpan={5}>Không có thông số.</td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  ))
+                )}
                 <div className="ir-complete">
                   <div className="ir-complete-row">
                     <FiCheckCircle className="ir-complete-icon" />
@@ -294,15 +347,14 @@ const InstrumentRun = () => {
                         Hoàn Thành Xét Nghiệm
                       </div>
                       <div className="ir-complete-desc">
-                        {
-                          "Xét Nghiệm Thành Công, Kết quả xét nghiệm đã được trả về lịch sử xét nghiệm"
-                        }
+                        Xét Nghiệm Thành Công, Kết quả xét nghiệm đã được trả về
+                        lịch sử xét nghiệm
                       </div>
                     </div>
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
             <div className="ir-footer-hint">
               💡 Kết quả xét nghiệm tự động chạy sau 30 giây kể từ khi check-in
             </div>
