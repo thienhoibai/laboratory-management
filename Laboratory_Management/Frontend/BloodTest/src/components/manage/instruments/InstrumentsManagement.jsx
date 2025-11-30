@@ -245,7 +245,6 @@ const InstrumentsManagement = () => {
         freshInstrument.imageUrl || freshInstrument.imageData || "";
       setImagePreview(previewImage);
     } catch (error) {
-      console.error("Error loading instrument detail:", error);
       // Fallback to using instrument from list if API call fails
       setFormState(mapInstrumentToForm(instrument));
       releasePreview(imagePreview);
@@ -703,10 +702,6 @@ const InstrumentModal = ({
                         src={imagePreview}
                         alt="Preview"
                         onError={(e) => {
-                          console.error("Failed to load instrument image:", {
-                            attemptedUrl: imagePreview,
-                            code: formState.code,
-                          });
                           e.target.style.display = "none";
                         }}
                       />

@@ -152,7 +152,7 @@ const BlogsManagement = () => {
         setBlogs(blogsData);
       }
     } catch (error) {
-      console.error("Error loading blogs:", error);
+("Error loading blogs:", error);
       toast.error("Không thể tải danh sách bài viết. Vui lòng thử lại!");
     } finally {
       setLoading(false);
@@ -168,7 +168,7 @@ const BlogsManagement = () => {
       const categoriesData = await BlogService.getCategories();
       setCategories(categoriesData);
     } catch (error) {
-      console.error("Error loading categories:", error);
+("Error loading categories:", error);
       toast.error("Không thể tải danh mục. Vui lòng thử lại!");
     } finally {
       setCategoriesLoading(false);
@@ -414,7 +414,7 @@ const BlogsManagement = () => {
       closeModal();
       loadBlogs();
     } catch (error) {
-      console.error("Error saving blog:", error);
+("Error saving blog:", error);
       toast.error(
         error.response?.data?.message ||
           "Có lỗi xảy ra khi lưu bài viết. Vui lòng thử lại!"
@@ -454,7 +454,7 @@ const BlogsManagement = () => {
       closeDeleteModal();
       loadBlogs();
     } catch (error) {
-      console.error("Error deleting blog:", error);
+("Error deleting blog:", error);
       toast.error(
         error.response?.data?.message ||
           "Có lỗi xảy ra khi xóa bài viết. Vui lòng thử lại!"
@@ -479,7 +479,7 @@ const BlogsManagement = () => {
       toast.success("Đã duyệt bài viết thành công!");
       loadBlogs();
     } catch (error) {
-      console.error("Error approving blog:", error);
+("Error approving blog:", error);
       toast.error(
         error.response?.data?.message ||
           "Có lỗi xảy ra khi duyệt bài viết. Vui lòng thử lại!"
@@ -502,7 +502,7 @@ const BlogsManagement = () => {
       toast.success("Đã hủy bài viết thành công!");
       loadBlogs();
     } catch (error) {
-      console.error("Error rejecting blog:", error);
+("Error rejecting blog:", error);
       toast.error(
         error.response?.data?.message ||
           "Có lỗi xảy ra khi hủy bài viết. Vui lòng thử lại!"
@@ -535,7 +535,7 @@ const BlogsManagement = () => {
       setViewingBlog(blogDetail);
       setIsViewDetailOpen(true);
     } catch (error) {
-      console.error("Error loading blog detail:", error);
+("Error loading blog detail:", error);
       // Fallback to using blog from list if API call fails
       setViewingBlog(blog);
       setIsViewDetailOpen(true);

@@ -47,6 +47,12 @@ export const IAMServiceAPI = {
     return await api.get(`${URL_User}${userId}`);
   },
 
+  // GET /api/Users/me
+  // Lấy thông tin user hiện tại đang đăng nhập
+  GetCurrentUser: async () => {
+    return await api.get(`${URL_User}me`);
+  },
+
   UpdateUserRoles: async (userId, roleIds) => {
     return await api.post(`${URL_User}${userId}/roles`, {
       roleIds: Array.isArray(roleIds) ? roleIds : [roleIds],

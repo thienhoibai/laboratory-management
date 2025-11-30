@@ -38,24 +38,14 @@ export const getInstrumentByCode = async (code) => {
 
 export const createInstrument = async (payload) => {
   ensureAuth();
-  try {
-    const res = await api.post(INSTRUMENT_BASE, payload);
-    return unwrap(res);
-  } catch (error) {
-    console.error("Error creating instrument:", error);
-    throw error;
-  }
+  const res = await api.post(INSTRUMENT_BASE, payload);
+  return unwrap(res);
 };
 
 export const updateInstrumentByCode = async (code, payload) => {
   ensureAuth();
-  try {
-    const res = await api.put(`${INSTRUMENT_BASE}/${code}`, payload);
-    return unwrap(res);
-  } catch (error) {
-    console.error("Error updating instrument:", error);
-    throw error;
-  }
+  const res = await api.put(`${INSTRUMENT_BASE}/${code}`, payload);
+  return unwrap(res);
 };
 
 export const deleteInstrumentByCode = async (code) => {

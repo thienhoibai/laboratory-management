@@ -74,14 +74,8 @@ export default function BlogPage() {
     setCategoriesLoading(true);
     try {
       const categoriesData = await BlogService.getCategories();
-      console.log("Loaded categories:", categoriesData);
       setCategories(categoriesData || []);
-      // Log for debugging
-      if (!categoriesData || categoriesData.length === 0) {
-        console.warn("No categories loaded - API may require authentication");
-      }
     } catch (err) {
-      console.error("Error loading categories:", err);
       // Still set empty array so UI doesn't break
       setCategories([]);
       // Don't show error to user - categories are optional
@@ -158,7 +152,6 @@ export default function BlogPage() {
               
               if (uniqueCategories.size > 0) {
                 const extractedCategories = Array.from(uniqueCategories.values());
-                console.log("Extracted categories from blogs:", extractedCategories);
                 return extractedCategories;
               }
             }
@@ -190,7 +183,6 @@ export default function BlogPage() {
       setTotalPages(totalPagesCount);
       setTotalCount(total);
     } catch (err) {
-      console.error("Error loading blog page data:", err);
       setError("Không thể tải dữ liệu. Vui lòng thử lại sau.");
       setBlogPosts([]);
       setTotalPages(0);
@@ -202,7 +194,6 @@ export default function BlogPage() {
 
 
   const handleCategoryChange = (categoryId) => {
-    console.log("Category changed to:", categoryId);
     setSelectedCategoryId(categoryId);
     setCurrentPage(1); // Reset to first page when category changes
   };
@@ -310,7 +301,6 @@ export default function BlogPage() {
                         selectedCategoryId === catId ? "active" : ""
                       }`}
                       onClick={() => {
-                        console.log("Category button clicked:", { catId, normalizedCatId, category });
                         handleCategoryChange(normalizedCatId);
                       }}
                     >

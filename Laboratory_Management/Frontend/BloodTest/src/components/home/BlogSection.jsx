@@ -38,7 +38,6 @@ export default function BlogSection() {
         setError(null);
       }
     } catch (err) {
-      console.error("Error loading blogs:", err);
       // Only show error for non-auth issues
       if (err.response?.status !== 401 && err.response?.status !== 403) {
         setError("Không thể tải bài viết. Vui lòng thử lại sau.");

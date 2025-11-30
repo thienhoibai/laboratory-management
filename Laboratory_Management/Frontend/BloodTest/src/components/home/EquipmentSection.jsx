@@ -4,7 +4,6 @@ import "./EquipmentSection.css";
 import InstrumentService from "../../services/InstrumentService";
 import { setAuthToken } from "../../utils/auth";
 
-
 export default function EquipmentSection() {
   const [equipments, setEquipments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,7 +21,7 @@ export default function EquipmentSection() {
       if (token) {
         setAuthToken(token);
       }
-      
+
       // Gọi API ngay cả khi không có token (public endpoint)
       const response = await InstrumentService.list({
         pageSize: 100,
@@ -30,15 +29,13 @@ export default function EquipmentSection() {
       });
       const items = response.items || [];
       setEquipments(items);
-    } catch (error) {
-      console.error("Error fetching equipments:", error);
+    } catch {
       // Nếu có lỗi (401, 403...), không hiển thị dữ liệu
       setEquipments([]);
     } finally {
       setLoading(false);
     }
   };
-
 
   const getVisibleEquipments = () => {
     const startIndex = currentIndex;
@@ -119,81 +116,78 @@ export default function EquipmentSection() {
               // Get image URL - ưu tiên imageUrl đã được build từ InstrumentService
               // Fallback to imageData (base64) nếu có
               const imageUrl = item.imageUrl || item.imageData || "";
-              
+
               return (
-              <div className="equipment-card" key={item.code || item.id}>
-                <div className="equipment-img-bg">
-                  {imageUrl ? (
-                    <img
-                      src={imageUrl}
-                      alt={item.name}
-                      className="equipment-img"
-                      onError={(e) => {
-                        console.error("Failed to load instrument image:", {
-                          url: imageUrl,
-                          item: item.name,
-                          code: item.code,
-                        });
-                        e.target.style.display = "none";
-                        // Hiển thị placeholder khi ảnh lỗi
-                        const placeholder =
-                          e.target.parentElement.querySelector(
-                            ".equipment-img-placeholder"
-                          );
-                        if (placeholder) {
-                          placeholder.style.display = "flex";
-                        }
-                      }}
-                    />
-                  ) : null}
-                  <div
-                    className="equipment-img-placeholder"
-                    style={{ display: imageUrl ? "none" : "flex" }}
-                  >
-                    <svg
-                      width="80"
-                      height="80"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                    >
-                      <rect
-                        x="3"
-                        y="3"
-                        width="18"
-                        height="18"
-                        rx="2"
-                        ry="2"
-                        stroke="#cbd5e0"
+                <div className="equipment-card" key={item.code || item.id}>
+                  <div className="equipment-img-bg">
+                    {imageUrl ? (
+                      <img
+                        src={imageUrl}
+                        alt={item.name}
+                        className="equipment-img"
+                        onError={(e) => {
+                          e.target.style.display = "none";
+                          // Hiển thị placeholder khi ảnh lỗi
+                          const placeholder =
+                            e.target.parentElement.querySelector(
+                              ".equipment-img-placeholder"
+                            );
+                          if (placeholder) {
+                            placeholder.style.display = "flex";
+                          }
+                        }}
                       />
-                      <circle cx="8.5" cy="8.5" r="1.5" fill="#cbd5e0" />
-                      <path
-                        d="M21 15l-5-5L5 21"
-                        stroke="#cbd5e0"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                    <span
-                      style={{
-                        marginTop: "8px",
-                        color: "#9ca3af",
-                        fontSize: "0.875rem",
-                      }}
+                    ) : null}
+                    <div
+                      className="equipment-img-placeholder"
+                      style={{ display: imageUrl ? "none" : "flex" }}
                     >
-                      Không có ảnh
-                    </span>
+                      <svg
+                        width="80"
+                        height="80"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                      >
+                        <rect
+                          x="3"
+                          y="3"
+                          width="18"
+                          height="18"
+                          rx="2"
+                          ry="2"
+                          stroke="#cbd5e0"
+                        />
+                        <circle cx="8.5" cy="8.5" r="1.5" fill="#cbd5e0" />
+                        <path
+                          d="M21 15l-5-5L5 21"
+                          stroke="#cbd5e0"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                      <span
+                        style={{
+                          marginTop: "8px",
+                          color: "#9ca3af",
+                          fontSize: "0.875rem",
+                        }}
+                      >
+                        Không có ảnh
+                      </span>
+                    </div>
+                  </div>
+                  <div className="equipment-info">
+                    <h3 className="equipment-name">{item.name}</h3>
+                    <div className="equipment-code-wrapper">
+                      <span className="equipment-code-label">Mã thiết bị:</span>
+                      <span className="equipment-code-value">
+                        {item.code || item.instrumentCode}
+                      </span>
+                    </div>
                   </div>
                 </div>
-                <div className="equipment-info">
-                  <h3 className="equipment-name">{item.name}</h3>
-                  <div className="equipment-code-wrapper">
-                    <span className="equipment-code-label">Mã thiết bị:</span>
-                    <span className="equipment-code-value">{item.code || item.instrumentCode}</span>
-                  </div>
-                </div>
-              </div>
               );
             })
           )}

@@ -119,7 +119,6 @@ const InstrumentRun = () => {
         );
 
         const data = await startInstrumentRun(bookingId);
-        console.log(data);
         const status = data?.status || data?.Status || "";
         const msg = String(data?.message || data?.Message || "");
         setMessage(msg);
@@ -190,7 +189,6 @@ const InstrumentRun = () => {
           );
           if (res.data && Array.isArray(res.data.catalogs)) {
             setResults(res.data.catalogs);
-            console.log("Result: " + results);
           } else {
             setResults([]);
           }

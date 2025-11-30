@@ -50,24 +50,18 @@ export const extractItemsAndMeta = (response, fallbackQuery = {}) => {
 
 // ==================== Bundle Service ====================
 export const getAllBundles = async (params = {}) => {
-  console.log("[Service] getAllBundles called with params:", params);
   try {
     const token = localStorage.getItem("accessToken");
     if (token) setAuthToken(token);
     // Lấy bundles từ TestBundle API (chứa tất cả bundles, kể cả chưa có catalog)
-    console.log("[Service] Fetching bundles from TestBundle API...");
     const testBundleResponse = await getAllBundlesWithActive(params);
     const testBundles = extractItemsAndMeta(testBundleResponse, params);
-    console.log(
-      `[Service] TestBundle API returned ${testBundles.items.length} bundles`
-    );
 
     // Lấy thông tin catalogs từ CatalogBundle API để merge
     // Lưu ý: CatalogBundle API chỉ trả về bundles có catalogs
     // Nên cần lấy với pageSize lớn để đảm bảo lấy được tất cả
     let catalogBundles = { items: [], meta: { totalItems: 0 } };
     try {
-      console.log("[Service] Fetching catalogs from CatalogBundle API...");
       // Lấy tất cả bundles có catalogs (không giới hạn pagination)
       const catalogBundleParams = {
         ...params,
@@ -79,14 +73,8 @@ export const getAllBundles = async (params = {}) => {
         catalogBundleResponse,
         catalogBundleParams
       );
-      console.log(
-        `[Service] CatalogBundle API returned ${catalogBundles.items.length} bundles with catalogs`
-      );
     } catch (error) {
-      console.warn(
-        "Could not fetch catalogs from CatalogBundle, using TestBundle data only:",
-        error
-      );
+      // Silently fallback to TestBundle data only
     }
 
     // Helper function để so sánh bundle ID một cách an toàn
@@ -116,46 +104,20 @@ export const getAllBundles = async (params = {}) => {
         isActive: testBundle.isActive ?? catalogBundle?.isActive ?? true,
       };
 
-      // Log để debug
-      if (catalogBundle) {
-        console.log(
-          `[Service] Merged bundle ${testBundleId}: found ${
-            catalogBundle.catalogs?.length || 0
-          } catalogs`
-        );
-      } else {
-        console.log(
-          `[Service] Bundle ${testBundleId} has no catalogs in CatalogBundle response`
-        );
-      }
-
       return mergedBundle;
     });
-
-    console.log(
-      `[Service] getAllBundles returning ${mergedBundles.length} merged bundles`
-    );
 
     return {
       items: mergedBundles,
       meta: testBundles.meta, // Sử dụng meta từ TestBundle vì nó chứa tất cả bundles
     };
   } catch (error) {
-    console.error("[Service] Error fetching bundles from TestBundle:", error);
     // Fallback: thử lấy từ CatalogBundle nếu TestBundle lỗi
     try {
-      console.log("[Service] Fallback: trying CatalogBundle API...");
       const catalogBundleResponse = await getAllBundlesAPI(params);
       const catalogBundles = extractItemsAndMeta(catalogBundleResponse, params);
-      console.log(
-        `[Service] Fallback returned ${catalogBundles.items.length} bundles`
-      );
       return catalogBundles;
     } catch (fallbackError) {
-      console.error(
-        "[Service] Error fetching bundles from both APIs:",
-        fallbackError
-      );
       throw error; // Throw error gốc
     }
   }
@@ -168,18 +130,12 @@ export const getBundleById = async (id) => {
     if (token) setAuthToken(token);
     const response = await getBundleByIdAPI(id);
     if (response?.status === 204 || !response?.data) {
-      console.warn(
-        `[Service] getBundleById returned 204 or no data for id: ${id}`
-      );
       return null;
     }
     const data = response?.data;
     return data?.data || data;
   } catch (error) {
     if (error.response?.status === 204 || error.response?.status === 404) {
-      console.warn(
-        `[Service] getBundleById: Bundle not found or no content for id: ${id}`
-      );
       return null;
     }
     throw error;
@@ -190,28 +146,16 @@ export const createBundle = async (payload) => {
   try {
     const token = localStorage.getItem("accessToken");
     if (token) setAuthToken(token);
-    console.log("[Service] createBundle called with payload:", payload);
     const response = await createBundleAPI(payload);
-    console.log("[Service] createBundle API response:", {
-      status: response?.status,
-      headers: response?.headers,
-      data: response?.data,
-    });
 
     // Xử lý trường hợp 204 No Content - API thành công nhưng không trả về data
     if (response?.status === 204) {
-      console.log(
-        "[Service] createBundle returned 204 No Content - success but no data"
-      );
-
       // Thử lấy bundleId từ Location header nếu có
       const location =
         response?.headers?.location ||
         response?.headers?.Location ||
         response?.headers?.["location"] ||
         response?.headers?.["Location"];
-
-      console.log("[Service] Location header:", location);
 
       if (location) {
         // Thử nhiều pattern để extract ID
@@ -225,19 +169,9 @@ export const createBundle = async (payload) => {
           const match = location.match(pattern);
           if (match && match[1]) {
             const bundleId = match[1];
-            console.log(
-              `[Service] Extracted bundleId from Location header: ${bundleId}`
-            );
             return { id: bundleId, bundleId: bundleId };
           }
         }
-
-        console.warn(
-          "[Service] Location header found but couldn't extract ID:",
-          location
-        );
-      } else {
-        console.warn("[Service] No Location header in 204 response");
       }
 
       // Nếu không có Location header, trả về null để component xử lý
@@ -246,28 +180,15 @@ export const createBundle = async (payload) => {
 
     const data = response?.data;
     const result = data?.data || data;
-    console.log("[Service] createBundle returning data:", result);
     return result;
   } catch (error) {
-    console.error("[Service] createBundle error:", {
-      status: error.response?.status,
-      headers: error.response?.headers,
-      data: error.response?.data,
-      message: error.message,
-    });
-
     // Xử lý trường hợp 204 trong error response
     if (error.response?.status === 204) {
-      console.log(
-        "[Service] createBundle error response 204 - treating as success"
-      );
       const location =
         error.response?.headers?.location ||
         error.response?.headers?.Location ||
         error.response?.headers?.["location"] ||
         error.response?.headers?.["Location"];
-
-      console.log("[Service] Error Location header:", location);
 
       if (location) {
         const patterns = [/\/(\d+)$/, /\/([0-9a-fA-F-]+)$/, /id[=:](\d+)/i];
@@ -276,9 +197,6 @@ export const createBundle = async (payload) => {
           const match = location.match(pattern);
           if (match && match[1]) {
             const bundleId = match[1];
-            console.log(
-              `[Service] Extracted bundleId from error Location header: ${bundleId}`
-            );
             return { id: bundleId, bundleId: bundleId };
           }
         }
@@ -309,25 +227,14 @@ export const deleteBundle = async (id) => {
 
 export const getCatalogsOfBundle = async (bundleId) => {
   if (!bundleId) throw new Error("Bundle ID is required");
-  console.log(
-    `[Service] Calling getCatalogsOfBundle for bundleId: ${bundleId}`
-  );
 
   try {
     const token = localStorage.getItem("accessToken");
     if (token) setAuthToken(token);
     const response = await getCatalogsOfBundleAPI(bundleId);
-    console.log(
-      `[Service] Response from getCatalogsOfBundle:`,
-      response?.status,
-      response?.data
-    );
 
     // Xử lý trường hợp 204 No Content - bundle không có catalogs
     if (response?.status === 204 || !response?.data) {
-      console.log(
-        `[Service] getCatalogsOfBundle returned 204 or no data for bundleId: ${bundleId}`
-      );
       return null;
     }
 
@@ -352,22 +259,9 @@ export const getCatalogsOfBundle = async (bundleId) => {
     return null;
   } catch (error) {
     // Xử lý trường hợp 204, 404 hoặc các lỗi khác
-    if (error.response?.status === 204) {
-      console.log(
-        `[Service] getCatalogsOfBundle: 204 No Content for bundleId: ${bundleId}`
-      );
+    if (error.response?.status === 204 || error.response?.status === 404) {
       return null;
     }
-    if (error.response?.status === 404) {
-      console.log(
-        `[Service] getCatalogsOfBundle: 404 Not Found for bundleId: ${bundleId}`
-      );
-      return null;
-    }
-    console.error(
-      `[Service] Error getting catalogs of bundle ${bundleId}:`,
-      error
-    );
     throw error;
   }
 };
