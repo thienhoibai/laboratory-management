@@ -24,12 +24,13 @@ export default function TestResultDetail({
         );
         if (response.status >= 200 && response.status < 300) {
           setRealResult(response.data);
+          console.log(response.data);
         } else {
           setRealResult(null);
           setError("Không lấy được kết quả xét nghiệm thực tế.");
         }
       } catch (err) {
-        setRealResult(null);
+        setRealResult(err || null);
         setError("Không lấy được kết quả xét nghiệm thực tế.");
       } finally {
         setLoading(false);
@@ -54,7 +55,7 @@ export default function TestResultDetail({
               value: p.resultValue || p.value,
               unit: p.unit,
               referenceRange: p.referenceRange || p.range,
-              status: p.status,
+              isNormal: p.isNormal,
             }))
           : [],
       }));
@@ -70,7 +71,7 @@ export default function TestResultDetail({
             value: p.resultValue || p.value,
             unit: p.unit,
             referenceRange: p.referenceRange || p.range,
-            status: p.status,
+            isNormal: p.isNormal,
           })),
         },
       ];
@@ -86,16 +87,13 @@ export default function TestResultDetail({
     }));
   };
 
-  const getStatusBadge = (status) => {
-    if (status === "normal") {
-      return <span className="status-badge normal">Bình thường</span>;
-    } else if (status === "high") {
-      return <span className="status-badge high">Cao</span>;
-    } else if (status === "low") {
-      return <span className="status-badge low">Thấp</span>;
-    }
-    return null;
-  };
+  // const getStatusBadge = (status) => {
+  //   if (status === true) {
+  //     return <span className="status-badge normal">Bình thường</span>;
+  //   } else {
+  //     return <span className="status-badge high">Bất thường</span>;
+  //   }
+  // };
 
   // Decide which data to show: realResult if available and valid
   let sections = [];
@@ -197,7 +195,9 @@ export default function TestResultDetail({
                             {testItem.referenceRange}
                           </td>
                           <td className="test-status">
-                            {getStatusBadge(testItem.status)}
+                            {testItem.isNormal === true
+                              ? "Bình thường"
+                              : "Bất thường"}
                           </td>
                         </tr>
                       ))}

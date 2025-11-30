@@ -5,7 +5,7 @@ import {
   getInstrumentById,
   getInstruments,
   updateInstrumentByCode,
-} from "../apis/InstrumentAPI";
+} from "../apis/InstrumentAPI.jsx";
 
 const formatError = (error) => {
   if (!error) return new Error("Đã có lỗi không xác định.");
