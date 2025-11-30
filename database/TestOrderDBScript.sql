@@ -135,85 +135,100 @@ CREATE TABLE TestReport
 	DocumentId Bigint identity(1,1) PRIMARY KEY,
 	BookingId UNIQUEIDENTIFIER FOREIGN KEY REFERENCES Booking(BookingId),
 	Filename nvarchar(255) not null,
-	FileType nvarchar(30),
+	FileType nvarchar(max),
 	ResultData VARBINARY(MAX),
 	CreatedAt date DEFAULT GETDATE(),
 )
 
 
 
+
 ------------------------------------------------------------
 -- INITIAL DATA
 ------------------------------------------------------------
-INSERT INTO TestCatalog (TestName, Description, Price) VALUES
-('Tổng phân tích tế bào máu (CBC)', 'Đánh giá toàn bộ tế bào máu', 120000),
-('Xét nghiệm đường huyết', 'Đánh giá nồng độ glucose trong máu', 40000),
-('Xét nghiệm mỡ máu', 'Đánh giá nồng độ lipid trong máu', 150000),
-('Xét nghiệm chức năng gan', 'Đánh giá hoạt động của gan qua men gan và protein', 180000),
-( 'Xét nghiệm chức năng thận', 'Đánh giá khả năng lọc của thận', 100000),
-( 'TSH', 'Định lượng hormone kích thích tuyến giáp (TSH)', 80000),
-( 'Estradiol', 'Định lượng hormone estradiol', 80000),
-( 'Prolactin', 'Định lượng hormone prolactin', 80000),
-( 'CRP', 'Định lượng protein phản ứng C (CRP)', 55000),
-( 'RF', 'Định lượng yếu tố dạng thấp (RF)', 50000);
 
+INSERT INTO TimeBlock (TimeBlock) VALUES
+('8:00'),
+('9:00'),
+('10:00'),
+('11:00'),
+('13:00'),
+('14:00'),
+('15:00'),
+('16:00');
+
+INSERT INTO TestCatalog (TestName, Description, Price) VALUES
+(N'Tổng phân tích tế bào máu (CBC)', N'Đánh giá toàn bộ tế bào máu', 120000),
+(N'Xét nghiệm đường huyết', N'Đánh giá nồng độ glucose trong máu', 40000),
+(N'Xét nghiệm mỡ máu', N'Đánh giá nồng độ lipid trong máu', 150000),
+(N'Xét nghiệm chức năng gan', N'Đánh giá hoạt động của gan qua men gan và protein', 180000),
+(N'Xét nghiệm chức năng thận', N'Đánh giá khả năng lọc của thận', 100000),
+(N'TSH', N'Định lượng hormone kích thích tuyến giáp (TSH)', 80000),
+(N'Estradiol', N'Định lượng hormone estradiol', 80000),
+(N'Prolactin', N'Định lượng hormone prolactin', 80000),
+(N'CRP', N'Định lượng protein phản ứng C (CRP)', 55000),
+(N'RF', N'Định lượng yếu tố dạng thấp (RF)', 50000);
 
 
 INSERT INTO TestParameter (ParameterName, Unit, ReferenceRange, MinRange, MaxRange) VALUES
 -- CBC
-('Hồng cầu (RBC)', '10^6/µL', '4.0 - 5.5', 4.0, 5.5),
-( 'Hemoglobin (Hb)', 'g/dL', '12.0 - 16.0', 12.0, 16.0),
-( 'Hematocrit (Hct)', '%', '38 - 46', 38, 46),
-( 'Bạch cầu (WBC)', '10^3/µL', '4.0 - 10.0', 4.0, 10.0),
-( 'Tiểu cầu (PLT)', '10^3/µL', '150 - 400', 150, 400),
+(N'Hồng cầu (RBC)', N'10^6/mcL', N'4.0 - 5.5', 4.0, 5.5),
+(N'Hemoglobin (Hb)', N'g/dL', N'12.0 - 16.0', 12.0, 16.0),
+(N'Hematocrit (Hct)', N'%', N'38 - 46', 38, 46),
+(N'Bạch cầu (WBC)', N'10^3/mcL', N'4.0 - 10.0', 4.0, 10.0),
+(N'Tiểu cầu (PLT)', N'10^3/mcL', N'150 - 400', 150, 400),
 
 -- Đường huyết
-( 'Đường huyết (Glucose)', 'mg/dL', '70 - 100', 70, 100),
+(N'Đường huyết (Glucose)', N'mg/dL', N'70 - 100', 70, 100),
 
 -- Mỡ máu
-('Cholesterol toàn phần', 'mg/dL', '125 - 200', 125, 200),
-( 'LDL cholesterol', 'mg/dL', '0 - 100', 0, 100),
-('HDL cholesterol', 'mg/dL', '40 - 60', 40, 60),
-( 'Triglyceride', 'mg/dL', '30 - 150', 30, 150),
+(N'Cholesterol toàn phần', N'mg/dL', N'125 - 200', 125, 200),
+(N'LDL cholesterol', N'mg/dL', N'0 - 100', 0, 100),
+(N'HDL cholesterol', N'mg/dL', N'40 - 60', 40, 60),
+(N'Triglyceride', N'mg/dL', N'30 - 150', 30, 150),
 
 -- Chức năng gan
-( 'ALT (SGPT)', 'U/L', '7 - 55', 7, 55),
-( 'AST (SGOT)', 'U/L', '8 - 48', 8, 48),
-( 'ALP', 'U/L', '40 - 129', 40, 129),
-( 'Albumin', 'g/dL', '3.5 - 5.0', 3.5, 5.0),
-( 'Bilirubin toàn phần', 'mg/dL', '0.1 - 1.2', 0.1, 1.2),
+(N'ALT (SGPT)', N'U/L', N'7 - 55', 7, 55),
+(N'AST (SGOT)', N'U/L', N'8 - 48', 8, 48),
+(N'ALP', N'U/L', N'40 - 129', 40, 129),
+(N'Albumin', N'g/dL', N'3.5 - 5.0', 3.5, 5.0),
+(N'Bilirubin toàn phần', N'mg/dL', N'0.1 - 1.2', 0.1, 1.2),
 
 -- Chức năng thận
-( 'Creatinine', 'mg/dL', '0.6 - 1.3', 0.6, 1.3),
-('Ure (BUN)', 'mg/dL', '7 - 20', 7, 20),
+(N'Creatinine', N'mg/dL', N'0.6 - 1.3', 0.6, 1.3),
+(N'Ure (BUN)', N'mg/dL', N'7 - 20', 7, 20),
 
-( 'TSH', 'mIU/L', '0.4-5.0', 0.4, 5.0),
-( 'Estradiol', 'pmol/L', '70-220', 70, 220),
-( 'Prolactin', 'μU/mL', '127-637', 127, 637),
-( 'CRP', 'mg/L', '0-10', 0, 10),
-( 'RF', 'IU/mL', '0-14', 0, 14);
+-- Nội tiết & Miễn dịch
+(N'TSH', N'mIU/L', N'0.4 - 5.0', 0.4, 5.0),
+(N'Estradiol', N'pmol/L', N'70 - 220', 70, 220),
+(N'Prolactin', N'mU/L', N'127 - 637', 127, 637),
+(N'CRP', N'mg/L', N'0 - 10', 0, 10),
+(N'RF', N'IU/mL', N'0 - 14', 0, 14);
+
 
 INSERT INTO CatalogParameter (CatalogId, ParameterId) VALUES
 -- CBC
-(1,1),(1,2),(1,3),(1,4),(1,5),
+(1, 1), (1, 2), (1, 3), (1, 4), (1, 5),
 
 -- Đường huyết
-(2,6),
+(2, 6),
 
 -- Mỡ máu
-(3,7),(3,8),(3,9),(3,10),
+(3, 7), (3, 8), (3, 9), (3, 10),
 
 -- Chức năng gan
-(4,11),(4,12),(4,13),(4,14),(4,15),
+(4, 11), (4, 12), (4, 13), (4, 14), (4, 15),
 
 -- Chức năng thận
-(5,16),(5,17),
+(5, 16), (5, 17),
 
-(6, 18),
-(7, 19),
-(8, 20),
-(9, 21),
-(10, 22);
+-- Nội tiết & miễn dịch
+(6, 18),  -- TSH
+(7, 19),  -- Estradiol
+(8, 20),  -- Prolactin
+(9, 21),  -- CRP
+(10, 22); -- RF
+
 
 
 INSERT INTO TestBundle (BundleName,Description,Price,IsActive)
