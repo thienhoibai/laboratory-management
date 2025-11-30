@@ -78,9 +78,11 @@ export const deleteInstrumentByCode = async (code) => {
   return unwrap(res);
 };
 
-export const startInstrumentRun = async (bookingId) => {
-  const instrumentCode = generateInstrumentCode();
-  const payload = { bookingId, instrumentCode };
+// Start a run for a booking. If `instrumentCode` is provided, use it;
+// otherwise generate one (backwards-compatible behavior).
+export const startInstrumentRun = async (bookingId, instrumentCode) => {
+  const codeToUse = instrumentCode || generateInstrumentCode();
+  const payload = { bookingId, instrumentCode: codeToUse };
   const res = await api.post("instrument/api/instrument/runs/start", payload);
   return res?.data ?? {};
 };

@@ -1,11 +1,17 @@
-import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useRef, useState } from "react";
 import api from "../../../configs/axios";
 import { useSearchParams } from "react-router-dom";
-import { startInstrumentRun } from "../../../apis/InstrumentAPI";
+import {
+  startInstrumentRun,
+  getAllInstrument,
+} from "../../../apis/InstrumentAPI";
 import AdminLayout from "../../admin/layout/AdminLayout";
 import { setAuthToken } from "../../../utils/auth";
 import { FiDroplet, FiCheckCircle } from "react-icons/fi";
+import { Modal, Button, Card, Spin } from "antd";
 import "./InstrumentRun.css";
+
+const BASE_URL = "http://localhost:8080";
 
 // Không dùng defaultResults nữa, sẽ lấy từ API
 
@@ -21,6 +27,13 @@ const InstrumentRun = () => {
   const [message, setMessage] = useState("");
   const [progress, setProgress] = useState(0);
   const [results, setResults] = useState([]); // [{catalogName, parameters: [{name, value, unit, referenceRange}]}]
+  // Instrument selection modal state
+  const [showModal, setShowModal] = useState(false);
+  const [instruments, setInstruments] = useState([]);
+  const [loadingInstruments, setLoadingInstruments] = useState(false);
+  const [selectedInstrument, setSelectedInstrument] = useState(null);
+  const [waiting, setWaiting] = useState(false);
+  const hasStartedRef = useRef(false);
   const breadcrumbs = useMemo(
     () => [
       { name: "Phòng Xét Nghiệm", link: "/instruments" },
@@ -31,148 +44,85 @@ const InstrumentRun = () => {
 
   useEffect(() => {
     if (!bookingId) return;
-    const storageKey = `instrument_run_${bookingId}`;
-    const stored = localStorage.getItem(storageKey);
+    // Khi vào trang, show modal chọn máy nếu chưa chọn
+    setShowModal(true);
+    setSelectedInstrument(null);
+    setWaiting(false);
+    hasStartedRef.current = false;
+    setLoadingInstruments(true);
+    getAllInstrument()
+      .then((data) => {
+        setInstruments(Array.isArray(data.items) ? data.items : data);
+      })
+      .catch(() => setInstruments([]))
+      .finally(() => setLoadingInstruments(false));
+    // Reset các state khác nếu cần
+    setPhase("pending");
+    setSeconds(30);
+    setProgress(0);
+    setMessage("");
+    setResults([]);
+    // Không chạy timer cho đến khi chọn máy và bấm tiếp tục
+  }, [bookingId]);
 
-    if (stored) {
-      try {
-        const data = JSON.parse(stored);
-        const elapsed = Math.floor((Date.now() - data.startTime) / 1000);
-        const remaining = Math.max(0, 30 - elapsed);
-
-        setSeconds(remaining);
-        setPhase(data.phase || "pending");
-        setProgress(data.progress || 0);
-        setMessage(String(data.message || ""));
-
-        if (remaining === 0 && data.phase === "pending") {
-          // Timer đã hết, sẽ trigger API
-        }
-      } catch (e) {
-        // Nếu data lỗi, reset
-        setPhase("pending");
-        setSeconds(60);
-        setProgress(0);
-        localStorage.setItem(
-          storageKey,
-          JSON.stringify({
-            startTime: Date.now(),
-            phase: "pending",
-            progress: 0,
-            message: "",
-          })
-        );
-      }
-    } else {
-      // Lần đầu, khởi tạo
-      setPhase("pending");
-      setSeconds(60);
-      setProgress(0);
-      localStorage.setItem(
-        storageKey,
-        JSON.stringify({
-          startTime: Date.now(),
-          phase: "pending",
-          progress: 0,
-          message: "",
-        })
-      );
-    }
-
-    const interval = setInterval(() => {
+  // Khi bấm tiếp tục, đợi 15s rồi run API
+  useEffect(() => {
+    if (!waiting || !selectedInstrument || !bookingId) return;
+    setPhase("pending");
+    setProgress(0);
+    setSeconds(15);
+    setMessage("");
+    // Đếm ngược 15s, sau đó gọi API
+    const timer = setInterval(() => {
       setSeconds((s) => {
         if (s <= 1) {
-          clearInterval(interval);
+          clearInterval(timer);
+          // Gọi API startInstrumentRun
+          (async () => {
+            if (hasStartedRef.current) return; // guard: ensure we only start once
+            hasStartedRef.current = true;
+            setPhase("running");
+            setProgress(35);
+            try {
+              const data = await startInstrumentRun(
+                bookingId,
+                selectedInstrument.instrumentCode
+              );
+              const status = data?.status || data?.Status || "";
+              const msg = String(data?.message || data?.Message || "");
+              setMessage(msg);
+              setProgress(100);
+              if (status === 1) {
+                setPhase("done");
+              } else {
+                setPhase("error");
+              }
+            } catch (e) {
+              let msg = "Không thể khởi chạy thiết bị. Vui lòng thử lại.";
+              if (typeof e === "string") {
+                msg = e;
+              } else if (e?.response?.data?.message) {
+                msg = String(e.response.data.message);
+              } else if (e?.message) {
+                msg = String(e.message);
+              } else if (e) {
+                try {
+                  msg = JSON.stringify(e);
+                } catch {
+                  msg = "Không thể khởi chạy thiết bị. Vui lòng thử lại.";
+                }
+              }
+              setMessage(msg);
+              setPhase("error");
+            }
+          })();
           return 0;
         }
         return s - 1;
       });
     }, 1000);
-
-    return () => clearInterval(interval);
-  }, [bookingId]);
-
-  // Kick off API when countdown reaches 0
-  useEffect(() => {
-    if (phase !== "pending" || seconds !== 0 || !bookingId) return;
-
-    const run = async () => {
-      const storageKey = `instrument_run_${bookingId}`;
-      const stored = localStorage.getItem(storageKey);
-      const originalStartTime = stored
-        ? JSON.parse(stored).startTime
-        : Date.now();
-
-      try {
-        setPhase("running");
-        setProgress(35);
-
-        // Cập nhật localStorage - GIỮ NGUYÊN startTime gốc
-        localStorage.setItem(
-          storageKey,
-          JSON.stringify({
-            startTime: originalStartTime,
-            phase: "running",
-            progress: 35,
-            message: "",
-          })
-        );
-
-        const data = await startInstrumentRun(bookingId);
-        console.log(data);
-        const status = data?.status || data?.Status || "";
-        const msg = String(data?.message || data?.Message || "");
-        setMessage(msg);
-
-        // Simulate progress finishing quickly after response
-        setProgress(100);
-        if (status === 1) {
-          setPhase("done");
-        } else {
-          setPhase("error");
-          localStorage.setItem(
-            storageKey,
-            JSON.stringify({
-              startTime: originalStartTime,
-              phase: "error",
-              progress: 100,
-              message: msg,
-            })
-          );
-        }
-      } catch (e) {
-        let msg = "Không thể khởi chạy thiết bị. Vui lòng thử lại.";
-
-        if (typeof e === "string") {
-          msg = e;
-        } else if (e?.response?.data?.message) {
-          msg = String(e.response.data.message);
-        } else if (e?.message) {
-          msg = String(e.message);
-        } else if (e) {
-          try {
-            msg = JSON.stringify(e);
-          } catch {
-            msg = "Không thể khởi chạy thiết bị. Vui lòng thử lại.";
-          }
-        }
-
-        setMessage(msg);
-        setPhase("error");
-        localStorage.setItem(
-          storageKey,
-          JSON.stringify({
-            startTime: originalStartTime,
-            phase: "error",
-            progress: 0,
-            message: msg,
-          })
-        );
-      }
-    };
-
-    run();
-  }, [seconds, phase, bookingId]);
+    return () => clearInterval(timer);
+  }, [waiting, selectedInstrument, bookingId]);
 
   // Khi phase done, gọi API lấy kết quả thực tế
   useEffect(() => {
@@ -195,7 +145,7 @@ const InstrumentRun = () => {
             setResults([]);
           }
         } catch (e) {
-          setResults([]);
+          setResults([e || "Error"]);
         }
       };
       fetchResults();
@@ -204,6 +154,128 @@ const InstrumentRun = () => {
 
   return (
     <AdminLayout pageTitle="Phòng Xét Nghiệm Tự Động" breadcrumbs={breadcrumbs}>
+      {/* Modal chọn máy */}
+      <Modal
+        open={showModal}
+        title="Chọn máy thực hiện xét nghiệm"
+        footer={null}
+        closable={false}
+        centered
+        width={1300}
+        bodyStyle={{ minHeight: 100 }}
+      >
+        {loadingInstruments ? (
+          <div style={{ textAlign: "center", padding: 40 }}>
+            <Spin size="large" />
+          </div>
+        ) : (
+          <div className="ir-instrument-modal">
+            {instruments.length === 0 ? (
+              <div>Không có máy nào khả dụng.</div>
+            ) : (
+              instruments.map((ins) => {
+                const insKey = ins.instrumentCode;
+                const selectedKey =
+                  selectedInstrument && selectedInstrument.instrumentCode;
+                const isSelectable =
+                  ins.status === 0 &&
+                  (ins.reagentStatus === 0 || ins.reagentStatus === 1);
+                return (
+                  <div
+                    key={insKey}
+                    className={
+                      "ir-instrument-card" +
+                      (selectedKey === insKey ? " selected" : "") +
+                      (!isSelectable ? " disabled" : "")
+                    }
+                    tabIndex={isSelectable ? 0 : -1}
+                    onClick={() => isSelectable && setSelectedInstrument(ins)}
+                    onKeyDown={(e) => {
+                      if (!isSelectable) return;
+                      if (e.key === "Enter" || e.key === " ")
+                        setSelectedInstrument(ins);
+                    }}
+                  >
+                    <div className="ir-instrument-status-row">
+                      <span
+                        className={`ir-badge-status ${
+                          ins.status === 0
+                            ? "active"
+                            : ins.status === 1
+                            ? "inactive"
+                            : ins.status === 2
+                            ? "error"
+                            : ins.status === 3
+                            ? "maintenance"
+                            : ""
+                        }`}
+                      >
+                        {ins.status === 0
+                          ? "Hoạt động"
+                          : ins.status === 1
+                          ? "Không hoạt động"
+                          : ins.status === 2
+                          ? "Máy bị lỗi"
+                          : ins.status === 3
+                          ? "Máy đang bảo trì"
+                          : "Chưa có trạng thái"}
+                      </span>
+                      <span
+                        className={`ir-badge-reagent ${
+                          ins.reagentStatus === 0
+                            ? "full"
+                            : ins.reagentStatus === 1
+                            ? "low"
+                            : ins.reagentStatus === 2
+                            ? "empty"
+                            : ""
+                        }`}
+                      >
+                        {ins.reagentStatus === 0
+                          ? "Hóa chất đầy đủ"
+                          : ins.reagentStatus === 1
+                          ? "Hóa chất sắp hết"
+                          : ins.reagentStatus === 2
+                          ? "Hóa chất đã hết"
+                          : "Trạng thái hóa chất lỗi"}
+                      </span>
+                    </div>
+                    <div className="ir-instrument-title">
+                      {ins.name ||
+                        ins.instrumentName ||
+                        ins.code ||
+                        ins.instrumentCode}
+                    </div>
+                    <div className="img-box">
+                      <img
+                        src={`${BASE_URL}/instrument/` + ins.imagePath || ""}
+                      />
+                    </div>
+                    <div className="ir-instrument-desc">
+                      {ins.description || ins.type || ""}
+                    </div>
+                    <div className="ir-instrument-code">
+                      Mã: {ins.instrumentCode || ins.code || ins.id}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        )}
+        <div className="ir-instrument-modal-footer">
+          <Button
+            type="primary"
+            disabled={!selectedInstrument}
+            onClick={() => {
+              setShowModal(false);
+              setWaiting(true);
+            }}
+          >
+            Tiếp tục
+          </Button>
+        </div>
+      </Modal>
       <div className="ir-container">
         <div className="ir-header">
           <h1 className="ir-title">

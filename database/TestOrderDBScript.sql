@@ -1,6 +1,6 @@
 ﻿USE master;
-ALTER DATABASE TestOder SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
-DROP DATABASE TestOder;
+ALTER DATABASE TestOrderDB SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+DROP DATABASE TestOrderDB;
 
 CREATE DATABASE TestOrderDB
 
@@ -145,53 +145,53 @@ CREATE TABLE TestReport
 ------------------------------------------------------------
 -- INITIAL DATA
 ------------------------------------------------------------
-INSERT INTO TestCatalog (CatalogId, TestName, Description, Price) VALUES
-(1, 'Tổng phân tích tế bào máu (CBC)', 'Đánh giá toàn bộ tế bào máu', 120000),
-(2, 'Xét nghiệm đường huyết', 'Đánh giá nồng độ glucose trong máu', 40000),
-(3, 'Xét nghiệm mỡ máu', 'Đánh giá nồng độ lipid trong máu', 150000),
-(4, 'Xét nghiệm chức năng gan', 'Đánh giá hoạt động của gan qua men gan và protein', 180000),
-(5, 'Xét nghiệm chức năng thận', 'Đánh giá khả năng lọc của thận', 100000),
-(6, 'TSH', 'Định lượng hormone kích thích tuyến giáp (TSH)', 80000),
-(7, 'Estradiol', 'Định lượng hormone estradiol', 80000),
-(8, 'Prolactin', 'Định lượng hormone prolactin', 80000),
-(9, 'CRP', 'Định lượng protein phản ứng C (CRP)', 55000),
-(10, 'RF', 'Định lượng yếu tố dạng thấp (RF)', 50000);
+INSERT INTO TestCatalog (TestName, Description, Price) VALUES
+('Tổng phân tích tế bào máu (CBC)', 'Đánh giá toàn bộ tế bào máu', 120000),
+('Xét nghiệm đường huyết', 'Đánh giá nồng độ glucose trong máu', 40000),
+('Xét nghiệm mỡ máu', 'Đánh giá nồng độ lipid trong máu', 150000),
+('Xét nghiệm chức năng gan', 'Đánh giá hoạt động của gan qua men gan và protein', 180000),
+( 'Xét nghiệm chức năng thận', 'Đánh giá khả năng lọc của thận', 100000),
+( 'TSH', 'Định lượng hormone kích thích tuyến giáp (TSH)', 80000),
+( 'Estradiol', 'Định lượng hormone estradiol', 80000),
+( 'Prolactin', 'Định lượng hormone prolactin', 80000),
+( 'CRP', 'Định lượng protein phản ứng C (CRP)', 55000),
+( 'RF', 'Định lượng yếu tố dạng thấp (RF)', 50000);
 
 
 
-INSERT INTO TestParameter (ParameterId, ParameterName, Unit, ReferenceRange, MinRange, MaxRange) VALUES
+INSERT INTO TestParameter (ParameterName, Unit, ReferenceRange, MinRange, MaxRange) VALUES
 -- CBC
-(1, 'Hồng cầu (RBC)', '10^6/µL', '4.0 - 5.5', 4.0, 5.5),
-(2, 'Hemoglobin (Hb)', 'g/dL', '12.0 - 16.0', 12.0, 16.0),
-(3, 'Hematocrit (Hct)', '%', '38 - 46', 38, 46),
-(4, 'Bạch cầu (WBC)', '10^3/µL', '4.0 - 10.0', 4.0, 10.0),
-(5, 'Tiểu cầu (PLT)', '10^3/µL', '150 - 400', 150, 400),
+('Hồng cầu (RBC)', '10^6/µL', '4.0 - 5.5', 4.0, 5.5),
+( 'Hemoglobin (Hb)', 'g/dL', '12.0 - 16.0', 12.0, 16.0),
+( 'Hematocrit (Hct)', '%', '38 - 46', 38, 46),
+( 'Bạch cầu (WBC)', '10^3/µL', '4.0 - 10.0', 4.0, 10.0),
+( 'Tiểu cầu (PLT)', '10^3/µL', '150 - 400', 150, 400),
 
 -- Đường huyết
-(6, 'Đường huyết (Glucose)', 'mg/dL', '70 - 100', 70, 100),
+( 'Đường huyết (Glucose)', 'mg/dL', '70 - 100', 70, 100),
 
 -- Mỡ máu
-(7, 'Cholesterol toàn phần', 'mg/dL', '125 - 200', 125, 200),
-(8, 'LDL cholesterol', 'mg/dL', '0 - 100', 0, 100),
-(9, 'HDL cholesterol', 'mg/dL', '40 - 60', 40, 60),
-(10, 'Triglyceride', 'mg/dL', '30 - 150', 30, 150),
+('Cholesterol toàn phần', 'mg/dL', '125 - 200', 125, 200),
+( 'LDL cholesterol', 'mg/dL', '0 - 100', 0, 100),
+('HDL cholesterol', 'mg/dL', '40 - 60', 40, 60),
+( 'Triglyceride', 'mg/dL', '30 - 150', 30, 150),
 
 -- Chức năng gan
-(11, 'ALT (SGPT)', 'U/L', '7 - 55', 7, 55),
-(12, 'AST (SGOT)', 'U/L', '8 - 48', 8, 48),
-(13, 'ALP', 'U/L', '40 - 129', 40, 129),
-(14, 'Albumin', 'g/dL', '3.5 - 5.0', 3.5, 5.0),
-(15, 'Bilirubin toàn phần', 'mg/dL', '0.1 - 1.2', 0.1, 1.2),
+( 'ALT (SGPT)', 'U/L', '7 - 55', 7, 55),
+( 'AST (SGOT)', 'U/L', '8 - 48', 8, 48),
+( 'ALP', 'U/L', '40 - 129', 40, 129),
+( 'Albumin', 'g/dL', '3.5 - 5.0', 3.5, 5.0),
+( 'Bilirubin toàn phần', 'mg/dL', '0.1 - 1.2', 0.1, 1.2),
 
 -- Chức năng thận
-(16, 'Creatinine', 'mg/dL', '0.6 - 1.3', 0.6, 1.3),
-(17, 'Ure (BUN)', 'mg/dL', '7 - 20', 7, 20),
+( 'Creatinine', 'mg/dL', '0.6 - 1.3', 0.6, 1.3),
+('Ure (BUN)', 'mg/dL', '7 - 20', 7, 20),
 
-(18, 'TSH', 'mIU/L', '0.4-5.0', 0.4, 5.0),
-(19, 'Estradiol', 'pmol/L', '70-220', 70, 220),
-(20, 'Prolactin', 'μU/mL', '127-637', 127, 637),
-(21, 'CRP', 'mg/L', '0-10', 0, 10),
-(22, 'RF', 'IU/mL', '0-14', 0, 14);
+( 'TSH', 'mIU/L', '0.4-5.0', 0.4, 5.0),
+( 'Estradiol', 'pmol/L', '70-220', 70, 220),
+( 'Prolactin', 'μU/mL', '127-637', 127, 637),
+( 'CRP', 'mg/L', '0-10', 0, 10),
+( 'RF', 'IU/mL', '0-14', 0, 14);
 
 INSERT INTO CatalogParameter (CatalogId, ParameterId) VALUES
 -- CBC
