@@ -6,6 +6,7 @@ public record CreateInstrumentRequest(
     string InstrumentCode,
     string Name,
     InstrumentStatus Status = InstrumentStatus.Online,
+    ReagentStatus ReagentStatus = ReagentStatus.OK,
     string? ImagePath = null
 );
 

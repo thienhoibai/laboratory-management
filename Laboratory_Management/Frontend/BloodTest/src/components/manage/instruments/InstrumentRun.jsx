@@ -1,10 +1,7 @@
 ﻿import React, { useEffect, useMemo, useRef, useState } from "react";
 import api from "../../../configs/axios";
 import { useSearchParams } from "react-router-dom";
-import {
-  startInstrumentRun,
-  getAllInstrument,
-} from "../../../apis/InstrumentAPI";
+import { startInstrumentRun } from "../../../apis/InstrumentAPI.jsx";
 import AdminLayout from "../../admin/layout/AdminLayout";
 import { setAuthToken } from "../../../utils/auth";
 import { FiDroplet, FiCheckCircle } from "react-icons/fi";
@@ -121,8 +118,90 @@ const InstrumentRun = () => {
         return s - 1;
       });
     }, 1000);
-    return () => clearInterval(timer);
-  }, [waiting, selectedInstrument, bookingId]);
+
+    return () => clearInterval(interval);
+  }, [bookingId]);
+
+  // Kick off API when countdown reaches 0
+  useEffect(() => {
+    if (phase !== "pending" || seconds !== 0 || !bookingId) return;
+
+    const run = async () => {
+      const storageKey = `instrument_run_${bookingId}`;
+      const stored = localStorage.getItem(storageKey);
+      const originalStartTime = stored
+        ? JSON.parse(stored).startTime
+        : Date.now();
+
+      try {
+        setPhase("running");
+        setProgress(35);
+
+        // Cập nhật localStorage - GIỮ NGUYÊN startTime gốc
+        localStorage.setItem(
+          storageKey,
+          JSON.stringify({
+            startTime: originalStartTime,
+            phase: "running",
+            progress: 35,
+            message: "",
+          })
+        );
+
+        const data = await startInstrumentRun(bookingId);
+        const status = data?.status || data?.Status || "";
+        const msg = String(data?.message || data?.Message || "");
+        setMessage(msg);
+
+        // Simulate progress finishing quickly after response
+        setProgress(100);
+        if (status === 1) {
+          setPhase("done");
+        } else {
+          setPhase("error");
+          localStorage.setItem(
+            storageKey,
+            JSON.stringify({
+              startTime: originalStartTime,
+              phase: "error",
+              progress: 100,
+              message: msg,
+            })
+          );
+        }
+      } catch (e) {
+        let msg = "Không thể khởi chạy thiết bị. Vui lòng thử lại.";
+
+        if (typeof e === "string") {
+          msg = e;
+        } else if (e?.response?.data?.message) {
+          msg = String(e.response.data.message);
+        } else if (e?.message) {
+          msg = String(e.message);
+        } else if (e) {
+          try {
+            msg = JSON.stringify(e);
+          } catch {
+            msg = "Không thể khởi chạy thiết bị. Vui lòng thử lại.";
+          }
+        }
+
+        setMessage(msg);
+        setPhase("error");
+        localStorage.setItem(
+          storageKey,
+          JSON.stringify({
+            startTime: originalStartTime,
+            phase: "error",
+            progress: 0,
+            message: msg,
+          })
+        );
+      }
+    };
+
+    run();
+  }, [seconds, phase, bookingId]);
 
   // Khi phase done, gọi API lấy kết quả thực tế
   useEffect(() => {
@@ -140,7 +219,6 @@ const InstrumentRun = () => {
           );
           if (res.data && Array.isArray(res.data.catalogs)) {
             setResults(res.data.catalogs);
-            console.log("Result: " + results);
           } else {
             setResults([]);
           }

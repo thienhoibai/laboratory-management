@@ -31,12 +31,158 @@ const normalizeListResponse = (payload) => {
   return Array.isArray(firstArrayValue) ? firstArrayValue : [];
 };
 
+/**
+ * Helper function to build full image URL for instrument
+ * @param {string} imagePath - Image path from API (can be relative or absolute)
+ * @returns {string} Full image URL
+ */
+const buildInstrumentImageUrl = (imagePath) => {
+  if (!imagePath || imagePath.trim() === "") return "";
+
+  const trimmedPath = imagePath.trim();
+  const baseURL = "http://localhost:8080";
+
+  // If already a full URL (starts with http:// or https://), return as is
+  if (trimmedPath.startsWith("http://") || trimmedPath.startsWith("https://")) {
+    // If URL already contains /instrument/Images/, check if filename needs encoding
+    if (trimmedPath.includes("/instrument/Images/")) {
+      const urlParts = trimmedPath.split("/instrument/Images/");
+      if (urlParts.length === 2 && urlParts[1]) {
+        const filename = urlParts[1];
+        // Only encode if not already encoded (check for % which indicates encoding)
+        if (!filename.includes("%")) {
+          const encodedFilename = encodeURIComponent(filename);
+          return `${urlParts[0]}/instrument/Images/${encodedFilename}`;
+        }
+      }
+    }
+    return trimmedPath;
+  }
+
+  // Check if path already contains /instrument/Images/ (without http://)
+  // This handles cases where backend returns path like "/instrument/Images/filename.jpg"
+  // Must check BEFORE other checks to avoid double processing
+  if (trimmedPath.includes("/instrument/Images/")) {
+    const parts = trimmedPath.split("/instrument/Images/");
+    if (parts.length === 2 && parts[1]) {
+      const filename = parts[1];
+      // Only encode if not already encoded
+      if (!filename.includes("%")) {
+        const encodedFilename = encodeURIComponent(filename);
+        return `${baseURL}/instrument/Images/${encodedFilename}`;
+      }
+      return `${baseURL}/instrument/Images/${filename}`;
+    }
+    // If split didn't work as expected, try to extract filename from end
+    const lastSlashIndex = trimmedPath.lastIndexOf("/");
+    if (lastSlashIndex > 0) {
+      const filename = trimmedPath.substring(lastSlashIndex + 1);
+      if (filename && !filename.includes("%")) {
+        const encodedFilename = encodeURIComponent(filename);
+        return `${baseURL}/instrument/Images/${encodedFilename}`;
+      }
+    }
+  }
+
+  // Helper to encode only the filename (last part) while preserving path structure
+  const encodePathFilename = (path) => {
+    const parts = path.split("/");
+    if (parts.length > 0 && parts[parts.length - 1]) {
+      // Encode only the filename (last part)
+      parts[parts.length - 1] = encodeURIComponent(parts[parts.length - 1]);
+      return parts.join("/");
+    }
+    return path;
+  };
+
+  // Handle /images/instruments/... paths - convert to /instrument/Images/...
+  // Backend may return /images/instruments/... but serve from /instrument/Images/...
+  // Example: "/images/instruments/5fbbdba3-2d1c-45d4-a9d8-750045e447fb_file.jpg"
+  // Result: "http://localhost:8080/instrument/Images/5fbbdba3-2d1c-45d4-a9d8-750045e447fb_file.jpg"
+  if (trimmedPath.startsWith("/images/instruments/")) {
+    const imageFileName = trimmedPath.replace("/images/instruments/", "");
+    const encodedFileName = encodeURIComponent(imageFileName);
+    return `${baseURL}/instrument/Images/${encodedFileName}`;
+  }
+
+  // Handle images/instruments/... (without leading slash)
+  if (trimmedPath.startsWith("images/instruments/")) {
+    const imageFileName = trimmedPath.replace("images/instruments/", "");
+    const encodedFileName = encodeURIComponent(imageFileName);
+    return `${baseURL}/instrument/Images/${encodedFileName}`;
+  }
+
+  // If starts with /Images/ or /images/, convert to /instrument/Images/...
+  if (
+    trimmedPath.startsWith("/Images/") ||
+    trimmedPath.startsWith("/images/")
+  ) {
+    const imageFileName = trimmedPath.replace(/^\/[Ii]mages\//, "");
+    const encodedFileName = encodeURIComponent(imageFileName);
+    return `${baseURL}/instrument/Images/${encodedFileName}`;
+  }
+
+  // If path starts with "Images/", append directly to /instrument/
+  // Example: "Images/f4a44ab4-81cf-47de-9555-d67ccf02fbb1.jpg"
+  // Result: http://localhost:8080/instrument/Images/f4a44ab4-81cf-47de-9555-d67ccf02fbb1.jpg
+  if (trimmedPath.startsWith("Images/")) {
+    // Extract filename and encode it
+    const imageFileName = trimmedPath.replace("Images/", "");
+    const encodedFileName = encodeURIComponent(imageFileName);
+    return `${baseURL}/instrument/Images/${encodedFileName}`;
+  }
+
+  // If starts with /instrument/, encode the filename part
+  if (trimmedPath.startsWith("/instrument/")) {
+    const pathAfterInstrument = trimmedPath.replace("/instrument/", "");
+    const encodedPath = encodePathFilename(pathAfterInstrument);
+    return `${baseURL}/instrument/${encodedPath}`;
+  }
+
+  // If starts with /, encode the filename part
+  if (trimmedPath.startsWith("/")) {
+    const pathWithoutSlash = trimmedPath.substring(1);
+    const encodedPath = encodePathFilename(pathWithoutSlash);
+    return `${baseURL}/${encodedPath}`;
+  }
+
+  // Otherwise, assume it's just a filename and try common paths
+  // Encode the filename to handle spaces and special characters
+  const encodedPath = encodeURIComponent(trimmedPath);
+  return `${baseURL}/instrument/Images/${encodedPath}`;
+};
+
 const mapInstrumentShape = (instrument = {}) => {
-  const code = instrument.code ?? instrument.instrumentCode ?? "";
+  const code =
+    instrument.code ??
+    instrument.instrumentCode ??
+    instrument.InstrumentCode ??
+    "";
   const machineStatus =
-    instrument.machineStatus ?? instrument.status ?? "ACTIVE";
-  const reagentStatus =
-    instrument.reagentStatus ?? instrument.reagent_status ?? "FULL";
+    instrument.machineStatus ??
+    instrument.status ??
+    instrument.Status ??
+    instrument.MachineStatus ??
+    "ACTIVE";
+
+  // Lấy reagentStatus từ nhiều nguồn có thể
+  const rawReagentStatus =
+    instrument.reagentStatus ??
+    instrument.reagent_status ??
+    instrument.ReagentStatus ??
+    instrument.Reagent_Status;
+
+  const reagentStatus = rawReagentStatus ?? "FULL";
+
+  // Get image path from various possible fields
+  const rawImagePath =
+    instrument.imagePath ||
+    instrument.ImagePath ||
+    instrument.imageUrl ||
+    instrument.ImageUrl ||
+    "";
+  const imageUrl = buildInstrumentImageUrl(rawImagePath);
+
   return {
     ...instrument,
     code,
@@ -44,6 +190,8 @@ const mapInstrumentShape = (instrument = {}) => {
     machineStatus,
     status: machineStatus,
     reagentStatus,
+    imageUrl: imageUrl, // Add built image URL
+    imagePath: rawImagePath, // Keep original path for reference
   };
 };
 
@@ -51,8 +199,9 @@ const buildInstrumentPayload = (
   { code, name, status, reagentStatus, imageFile },
   isUpdate = false
 ) => {
-  // Nếu có file ảnh, sử dụng FormData
-  if (imageFile instanceof File) {
+  // Khi update, luôn sử dụng FormData (API expect multipart/form-data)
+  // Khi create, sử dụng FormData nếu có file, JSON nếu không có file
+  if (isUpdate || imageFile instanceof File) {
     const formData = new FormData();
     // Chỉ gửi code khi tạo mới, không gửi khi update (vì đã có trong URL)
     // Backend expect PascalCase: InstrumentCode, Name, Status, ReagentStatus, Image
@@ -64,35 +213,28 @@ const buildInstrumentPayload = (
     }
     if (typeof status !== "undefined") {
       // Backend expect enum (số), gửi số trực tiếp
-      formData.append("Status", status);
+      formData.append("Status", String(status));
     }
-    if (typeof reagentStatus !== "undefined") {
-      // Backend expect enum (số), gửi số trực tiếp
-      formData.append("ReagentStatus", reagentStatus);
+    if (typeof reagentStatus !== "undefined" && reagentStatus !== null) {
+      formData.append("ReagentStatus", String(reagentStatus));
     }
-    formData.append("Image", imageFile); // Backend expect "Image" not "imageFile"
-
-    // Debug: Log FormData contents
-    console.log("FormData contents:");
-    for (let pair of formData.entries()) {
-      console.log(
-        pair[0] +
-          ": " +
-          (pair[1] instanceof File ? `File(${pair[1].name})` : pair[1])
-      );
+    // Chỉ append Image nếu có file mới
+    if (imageFile instanceof File) {
+      formData.append("Image", imageFile);
     }
+    // Nếu update mà không có file mới, không gửi field Image (backend sẽ giữ nguyên ảnh cũ)
 
     return formData;
   }
 
-  // Nếu không có file, sử dụng JSON
+  // Nếu create và không có file, sử dụng JSON
   const payload = {};
-  // Chỉ gửi code khi tạo mới, không gửi khi update (vì đã có trong URL)
-  if (code && !isUpdate) payload.InstrumentCode = code;
+  if (code) payload.InstrumentCode = code;
   if (name) payload.Name = name;
   if (typeof status !== "undefined") payload.Status = status;
-  if (typeof reagentStatus !== "undefined")
+  if (typeof reagentStatus !== "undefined" && reagentStatus !== null) {
     payload.ReagentStatus = reagentStatus;
+  }
   if (typeof imageFile === "string" && imageFile) {
     payload.ImagePath = imageFile;
   }
@@ -129,7 +271,9 @@ const InstrumentService = {
 
   async getByCode(code) {
     try {
-      return await getInstrumentByCode(code);
+      const instrument = await getInstrumentByCode(code);
+      // Map the instrument to ensure imageUrl is built correctly
+      return mapInstrumentShape(instrument);
     } catch (error) {
       throw formatError(error);
     }
@@ -146,15 +290,8 @@ const InstrumentService = {
 
   async update(code, payload) {
     try {
-      // Update endpoint chỉ nhận JSON với ImagePath (string), không hỗ trợ file upload
-      // Nếu có file mới, cần upload riêng trước hoặc bỏ qua
-      // eslint-disable-next-line no-unused-vars
-      const { imageFile, ...restPayload } = payload;
-      const jsonPayload = buildInstrumentPayload(
-        { ...restPayload, code },
-        true
-      );
-      return await updateInstrumentByCode(code, jsonPayload);
+      const builtPayload = buildInstrumentPayload({ ...payload, code }, true);
+      return await updateInstrumentByCode(code, builtPayload);
     } catch (error) {
       throw formatError(error);
     }
