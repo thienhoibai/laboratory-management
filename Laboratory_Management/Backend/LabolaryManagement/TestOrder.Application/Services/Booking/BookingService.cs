@@ -398,7 +398,7 @@ namespace TestOrder.Application.Services.Booking
                         { "BookingCode", booking.BookingCode ?? "N/A" },
                         { "TotalAmount", totalAmount },
                         { "TestPackage", testPackage },
-                        { "Location", "Phòng khám Xét nghiệm Y tế\n123 Nguyễn Huệ, Q.1, TP.HCM" },
+                        { "Location", "Trung Tâm Xét nghiệm FPT - Tòa nhà F-Town 1, Lô T2, Đường D1, Khu Công nghệ Cao Sài Gòn, Phường Tân Phú, Thành phố Thủ Đức, Thành phố Hồ Chí Minh, Việt Nam.\r\n" },
                         { "PatientName", booking.PatientName ?? "Khách hàng" },
                         { "PatientEmail", booking.PatientEmail },
                         { "PatientPhone", booking.PatientPhone ?? "N/A" },
