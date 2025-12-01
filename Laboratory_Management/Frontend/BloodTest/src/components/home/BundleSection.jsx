@@ -1,6 +1,7 @@
 // src/components/home/BundleSection.jsx
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { Spin } from "antd";
 import "./BundleSection.css";
 import { getAllBundles } from "../../services/TestOrderService.jsx";
 
@@ -74,7 +75,7 @@ export default function BundleSection() {
 
       {loading ? (
         <div className="bundle-loading">
-          <p>Đang tải gói xét nghiệm...</p>
+          <Spin size="large" />
         </div>
       ) : error ? (
         <div className="bundle-error">

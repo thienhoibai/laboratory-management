@@ -13,6 +13,7 @@ function PackageSelection({
   mode,
 }) {
   const [packages, setPackages] = useState([]);
+  const [expandedCards, setExpandedCards] = useState({});
   const loading = useRef(true);
 
   useEffect(() => {
@@ -99,61 +100,87 @@ function PackageSelection({
       </div>
 
       <div className="packages-grid">
-        {packages.map((pkg) => (
-          <div
-            key={pkg.bundleId}
-            className={`package-card ${
-              selectedPackage === pkg.bundleId ? "selected" : ""
-            }`}
-            onClick={() => onPackageSelect(pkg.bundleId)}
-            role="button"
-            tabIndex={0}
-            onKeyPress={(e) => {
-              if (e.key === "Enter") onPackageSelect(pkg.bundleId);
-            }}
-          >
-            {pkg.isPopular && <div className="popular-badge">Phổ biến</div>}
+        {packages.map((pkg) => {
+          const catalogsList = pkg.catalogs || [];
+          const isExpanded = expandedCards[pkg.bundleId];
+          const shouldShowToggle = catalogsList.length > 5;
+          const displayedCatalogs =
+            isExpanded || !shouldShowToggle
+              ? catalogsList
+              : catalogsList.slice(0, 5);
 
-            <div className="package-header">
-              <strong>
-                <h3 className="package-title">{pkg.bundleName}</h3>
-              </strong>
-              <p className="package-description">{pkg.description}</p>
-              <div className="package-price">
-                <span className="price-amount">{PasePrice(pkg.price)}</span>
+          return (
+            <div
+              key={pkg.bundleId}
+              className={`package-card ${
+                selectedPackage === pkg.bundleId ? "selected" : ""
+              }`}
+              onClick={() => onPackageSelect(pkg.bundleId)}
+              role="button"
+              tabIndex={0}
+              onKeyPress={(e) => {
+                if (e.key === "Enter") onPackageSelect(pkg.bundleId);
+              }}
+            >
+              {pkg.isPopular && <div className="popular-badge">Phổ biến</div>}
+
+              <div className="package-header">
+                <strong>
+                  <h3 className="package-title">{pkg.bundleName}</h3>
+                </strong>
+                <p className="package-description">{pkg.description}</p>
+                <div className="package-price">
+                  <span className="price-amount">{PasePrice(pkg.price)}</span>
+                </div>
+              </div>
+
+              <div className="package-includes">
+                <h4 className="includes-title">Bao gồm:</h4>
+                <ul className="includes-list">
+                  {displayedCatalogs.map((itemId, index) => {
+                    return (
+                      <li key={index} className="includes-item">
+                        <svg
+                          className="check-icon"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 16 16"
+                          fill="none"
+                          aria-hidden="true"
+                        >
+                          <path
+                            d="M13.5 4.5L6 12L2.5 8.5"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                        <span>{itemId.description}</span>
+                      </li>
+                    );
+                  })}
+                </ul>
+                {shouldShowToggle && (
+                  <button
+                    className="toggle-more-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setExpandedCards((prev) => ({
+                        ...prev,
+                        [pkg.bundleId]: !prev[pkg.bundleId],
+                      }));
+                    }}
+                  >
+                    {isExpanded
+                      ? "Thu gọn"
+                      : `Xem thêm (${catalogsList.length - 5})`}
+                  </button>
+                )}
               </div>
             </div>
-
-            <div className="package-includes">
-              <h4 className="includes-title">Bao gồm:</h4>
-              <ul className="includes-list">
-                {(pkg.catalogs || []).map((itemId, index) => {
-                  return (
-                    <li key={index} className="includes-item">
-                      <svg
-                        className="check-icon"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 16 16"
-                        fill="none"
-                        aria-hidden="true"
-                      >
-                        <path
-                          d="M13.5 4.5L6 12L2.5 8.5"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                      <span>{itemId.description}</span>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Summary bar below packages (giống ảnh) */}

@@ -1,6 +1,7 @@
 // src/pages/blog/BlogPage.jsx
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { Spin } from "antd";
 import Navbar from "../../components/navbar/Navbar";
 import Footer from "../../components/footer/Footer";
 import BlogService from "../../services/BlogService";
@@ -14,11 +15,11 @@ export default function BlogPage() {
   const [loading, setLoading] = useState(true);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   // Search state
   const [searchTerm, setSearchTerm] = useState("");
   const [searchInput, setSearchInput] = useState(""); // For input field
-  
+
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(12); // 12 items per page
@@ -31,38 +32,45 @@ export default function BlogPage() {
   }, []);
 
   // Client-side filtering function
-  const applyCategoryFilter = React.useCallback((blogs, categoryId) => {
-    let filteredBlogs = blogs;
+  const applyCategoryFilter = React.useCallback(
+    (blogs, categoryId) => {
+      let filteredBlogs = blogs;
 
-    // Filter by category if selected
-    if (categoryId !== null && categoryId !== undefined) {
-      filteredBlogs = blogs.filter(blog => {
-        const blogCategoryId = blog.categoryId;
-        // Normalize both IDs for comparison
-        const normalizedSelectedId = typeof categoryId === 'string' 
-          ? parseInt(categoryId, 10) 
-          : categoryId;
-        const normalizedBlogId = typeof blogCategoryId === 'string'
-          ? parseInt(blogCategoryId, 10)
-          : blogCategoryId;
-        
-        return normalizedBlogId === normalizedSelectedId || 
-               blogCategoryId === categoryId ||
-               blog.categoryId === categoryId;
-      });
-    }
+      // Filter by category if selected
+      if (categoryId !== null && categoryId !== undefined) {
+        filteredBlogs = blogs.filter((blog) => {
+          const blogCategoryId = blog.categoryId;
+          // Normalize both IDs for comparison
+          const normalizedSelectedId =
+            typeof categoryId === "string"
+              ? parseInt(categoryId, 10)
+              : categoryId;
+          const normalizedBlogId =
+            typeof blogCategoryId === "string"
+              ? parseInt(blogCategoryId, 10)
+              : blogCategoryId;
 
-    // Calculate pagination
-    const total = filteredBlogs.length;
-    const totalPagesCount = Math.ceil(total / pageSize) || 1;
-    const startIndex = (currentPage - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-    const paginatedBlogs = filteredBlogs.slice(startIndex, endIndex);
+          return (
+            normalizedBlogId === normalizedSelectedId ||
+            blogCategoryId === categoryId ||
+            blog.categoryId === categoryId
+          );
+        });
+      }
 
-    setBlogPosts(paginatedBlogs);
-    setTotalPages(totalPagesCount);
-    setTotalCount(total);
-  }, [currentPage, pageSize]);
+      // Calculate pagination
+      const total = filteredBlogs.length;
+      const totalPagesCount = Math.ceil(total / pageSize) || 1;
+      const startIndex = (currentPage - 1) * pageSize;
+      const endIndex = startIndex + pageSize;
+      const paginatedBlogs = filteredBlogs.slice(startIndex, endIndex);
+
+      setBlogPosts(paginatedBlogs);
+      setTotalPages(totalPagesCount);
+      setTotalCount(total);
+    },
+    [currentPage, pageSize]
+  );
 
   // Load blogs when page, search, or category changes
   useEffect(() => {
@@ -93,7 +101,7 @@ export default function BlogPage() {
       // If filtering by category, we'll need to load all and filter client-side
       // since API doesn't support categoryId filter
       let result;
-      
+
       if (searchTerm.trim() !== "") {
         // Use search API - this will use server-side search
         result = await BlogService.getApprovedBlogsWithSearch(
@@ -103,7 +111,11 @@ export default function BlogPage() {
         );
       } else {
         // Load with pagination from API
-        result = await BlogService.getApprovedBlogs(currentPage, pageSize, null);
+        result = await BlogService.getApprovedBlogs(
+          currentPage,
+          pageSize,
+          null
+        );
       }
 
       let blogsData = [];
@@ -134,10 +146,10 @@ export default function BlogPage() {
           setAllBlogs(allBlogsData);
 
           // Extract categories from blogs if categories API didn't work
-          setCategories(prevCategories => {
+          setCategories((prevCategories) => {
             if (prevCategories.length === 0 && allBlogsData.length > 0) {
               const uniqueCategories = new Map();
-              allBlogsData.forEach(blog => {
+              allBlogsData.forEach((blog) => {
                 const catId = blog.categoryId;
                 const catName = blog.category || blog.tag;
                 if (catId && catName && !uniqueCategories.has(catId)) {
@@ -145,13 +157,15 @@ export default function BlogPage() {
                     id: catId,
                     categoryId: catId,
                     name: catName,
-                    categoryName: catName
+                    categoryName: catName,
                   });
                 }
               });
-              
+
               if (uniqueCategories.size > 0) {
-                const extractedCategories = Array.from(uniqueCategories.values());
+                const extractedCategories = Array.from(
+                  uniqueCategories.values()
+                );
                 return extractedCategories;
               }
             }
@@ -162,18 +176,22 @@ export default function BlogPage() {
 
       // Apply category filter if selected (client-side)
       if (selectedCategoryId !== null && selectedCategoryId !== undefined) {
-        blogsData = blogsData.filter(blog => {
+        blogsData = blogsData.filter((blog) => {
           const blogCategoryId = blog.categoryId;
-          const normalizedSelectedId = typeof selectedCategoryId === 'string' 
-            ? parseInt(selectedCategoryId, 10) 
-            : selectedCategoryId;
-          const normalizedBlogId = typeof blogCategoryId === 'string'
-            ? parseInt(blogCategoryId, 10)
-            : blogCategoryId;
-          
-          return normalizedBlogId === normalizedSelectedId || 
-                 blogCategoryId === selectedCategoryId ||
-                 blog.categoryId === selectedCategoryId;
+          const normalizedSelectedId =
+            typeof selectedCategoryId === "string"
+              ? parseInt(selectedCategoryId, 10)
+              : selectedCategoryId;
+          const normalizedBlogId =
+            typeof blogCategoryId === "string"
+              ? parseInt(blogCategoryId, 10)
+              : blogCategoryId;
+
+          return (
+            normalizedBlogId === normalizedSelectedId ||
+            blogCategoryId === selectedCategoryId ||
+            blog.categoryId === selectedCategoryId
+          );
         });
         total = blogsData.length;
         totalPagesCount = Math.ceil(total / pageSize) || 1;
@@ -191,7 +209,6 @@ export default function BlogPage() {
       setLoading(false);
     }
   };
-
 
   const handleCategoryChange = (categoryId) => {
     setSelectedCategoryId(categoryId);
@@ -228,7 +245,7 @@ export default function BlogPage() {
           <p className="blog-page-subtitle">
             Cập nhật thông tin y tế và sức khỏe mới nhất từ các chuyên gia
           </p>
-          
+
           {/* Search Box */}
           <form onSubmit={handleSearch} className="blog-search-form">
             <div className="blog-search-container">
@@ -262,7 +279,7 @@ export default function BlogPage() {
 
         {loading && blogPosts.length === 0 ? (
           <div className="blog-page-loading">
-            <p>Đang tải dữ liệu...</p>
+            <Spin size="large" />
           </div>
         ) : error ? (
           <div className="blog-page-error">
@@ -281,24 +298,36 @@ export default function BlogPage() {
                 Tất cả
               </button>
               {categoriesLoading ? (
-                <span style={{ color: '#6b7280', fontSize: '0.9rem', padding: '10px 24px' }}>
-                  Đang tải danh mục...
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    padding: "10px 24px",
+                  }}
+                >
+                  <Spin size="small" />
                 </span>
               ) : categories.length > 0 ? (
                 categories.map((category) => {
                   const catId = category.id || category.categoryId;
                   const catName = category.name || category.categoryName;
                   // Ensure categoryId is a number if it's a string
-                  const normalizedCatId = catId !== null && catId !== undefined 
-                    ? (typeof catId === 'string' ? parseInt(catId, 10) : catId)
-                    : null;
-                  
+                  const normalizedCatId =
+                    catId !== null && catId !== undefined
+                      ? typeof catId === "string"
+                        ? parseInt(catId, 10)
+                        : catId
+                      : null;
+
                   return (
                     <button
                       key={catId}
                       className={`category-filter-btn ${
-                        selectedCategoryId === normalizedCatId || 
-                        selectedCategoryId === catId ? "active" : ""
+                        selectedCategoryId === normalizedCatId ||
+                        selectedCategoryId === catId
+                          ? "active"
+                          : ""
                       }`}
                       onClick={() => {
                         handleCategoryChange(normalizedCatId);
@@ -309,7 +338,13 @@ export default function BlogPage() {
                   );
                 })
               ) : (
-                <span style={{ color: '#6b7280', fontSize: '0.9rem', padding: '10px 24px' }}>
+                <span
+                  style={{
+                    color: "#6b7280",
+                    fontSize: "0.9rem",
+                    padding: "10px 24px",
+                  }}
+                >
                   Không có danh mục nào
                 </span>
               )}
@@ -328,13 +363,13 @@ export default function BlogPage() {
                       key={post.id}
                       className="blog-post-card"
                     >
-                      {(post.img || post.thumbnailUrl || post.imageUrl) ? (
+                      {post.img || post.thumbnailUrl || post.imageUrl ? (
                         <img
                           src={post.img || post.thumbnailUrl || post.imageUrl}
                           alt={post.title}
                           className="blog-post-img"
                           onError={(e) => {
-                            e.target.style.display = 'none';
+                            e.target.style.display = "none";
                           }}
                           loading="lazy"
                         />
@@ -370,39 +405,42 @@ export default function BlogPage() {
                     >
                       ‹ Trước
                     </button>
-                    
+
                     <div className="pagination-info">
                       Trang {currentPage} / {totalPages} ({totalCount} bài viết)
                     </div>
-                    
+
                     {/* Page numbers */}
                     <div className="pagination-numbers">
-                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                        let pageNum;
-                        if (totalPages <= 5) {
-                          pageNum = i + 1;
-                        } else if (currentPage <= 3) {
-                          pageNum = i + 1;
-                        } else if (currentPage >= totalPages - 2) {
-                          pageNum = totalPages - 4 + i;
-                        } else {
-                          pageNum = currentPage - 2 + i;
+                      {Array.from(
+                        { length: Math.min(5, totalPages) },
+                        (_, i) => {
+                          let pageNum;
+                          if (totalPages <= 5) {
+                            pageNum = i + 1;
+                          } else if (currentPage <= 3) {
+                            pageNum = i + 1;
+                          } else if (currentPage >= totalPages - 2) {
+                            pageNum = totalPages - 4 + i;
+                          } else {
+                            pageNum = currentPage - 2 + i;
+                          }
+
+                          return (
+                            <button
+                              key={pageNum}
+                              className={`pagination-number ${
+                                currentPage === pageNum ? "active" : ""
+                              }`}
+                              onClick={() => handlePageChange(pageNum)}
+                            >
+                              {pageNum}
+                            </button>
+                          );
                         }
-                        
-                        return (
-                          <button
-                            key={pageNum}
-                            className={`pagination-number ${
-                              currentPage === pageNum ? "active" : ""
-                            }`}
-                            onClick={() => handlePageChange(pageNum)}
-                          >
-                            {pageNum}
-                          </button>
-                        );
-                      })}
+                      )}
                     </div>
-                    
+
                     <button
                       className="pagination-btn"
                       onClick={() => handlePageChange(currentPage + 1)}

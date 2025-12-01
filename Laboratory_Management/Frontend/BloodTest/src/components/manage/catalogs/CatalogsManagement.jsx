@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import AdminLayout from "../../admin/layout/AdminLayout";
 import { FiPlus, FiEdit2, FiSearch, FiX } from "react-icons/fi";
-import { Pagination } from "antd";
+import { Pagination, Spin } from "antd";
 import { setAuthToken } from "../../../utils/auth";
 import { toast } from "react-toastify";
 import {
@@ -478,9 +478,8 @@ const CatalogsManagement = () => {
                 {isLoading ? (
                   <tr>
                     <td colSpan="5" style={{ padding: "40px" }}>
-                      <div className="loading-container">
-                        <div className="loading-spinner"></div>
-                        <p>Đang tải dữ liệu...</p>
+                      <div style={{ textAlign: "center" }}>
+                        <Spin size="large" />
                       </div>
                     </td>
                   </tr>
@@ -713,9 +712,8 @@ const CatalogsManagement = () => {
                     </div>
                     <div className="parameters-selection">
                       {parametersLoading ? (
-                        <div className="loading-container small">
-                          <div className="loading-spinner"></div>
-                          <p>Đang tải chỉ số...</p>
+                        <div style={{ textAlign: "center", padding: "20px" }}>
+                          <Spin />
                         </div>
                       ) : filteredAvailableParameters.length > 0 ? (
                         filteredAvailableParameters.map((param) => {

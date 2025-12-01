@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import AdminLayout from "../../admin/layout/AdminLayout";
-import { Pagination } from "antd";
+import { Pagination, Spin } from "antd";
 import { FiPlus, FiSearch, FiEdit2, FiTrash2, FiX } from "react-icons/fi";
 import { toast } from "react-toastify";
 import { setAuthToken } from "../../../utils/auth";
@@ -204,7 +204,7 @@ const BundleManager = () => {
       // Xử lý trường hợp 204 No Content hoặc null
       if (!bundleData) {
         console.log("[BundleManager] No data from API, using bundle data");
-      setFormData({
+        setFormData({
           bundleName: bundle.bundleName || "",
           description: bundle.description || "",
           price: bundle.price ?? "",
@@ -907,9 +907,9 @@ const BundleManager = () => {
               searchError
             );
           }
-      }
+        }
 
-      if (!bundleId) {
+        if (!bundleId) {
           throw new Error(
             "Không xác định được ID của gói sau khi tạo. Vui lòng kiểm tra lại."
           );
@@ -1088,9 +1088,8 @@ const BundleManager = () => {
                 {isLoading ? (
                   <tr>
                     <td colSpan="6">
-                      <div className="loading-container">
-                        <div className="loading-spinner"></div>
-                        <p>Đang tải dữ liệu...</p>
+                      <div style={{ textAlign: "center", padding: "40px" }}>
+                        <Spin size="large" />
                       </div>
                     </td>
                   </tr>
@@ -1415,9 +1414,10 @@ const BundleManager = () => {
                         </div>
                         <div className="parameters-selection">
                           {catalogsLoading ? (
-                            <div className="loading-container small">
-                              <div className="loading-spinner"></div>
-                              <p>Đang tải danh mục...</p>
+                            <div
+                              style={{ textAlign: "center", padding: "20px" }}
+                            >
+                              <Spin />
                             </div>
                           ) : filteredCatalogs.length > 0 ? (
                             filteredCatalogs.map((catalog) => {
@@ -1464,170 +1464,169 @@ const BundleManager = () => {
 
               {/* Edit mode: Hiển thị cả form và catalog selector */}
               {modalMode === "edit" && (
-              <div className="bundle-form-grid">
-                <div className="bundle-form-left">
-                  <div className="form-section">
-                    <label className="form-label">Tên gói</label>
-                    <input
-                      type="text"
-                      name="bundleName"
-                      className="form-input"
-                      placeholder="VD: Gói khám tổng quát"
-                      value={formData.bundleName}
-                      onChange={handleFormChange}
-                      disabled={isSaving}
-                    />
-                  </div>
-                  <div className="form-section grid-2">
-                    <div className="form-group">
-                      <label className="form-label">Giá (VNĐ)</label>
+                <div className="bundle-form-grid">
+                  <div className="bundle-form-left">
+                    <div className="form-section">
+                      <label className="form-label">Tên gói</label>
                       <input
-                        type="number"
-                        name="price"
+                        type="text"
+                        name="bundleName"
                         className="form-input"
-                        placeholder="450000"
-                        value={formData.price}
+                        placeholder="VD: Gói khám tổng quát"
+                        value={formData.bundleName}
                         onChange={handleFormChange}
                         disabled={isSaving}
                       />
                     </div>
-                    <div className="form-group switch-group">
-                      <label className="form-label">Trạng thái</label>
-                        <div className="switch-container">
-                      <label className="switch">
+                    <div className="form-section grid-2">
+                      <div className="form-group">
+                        <label className="form-label">Giá (VNĐ)</label>
                         <input
-                          type="checkbox"
-                          name="isActive"
-                          checked={formData.isActive}
+                          type="number"
+                          name="price"
+                          className="form-input"
+                          placeholder="450000"
+                          value={formData.price}
                           onChange={handleFormChange}
-                              disabled={isSaving}
+                          disabled={isSaving}
                         />
-                        <span className="slider" />
+                      </div>
+                      <div className="form-group switch-group">
+                        <label className="form-label">Trạng thái</label>
+                        <div className="switch-container">
+                          <label className="switch">
+                            <input
+                              type="checkbox"
+                              name="isActive"
+                              checked={formData.isActive}
+                              onChange={handleFormChange}
+                              disabled={isSaving}
+                            />
+                            <span className="slider" />
                           </label>
                           <span
                             className={`switch-text ${
                               formData.isActive ? "active" : "inactive"
                             }`}
                           >
-                          {formData.isActive ? "Hoạt động" : "Tạm dừng"}
-                        </span>
+                            {formData.isActive ? "Hoạt động" : "Tạm dừng"}
+                          </span>
                         </div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="form-section">
-                    <label className="form-label">Mô tả</label>
-                    <textarea
-                      name="description"
-                      className="form-textarea"
-                      rows={4}
-                      placeholder="Nhập mô tả cho gói xét nghiệm..."
-                      value={formData.description}
-                      onChange={handleFormChange}
-                      disabled={isSaving}
-                    />
-                  </div>
-                  <div className="form-section selected-summary">
-                    <div className="selected-summary-header">
-                      <h3>Danh mục đã chọn ({selectedCatalogs.length})</h3>
-                      <button
-                        type="button"
-                        className="clear-btn"
+                    <div className="form-section">
+                      <label className="form-label">Mô tả</label>
+                      <textarea
+                        name="description"
+                        className="form-textarea"
+                        rows={4}
+                        placeholder="Nhập mô tả cho gói xét nghiệm..."
+                        value={formData.description}
+                        onChange={handleFormChange}
+                        disabled={isSaving}
+                      />
+                    </div>
+                    <div className="form-section selected-summary">
+                      <div className="selected-summary-header">
+                        <h3>Danh mục đã chọn ({selectedCatalogs.length})</h3>
+                        <button
+                          type="button"
+                          className="clear-btn"
                           onClick={handleClearAllCatalogs}
-                        disabled={isSaving || selectedCatalogs.length === 0}
-                      >
-                        Xóa tất cả
-                      </button>
-                    </div>
-                    <div className="selected-summary-list">
-                      {selectedCatalogs.length > 0 ? (
-                        selectedCatalogs.map((catalog) => (
-                          <div
-                            key={getCatalogId(catalog)}
-                            className="selected-summary-item"
-                          >
-                            <span>
-                              {catalog.testName || catalog.catalogName || "-"}
-                            </span>
-                            <button
-                              onClick={() => handleToggleCatalog(catalog)}
-                              disabled={isSaving}
+                          disabled={isSaving || selectedCatalogs.length === 0}
+                        >
+                          Xóa tất cả
+                        </button>
+                      </div>
+                      <div className="selected-summary-list">
+                        {selectedCatalogs.length > 0 ? (
+                          selectedCatalogs.map((catalog) => (
+                            <div
+                              key={getCatalogId(catalog)}
+                              className="selected-summary-item"
                             >
-                              <FiX size={14} />
-                            </button>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="empty-text">
-                          Chưa có danh mục nào được chọn
-                        </p>
-                      )}
+                              <span>
+                                {catalog.testName || catalog.catalogName || "-"}
+                              </span>
+                              <button
+                                onClick={() => handleToggleCatalog(catalog)}
+                                disabled={isSaving}
+                              >
+                                <FiX size={14} />
+                              </button>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="empty-text">
+                            Chưa có danh mục nào được chọn
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="bundle-form-right">
-                  <div className="parameter-selector">
-                    <div className="parameter-selector-header">
-                      <div>
-                        <h4>Danh mục xét nghiệm</h4>
-                        <p>Chọn các danh mục thuộc gói</p>
-                      </div>
-                      <div className="search-box compact">
-                        <FiSearch size={16} />
-                        <input
-                          type="text"
-                          placeholder="Tìm kiếm danh mục..."
-                          value={catalogSearch}
-                          onChange={(e) => setCatalogSearch(e.target.value)}
-                        />
-                      </div>
-                    </div>
-                    <div className="parameters-selection">
-                      {catalogsLoading ? (
-                        <div className="loading-container small">
-                          <div className="loading-spinner"></div>
-                          <p>Đang tải danh mục...</p>
+                  <div className="bundle-form-right">
+                    <div className="parameter-selector">
+                      <div className="parameter-selector-header">
+                        <div>
+                          <h4>Danh mục xét nghiệm</h4>
+                          <p>Chọn các danh mục thuộc gói</p>
                         </div>
-                      ) : filteredCatalogs.length > 0 ? (
-                        filteredCatalogs.map((catalog) => {
-                          const catalogId = getCatalogId(catalog);
+                        <div className="search-box compact">
+                          <FiSearch size={16} />
+                          <input
+                            type="text"
+                            placeholder="Tìm kiếm danh mục..."
+                            value={catalogSearch}
+                            onChange={(e) => setCatalogSearch(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <div className="parameters-selection">
+                        {catalogsLoading ? (
+                          <div style={{ textAlign: "center", padding: "20px" }}>
+                            <Spin />
+                          </div>
+                        ) : filteredCatalogs.length > 0 ? (
+                          filteredCatalogs.map((catalog) => {
+                            const catalogId = getCatalogId(catalog);
                             const isSelected = selectedCatalogs.some((item) =>
                               compareCatalogIds(getCatalogId(item), catalogId)
-                          );
+                            );
 
-                          return (
-                            <div
-                              key={catalogId}
-                              className={`parameter-item ${
-                                isSelected ? "selected" : ""
-                              }`}
-                              onClick={() => handleToggleCatalog(catalog)}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={isSelected}
-                                readOnly
-                              />
-                              <div className="parameter-info">
-                                <span className="parameter-title">
-                                  {catalog.testName || catalog.catalogName}
-                                </span>
-                                <span className="parameter-meta">
-                                  {catalog.description || "Không có mô tả"}
-                                </span>
+                            return (
+                              <div
+                                key={catalogId}
+                                className={`parameter-item ${
+                                  isSelected ? "selected" : ""
+                                }`}
+                                onClick={() => handleToggleCatalog(catalog)}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  readOnly
+                                />
+                                <div className="parameter-info">
+                                  <span className="parameter-title">
+                                    {catalog.testName || catalog.catalogName}
+                                  </span>
+                                  <span className="parameter-meta">
+                                    {catalog.description || "Không có mô tả"}
+                                  </span>
+                                </div>
                               </div>
-                            </div>
-                          );
-                        })
-                      ) : (
-                        <p className="empty-text">
-                          Không có danh mục nào phù hợp
-                        </p>
-                      )}
+                            );
+                          })
+                        ) : (
+                          <p className="empty-text">
+                            Không có danh mục nào phù hợp
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
               )}
             </div>
 
@@ -1645,13 +1644,13 @@ const BundleManager = () => {
                   >
                     ← Trở về
                   </button>
-              <button
-                className="modal-button cancel"
-                onClick={handleCloseModal}
-                disabled={isSaving}
-              >
-                Hủy
-              </button>
+                  <button
+                    className="modal-button cancel"
+                    onClick={handleCloseModal}
+                    disabled={isSaving}
+                  >
+                    Hủy
+                  </button>
                   <button
                     className="modal-button primary"
                     onClick={handleCompleteCreate}
@@ -1684,11 +1683,11 @@ const BundleManager = () => {
                       {isSaving ? "Đang tạo..." : "Tiếp theo →"}
                     </button>
                   ) : (
-              <button
-                className="modal-button primary"
-                onClick={handleSaveBundle}
-                disabled={isSaving || isDetailLoading}
-              >
+                    <button
+                      className="modal-button primary"
+                      onClick={handleSaveBundle}
+                      disabled={isSaving || isDetailLoading}
+                    >
                       {isSaving ? "Đang xử lý..." : "Cập nhật gói"}
                     </button>
                   )}

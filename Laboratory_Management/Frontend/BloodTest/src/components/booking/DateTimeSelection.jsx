@@ -90,8 +90,11 @@ function DateTimeSelection({ onBack, onContinue }) {
   return (
     <div className="dt-selection">
       <div className="dt-location-card">
-        <div>Phòng khám Xét nghiệm Y tế</div>
-        <div className="dt-location-sub">123 Nguyễn Huệ, Quận 1, TP.HCM</div>
+        <div>Trung Tâm Xét nghiệm FPT</div>
+        <div className="dt-location-sub">
+          Tòa nhà F-Town 1, Lô T2, Đường D1, Khu Công nghệ Cao Sài Gòn, Phường
+          Tân Phú, Thành phố Thủ Đức, Thành phố Hồ Chí Minh, Việt Nam.
+        </div>
       </div>
       <h4 className="dt-sub ">
         <CiCalendar style={{ color: "#2563eb", fontWeight: "bolder" }} />

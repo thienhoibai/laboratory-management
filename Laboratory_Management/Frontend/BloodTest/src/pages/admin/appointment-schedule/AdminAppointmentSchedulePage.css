@@ -880,6 +880,18 @@
   }
 }
 
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 4px 16px rgba(76, 175, 80, 0.5);
+  }
+}
+
 .alert-text {
   font-size: 14px;
   line-height: 1.5;
