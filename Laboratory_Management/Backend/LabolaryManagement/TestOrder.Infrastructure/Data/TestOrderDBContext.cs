@@ -47,7 +47,7 @@ public partial class TestOrderDBContext : DbContext
     {
         modelBuilder.Entity<AppointmentSlot>(entity =>
         {
-            entity.HasKey(e => e.SlotId).HasName("PK__Appointm__0A124AAFABC70710");
+            entity.HasKey(e => e.SlotId).HasName("PK__Appointm__0A124AAF2E60C578");
 
             entity.ToTable("AppointmentSlot");
 
@@ -64,7 +64,7 @@ public partial class TestOrderDBContext : DbContext
 
         modelBuilder.Entity<AuditLog>(entity =>
         {
-            entity.HasKey(e => e.AuditLogId).HasName("PK__AuditLog__EB5F6CBD21EA442E");
+            entity.HasKey(e => e.AuditLogId).HasName("PK__AuditLog__EB5F6CBD3E4E8010");
 
             entity.ToTable("AuditLog");
 
@@ -74,7 +74,7 @@ public partial class TestOrderDBContext : DbContext
 
         modelBuilder.Entity<Booking>(entity =>
         {
-            entity.HasKey(e => e.BookingId).HasName("PK__Booking__73951AED5564E51D");
+            entity.HasKey(e => e.BookingId).HasName("PK__Booking__73951AED9605350E");
 
             entity.ToTable("Booking");
 
@@ -101,7 +101,7 @@ public partial class TestOrderDBContext : DbContext
 
         modelBuilder.Entity<BookingTest>(entity =>
         {
-            entity.HasKey(e => e.TestBookingNo).HasName("PK__BookingT__E0217BD0AF66EE3A");
+            entity.HasKey(e => e.TestBookingNo).HasName("PK__BookingT__E0217BD0D3B06BE1");
 
             entity.ToTable("BookingTest");
 
@@ -116,7 +116,7 @@ public partial class TestOrderDBContext : DbContext
 
         modelBuilder.Entity<CatalogBundle>(entity =>
         {
-            entity.HasKey(e => new { e.BundleId, e.CatalogId }).HasName("PK__CatalogB__DE2527E7A2A0B345");
+            entity.HasKey(e => new { e.BundleId, e.CatalogId }).HasName("PK__CatalogB__DE2527E762F90615");
 
             entity.ToTable("CatalogBundle");
 
@@ -133,7 +133,7 @@ public partial class TestOrderDBContext : DbContext
 
         modelBuilder.Entity<Comment>(entity =>
         {
-            entity.HasKey(e => e.CommentId).HasName("PK__Comment__C3B4DFCACDA29DDF");
+            entity.HasKey(e => e.CommentId).HasName("PK__Comment__C3B4DFCA3A3F34F3");
 
             entity.ToTable("Comment");
 
@@ -148,7 +148,7 @@ public partial class TestOrderDBContext : DbContext
 
         modelBuilder.Entity<PaymentEnvoice>(entity =>
         {
-            entity.HasKey(e => e.PaymentNo).HasName("PK__PaymentE__9B557267FC743E56");
+            entity.HasKey(e => e.PaymentNo).HasName("PK__PaymentE__9B55726797ED56A6");
 
             entity.ToTable("PaymentEnvoice");
 
@@ -166,7 +166,7 @@ public partial class TestOrderDBContext : DbContext
 
         modelBuilder.Entity<TestBundle>(entity =>
         {
-            entity.HasKey(e => e.BundleId).HasName("PK__TestBund__420034519D0B8D33");
+            entity.HasKey(e => e.BundleId).HasName("PK__TestBund__42003451FEA5724F");
 
             entity.ToTable("TestBundle");
 
@@ -176,7 +176,7 @@ public partial class TestOrderDBContext : DbContext
 
         modelBuilder.Entity<TestCatalog>(entity =>
         {
-            entity.HasKey(e => e.CatalogId).HasName("PK__TestCata__C2513B684F9B48DE");
+            entity.HasKey(e => e.CatalogId).HasName("PK__TestCata__C2513B6838281F9F");
 
             entity.ToTable("TestCatalog");
 
@@ -196,14 +196,14 @@ public partial class TestOrderDBContext : DbContext
                         .HasConstraintName("FK__CatalogPa__Catal__68487DD7"),
                     j =>
                     {
-                        j.HasKey("CatalogId", "ParameterId").HasName("PK__CatalogP__ADD1FD4F85DD2403");
+                        j.HasKey("CatalogId", "ParameterId").HasName("PK__CatalogP__ADD1FD4FA5109A19");
                         j.ToTable("CatalogParameter");
                     });
         });
 
         modelBuilder.Entity<TestParameter>(entity =>
         {
-            entity.HasKey(e => e.ParameterId).HasName("PK__TestPara__F80C62774F1DD611");
+            entity.HasKey(e => e.ParameterId).HasName("PK__TestPara__F80C6277667FF7A1");
 
             entity.ToTable("TestParameter");
 
@@ -214,22 +214,21 @@ public partial class TestOrderDBContext : DbContext
 
         modelBuilder.Entity<TestReport>(entity =>
         {
-            entity.HasKey(e => e.DocumentId).HasName("PK__TestRepo__1ABEEF0FE00AED50");
+            entity.HasKey(e => e.DocumentId).HasName("PK__TestRepo__1ABEEF0FF5655FF7");
 
             entity.ToTable("TestReport");
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
-            entity.Property(e => e.FileType).HasMaxLength(30);
             entity.Property(e => e.Filename).HasMaxLength(255);
 
             entity.HasOne(d => d.Booking).WithMany(p => p.TestReports)
                 .HasForeignKey(d => d.BookingId)
-                .HasConstraintName("FK__TestRepor__Booki__02FC7413");
+                .HasConstraintName("FK__TestRepor__Booki__73BA3083");
         });
 
         modelBuilder.Entity<TestResult>(entity =>
         {
-            entity.HasKey(e => e.ResultId).HasName("PK__TestResu__976902080375A3E9");
+            entity.HasKey(e => e.ResultId).HasName("PK__TestResu__976902086AC252E9");
 
             entity.ToTable("TestResult");
 
@@ -247,11 +246,11 @@ public partial class TestOrderDBContext : DbContext
 
         modelBuilder.Entity<TimeBlock>(entity =>
         {
-            entity.HasKey(e => e.TimeBlockId).HasName("PK__TimeBloc__78D14F4EDB4DA452");
+            entity.HasKey(e => e.TimeBlockId).HasName("PK__TimeBloc__78D14F4E66AA06F1");
 
             entity.ToTable("TimeBlock");
 
-            entity.HasIndex(e => e.TimeBlock1, "UQ__TimeBloc__3E92327BB4D9B3B3").IsUnique();
+            entity.HasIndex(e => e.TimeBlock1, "UQ__TimeBloc__3E92327B2D1F526F").IsUnique();
 
             entity.Property(e => e.TimeBlock1).HasColumnName("TimeBlock");
         });

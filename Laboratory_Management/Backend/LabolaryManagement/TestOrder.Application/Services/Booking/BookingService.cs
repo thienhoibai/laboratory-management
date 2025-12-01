@@ -281,6 +281,7 @@ namespace TestOrder.Application.Services.Booking
 
         public async Task<ResponseMessage> CheckInBooking(Guid bookingId)
         {
+            DateTime today = DateTime.Now;
 
             var booking =  await _bookingRepository.GetByIdAsync(bookingId);
             var timeSlot = await _appointmentSlotService.GetAppointmentSlotByIdAsync((Guid)booking.AppointmentSlotId);
@@ -300,6 +301,14 @@ namespace TestOrder.Application.Services.Booking
                 response.InstancesCode = bookingId;
                 return response;
             }
+            if (timeSlot.AppointmentDate != DateOnly.FromDateTime(today))
+            {
+                response.ResponseCode = ResponseCode.BadInstanceState;
+                response.Message = "Check-in is only allowed on the appointment date";
+                response.InstancesCode = bookingId;
+                return response;
+            }
+
 
             booking.Status = (byte)BookingStatusEnum.InProgress;
             booking.RunDate = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(DateTime.UtcNow, timeZoneById));
