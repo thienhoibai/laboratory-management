@@ -183,6 +183,14 @@
   box-shadow: none;
 }
 
+/* Tablet */
+@media (max-width: 1024px) {
+  .patient-selection {
+    padding: 32px 20px;
+  }
+}
+
+/* Mobile */
 @media (max-width: 768px) {
   .patient-selection {
     padding: 24px 16px;
@@ -192,6 +200,24 @@
     font-size: 1.5rem;
   }
 
+  .patient-selection-sub {
+    font-size: 0.9rem;
+  }
+
+  .patient-card {
+    padding: 16px;
+  }
+
+  .patient-avatar {
+    width: 48px;
+    height: 48px;
+    font-size: 18px;
+  }
+
+  .patient-name {
+    font-size: 16px;
+  }
+
   .patient-details {
     padding-left: 0;
     margin-top: 12px;
@@ -199,10 +225,44 @@
 
   .patient-selection-actions {
     flex-direction: column;
+    gap: 12px;
   }
 
   .btn-back,
   .btn-continue {
     width: 100%;
+    padding: 12px 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .patient-selection {
+    padding: 20px 12px;
+  }
+
+  .patient-selection h2 {
+    font-size: 1.25rem;
+  }
+
+  .patient-selection-sub {
+    font-size: 0.85rem;
+  }
+
+  .patient-card {
+    padding: 14px;
+  }
+
+  .patient-avatar {
+    width: 44px;
+    height: 44px;
+    font-size: 16px;
+  }
+
+  .patient-name {
+    font-size: 15px;
+  }
+
+  .detail-row {
+    font-size: 13px;
   }
 }

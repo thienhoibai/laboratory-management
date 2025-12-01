@@ -463,41 +463,183 @@
 }
 
 /* =================== RESPONSIVE =================== */
+/* Tablet */
+@media (max-width: 1024px) {
+  .payment-layout {
+    gap: 24px;
+  }
+
+  .payment-title {
+    font-size: 26px;
+  }
+}
+
+/* Mobile */
 @media (max-width: 900px) {
   .payment-layout {
     grid-template-columns: 1fr;
     gap: 20px;
   }
+
   .payment-right {
     position: relative;
     top: 0;
   }
+
+  .payment-title {
+    font-size: 24px;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .info-card-1 {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .info-card-1 label input {
+    width: 96%;
+  }
+
+  .small-row {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .small-row label input {
+    width: 96%;
+  }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 768px) {
   .payment-container {
     padding: 24px 16px 60px;
+  }
+
+  .payment-title {
+    font-size: 22px;
+  }
+
+  .payment-sub {
+    font-size: 14px;
   }
 
   .card {
     padding: 16px;
   }
 
+  .card h3 {
+    font-size: 15px;
+  }
+
+  .form-grid label {
+    font-size: 13px;
+  }
+
+  .form-grid input {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+
+  .method-item {
+    padding: 8px;
+    font-size: 13px;
+  }
+
+  .summary-card h3 {
+    font-size: 15px;
+  }
+
+  .summary-line {
+    font-size: 13px;
+  }
+
+  .summary-total {
+    font-size: 15px;
+  }
+
   .btn-confirm {
-    padding: 14px;
+    padding: 12px;
+    font-size: 14px;
+  }
+
+  .secure-note {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .payment-container {
+    padding: 20px 12px 50px;
   }
 
   .payment-title {
-    font-size: 24px;
+    font-size: 20px;
+  }
+
+  .payment-sub {
+    font-size: 13px;
+  }
+
+  .card {
+    padding: 14px;
+  }
+
+  .card h3 {
+    font-size: 14px;
+  }
+
+  .form-grid label {
+    font-size: 12px;
+    margin-bottom: 10px;
+  }
+
+  .form-grid input {
+    padding: 8px;
+    font-size: 12px;
+  }
+
+  .method-item {
+    padding: 6px;
+    font-size: 12px;
+  }
+
+  .btn-confirm {
+    padding: 12px;
+    font-size: 13px;
+  }
+
+  .secure-note {
+    font-size: 11px;
   }
 }
 
 @media (max-width: 520px) {
   .modal-dialog {
-    padding: 12px;
+    padding: 16px;
+    margin: 20px;
   }
+
   .modal-dialog .modal-title {
-    font-size: 15px;
+    font-size: 16px;
     margin-bottom: 12px;
+  }
+
+  .modal-dialog .modal-body-alert {
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .modal-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .btn-modal-cancel,
+  .btn-modal-confirm {
+    width: 100%;
+    padding: 10px;
   }
 }

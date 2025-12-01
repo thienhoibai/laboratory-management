@@ -295,39 +295,177 @@
   font-weight: 500;
 }
 
-@media (max-width: 900px) {
+/* Tablet Styles */
+@media (max-width: 1024px) {
+  .bundle-section-bg {
+    padding: 56px 0 40px 0;
+  }
+  .bundle-section-header {
+    padding: 0 20px;
+    margin-bottom: 40px;
+  }
+  .bundle-title {
+    font-size: 2rem;
+  }
+  .bundle-cards {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    padding: 0 20px;
+  }
+}
+
+/* Mobile Styles */
+@media (max-width: 768px) {
+  .bundle-section-bg {
+    padding: 48px 0 32px 0;
+  }
   .bundle-section-header {
     padding: 0 16px;
     flex-direction: column;
     align-items: flex-start;
     gap: 16px;
+    margin-bottom: 32px;
   }
-
   .bundle-badge {
     position: static;
     left: auto;
     margin-bottom: 0;
+    font-size: 0.9rem;
+    padding: 5px 14px;
   }
-
   .bundle-title-group {
     width: 100%;
     padding-top: 0;
   }
-
+  .bundle-title {
+    font-size: 1.75rem;
+    margin-bottom: 6px;
+  }
+  .bundle-desc {
+    font-size: 0.95rem;
+  }
   .bundle-viewall {
     position: static;
     right: auto;
     margin-top: 0;
+    font-size: 0.95rem;
   }
-
   .bundle-cards {
     grid-template-columns: 1fr;
+    gap: 20px;
     padding: 0 16px;
   }
-
   .bundle-card {
     width: 100%;
     max-width: 100%;
+  }
+  .bundle-card-content {
+    padding: 20px;
+    gap: 14px;
+  }
+  .bundle-card-header {
+    gap: 12px;
+  }
+  .bundle-card-title {
+    font-size: 1.15rem;
+  }
+  .bundle-price {
+    font-size: 1.05rem;
+  }
+  .bundle-card-desc {
+    font-size: 0.9rem;
+  }
+  .bundle-catalogs-label {
+    font-size: 0.8rem;
+  }
+  .bundle-catalog-tag,
+  .bundle-catalog-more {
+    font-size: 0.75rem;
+    padding: 3px 8px;
+  }
+  .bundle-book-btn {
+    margin: 0 20px 20px 20px;
+    width: calc(100% - 40px);
+    padding: 11px 18px;
+    font-size: 0.9rem;
+  }
+}
+
+/* Small Mobile Styles */
+@media (max-width: 480px) {
+  .bundle-section-bg {
+    padding: 40px 0 24px 0;
+  }
+  .bundle-section-header {
+    padding: 0 12px;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .bundle-badge {
+    font-size: 0.85rem;
+    padding: 4px 12px;
+  }
+  .bundle-title {
+    font-size: 1.5rem;
+  }
+  .bundle-desc {
+    font-size: 0.9rem;
+  }
+  .bundle-viewall {
+    font-size: 0.9rem;
+  }
+  .bundle-cards {
+    padding: 0 12px;
+    gap: 16px;
+  }
+  .bundle-card-content {
+    padding: 18px;
+    gap: 12px;
+  }
+  .bundle-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .bundle-card-title {
+    font-size: 1.1rem;
+    width: 100%;
+  }
+  .bundle-price {
+    font-size: 1rem;
+    align-self: flex-start;
+  }
+  .bundle-card-desc {
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+  .bundle-catalogs {
+    margin-top: 6px;
+  }
+  .bundle-catalogs-label {
+    font-size: 0.75rem;
+    margin-bottom: 6px;
+  }
+  .bundle-catalog-tag,
+  .bundle-catalog-more {
+    font-size: 0.7rem;
+    padding: 3px 6px;
+  }
+  .bundle-book-btn {
+    margin: 0 18px 18px 18px;
+    width: calc(100% - 36px);
+    padding: 10px 16px;
+    font-size: 0.85rem;
+  }
+  .bundle-loading,
+  .bundle-error,
+  .bundle-empty {
+    padding: 40px 12px;
+  }
+  .bundle-loading p,
+  .bundle-error p,
+  .bundle-empty p {
+    font-size: 1rem;
   }
 }
 
