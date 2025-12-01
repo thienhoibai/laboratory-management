@@ -77,6 +77,16 @@ public class PatientsController : ControllerBase
         return Ok(res.Data);
     }
 
+    // Internal endpoint for service-to-service calls (no authorization required)
+    [HttpGet("internal/{id:guid}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetByIdInternal(Guid id, CancellationToken ct)
+    {
+        var res = await _service.GetAsync(id, ct);
+        if (!res.Succeeded || res.Data == null) return NotFound();
+        return Ok(res.Data);
+    }
+
     [HttpPut("{id:guid}")]
     [Authorize(Policy = "perm:Patient.Update")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdatePatientRequest request, CancellationToken ct)
