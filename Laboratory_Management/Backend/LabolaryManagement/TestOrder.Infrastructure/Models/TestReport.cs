@@ -11,7 +11,9 @@ public partial class TestReport
 
     public string Filename { get; set; } = null!;
 
-    public string ResultFile { get; set; } = null!;
+    public string? FileType { get; set; }
+
+    public byte[]? ResultData { get; set; }
 
     public DateOnly? CreatedAt { get; set; }
 
