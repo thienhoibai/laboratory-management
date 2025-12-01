@@ -1,9 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { FiUpload, FiImage } from "react-icons/fi";
+import { FiUpload, FiImage, FiSettings } from "react-icons/fi";
 import { Spin } from "antd";
 import AdminLayout from "../../admin/layout/AdminLayout";
 import InstrumentService from "../../../services/InstrumentService";
+import { StatisticsAPI } from "../../../apis/StatisticsAPI";
+import { setAuthToken } from "../../../utils/auth";
 import "./InstrumentsManagement.css";
 
 const STATUS_CONFIG = {
@@ -147,6 +149,10 @@ const InstrumentsManagement = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
+  // Statistics state
+  const [instrumentsStats, setInstrumentsStats] = useState(null);
+  const [loadingStats, setLoadingStats] = useState(false);
+
   const tableData = useMemo(() => instruments ?? [], [instruments]);
 
   const fetchInstruments = async () => {
@@ -193,6 +199,7 @@ const InstrumentsManagement = () => {
 
   useEffect(() => {
     fetchInstruments();
+    fetchInstrumentsStatistics();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     currentPage,
@@ -201,6 +208,25 @@ const InstrumentsManagement = () => {
     filterMachineStatus,
     filterReagentStatus,
   ]);
+
+  const fetchInstrumentsStatistics = async () => {
+    setLoadingStats(true);
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (token) setAuthToken(token);
+      const response = await StatisticsAPI.getInstrumentsStatistics();
+      if (response?.data) {
+        const instrumentsData = response.data.data || response.data;
+        if (instrumentsData && typeof instrumentsData === "object") {
+          setInstrumentsStats(instrumentsData);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching instruments statistics:", error);
+    } finally {
+      setLoadingStats(false);
+    }
+  };
 
   const releasePreview = (previewUrl) => {
     if (previewUrl && previewUrl.startsWith("blob:")) {
@@ -245,8 +271,9 @@ const InstrumentsManagement = () => {
       const previewImage =
         freshInstrument.imageUrl || freshInstrument.imageData || "";
       setImagePreview(previewImage);
-    } catch (error) {
+    } catch (err) {
       // Fallback to using instrument from list if API call fails
+      console.error("Error fetching instrument details:", err);
       setFormState(mapInstrumentToForm(instrument));
       releasePreview(imagePreview);
       const previewImage = instrument.imageUrl || instrument.imageData || "";
@@ -364,6 +391,102 @@ const InstrumentsManagement = () => {
             + Thêm thiết bị
           </button>
         </div>
+
+        {/* Statistics Cards */}
+        {loadingStats ? (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              padding: "20px",
+              marginBottom: "24px",
+            }}
+          >
+            <Spin />
+          </div>
+        ) : instrumentsStats ? (
+          <div className="instruments-stats-cards">
+            <div className="instruments-stat-card">
+              <div
+                className="instruments-stat-icon"
+                style={{ color: "#3b82f6" }}
+              >
+                <FiSettings />
+              </div>
+              <div className="instruments-stat-content">
+                <div className="instruments-stat-title">Tổng số máy</div>
+                <div className="instruments-stat-value">
+                  {instrumentsStats.totalInstruments || 0}
+                </div>
+                <div className="instruments-stat-change">Tất cả máy</div>
+              </div>
+            </div>
+
+            <div className="instruments-stat-card">
+              <div
+                className="instruments-stat-icon"
+                style={{ color: "#10b981" }}
+              >
+                <FiSettings />
+              </div>
+              <div className="instruments-stat-content">
+                <div className="instruments-stat-title">Máy đang hoạt động</div>
+                <div className="instruments-stat-value">
+                  {instrumentsStats.onlineInstruments || 0}
+                </div>
+                <div className="instruments-stat-change">Đang sử dụng</div>
+              </div>
+            </div>
+
+            <div className="instruments-stat-card">
+              <div
+                className="instruments-stat-icon"
+                style={{ color: "#6b7280" }}
+              >
+                <FiSettings />
+              </div>
+              <div className="instruments-stat-content">
+                <div className="instruments-stat-title">Máy đang tắt</div>
+                <div className="instruments-stat-value">
+                  {instrumentsStats.offlineInstruments || 0}
+                </div>
+                <div className="instruments-stat-change">Không hoạt động</div>
+              </div>
+            </div>
+
+            <div className="instruments-stat-card">
+              <div
+                className="instruments-stat-icon"
+                style={{ color: "#f59e0b" }}
+              >
+                <FiSettings />
+              </div>
+              <div className="instruments-stat-content">
+                <div className="instruments-stat-title">Máy đang bảo trì</div>
+                <div className="instruments-stat-value">
+                  {instrumentsStats.maintenanceInstruments || 0}
+                </div>
+                <div className="instruments-stat-change">Cần xử lý</div>
+              </div>
+            </div>
+
+            <div className="instruments-stat-card">
+              <div
+                className="instruments-stat-icon"
+                style={{ color: "#ef4444" }}
+              >
+                <FiSettings />
+              </div>
+              <div className="instruments-stat-content">
+                <div className="instruments-stat-title">Máy đang lỗi</div>
+                <div className="instruments-stat-value">
+                  {instrumentsStats.faultInstruments || 0}
+                </div>
+                <div className="instruments-stat-change">Nguy cấp</div>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         {/* Bộ lọc và tìm kiếm */}
         <div className="instruments-filters">

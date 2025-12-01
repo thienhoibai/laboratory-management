@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { Pagination } from "antd";
+import { Pagination, Spin } from "antd";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import {
   FiCalendar,
@@ -11,6 +11,7 @@ import {
   FiChevronRight,
   FiX,
   FiCheck,
+  FiTrendingUp,
 } from "react-icons/fi";
 import {
   appointmentStatuses,
@@ -21,6 +22,7 @@ import "./AdminAppointmentSchedulePage.css";
 import api from "../../../configs/axios";
 import { formatDate1 } from "../../../utils/formatDate";
 import { setAuthToken } from "../../../utils/auth";
+import { StatisticsAPI } from "../../../apis/StatisticsAPI";
 // import { CgLayoutGrid } from "react-icons/cg";
 
 const AdminAppointmentSchedulePage = () => {
@@ -48,6 +50,10 @@ const AdminAppointmentSchedulePage = () => {
   //   patientName: "",
   // });
   const totalFetchedRef = React.useRef(false); // Đánh dấu đã fetch total chưa
+
+  // Statistics state
+  const [bookingsStats, setBookingsStats] = useState(null);
+  const [loadingStats, setLoadingStats] = useState(false);
 
   // Format date to YYYY-MM-DD
   const formatDate = (date) => {
@@ -312,7 +318,27 @@ const AdminAppointmentSchedulePage = () => {
       totalFetchedRef.current = false;
     }
     fetchAPI();
+    fetchBookingsStatistics();
   }, [selectedDate, currentPage, pageSize, search]);
+
+  const fetchBookingsStatistics = async () => {
+    setLoadingStats(true);
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (token) setAuthToken(token);
+      const response = await StatisticsAPI.getBookingsStatistics();
+      if (response?.data) {
+        const bookingsData = response.data.data || response.data;
+        if (bookingsData && typeof bookingsData === "object") {
+          setBookingsStats(bookingsData);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching bookings statistics:", error);
+    } finally {
+      setLoadingStats(false);
+    }
+  };
 
   // Auto-refresh để cập nhật thời gian đếm ngược cho các booking đang xét nghiệm
   useEffect(() => {
@@ -386,6 +412,88 @@ const AdminAppointmentSchedulePage = () => {
           <h1>Quản lý lịch xét nghiệm</h1>
           <p>Quản lý lịch hẹn xét nghiệm của bệnh nhân</p>
         </div>
+
+        {/* Statistics Cards */}
+        {loadingStats ? (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              padding: "20px",
+              marginBottom: "24px",
+            }}
+          >
+            <Spin />
+          </div>
+        ) : bookingsStats ? (
+          <div className="appointment-stats-cards">
+            <div className="appointment-stat-card">
+              <div
+                className="appointment-stat-icon"
+                style={{ color: "#3b82f6" }}
+              >
+                <FiCalendar />
+              </div>
+              <div className="appointment-stat-content">
+                <div className="appointment-stat-title">Lịch hẹn hôm nay</div>
+                <div className="appointment-stat-value">
+                  {bookingsStats.totalBookingsToday || 0}
+                </div>
+                <div className="appointment-stat-change">Hôm nay</div>
+              </div>
+            </div>
+
+            <div className="appointment-stat-card">
+              <div
+                className="appointment-stat-icon"
+                style={{ color: "#10b981" }}
+              >
+                <FiCalendar />
+              </div>
+              <div className="appointment-stat-content">
+                <div className="appointment-stat-title">Lịch hẹn tháng này</div>
+                <div className="appointment-stat-value">
+                  {bookingsStats.totalBookingsThisMonth || 0}
+                </div>
+                <div className="appointment-stat-change">Tháng hiện tại</div>
+              </div>
+            </div>
+
+            <div className="appointment-stat-card">
+              <div
+                className="appointment-stat-icon"
+                style={{ color: "#f59e0b" }}
+              >
+                <FiTrendingUp />
+              </div>
+              <div className="appointment-stat-content">
+                <div className="appointment-stat-title">Lịch hẹn đang chờ</div>
+                <div className="appointment-stat-value">
+                  {bookingsStats.pendingBookings || 0}
+                </div>
+                <div className="appointment-stat-change">Chờ xử lý</div>
+              </div>
+            </div>
+
+            <div className="appointment-stat-card">
+              <div
+                className="appointment-stat-icon"
+                style={{ color: "#10b981" }}
+              >
+                <FiCheck />
+              </div>
+              <div className="appointment-stat-content">
+                <div className="appointment-stat-title">
+                  Lịch hẹn đã hoàn thành
+                </div>
+                <div className="appointment-stat-value">
+                  {bookingsStats.completedBookings || 0}
+                </div>
+                <div className="appointment-stat-change">Đã hoàn thành</div>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         <div className="appointment-content">
           {/* Calendar Section */}

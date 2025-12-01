@@ -18,6 +18,7 @@ import {
 import { Pagination, Spin } from "antd";
 import { toast } from "react-toastify";
 import BlogService from "../../../services/BlogService";
+import { StatisticsAPI } from "../../../apis/StatisticsAPI";
 import { setAuthToken } from "../../../utils/auth";
 import "./BlogsManagement.css";
 import { jwtDecode } from "jwt-decode";
@@ -54,6 +55,10 @@ const BlogsManagement = () => {
 
   const [categories, setCategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
+
+  // Statistics state
+  const [blogsStats, setBlogsStats] = useState(null);
+  const [loadingStats, setLoadingStats] = useState(false);
 
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -104,7 +109,27 @@ const BlogsManagement = () => {
 
   useEffect(() => {
     loadCategories();
+    fetchBlogsStatistics();
   }, []);
+
+  const fetchBlogsStatistics = async () => {
+    setLoadingStats(true);
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (token) setAuthToken(token);
+      const response = await StatisticsAPI.getBlogsStatistics();
+      if (response?.data) {
+        const blogsData = response.data.data || response.data;
+        if (blogsData && typeof blogsData === "object") {
+          setBlogsStats(blogsData);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching blogs statistics:", error);
+    } finally {
+      setLoadingStats(false);
+    }
+  };
 
   // Cleanup preview URL on unmount or when modal closes
   useEffect(() => {
@@ -178,14 +203,6 @@ const BlogsManagement = () => {
   // API handles both status filter and search
   // Just slice for pagination
   const displayedBlogs = blogs.slice((page - 1) * pageSize, page * pageSize);
-
-  // Statistics
-  const stats = {
-    total: blogs.length,
-    approved: blogs.filter((b) => b.status === "approved").length,
-    views: blogs.reduce((sum, b) => sum + b.views, 0),
-    comments: blogs.reduce((sum, b) => sum + (b.comments || 0), 0),
-  };
 
   const getStatusTag = (status) => {
     const statusMap = {
@@ -572,53 +589,72 @@ const BlogsManagement = () => {
         </div>
 
         {/* Statistics Cards */}
-        <div className="blogs-stats-cards">
-          <div className="blogs-stat-card">
-            <div className="blogs-stat-icon" style={{ color: "#3b82f6" }}>
-              <FiBook />
-            </div>
-            <div className="blogs-stat-content">
-              <div className="blogs-stat-title">Tổng bài viết</div>
-              <div className="blogs-stat-value">{stats.total}</div>
-              <div className="blogs-stat-change">+3 bài mới</div>
-            </div>
+        {loadingStats ? (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              padding: "20px",
+              marginBottom: "24px",
+            }}
+          >
+            <Spin />
           </div>
-
-          <div className="blogs-stat-card">
-            <div className="blogs-stat-icon" style={{ color: "#10b981" }}>
-              <FiEye />
-            </div>
-            <div className="blogs-stat-content">
-              <div className="blogs-stat-title">Bài đã phê duyệt</div>
-              <div className="blogs-stat-value">{stats.approved}</div>
-              <div className="blogs-stat-change">Đang hoạt động</div>
-            </div>
-          </div>
-
-          <div className="blogs-stat-card">
-            <div className="blogs-stat-icon" style={{ color: "#8b5cf6" }}>
-              <FiTrendingUp />
-            </div>
-            <div className="blogs-stat-content">
-              <div className="blogs-stat-title">Tổng lượt xem</div>
-              <div className="blogs-stat-value">
-                {(stats.views / 1000).toFixed(1)}K
+        ) : blogsStats ? (
+          <div className="blogs-stats-cards">
+            <div className="blogs-stat-card">
+              <div className="blogs-stat-icon" style={{ color: "#3b82f6" }}>
+                <FiBook />
               </div>
-              <div className="blogs-stat-change">+15% tuần này</div>
+              <div className="blogs-stat-content">
+                <div className="blogs-stat-title">Tổng bài viết</div>
+                <div className="blogs-stat-value">
+                  {blogsStats.totalPosts || 0}
+                </div>
+                <div className="blogs-stat-change">Tất cả bài viết</div>
+              </div>
             </div>
-          </div>
 
-          <div className="blogs-stat-card">
-            <div className="blogs-stat-icon" style={{ color: "#f59e0b" }}>
-              <FiMessageCircle />
+            <div className="blogs-stat-card">
+              <div className="blogs-stat-icon" style={{ color: "#10b981" }}>
+                <FiCheck />
+              </div>
+              <div className="blogs-stat-content">
+                <div className="blogs-stat-title">Bài đã phê duyệt</div>
+                <div className="blogs-stat-value">
+                  {blogsStats.publishedPosts || 0}
+                </div>
+                <div className="blogs-stat-change">Đang hoạt động</div>
+              </div>
             </div>
-            <div className="blogs-stat-content">
-              <div className="blogs-stat-title">Bình luận</div>
-              <div className="blogs-stat-value">{stats.comments}</div>
-              <div className="blogs-stat-change">+23 bình luận mới</div>
+
+            <div className="blogs-stat-card">
+              <div className="blogs-stat-icon" style={{ color: "#f59e0b" }}>
+                <FiMessageCircle />
+              </div>
+              <div className="blogs-stat-content">
+                <div className="blogs-stat-title">Bài đang chờ duyệt</div>
+                <div className="blogs-stat-value">
+                  {blogsStats.pendingPosts || 0}
+                </div>
+                <div className="blogs-stat-change">Chờ xử lý</div>
+              </div>
+            </div>
+
+            <div className="blogs-stat-card">
+              <div className="blogs-stat-icon" style={{ color: "#8b5cf6" }}>
+                <FiBook />
+              </div>
+              <div className="blogs-stat-content">
+                <div className="blogs-stat-title">Bài viết tháng này</div>
+                <div className="blogs-stat-value">
+                  {blogsStats.postsThisMonth || 0}
+                </div>
+                <div className="blogs-stat-change">Tháng hiện tại</div>
+              </div>
             </div>
           </div>
-        </div>
+        ) : null}
 
         {/* Blog List Section */}
         <div className="blogs-list-section">

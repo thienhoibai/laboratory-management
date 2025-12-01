@@ -1,5 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import api from "../configs/axios";
+import axios from "axios";
 
 const URL = "iam/api/Auth/";
 const URL_Google = "iam/v1/auth/";
@@ -57,6 +58,20 @@ export const IAMServiceAPI = {
     return await api.post(`${URL_User}${userId}/roles`, {
       roleIds: Array.isArray(roleIds) ? roleIds : [roleIds],
     });
+  },
+
+  // GET /api/statistics/users
+  // Lấy thống kê người dùng và khách hàng
+  // Note: This API is on port 5001, not 8080
+  GetUsersStatistics: async () => {
+    const iamApi = axios.create({
+      baseURL: "http://localhost:5001/",
+    });
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      iamApi.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    }
+    return await iamApi.get("api/statistics/users");
   },
 };
 

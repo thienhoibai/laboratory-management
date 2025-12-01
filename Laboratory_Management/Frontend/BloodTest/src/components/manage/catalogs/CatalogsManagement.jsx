@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import AdminLayout from "../../admin/layout/AdminLayout";
-import { FiPlus, FiEdit2, FiSearch, FiX } from "react-icons/fi";
+import { FiPlus, FiEdit2, FiSearch, FiX, FiPackage } from "react-icons/fi";
 import { Pagination, Spin } from "antd";
 import { setAuthToken } from "../../../utils/auth";
 import { toast } from "react-toastify";
@@ -13,6 +13,7 @@ import {
   removeParametersFromCatalog,
   getAllParameters,
 } from "../../../services/TestOrderService.jsx";
+import { StatisticsAPI } from "../../../apis/StatisticsAPI";
 import "./CatalogsManagement.css";
 
 const DEFAULT_FORM = {
@@ -67,11 +68,35 @@ const CatalogsManagement = () => {
   const [initialParameterIds, setInitialParameterIds] = useState([]);
   const [parameterSearch, setParameterSearch] = useState("");
 
+  // Statistics state
+  const [catalogsStats, setCatalogsStats] = useState(null);
+  const [loadingStats, setLoadingStats] = useState(false);
+
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
     if (token) setAuthToken(token);
     preloadParameters();
+    fetchCatalogsStatistics();
   }, []);
+
+  const fetchCatalogsStatistics = async () => {
+    setLoadingStats(true);
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (token) setAuthToken(token);
+      const response = await StatisticsAPI.getCatalogsStatistics();
+      if (response?.data) {
+        const catalogsData = response.data.data || response.data;
+        if (catalogsData && typeof catalogsData === "object") {
+          setCatalogsStats(catalogsData);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching catalogs statistics:", error);
+    } finally {
+      setLoadingStats(false);
+    }
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -442,6 +467,69 @@ const CatalogsManagement = () => {
             <span>Thêm mục xét nghiệm</span>
           </button>
         </div>
+
+        {/* Statistics Cards */}
+        {loadingStats ? (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              padding: "20px",
+              marginBottom: "24px",
+            }}
+          >
+            <Spin />
+          </div>
+        ) : catalogsStats ? (
+          <div className="catalogs-stats-cards">
+            <div className="catalogs-stat-card">
+              <div className="catalogs-stat-icon" style={{ color: "#3b82f6" }}>
+                <FiPackage />
+              </div>
+              <div className="catalogs-stat-content">
+                <div className="catalogs-stat-title">
+                  Tổng số mục xét nghiệm
+                </div>
+                <div className="catalogs-stat-value">
+                  {catalogsStats.totalCatalogs || 0}
+                </div>
+                <div className="catalogs-stat-change">
+                  Tất cả mục xét nghiệm
+                </div>
+              </div>
+            </div>
+
+            <div className="catalogs-stat-card">
+              <div className="catalogs-stat-icon" style={{ color: "#10b981" }}>
+                <FiPackage />
+              </div>
+              <div className="catalogs-stat-content">
+                <div className="catalogs-stat-title">
+                  Mục xét nghiệm đang hoạt động
+                </div>
+                <div className="catalogs-stat-value">
+                  {catalogsStats.activeCatalogs || 0}
+                </div>
+                <div className="catalogs-stat-change">Đang sử dụng</div>
+              </div>
+            </div>
+
+            <div className="catalogs-stat-card">
+              <div className="catalogs-stat-icon" style={{ color: "#ef4444" }}>
+                <FiPackage />
+              </div>
+              <div className="catalogs-stat-content">
+                <div className="catalogs-stat-title">
+                  Mục xét nghiệm không hoạt động
+                </div>
+                <div className="catalogs-stat-value">
+                  {catalogsStats.inactiveCatalogs || 0}
+                </div>
+                <div className="catalogs-stat-change">Đã vô hiệu hóa</div>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         <div className="catalogs-content">
           <div className="catalogs-controls">
