@@ -9,8 +9,13 @@ namespace TestOrder.Application.Services.InstrumentBridge;
 public class InstrumentBridgeService
 {
     private readonly TestOrderDBContext _db;
+    private readonly TestReportService _testReportService;
 
-    public InstrumentBridgeService(TestOrderDBContext db) => _db = db;
+    public InstrumentBridgeService(TestOrderDBContext db, TestReportService testReportService)
+    {
+        _db = db;
+        _testReportService = testReportService;
+    }
 
     /// <summary>
     /// GET /for-instrument: Trả danh sách test con & tham số để máy sinh kết quả
@@ -171,7 +176,29 @@ public class InstrumentBridgeService
         if (completed) 
         { 
             booking.Status = 5;
-            await _db.SaveChangesAsync(); 
+            await _db.SaveChangesAsync();
+
+            // ✅ TỰ ĐỘNG TẠO REPORT SAU KHI HOÀN THÀNH KẾT QUẢ
+            try
+            {
+                // Kiểm tra xem đã có report chưa để tránh tạo trùng
+                var existingReport = await _testReportService.GetReportByBookingId(bookingId);
+                
+                if (existingReport == null)
+                {
+                    await _testReportService.CreateNewReport(bookingId);
+                    Console.WriteLine($"[INFO] Auto-generated report for BookingId: {bookingId}");
+                }
+                else
+                {
+                    Console.WriteLine($"[INFO] Report already exists for BookingId: {bookingId}, skipping auto-generation");
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log lỗi nhưng không throw để không ảnh hưởng đến flow chính
+                Console.WriteLine($"[ERROR] Failed to auto-generate report for BookingId: {bookingId}. Error: {ex.Message}");
+            }
         }
 
         return new IngestResponse(accepted, rejected, completed, missing);

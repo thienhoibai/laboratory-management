@@ -406,13 +406,13 @@ namespace TestOrder.Application.Services.Booking
                         { "AppointmentTime", slot?.TimeBlock.ToString(@"hh\:mm") ?? "Chưa xác định" }
                     };
 
-                    //await _publishEndpoint.Publish(new NotificationRequestedV1(
-                    //    MessageId: Guid.NewGuid().ToString(),
-                    //    Channel: "email",
-                    //    To: booking.PatientEmail,
-                    //    Template: "BookingConfirmation",
-                    //    Data: templateData
-
+                    await _publishEndpoint.Publish(new NotificationRequestedV1(
+                        MessageId: Guid.NewGuid().ToString(),
+                        Channel: "email",
+                        To: booking.PatientEmail,
+                        Template: "BookingConfirmation",
+                        Data: templateData
+                    ));
 
                     Console.WriteLine($"✅ Đã gửi yêu cầu email xác nhận booking #{booking.BookingCode} tới {booking.PatientEmail}");
                 }
