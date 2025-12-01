@@ -19,16 +19,29 @@ export default function BlogSection() {
       setError(null);
 
       // Lấy 3 bài blog đã được duyệt (status = 1) mới nhất
-      const blogsData = await BlogService.getApprovedBlogs(1, 100);
+      const result = await BlogService.getApprovedBlogs(1, 3);
 
-      // Đảm bảo chỉ lấy 3 bài mới nhất
-      const latestBlogs = Array.isArray(blogsData) ? blogsData.slice(0, 3) : [];
+      // Handle new format (object with blogs array) or old format (array)
+      let latestBlogs = [];
+      if (result && result.blogs) {
+        latestBlogs = result.blogs;
+      } else if (Array.isArray(result)) {
+        latestBlogs = result;
+      }
 
       setBlogs(latestBlogs);
-      console.log("123" + blogsData);
+      
+      // Only show error if we expected data but got none
+      // (Don't show error if backend just has no blogs)
+      if (latestBlogs.length === 0) {
+        // This is fine - just means no blogs available
+        setError(null);
+      }
     } catch (err) {
-      console.error("Error loading blogs:", err);
-      setError("Không thể tải bài viết. Vui lòng thử lại sau.");
+      // Only show error for non-auth issues
+      if (err.response?.status !== 401 && err.response?.status !== 403) {
+        setError("Không thể tải bài viết. Vui lòng thử lại sau.");
+      }
       setBlogs([]);
     } finally {
       setLoading(false);
@@ -67,7 +80,14 @@ export default function BlogSection() {
           {blogs.map((blog) => (
             <div key={blog.id} className="blog-card">
               <Link to={`/blog/${blog.id}`} className="blog-card-link">
-                <img src={blog.img} alt={blog.title} className="blog-img" />
+                <img 
+                  src={blog.img || blog.thumbnailUrl || blog.imageUrl} 
+                  alt={blog.title} 
+                  className="blog-img"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                  }}
+                />
                 <div className="blog-card-content">
                   <div className="blog-meta">
                     <span className="blog-tag">

@@ -54,6 +54,7 @@ namespace BlogService.Presentation.Controllers
         public async Task<IActionResult> GetById(int id)
         {
             var post = await _service.GetByIdAsync(id);
+            post.ImagePath = post.ImagePath != null ? Path.Combine(_env.ContentRootPath, post.ImagePath) : null;
             return post == null ? NotFound() : Ok(post);
         }
 

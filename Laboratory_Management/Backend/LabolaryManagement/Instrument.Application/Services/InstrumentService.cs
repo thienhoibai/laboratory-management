@@ -163,7 +163,7 @@ public class InstrumentService
             InstrumentCode = request.InstrumentCode,
             Name = request.Name,
             Status =  request.Status,
-            ReagentStatus = ReagentStatus.OK,
+            ReagentStatus = request.ReagentStatus,
             ImagePath = request.ImagePath,
             CreatedAt = DateTime.UtcNow
         };
