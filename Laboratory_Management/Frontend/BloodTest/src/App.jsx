@@ -13,7 +13,6 @@ import CatalogSelection from "./components/booking/CatalogSelection";
 import SuccessBookingPage from "./pages/booking/SuccessBookingPage";
 
 import DashboardPage from "./pages/admin/dashboard/DashboardPage";
-import PatientManagement from "./pages/admin/patient/PatientManagement";
 import AdminDashboardPage from "./pages/admin/dashboard/AdminDashboardPage";
 import AdminUsersPage from "./pages/admin/user/AdminUsersPage";
 import AdminRolesPage from "./pages/admin/roles/AdminRolesPage";
@@ -131,10 +130,6 @@ function App() {
     {
       path: "/reports",
       element: <AdminReportsPage />,
-    },
-    {
-      path: "admin/patients",
-      element: <PatientManagement />,
     },
     {
       path: "medical-record",

@@ -84,6 +84,14 @@ export const isStaff = () => {
   return getCurrentUserRole() === "Staff";
 };
 
+
+export const isLabBlogger = () => {
+  return getCurrentUserRole() === "LabBlogger";
+};
+
+export const isTechnician = () => {
+  return getCurrentUserRole() === "Technician";
+};
 // Check if user can access management pages
 export const canAccessManagement = () => {
   const role = getCurrentUserRole();

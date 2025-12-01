@@ -20,7 +20,7 @@ namespace BlogService.Infrastructure.Repository
         }
 
      
-        public async Task<List<Comment>> GetByUserIdAsync(int userId)
+        public async Task<List<Comment>> GetByUserIdAsync(Guid userId)
         {
             return await _context.Comments
                 .Where(c => c.UserId == userId)

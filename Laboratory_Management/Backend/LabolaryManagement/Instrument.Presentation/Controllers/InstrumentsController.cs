@@ -4,6 +4,7 @@ using Instrument.Application.Instruments.DTOs.Requests;
 using Instrument.Application.Instruments.DTOs.Responses;
 using Instrument.Application.Services;
 using Instrument.Domain.Enums;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace Instrument.Presentation.Controllers;
 
@@ -97,21 +98,55 @@ public class InstrumentsController : ControllerBase
     /// </remarks>
     [HttpPost]
     [Authorize(Policy = "perm:Instrument.Create")]
-    public async Task<IActionResult> Create([FromBody] CreateInstrumentRequest request)
+    public async Task<IActionResult> Create([FromForm] InstrumentCreateHttpRequest request)
     {
+        string? imagePath = null;
+
+        if (request.Image != null)
+        {
+            var folder = Path.Combine(Directory.GetCurrentDirectory(), "Images");
+
+            // ép thành dạng Linux
+            folder = folder.Replace("\\", "/");
+
+            Directory.CreateDirectory(folder);
+
+            var fileName = Guid.NewGuid() + Path.GetExtension(request.Image.FileName);
+            var savePath = $"{folder}/{fileName}";
+
+            using (var stream = new FileStream(savePath, FileMode.Create))
+            {
+                await request.Image.CopyToAsync(stream);
+            }
+
+            // path lưu vào DB → dùng "/" chuẩn web
+            imagePath = $"Images/{fileName}";
+
+        }
+
         try
         {
-            var instrument = await _service.CreateAsync(request);
+            // Map Presentation DTO -> Application DTO
+            var appDto = new CreateInstrumentRequest(
+                request.InstrumentCode,
+                request.Name,
+                (InstrumentStatus)request.Status,
+                imagePath);
+            
+            var instrument = await _service.CreateAsync(appDto);
+
             return CreatedAtAction(
-                nameof(GetByCode), 
-                new { code = instrument.InstrumentCode }, 
-                instrument);
+                nameof(GetByCode),
+                new { code = instrument.InstrumentCode },
+                instrument
+            );
         }
         catch (InvalidOperationException ex)
         {
             return BadRequest(new { error = ex.Message });
         }
     }
+
 
     /// <summary>
     /// PUT /api/instruments/{code} - Cập nhật thông tin máy

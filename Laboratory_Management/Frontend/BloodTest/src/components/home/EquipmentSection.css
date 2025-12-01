@@ -188,13 +188,67 @@
   margin-right: auto;
 }
 
-.equipment-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 32px;
+.equipment-carousel-container {
+  position: relative;
   max-width: 1200px;
   margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
+
+.equipment-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+  flex: 1;
+  width: 100%;
+}
+
+.equipment-nav-btn {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  color: #4a5568;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  font-size: 20px;
+  font-weight: 300;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+  z-index: 10;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  line-height: 1;
+  padding: 0;
+}
+
+.equipment-nav-btn:hover:not(.disabled) {
+  background: #fff;
+  border-color: #cbd5e0;
+  color: #2d3748;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+.equipment-nav-btn:active:not(.disabled) {
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.equipment-nav-btn.disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+  border-color: #e2e8f0;
+  color: #cbd5e0;
+  background: rgba(255, 255, 255, 0.5);
+}
+
 
 .equipment-card {
   background: #fff;
@@ -245,18 +299,29 @@
 .equipment-img-bg {
   width: 100%;
   height: 250px;
-  background: #fff;
+  background: #f9fafb;
   padding: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-bottom: 1px solid #e2e8f0;
+  position: relative;
 }
 
 .equipment-img {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
+}
+
+.equipment-img-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: #cbd5e0;
 }
 
 .equipment-info {
@@ -268,9 +333,6 @@
 }
 
 .equipment-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
   margin-bottom: 8px;
 }
 
@@ -297,16 +359,78 @@
 }
 
 .equipment-category {
-  color: #718096;
   font-size: 0.9rem;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
   margin-bottom: 20px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-weight: 500;
+  transition: all 0.2s ease;
 }
 
 .equipment-category-icon {
-  color: #cbd5e0;
+  font-size: 0.85rem;
+}
+
+.equipment-status-text {
+  font-weight: 500;
+}
+
+/* Trạng thái: Đang hoạt động */
+.equipment-category.status-active {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.equipment-category.status-active .equipment-category-icon {
+  color: #10b981;
+}
+
+/* Trạng thái: Đang tắt */
+.equipment-category.status-off {
+  background: #f3f4f6;
+  color: #4b5563;
+  border: 1px solid #e5e7eb;
+}
+
+.equipment-category.status-off .equipment-category-icon {
+  color: #9ca3af;
+}
+
+/* Trạng thái: Đang lỗi */
+.equipment-category.status-error {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.equipment-category.status-error .equipment-category-icon {
+  color: #ef4444;
+}
+
+/* Trạng thái: Đang bảo trì */
+.equipment-category.status-maintenance {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.equipment-category.status-maintenance .equipment-category-icon {
+  color: #f59e0b;
+}
+
+/* Trạng thái: Không xác định */
+.equipment-category.status-unknown {
+  background: #f3f4f6;
+  color: #6b7280;
+  border: 1px solid #e5e7eb;
+}
+
+.equipment-category.status-unknown .equipment-category-icon {
+  color: #9ca3af;
 }
 
 .equipment-btn {
@@ -377,6 +501,27 @@
   .equipment-title {
     font-size: 2rem;
   }
+  .equipment-carousel-container {
+    gap: 8px;
+  }
+  .equipment-cards {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .equipment-nav-btn {
+    width: 40px;
+    height: 40px;
+  }
+  .equipment-nav-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .equipment-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 480px) {
@@ -389,5 +534,16 @@
   .doctor-btn {
     margin: 16px 20px 0 20px;
     width: calc(100% - 40px);
+  }
+  .equipment-cards {
+    grid-template-columns: 1fr;
+  }
+  .equipment-nav-btn {
+    width: 36px;
+    height: 36px;
+  }
+  .equipment-nav-btn svg {
+    width: 16px;
+    height: 16px;
   }
 }

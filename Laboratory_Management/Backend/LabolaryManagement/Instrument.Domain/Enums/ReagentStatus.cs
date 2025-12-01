@@ -3,7 +3,7 @@
 /// <summary>
 /// Trạng thái hóa chất/reagent của máy xét nghiệm
 /// </summary>
-public enum ReagentStatus : byte
+public enum ReagentStatus : int
 {
     /// <summary>
     /// Hóa chất đầy đủ

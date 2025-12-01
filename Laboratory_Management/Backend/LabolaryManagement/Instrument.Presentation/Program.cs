@@ -1,6 +1,4 @@
-﻿using Instrument.Infrastructure;
-using Microsoft.EntityFrameworkCore;
-using Instrument.Application.Results;
+﻿using Instrument.Application.Results;
 using Instrument.Application.Services;
 using Common.Authorization; // ✅ Thêm namespace Common.Authorization
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -8,6 +6,9 @@ using Microsoft.AspNetCore.Authorization; // ✅ Thêm namespace Authorization
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
+using Instrument.Infrastructure;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -119,6 +120,12 @@ if (!isDocker)
 {
     app.UseHttpsRedirection();
 }
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(
+        Path.Combine(builder.Environment.ContentRootPath, "Images")),
+    RequestPath = "/Images"
+});
 
 app.UseRouting();
 app.UseCors("AllowFrontend");
