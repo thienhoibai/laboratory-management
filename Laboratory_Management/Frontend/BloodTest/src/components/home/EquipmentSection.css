@@ -447,66 +447,180 @@
   box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
 }
 
-@media (max-width: 768px) {
-  .doctor-cards {
-    grid-template-columns: 1fr;
-    gap: 24px;
-    padding: 0 16px;
-  }
-  .doctor-card {
-    max-width: 100%;
-  }
-  .doctor-section-bg {
-    padding: 40px 16px;
-  }
-  .doctor-title {
-    font-size: 2rem;
-  }
-  .doctor-desc {
-    font-size: 1.1rem;
-  }
+/* Tablet Styles */
+@media (max-width: 1024px) {
   .equipment-section-bg {
-    padding: 60px 16px;
+    padding: 60px 20px;
   }
   .equipment-title {
     font-size: 2rem;
   }
+  .equipment-desc {
+    font-size: 1.05rem;
+  }
+  .equipment-cards {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+  }
+  .doctor-section-bg {
+    padding: 50px 20px;
+  }
+  .doctor-title {
+    font-size: 2.25rem;
+  }
+  .doctor-cards {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+  }
+}
+
+/* Mobile Styles */
+@media (max-width: 768px) {
+  .doctor-section-bg {
+    padding: 40px 16px;
+    width: calc(100vw - 32px);
+  }
+  .doctor-badge {
+    font-size: 0.85rem;
+    padding: 5px 14px;
+  }
+  .doctor-title {
+    font-size: 1.75rem;
+    margin-bottom: 10px;
+  }
+  .doctor-desc {
+    font-size: 1rem;
+    margin-bottom: 36px;
+  }
+  .doctor-cards {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding: 0 8px;
+  }
+  .doctor-card {
+    max-width: 100%;
+  }
+  .doctor-img-bg {
+    height: 240px;
+  }
+  .doctor-info {
+    padding: 20px 20px 0 20px;
+  }
+  .doctor-name {
+    font-size: 1.1rem;
+  }
+  .doctor-btn {
+    margin: 14px 20px 0 20px;
+    width: calc(100% - 40px);
+    padding: 11px 0;
+    font-size: 0.95rem;
+  }
+  .equipment-section-bg {
+    padding: 48px 16px;
+  }
+  .equipment-badge {
+    font-size: 0.9rem;
+    padding: 5px 14px;
+    margin-bottom: 14px;
+  }
+  .equipment-title {
+    font-size: 1.75rem;
+    margin-bottom: 10px;
+  }
+  .equipment-desc {
+    font-size: 1rem;
+    margin-bottom: 36px;
+  }
   .equipment-carousel-container {
     gap: 8px;
+    flex-wrap: wrap;
   }
   .equipment-cards {
     grid-template-columns: 1fr;
-    gap: 24px;
+    gap: 20px;
+    width: 100%;
   }
   .equipment-nav-btn {
     width: 40px;
     height: 40px;
+    flex-shrink: 0;
   }
   .equipment-nav-btn svg {
     width: 18px;
     height: 18px;
   }
-}
-
-@media (max-width: 1024px) {
-  .equipment-cards {
-    grid-template-columns: repeat(2, 1fr);
+  .equipment-img-bg {
+    height: 240px;
+    padding: 20px;
+  }
+  .equipment-info {
+    padding: 20px;
+  }
+  .equipment-name {
+    font-size: 1.2rem;
   }
 }
 
+/* Small Mobile Styles */
 @media (max-width: 480px) {
+  .doctor-section-bg {
+    padding: 32px 12px;
+    width: calc(100vw - 24px);
+  }
+  .doctor-badge {
+    font-size: 0.8rem;
+    padding: 4px 12px;
+  }
+  .doctor-title {
+    font-size: 1.5rem;
+  }
+  .doctor-desc {
+    font-size: 0.95rem;
+    margin-bottom: 28px;
+  }
   .doctor-cards {
-    padding: 0 8px;
+    padding: 0 4px;
+    gap: 16px;
+  }
+  .doctor-img-bg {
+    height: 200px;
   }
   .doctor-info {
-    padding: 20px 20px 0 20px;
+    padding: 16px 16px 0 16px;
+  }
+  .doctor-name {
+    font-size: 1.05rem;
+  }
+  .doctor-specialty,
+  .doctor-exp,
+  .doctor-location {
+    font-size: 0.9rem;
   }
   .doctor-btn {
-    margin: 16px 20px 0 20px;
-    width: calc(100% - 40px);
+    margin: 12px 16px 0 16px;
+    width: calc(100% - 32px);
+    padding: 10px 0;
+    font-size: 0.9rem;
+  }
+  .equipment-section-bg {
+    padding: 40px 12px;
+  }
+  .equipment-badge {
+    font-size: 0.85rem;
+    padding: 4px 12px;
+  }
+  .equipment-title {
+    font-size: 1.5rem;
+  }
+  .equipment-desc {
+    font-size: 0.95rem;
+    margin-bottom: 28px;
+  }
+  .equipment-carousel-container {
+    gap: 6px;
   }
   .equipment-cards {
-    grid-template-columns: 1fr;
+    gap: 16px;
   }
   .equipment-nav-btn {
     width: 36px;
@@ -515,5 +629,29 @@
   .equipment-nav-btn svg {
     width: 16px;
     height: 16px;
+  }
+  .equipment-img-bg {
+    height: 200px;
+    padding: 16px;
+  }
+  .equipment-info {
+    padding: 16px;
+    gap: 10px;
+  }
+  .equipment-name {
+    font-size: 1.1rem;
+  }
+  .equipment-code-wrapper {
+    padding: 8px 12px;
+  }
+  .equipment-code-label {
+    font-size: 0.8rem;
+  }
+  .equipment-code-value {
+    font-size: 0.85rem;
+  }
+  .equipment-btn {
+    padding: 9px 0;
+    font-size: 0.9rem;
   }
 }

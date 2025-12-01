@@ -3,6 +3,7 @@
   margin: 0 auto;
   font-family: "Inter", "Segoe UI", Roboto, Arial, sans-serif;
   color: #1f2937;
+  padding: 0 24px 32px 24px;
 }
 
 /* Hero / blue banner */
@@ -48,6 +49,11 @@
   align-items: flex-end;
   margin-top: 20px;
 }
+
+.filter-row > div:first-child {
+  display: flex;
+  gap: 16px;
+}
 .filter-item {
   display: flex;
   flex-direction: column;
@@ -83,6 +89,7 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  margin-bottom: 24px;
 }
 /* Css cho nút xem chi tiết*/
 .booking-card-body {
@@ -535,60 +542,411 @@
   pointer-events: auto;
 }
 
-/* responsiveness */
+/* Pagination */
+.booking-history-pagination {
+  margin-top: 32px;
+  display: flex;
+  justify-content: center;
+  padding: 20px 0;
+}
+
+/* Empty state */
+.booking-history-empty {
+  text-align: center;
+  padding: 60px 20px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.booking-history-empty svg {
+  width: 80px;
+  height: 80px;
+  color: #d1d5db;
+  margin: 0 auto 24px;
+}
+
+.booking-history-empty h3 {
+  font-size: 20px;
+  color: #1f2937;
+  margin: 0 0 8px 0;
+  font-weight: 600;
+}
+
+.booking-history-empty p {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+}
+
+/* Tablet */
 @media (max-width: 1024px) {
+  .booking-history-page {
+    padding: 0 20px;
+  }
+
+  .booking-history-header {
+    padding: 32px 24px;
+  }
+
+  .booking-history-header h1 {
+    font-size: 24px;
+  }
+
+  .booking-history-header p {
+    font-size: 14px;
+  }
+
+  .booking-filters {
+    padding: 18px 20px;
+  }
+
+  .filter-row {
+    grid-template-columns: 2fr 1fr;
+    gap: 14px;
+  }
+
+  .filter-row > div:first-child {
+    gap: 12px;
+  }
+
   .regular-layout,
   .completed-layout {
     grid-template-columns: 1fr 1fr;
+    gap: 24px;
   }
+
   .cancelled-layout {
     grid-template-columns: 1fr;
   }
+
   .expanded-grid {
     grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  .booking-card-header .booking-date {
+    font-size: 20px;
+  }
+
+  .booking-card-header .booking-time {
+    font-size: 16px;
   }
 }
+
+/* Mobile */
 @media (max-width: 768px) {
+  .booking-history-page {
+    padding: 0 16px;
+  }
+
   .booking-history-header {
-    padding: 28px;
+    padding: 24px 20px;
     margin-left: calc(50% - 50vw);
     margin-right: calc(50% - 50vw);
   }
+
+  .booking-history-header h1 {
+    font-size: 22px;
+  }
+
+  .booking-history-header p {
+    font-size: 13px;
+  }
+
+  .booking-filters {
+    padding: 16px;
+    margin: 16px 0 20px 0;
+  }
+
+  .filters-title {
+    font-size: 16px;
+  }
+
   .filter-row {
+    grid-template-columns: 1fr;
     flex-direction: column;
     align-items: stretch;
     gap: 12px;
+    margin-top: 16px;
   }
+
+  .filter-row > div:first-child {
+    flex-direction: column;
+    gap: 12px;
+  }
+
   .filter-item {
     min-width: 100%;
   }
-  .booking-card-header {
-    padding: 14px;
-  }
-  .booking-card-header .booking-date {
-    font-size: 16px;
-  }
-  .booking-created {
-    padding: 10px;
+
+  .filter-label {
     font-size: 13px;
   }
+
+  .filter-date-input,
+  .filter-status-select {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+
+  .booking-card {
+    border-radius: 12px;
+  }
+
+  .booking-card-header {
+    padding: 16px;
+  }
+
+  .booking-card-header .booking-code {
+    font-size: 13px;
+  }
+
+  .booking-card-header .booking-date {
+    font-size: 18px;
+  }
+
+  .booking-card-header .booking-time {
+    font-size: 15px;
+  }
+
+  .booking-created {
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+
   .booking-card-header .booking-badge {
     top: 10px;
     right: 10px;
+    padding: 5px 10px;
+    font-size: 11px;
   }
+
   .booking-main {
     flex-direction: column;
     align-items: flex-start;
-    gap: 6px;
+    gap: 8px;
   }
+
+  .booking-main img {
+    width: 18px;
+    height: 18px;
+  }
+
   .regular-layout,
   .completed-layout,
   .cancelled-layout {
     grid-template-columns: 1fr;
     gap: 20px;
   }
+
   .expanded-grid {
     grid-template-columns: 1fr;
     gap: 20px;
+  }
+
+  .section h4 {
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+
+  .info-row {
+    margin-bottom: 12px;
+  }
+
+  .info-row .label {
+    font-size: 12px;
+  }
+
+  .info-row .value {
+    font-size: 14px;
+  }
+
+  .result-box {
+    padding: 16px;
+  }
+
+  .result-box.ready {
+    padding: 32px 16px 24px 16px;
+    min-height: 180px;
+  }
+
+  .result-box.ready img {
+    height: 60px;
+    width: 60px;
+  }
+
+  .result-box.ready strong {
+    font-size: 18px;
+  }
+
+  .result-box.ready p {
+    font-size: 14px;
+  }
+
+  .btn-primary-history-booking {
+    width: 100%;
+    padding: 12px 24px;
+    font-size: 14px;
+  }
+
+  .booking-card-body {
+    padding: 0 16px;
+  }
+
+  .booking-card-body.open {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .booking-history-page {
+    padding: 0 12px;
+  }
+
+  .booking-history-header {
+    padding: 20px 16px;
+  }
+
+  .booking-history-header h1 {
+    font-size: 20px;
+  }
+
+  .booking-history-header p {
+    font-size: 12px;
+  }
+
+  .booking-filters {
+    padding: 14px;
+    border-radius: 10px;
+  }
+
+  .filters-title {
+    font-size: 15px;
+  }
+
+  .filter-row {
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .filter-label {
+    font-size: 12px;
+  }
+
+  .filter-date-input,
+  .filter-status-select {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+
+  .booking-card-header {
+    padding: 14px;
+  }
+
+  .booking-card-header .booking-code {
+    font-size: 12px;
+  }
+
+  .booking-card-header .booking-date {
+    font-size: 16px;
+  }
+
+  .booking-card-header .booking-time {
+    font-size: 14px;
+  }
+
+  .booking-created {
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+
+  .booking-card-header .booking-badge {
+    top: 8px;
+    right: 8px;
+    padding: 4px 8px;
+    font-size: 10px;
+  }
+
+  .regular-layout,
+  .completed-layout,
+  .cancelled-layout {
+    gap: 16px;
+  }
+
+  .expanded-grid {
+    gap: 16px;
+  }
+
+  .section h4 {
+    font-size: 13px;
+    margin-bottom: 10px;
+  }
+
+  .info-row .label {
+    font-size: 11px;
+  }
+
+  .info-row .value {
+    font-size: 13px;
+  }
+
+  .result-box {
+    padding: 14px;
+  }
+
+  .result-box.ready {
+    padding: 24px 12px 20px 12px;
+    min-height: 160px;
+  }
+
+  .result-box.ready img {
+    height: 50px;
+    width: 50px;
+  }
+
+  .result-box.ready strong {
+    font-size: 16px;
+  }
+
+  .result-box.ready p {
+    font-size: 13px;
+  }
+
+  .btn-primary-history-booking {
+    padding: 10px 20px;
+    font-size: 13px;
+  }
+
+  .booking-card-body.open {
+    padding: 14px;
+  }
+
+  .btn-dropdown {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+
+  .booking-history-pagination {
+    margin-top: 24px;
+    padding: 16px 0;
+  }
+
+  .booking-history-empty {
+    padding: 40px 16px;
+  }
+
+  .booking-history-empty svg {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 16px;
+  }
+
+  .booking-history-empty h3 {
+    font-size: 18px;
+  }
+
+  .booking-history-empty p {
+    font-size: 13px;
   }
 }

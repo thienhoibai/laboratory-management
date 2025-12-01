@@ -631,60 +631,36 @@
   .auth-register-container {
     grid-template-columns: 1fr;
     grid-template-rows: auto 1fr;
+    height: auto;
+    min-height: 100vh;
   }
 
   .auth-register-left {
-    padding: 60px 30px 40px;
-    min-height: 70vh;
+    padding: 50px 30px 30px;
+    min-height: auto;
   }
 
   .auth-register-right {
-    padding: 40px 30px 60px;
+    padding: 30px 30px 50px;
   }
 
   .auth-register-welcome-title {
     font-size: 2rem;
+    margin-bottom: 16px;
+  }
+
+  .auth-register-welcome-subtitle {
+    font-size: 1.1rem;
+    margin-bottom: 30px;
   }
 
   .auth-register-features {
-    margin-bottom: 40px;
+    margin-bottom: 30px;
   }
 
   .auth-register-feature-item {
-    margin-bottom: 20px;
-    padding: 12px;
-  }
-
-  .auth-register-stats {
-    gap: 20px;
-  }
-
-  .auth-register-card .ant-card-body {
-    padding: 32px;
-  }
-
-  .auth-register-form-row {
-    grid-template-columns: 1fr;
-    gap: 0;
-  }
-}
-
-@media screen and (max-width: 640px) {
-  .auth-register-left,
-  .auth-register-right {
-    padding: 40px 20px;
-  }
-
-  .auth-register-welcome-title {
-    font-size: 1.75rem;
-  }
-
-  .auth-register-card .ant-card-head {
-    padding: 24px 32px;
-  }
-
-  .auth-register-card .ant-card-body {
-    padding: 24px;
+    margin-bottom: 18px;
+    padding: 14px;
   }
 
   .auth-register-feature-icon {
@@ -693,24 +669,75 @@
     font-size: 1.75rem;
   }
 
+  .auth-register-feature-text h3 {
+    font-size: 1.1rem;
+  }
+
+  .auth-register-feature-text p {
+    font-size: 0.9rem;
+  }
+
   .auth-register-stats {
-    grid-template-columns: 1fr;
     gap: 16px;
   }
 
-  .auth-register-stat-item {
-    padding: 16px 12px;
+  .auth-register-card {
+    max-width: 100%;
+  }
+
+  .auth-register-card .ant-card-body {
+    padding: 28px;
+  }
+
+  .auth-register-form-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .auth-register-form .ant-form-item {
+    margin-bottom: 20px;
   }
 }
 
-@media screen and (max-width: 480px) {
+@media screen and (max-width: 640px) {
   .auth-register-left,
   .auth-register-right {
-    padding: 30px 16px;
+    padding: 30px 20px;
   }
 
   .auth-register-welcome-title {
-    font-size: 1.5rem;
+    font-size: 1.75rem;
+    margin-bottom: 12px;
+  }
+
+  .auth-register-welcome-subtitle {
+    font-size: 1rem;
+    margin-bottom: 24px;
+  }
+
+  .auth-register-features {
+    margin-bottom: 24px;
+  }
+
+  .auth-register-feature-item {
+    margin-bottom: 16px;
+    padding: 12px;
+    gap: 14px;
+  }
+
+  .auth-register-feature-icon {
+    width: 56px;
+    height: 56px;
+    font-size: 1.6rem;
+  }
+
+  .auth-register-feature-text h3 {
+    font-size: 1rem;
+    margin-bottom: 6px;
+  }
+
+  .auth-register-feature-text p {
+    font-size: 0.85rem;
   }
 
   .auth-register-card {
@@ -721,19 +748,118 @@
     padding: 20px 24px;
   }
 
-  .auth-register-card .ant-card-body {
-    padding: 20px;
+  .auth-register-card .ant-card-head-title {
+    font-size: 1.5rem;
   }
 
-  .auth-register-feature-icon {
-    width: 50px;
-    height: 50px;
-    font-size: 1.5rem;
+  .auth-register-card .ant-card-body {
+    padding: 24px;
+  }
+
+  .auth-register-form .ant-form-item {
+    margin-bottom: 18px;
   }
 
   .auth-register-button {
     height: 48px;
     font-size: 1rem;
+    margin-top: 16px;
+  }
+
+  .auth-register-stats {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .auth-register-stat-item {
+    padding: 14px 12px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .auth-register-left,
+  .auth-register-right {
+    padding: 25px 16px;
+  }
+
+  .auth-register-welcome-title {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+  }
+
+  .auth-register-welcome-subtitle {
+    font-size: 0.95rem;
+    margin-bottom: 20px;
+  }
+
+  .auth-register-features {
+    margin-bottom: 20px;
+  }
+
+  .auth-register-feature-item {
+    margin-bottom: 14px;
+    padding: 10px;
+    gap: 12px;
+  }
+
+  .auth-register-feature-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 1.4rem;
+  }
+
+  .auth-register-feature-text h3 {
+    font-size: 0.95rem;
+    margin-bottom: 4px;
+  }
+
+  .auth-register-feature-text p {
+    font-size: 0.8rem;
+  }
+
+  .auth-register-card {
+    border-radius: 12px;
+  }
+
+  .auth-register-card .ant-card-head {
+    padding: 16px 20px;
+  }
+
+  .auth-register-card .ant-card-head-title {
+    font-size: 1.35rem;
+  }
+
+  .auth-register-card .ant-card-body {
+    padding: 20px;
+  }
+
+  .auth-register-card .ant-card-extra {
+    display: none;
+  }
+
+  .auth-register-form .ant-form-item {
+    margin-bottom: 16px;
+  }
+
+  .auth-register-form .ant-form-item-label > label {
+    font-size: 0.85rem;
+  }
+
+  .auth-register-form .ant-input,
+  .auth-register-form .ant-input-password {
+    padding: 11px 14px;
+    font-size: 0.95rem;
+  }
+
+  .auth-register-button {
+    height: 46px;
+    font-size: 0.95rem;
+    margin-top: 14px;
+  }
+
+  .auth-register-login-link {
+    margin-top: 24px;
+    font-size: 0.9rem;
   }
 }
 
