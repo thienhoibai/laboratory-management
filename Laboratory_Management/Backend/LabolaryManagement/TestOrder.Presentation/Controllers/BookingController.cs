@@ -65,11 +65,12 @@ namespace TestOrder.Presentation.Controllers
 
         [HttpGet("patient")]
         [Authorize(Policy = "perm:Booking.View.Own")]
-        public async Task<IActionResult> GetBookingsByPatientId([FromQuery] Guid patientId, [FromQuery] int pageNumber, [FromQuery] int pageSize)
+        public async Task<IActionResult> GetBookingsByPatientId
+            ([FromQuery] Guid patientId, [FromQuery] int pageNumber, [FromQuery] int pageSize, [FromQuery] byte? filterStatus)
         {
             try
             {
-                var response = await _bookingService.GetBookingsByPatientIdAsync(patientId, pageNumber, pageSize);
+                var response = await _bookingService.GetBookingsByPatientIdAsync(patientId, pageNumber, pageSize, filterStatus);
                 return Ok(response);
             }
             catch (ArgumentException ex)

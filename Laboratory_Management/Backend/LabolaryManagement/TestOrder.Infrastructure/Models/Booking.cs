@@ -21,9 +21,7 @@ public partial class Booking
 
     public Guid? AppointmentSlotId { get; set; }
 
-    public DateOnly? CreateDate { get; set; }
-
-    public TimeOnly? CreateTime { get; set; }
+    public DateTime? CreateAt { get; set; }
 
     public string? CreatedBy { get; set; }
 
@@ -34,6 +32,8 @@ public partial class Booking
     public int? BundleId { get; set; }
 
     public double? TotalPrice { get; set; }
+
+    public DateTime? CancelAt { get; set; }
 
     public virtual AppointmentSlot? AppointmentSlot { get; set; }
 

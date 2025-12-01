@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TestOrder.Application.DTOs.Bookings
+namespace TestOrder.Infrastructure.Enums
 {
     public enum BookingStatusEnum : byte
     {

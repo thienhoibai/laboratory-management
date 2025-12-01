@@ -1,4 +1,7 @@
 ﻿using Azure;
+using Contracts.Notifications;
+using MassTransit;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
@@ -7,9 +10,9 @@ using System.Security.AccessControl;
 using System.Threading.Tasks;
 using TestOrder.Application.DTOs;
 using TestOrder.Application.DTOs.Bookings;
+using TestOrder.Infrastructure.Enums;
 using TestOrder.Infrastructure.Repository;
-using MassTransit;
-using Contracts.Notifications;
+using TimeZoneConverter;
 
 namespace TestOrder.Application.Services.Booking
 {
@@ -22,14 +25,17 @@ namespace TestOrder.Application.Services.Booking
         private readonly TestBundleService _testBundleService;
         private readonly TestCatalogService _testCatalogService;
         private readonly IPublishEndpoint _publishEndpoint;
+        private readonly IConfiguration configuration;
 
+        private TimeZoneInfo timeZoneById;
         public BookingService(BookingRepository bookingRepository,
                               BookingTestService bookingTestService,
                               AppointmentSlotService appointmentSlotService,
                               CatalogBundleService catalogBundleService,
                               TestBundleService testBundleService,
                               TestCatalogService testCatalogService,
-                              IPublishEndpoint publishEndpoint)
+                              IPublishEndpoint publishEndpoint,
+                              IConfiguration configuration)
         {
             _bookingTestService = bookingTestService;
             _bookingRepository = bookingRepository;
@@ -38,7 +44,12 @@ namespace TestOrder.Application.Services.Booking
             _testBundleService = testBundleService;
             _testCatalogService = testCatalogService;
             _publishEndpoint = publishEndpoint;
+            this.configuration = configuration ?? throw new ArgumentNullException(nameof(configuration), "Configuration cannot be null.");
+
+            timeZoneById = TZConvert.GetTimeZoneInfo(configuration.GetValue<string>("TimeZoneId") ?? "SE Asia Standard Time");
         }
+
+        
 
         internal async Task<BookingResponseDTO> MapToDTOAsync(Infrastructure.Models.Booking booking)
         {
@@ -53,13 +64,9 @@ namespace TestOrder.Application.Services.Booking
                 CreatedBy = booking.CreatedBy,
                 BundleId = booking.BundleId,
                 TotalAmount = booking.TotalPrice,
-                CreatedDate = booking.CreateDate.HasValue
-                        ? booking.CreateDate.Value.ToDateTime(new TimeOnly(0, 0))
+                CreatedAt = booking.CreateAt.HasValue
+                        ? booking.CreateAt.Value
                         : DateTime.MinValue,
-                CreatedTime = booking.CreateTime.HasValue
-                        ? booking.CreateTime.Value
-                        : TimeOnly.MinValue,
-
                 RunDate = booking.RunDate.HasValue
                         ? booking.RunDate.Value.ToDateTime(new TimeOnly(0, 0))
                         : (DateTime?)null,
@@ -139,9 +146,11 @@ namespace TestOrder.Application.Services.Booking
             return await MapToDTOAsync(booking);
         }
 
-        public async Task<object> GetBookingsByPatientIdAsync(Guid patientId, int pageNumber, int pageSize)
+        public async Task<object> GetBookingsByPatientIdAsync(Guid patientId, int pageNumber, int pageSize, byte? filterStatus)
         {
-            var (bookings, totalItem) = await _bookingRepository.GetBookingsByPatientIdAsync(patientId, pageNumber, pageSize);
+
+
+            var (bookings, totalItem) = await _bookingRepository.GetBookingsByPatientIdAsync(patientId, pageNumber, pageSize, filterStatus);
 
             var totalPages = (int)Math.Ceiling((double)totalItem / pageSize);
 
@@ -225,21 +234,20 @@ namespace TestOrder.Application.Services.Booking
 
 
             var newBooking = new Infrastructure.Models.Booking
-            {
-                BookingId = Guid.NewGuid(),
-                PatientId = bookingRequest.PatientId,
-                PatientName = bookingRequest.PatientName,
-                PatientPhone = bookingRequest.PatientPhoneNumber,
-                PatientEmail = bookingRequest.PatientEmail,
-                CreatedBy = bookingRequest.CreatedBy,
-                CreateDate = DateOnly.FromDateTime(DateTime.Now),
-                CreateTime = TimeOnly.FromDateTime(DateTime.Now),
-                BundleId = bundleId,
-                AppointmentSlotId = appointmentSlot.SlotId,
-                Status = (byte?)BookingStatusEnum.Pending,
-                BookingCode = nextCode,
-                TotalPrice = totalPrice
-            };
+                {
+                    BookingId = Guid.NewGuid(),
+                    PatientId = bookingRequest.PatientId,
+                    PatientName = bookingRequest.PatientName,
+                    PatientPhone = bookingRequest.PatientPhoneNumber,
+                    PatientEmail = bookingRequest.PatientEmail,
+                    CreatedBy = bookingRequest.CreatedBy,
+                    CreateAt = TimeZoneInfo.ConvertTime(DateTime.UtcNow, timeZoneById),
+                    BundleId = bundleId,
+                    AppointmentSlotId = appointmentSlot.SlotId,
+                    Status = (byte?)BookingStatusEnum.Pending,
+                    BookingCode = nextCode,
+                    TotalPrice = totalPrice
+                };
 
             await _bookingRepository.AddAsync(newBooking);
             if (bookingRequest.Catalogs != null)
@@ -274,16 +282,8 @@ namespace TestOrder.Application.Services.Booking
         public async Task<ResponseMessage> CheckInBooking(Guid bookingId)
         {
 
-            DateOnly today = DateOnly.FromDateTime(DateTime.Now);
-            TimeOnly now = TimeOnly.FromDateTime(DateTime.Now);
-
-
-
-
-            var booking = await _bookingRepository.GetByIdAsync(bookingId);
+            var booking =  await _bookingRepository.GetByIdAsync(bookingId);
             var timeSlot = await _appointmentSlotService.GetAppointmentSlotByIdAsync((Guid)booking.AppointmentSlotId);
-            TimeOnly lowerLimit = timeSlot.TimeBlock.Add(-TimeSpan.FromMinutes(30));
-            TimeOnly upperLimit = timeSlot.TimeBlock.Add(TimeSpan.FromMinutes(30));
             ResponseMessage response = new ResponseMessage();
             if (booking == null)
             {
@@ -300,26 +300,14 @@ namespace TestOrder.Application.Services.Booking
                 response.InstancesCode = bookingId;
                 return response;
             }
-            if (today == timeSlot.AppointmentDate &&
-                now >= lowerLimit &&
-                now <= upperLimit)
-            {
 
-                booking.Status = (byte)BookingStatusEnum.InProgress;
-                booking.RunDate = DateOnly.FromDateTime(DateTime.Now);
-                await _bookingRepository.UpdateAsync(booking);
-                response.ResponseCode = ResponseCode.Success;
-                response.Message = "Check-in successful";
-                response.InstancesCode = bookingId;
-
-            }
-            else
-            {
-                response.ResponseCode = ResponseCode.BadInstanceState;
-                response.Message = "Check-in is only allowed on the appointment date";
-                response.InstancesCode = bookingId;
-                return response;
-            }
+            booking.Status = (byte)BookingStatusEnum.InProgress;
+            booking.RunDate = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(DateTime.UtcNow, timeZoneById));
+            await _bookingRepository.UpdateAsync(booking);
+            response.ResponseCode = ResponseCode.Success;
+            response.Message = "Check-in successful";
+            response.InstancesCode = bookingId;
+                
             return response;
 
         }
@@ -358,9 +346,15 @@ namespace TestOrder.Application.Services.Booking
             {
                 throw new Exception("Booking not found");
             }
-
-            booking.Status = (byte?)BookingStatusEnum.Confirmed;
-            await _bookingRepository.UpdateAsync(booking);
+            if (booking.Status == (byte)BookingStatusEnum.Pending)
+            {
+                booking.Status = (byte?)BookingStatusEnum.Confirmed;
+                await _bookingRepository.UpdateAsync(booking);
+            }
+            else
+            {
+                throw new Exception("Booking is not in a state that allows payment confirmation");
+            }
 
             // ✅ GỬI EMAIL XÁC NHẬN BOOKING
             if (!string.IsNullOrWhiteSpace(booking.PatientEmail))
