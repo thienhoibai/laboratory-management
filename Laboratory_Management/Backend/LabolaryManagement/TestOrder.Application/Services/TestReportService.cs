@@ -47,6 +47,14 @@ namespace TestOrder.Application.Services
             if (booking.PatientId != Guid.Empty)
             {
                 patient = await GetPatientByIdAsync(booking.PatientId);
+                if (patient != null)
+                {
+                    Console.WriteLine($"✅ Đã lấy thông tin patient: {patient.FullName}, Gender: {patient.Gender}, DOB: {patient.DateOfBirth}, BloodType: {patient.BloodType}");
+                }
+                else
+                {
+                    Console.WriteLine($"⚠️ Không lấy được thông tin patient từ API cho PatientId: {booking.PatientId}");
+                }
             }
 
             var doc = DocX.Create($"TestReport_{testResult.BookingCode}.docx");
@@ -88,7 +96,10 @@ namespace TestOrder.Application.Services
                 doc.InsertParagraph($"Giới Tính: {GetGenderDisplay(patient.Gender)}")
                     .FontSize(12);
                 
-                doc.InsertParagraph($"Ngày Sinh: {patient.DateOfBirth?.ToString("dd/MM/yyyy") ?? "N/A"}")
+                doc.InsertParagraph($"Ngày Sinh: {(patient.DateOfBirth.HasValue ? patient.DateOfBirth.Value.ToString("dd/MM/yyyy") : "N/A")}")
+                    .FontSize(12);
+                
+                doc.InsertParagraph($"Địa Chỉ: {patient.Address ?? "N/A"}")
                     .FontSize(12);
                 
                 doc.InsertParagraph($"Nhóm Máu: {GetBloodTypeDisplay(patient.BloodType)}")
@@ -98,9 +109,6 @@ namespace TestOrder.Application.Services
                     .FontSize(12);
                 
                 doc.InsertParagraph($"Email: {patient.Email ?? booking.PatientEmail ?? "N/A"}")
-                    .FontSize(12);
-                
-                doc.InsertParagraph($"Địa Chỉ: {patient.Address ?? "N/A"}")
                     .FontSize(12)
                     .SpacingAfter(20);
             }
@@ -116,6 +124,9 @@ namespace TestOrder.Application.Services
                 doc.InsertParagraph($"Ngày Sinh: N/A")
                     .FontSize(12);
                 
+                doc.InsertParagraph($"Địa Chỉ: N/A")
+                    .FontSize(12);
+                
                 doc.InsertParagraph($"Nhóm Máu: N/A")
                     .FontSize(12);
                 
@@ -123,9 +134,6 @@ namespace TestOrder.Application.Services
                     .FontSize(12);
                 
                 doc.InsertParagraph($"Email: {booking.PatientEmail ?? "N/A"}")
-                    .FontSize(12);
-                
-                doc.InsertParagraph($"Địa Chỉ: N/A")
                     .FontSize(12)
                     .SpacingAfter(20);
             }
@@ -178,18 +186,34 @@ namespace TestOrder.Application.Services
             try
             {
                 var client = _httpClientFactory.CreateClient("PatientApi");
+                Console.WriteLine($"🔍 Calling Patient API: {client.BaseAddress}v1/patients/internal/{patientId}");
+                
                 var response = await client.GetAsync($"v1/patients/internal/{patientId}");
+                
+                Console.WriteLine($"📡 Patient API Response Status: {response.StatusCode}");
                 
                 if (response.IsSuccessStatusCode)
                 {
-                    return await response.Content.ReadFromJsonAsync<PatientDetailDto>();
+                    var patient = await response.Content.ReadFromJsonAsync<PatientDetailDto>();
+                    Console.WriteLine($"✅ Successfully retrieved patient data: {patient?.FullName}");
+                    return patient;
+                }
+                else
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"❌ Patient API Error: {response.StatusCode} - {errorContent}");
                 }
                 
                 return null;
             }
-            catch (Exception)
+            catch (HttpRequestException ex)
             {
-                // Log error but don't throw - allow report generation to continue
+                Console.WriteLine($"❌ HTTP Request Error calling Patient API: {ex.Message}");
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Unexpected error calling Patient API: {ex.Message}");
                 return null;
             }
         }
