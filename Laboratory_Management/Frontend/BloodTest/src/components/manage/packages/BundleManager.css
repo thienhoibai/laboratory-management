@@ -43,6 +43,54 @@
   transform: translateY(-1px);
 }
 
+/* Statistics Cards */
+.bundle-stats-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.bundle-stat-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.bundle-stat-icon {
+  font-size: 2.5rem;
+  opacity: 0.8;
+  flex-shrink: 0;
+}
+
+.bundle-stat-content {
+  flex: 1;
+}
+
+.bundle-stat-title {
+  font-size: 0.9rem;
+  color: #6b7280;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.bundle-stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 4px;
+}
+
+.bundle-stat-change {
+  font-size: 0.85rem;
+  color: #10b981;
+  font-weight: 500;
+}
+
 .bundle-content {
   background: white;
   border-radius: 16px;
