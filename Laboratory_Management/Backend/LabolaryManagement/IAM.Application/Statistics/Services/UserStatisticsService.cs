@@ -63,5 +63,17 @@ public class UserStatisticsService
             NewCustomersToday = newCustomersToday,
             GeneratedAt = DateTime.Now
         };
+        
+    }
+    public async Task<BlockedUserStatisticDto> GetBlockedUserStatistic(CancellationToken ct = default)
+    {
+        var users = await _db.Users.AsNoTracking().ToListAsync(ct);
+        return new BlockedUserStatisticDto
+        {
+            TotalUsers = users.Count,
+            TotalCustomers = users.Count(u => u.IsActive),
+            TotalBlockedUsers = users.Count(u => u.IsLocked),
+            GeneratedAt = DateTime.Now
+        };
     }
 }

@@ -37,7 +37,7 @@ public class StatisticsController : ControllerBase
         }
     }
     [HttpGet("ReagentStatus")]
-    
+    [Authorize(Policy = "perm:Statistics.InstrumentReagentStatus.View")]
     public async Task<IActionResult> GetReagentStatusStatistics(CancellationToken ct)
     {
         try
