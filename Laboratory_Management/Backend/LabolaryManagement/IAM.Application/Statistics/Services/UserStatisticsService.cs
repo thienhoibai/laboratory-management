@@ -61,6 +61,7 @@ public class UserStatisticsService
             InactiveCustomers = inactiveCustomers,
             NewCustomersThisMonth = newCustomersThisMonth,
             NewCustomersToday = newCustomersToday,
+
             GeneratedAt = DateTime.Now
         };
         
@@ -74,6 +75,24 @@ public class UserStatisticsService
             TotalCustomers = users.Count(u => u.IsActive),
             TotalBlockedUsers = users.Count(u => u.IsLocked),
             GeneratedAt = DateTime.Now
+        };
+    }
+    public async Task<UserByDayDto> GetUserByDay()
+    {
+        var Lastweek = DateTime.Now.AddDays(-6);
+        var WeeklyUser =  _db.Users.AsNoTracking()
+            .Where(u => u.IsActive&& u.CreatedAt >= new DateTime(Lastweek.Year, Lastweek.Month, Lastweek.Day))
+            .GroupBy(u => u.CreatedAt.Date)
+            .Select(g => new CountUserByDayDto
+            {
+                Day = g.Key,
+                UserCount = g.Count()
+
+
+            }).ToArrayAsync();
+        return new UserByDayDto
+        {
+            UsersByDay = await WeeklyUser
         };
     }
 }

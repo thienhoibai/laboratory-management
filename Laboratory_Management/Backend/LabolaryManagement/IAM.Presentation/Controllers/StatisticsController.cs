@@ -50,4 +50,19 @@ public class StatisticsController : ControllerBase
             return StatusCode(500, new { message = "Lỗi khi lấy thống kê người dùng bị khóa", details = ex.Message });
         }
     }
+    [HttpGet("UserByDay")]
+    [Authorize(Policy = "perm:Statistics.User.View")]
+    public async Task<IActionResult> GetUserByDay(CancellationToken ct)
+    {
+        try
+        {
+            var data = await _statisticsService.GetUserByDay();
+            return Ok(data);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Lỗi khi lấy thống kê người dùng theo ngày", details = ex.Message });
+        }
+
+    }
 }

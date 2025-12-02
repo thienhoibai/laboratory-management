@@ -11,4 +11,5 @@ public record UserStatisticsDto
     public int NewCustomersThisMonth { get; init; }
     public int NewCustomersToday { get; init; }
     public DateTime GeneratedAt { get; init; } = DateTime.Now;
+
 }
