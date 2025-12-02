@@ -31,5 +31,18 @@ public class InstrumentStatisticsService
             FaultInstruments = instruments.Count(i => i.Status == InstrumentStatus.Fault),
             GeneratedAt = DateTime.Now
         };
+
+    }
+    public async Task<InstrumentReagentStatisticsDto> GetReagentStatusStatisticsAsync(CancellationToken ct = default)
+    {
+        var instruments = await _db.Instruments.AsNoTracking().ToListAsync(ct);
+        return new InstrumentReagentStatisticsDto
+        {
+            TotalInstruments = instruments.Count,
+            ReagentFullInstruments = instruments.Count(i => i.ReagentStatus == ReagentStatus.OK),
+            ReagentLowInstruments = instruments.Count(i => i.ReagentStatus == ReagentStatus.Low),
+            ReagentEmptyInstruments = instruments.Count(i => i.ReagentStatus == ReagentStatus.Out),
+            GeneratedAt = DateTime.Now
+        };
     }
 }
