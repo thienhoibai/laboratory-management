@@ -112,4 +112,3 @@ VALUES
 (2, NEWID(), N'Hy vọng thêm nhiều thông tin hơn.'),
 (4, NEWID(), N'Tôi bị tiểu đường, chỉ số HbA1c rất quan trọng.'),
 (5, NEWID(), N'Lúc xét nghiệm men gan của tôi tăng cao, rất lo lắng.');
-select * from BlogPost
