@@ -218,7 +218,6 @@ function MedicalRecordDetail() {
               </svg>
             </div>
             <div className="info-content">
-              <span className="info-label">Mã bệnh nhân</span>
               <span className="info-value">{patients?.patientId}</span>
             </div>
           </div>

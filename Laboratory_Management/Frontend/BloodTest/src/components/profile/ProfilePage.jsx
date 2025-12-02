@@ -117,9 +117,6 @@ export default function ProfilePage() {
             </div>
             <div className="profile-info">
               <h1 className="profile-name">{userData.fullName}</h1>
-              <p className="profile-patient-id">
-                Mã bệnh nhân: {userData.patientId}
-              </p>
               <div className="profile-tags">
                 <span className="profile-tag">
                   {userData.gender == 1 ? "Nam" : "Nữ"}

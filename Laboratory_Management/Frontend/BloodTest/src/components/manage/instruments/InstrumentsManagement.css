@@ -54,15 +54,15 @@
 .instruments-stat-card {
   background: #fff;
   border-radius: 16px;
-  padding: 20px;
+  padding: 15px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   position: relative;
   overflow: hidden;
+  height: 180px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: 1px solid #f0f0f0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
   align-items: flex-start;
   flex: 1 1 0;
   min-width: 100px;
@@ -106,9 +106,8 @@
 .instruments-stat-content {
   display: flex;
   flex-direction: column;
-  gap: 8px;
   flex: 1;
-  justify-content: space-between;
+  gap: 20px;
   width: 100%;
   min-width: 0;
 }
@@ -676,7 +675,8 @@ tbody tr:last-child {
 
 .form-field:focus-within {
   border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1), 0 4px 12px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1),
+    0 4px 12px rgba(15, 23, 42, 0.08);
 }
 
 .form-field input:disabled {
