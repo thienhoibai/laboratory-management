@@ -48,7 +48,7 @@ public class TestOrderStatisticsService
             TotalBookingsThisYear = bookingsThisYear.Count,
             
             PendingBookings = allBookings.Count(b => b.Status == 0),
-            CompletedBookings = allBookings.Count(b => b.Status == 2),
+            CompletedBookings = allBookings.Count(b => b.Status ==  2),
             CancelledBookings = allBookings.Count(b => b.Status == 3),
             
             GeneratedAt = DateTime.Now
