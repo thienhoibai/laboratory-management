@@ -1,4 +1,16 @@
 ﻿services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver
+    restart: always
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_PID=Developer
+      - SA_PASSWORD=Lab@2024_sql!
+    ports:
+      - "1433:1433"
+    volumes:
+      - sql_data:/var/opt/mssql
   rabbitmq:
     image: rabbitmq:3.13-management
     container_name: rabbitmq
@@ -19,7 +31,7 @@
     container_name: iam.api
     environment:
       ASPNETCORE_ENVIRONMENT: "Docker"
-      ConnectionStrings__LabIAM: "Server=host.docker.internal,1433;Database=LabIAM;User Id=sa;Password=12345;TrustServerCertificate=True;Encrypt=False"
+      ConnectionStrings__LabIAM: "Server=sqlserver,1433;Database=LabIAM;User Id=sa;Password=Lab@2024_sql!;TrustServerCertificate=True;Encrypt=False"
       RabbitMQ__Host: "rabbitmq"
       RabbitMQ__User: "lab"
       RabbitMQ__Pass: "lab123"
@@ -31,6 +43,9 @@
       Jwt__RefreshTokenDays: "14"
 
       Auth__Google__ClientId: "834593887103-av11ov3n9l5pp160ekmr68e844nq2kg2.apps.googleusercontent.com"
+      
+      # ✅ Frontend URL for password reset email
+      Email__ResetPasswordBaseUrl: "http://hema-link.io.vn/reset-password"
 
     depends_on:
       rabbitmq:
@@ -46,7 +61,7 @@
     container_name: patient.api
     environment:
       ASPNETCORE_ENVIRONMENT: "Production"
-      ConnectionStrings__PatientService4: "Server=host.docker.internal,1433;Database=PatientService4;User Id=sa;Password=12345;TrustServerCertificate=True;Encrypt=False"
+      ConnectionStrings__PatientService4: "Server=sqlserver,1433;Database=PatientService4;User Id=sa;Password=Lab@2024_sql!;TrustServerCertificate=True;Encrypt=False"
       RabbitMQ__Host: "rabbitmq"
       RabbitMQ__User: "lab"
       RabbitMQ__Pass: "lab123"
@@ -85,7 +100,7 @@
     container_name: notify.api
     environment:
       ASPNETCORE_URLS: "http://0.0.0.0:5601"
-      ConnectionStrings__Notify: "Server=host.docker.internal,1433;Database=notify;User Id=sa;Password=12345;TrustServerCertificate=True;Encrypt=False"
+      ConnectionStrings__Notify: "Server=sqlserver,1433;Database=notify;User Id=sa;Password=Lab@2024_sql!;TrustServerCertificate=True;Encrypt=False"
       RabbitMQ__Host: "rabbitmq"
       RabbitMQ__User: "lab"
       RabbitMQ__Pass: "lab123"
@@ -109,7 +124,7 @@
     environment:
       ASPNETCORE_ENVIRONMENT: "Docker"
       TZ: Asia/Ho_Chi_Minh # <== thêm cái nàyd
-      ConnectionStrings__DefaultConnection: "Server=host.docker.internal,1433;Database=TestOrderDB;User Id=sa;Password=12345;TrustServerCertificate=True;Encrypt=False"
+      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=TestOrderDB;User Id=sa;Password=Lab@2024_sql!;TrustServerCertificate=True;Encrypt=False"
       RabbitMQ__Host: "rabbitmq"
       RabbitMQ__User: "lab"
       RabbitMQ__Pass: "lab123" # JWT config (must match iam.api)
@@ -131,7 +146,7 @@
     container_name: blogservice.api
     environment:
       ASPNETCORE_ENVIRONMENT: "Docker"
-      ConnectionStrings__DefaultConnection: "Server=host.docker.internal,1433;Database=BlogServiceDB;User Id=sa;Password=12345;TrustServerCertificate=True;Encrypt=False"
+      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=BlogServiceDB;User Id=sa;Password=Lab@2024_sql!;TrustServerCertificate=True;Encrypt=False"
       # JWT config (must match iam.api)
       Jwt__Issuer: "lab-iam"
       Jwt__Audience: "lab.api"
@@ -152,7 +167,7 @@
     container_name: instrument.api
     environment:
       ASPNETCORE_ENVIRONMENT: "Docker"
-      ConnectionStrings__InstrumentDb: "Server=host.docker.internal,1433;Database=InstrumentDB;User Id=sa;Password=12345;TrustServerCertificate=True;Encrypt=False"
+      ConnectionStrings__InstrumentDb: "Server=sqlserver,1433;Database=InstrumentDB;User Id=sa;Password=Lab@2024_sql!;TrustServerCertificate=True;Encrypt=False"
       TestOrderBaseUrl: "http://testorder.api:5003"
       # JWT config (must match iam.api)
       Jwt__Issuer: "lab-iam"
@@ -166,3 +181,5 @@
       - ./Instrument.Presentation/Images:/app/Images # ✅ Bind mount - file sẽ sync với máy local
     extra_hosts:
       - "host.docker.internal:host-gateway"
+volumes:
+  sql_data:

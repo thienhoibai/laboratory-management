@@ -1,13 +1,13 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:8080/",
+  baseURL: "http://20.6.88.113:8080/",
 });
 
 // Create a separate axios instance for public API calls (without auth headers)
 // This instance will never have Authorization headers set
 export const publicApi = axios.create({
-  baseURL: "http://localhost:8080/",
+  baseURL: "http://20.6.88.113:8080/",
 });
 
 // Ensure publicApi never gets Authorization headers
