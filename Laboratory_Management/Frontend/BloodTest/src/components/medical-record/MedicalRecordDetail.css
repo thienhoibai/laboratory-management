@@ -1,11 +1,6 @@
 .medical-record-detail {
   min-height: 100vh;
-  background: linear-gradient(
-    135deg,
-    #2563eb 0%,
-    #3b82f6 50%,
-    #60a5fa 100%
-  );
+  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 50%, #60a5fa 100%);
   background-size: 100% 400px;
   background-repeat: no-repeat;
   padding-bottom: 60px;
@@ -21,15 +16,15 @@
   right: 0;
   height: 400px;
   background: radial-gradient(
-    circle at 20% 50%,
-    rgba(255, 255, 255, 0.1) 0%,
-    transparent 50%
-  ),
-  radial-gradient(
-    circle at 80% 80%,
-    rgba(255, 255, 255, 0.1) 0%,
-    transparent 50%
-  );
+      circle at 20% 50%,
+      rgba(255, 255, 255, 0.1) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 80% 80%,
+      rgba(255, 255, 255, 0.1) 0%,
+      transparent 50%
+    );
   pointer-events: none;
 }
 
@@ -92,8 +87,7 @@
   background: white;
   border-radius: 16px;
   padding: 40px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08),
-    0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
   margin-bottom: 32px;
   position: relative;
   z-index: 1;
@@ -359,10 +353,6 @@
   padding-left: 24px;
 }
 
-.appointment-actions {
-  flex-shrink: 0;
-}
-
 .view-detail-btn {
   padding: 12px 24px;
   background: white;
@@ -391,6 +381,34 @@
   color: white;
   border-color: #2563eb;
   box-shadow: 0 4px 16px rgba(37, 99, 235, 0.3);
+}
+
+.download-report-btn {
+  width: 100%;
+  margin-top: 20px;
+  padding: 12px 15px;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+  box-shadow: 0 4px 6px rgba(17, 153, 142, 0.2);
+}
+
+.download-report-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(17, 153, 142, 0.3);
+}
+
+.download-icon {
+  width: 18px;
+  height: 18px;
 }
 
 .chevron-icon {

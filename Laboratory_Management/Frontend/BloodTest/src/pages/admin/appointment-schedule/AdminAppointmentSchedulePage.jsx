@@ -624,7 +624,7 @@ const AdminAppointmentSchedulePage = () => {
                                 animation: "pulse 1.5s ease-in-out infinite",
                               }}
                             >
-                              🔬 Chọn máy
+                              Chọn máy
                             </button>
                           )}
                           {canProcessSample &&
@@ -644,10 +644,10 @@ const AdminAppointmentSchedulePage = () => {
                                 className="Process-Button"
                               >
                                 {runStatus.isRunning
-                                  ? "⏱️ Đang xét nghiệm"
+                                  ? "Đang xét nghiệm"
                                   : runStatus.phase === "done"
-                                  ? "✅ Đã hoàn thành"
-                                  : "🔬 Chọn máy"}
+                                  ? "Đã hoàn thành"
+                                  : "Chọn máy"}
                               </button>
                             )}
                         </td>

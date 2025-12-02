@@ -11,6 +11,7 @@ import {
   calculateAge,
   formatDateTime,
 } from "../../utils/formatDate";
+import { getBloodTypeLabel, bloodTypeOptions } from "../../utils/bloodType";
 import {
   useFetchProfile,
   useMedicalRecord,
@@ -28,6 +29,7 @@ import Navbar from "../navbar/Navbar";
 const initialFormData = {
   fullName: "",
   gender: "",
+  bloodType: "",
   dateOfBirth: "",
   phoneNumber: "",
   email: "",
@@ -360,6 +362,27 @@ export default function ProfilePage() {
                       <span className="info-label">Số bảo hiểm y tế</span>
                       <span className="info-value">
                         {userData.insuranceNumber}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="profile-info-item">
+                    <div className="info-icon-wrapper">
+                      <svg
+                        className="info-icon"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z" />
+                        <path d="M12 6v6l4 2" />
+                      </svg>
+                    </div>
+                    <div className="info-content">
+                      <span className="info-label">Nhóm máu</span>
+                      <span className="info-value">
+                        {getBloodTypeLabel(userData.bloodType)}
                       </span>
                     </div>
                   </div>
@@ -733,6 +756,28 @@ export default function ProfilePage() {
 
               <div className="form-row-1">
                 <div className="form-group">
+                  <label>Nhóm máu</label>
+                  <select
+                    name="bloodType"
+                    value={formData.bloodType}
+                    onChange={handleInputChange}
+                    className={errors.bloodType ? "error" : ""}
+                  >
+                    <option value="">Chọn nhóm máu</option>
+                    {bloodTypeOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.bloodType && (
+                    <span className="error-text">{errors.bloodType}</span>
+                  )}
+                </div>
+              </div>
+
+              <div className="form-row-1">
+                <div className="form-group">
                   <label>Ngày sinh</label>
                   <input
                     type="date"
@@ -891,10 +936,15 @@ export default function ProfilePage() {
             rules={[{ required: true, message: "Vui lòng chọn nhóm máu" }]}
           >
             <Select placeholder="Chọn nhóm máu">
-              <Option value="0">A</Option>
-              <Option value="1">B</Option>
-              <Option value="2">AB</Option>
-              <Option value="3">O</Option>
+              <Option value="0">Không xác định</Option>
+              <Option value="1">A+</Option>
+              <Option value="2">A-</Option>
+              <Option value="3">B+</Option>
+              <Option value="4">B-</Option>
+              <Option value="5">AB+</Option>
+              <Option value="6">AB-</Option>
+              <Option value="7">O+</Option>
+              <Option value="8">O-</Option>
             </Select>
           </Form.Item>
           <Form.Item

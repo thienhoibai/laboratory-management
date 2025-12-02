@@ -1,6 +1,7 @@
 import api from "../configs/axios";
 
 const URL = "patient/v1/patients";
+const URL_REPORT = "testorder/api/TestReport";
 
 export const PatientServiceAPI = {
   CreateProfile: async (data) => {
@@ -27,7 +28,8 @@ export const PatientServiceAPI = {
     if (params.name) queryParams.append("name", params.name);
     if (params.phone) queryParams.append("phone", params.phone);
     if (params.email) queryParams.append("email", params.email);
-    if (params.insuranceNumber) queryParams.append("insuranceNumber", params.insuranceNumber);
+    if (params.insuranceNumber)
+      queryParams.append("insuranceNumber", params.insuranceNumber);
     if (params.citizenId) queryParams.append("citizenId", params.citizenId);
     if (params.page) queryParams.append("page", params.page);
     if (params.pageSize) queryParams.append("pageSize", params.pageSize);
@@ -46,5 +48,10 @@ export const PatientServiceAPI = {
   },
   DeletePatient: async (id) => {
     return await api.delete(`${URL}/${id}`);
+  },
+  TestReport: async (BookingId) => {
+    return await api.get(`${URL_REPORT}/DownloadReport/${BookingId}`, {
+      responseType: "arraybuffer",
+    });
   },
 };

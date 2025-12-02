@@ -87,15 +87,6 @@ export default function TestResultDetail({
       [index]: !prev[index],
     }));
   };
-
-  // const getStatusBadge = (status) => {
-  //   if (status === true) {
-  //     return <span className="status-badge normal">Bình thường</span>;
-  //   } else {
-  //     return <span className="status-badge high">Bất thường</span>;
-  //   }
-  // };
-
   // Decide which data to show: realResult if available and valid
   let sections = [];
   if (realResult) {
