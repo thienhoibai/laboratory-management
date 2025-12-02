@@ -37,7 +37,7 @@ public class StatisticsController : ControllerBase
         }
     }
     [HttpGet("BlokedUsers")]
-    [Authorize(Policy = "perm:Statistics.Loked.User.View")]
+    [Authorize(Policy = "perm:Statistics.Locked.User.View")]
     public async Task<IActionResult> GetBlockedUserStatistics(CancellationToken ct)
     {
         try
