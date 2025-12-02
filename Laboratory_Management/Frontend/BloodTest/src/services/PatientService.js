@@ -164,6 +164,7 @@ export const useUpdateProfile = (
         FullName: formData.fullName,
         DateOfBirth: formData.dateOfBirth,
         Gender: formData.gender === "1" ? 1 : formData.gender === "0" ? 0 : 2,
+        BloodType: parseInt(formData.bloodType, 10),
         Phone: formData.phoneNumber,
         Email: formData.email,
         Address: formData.address,
@@ -194,6 +195,7 @@ export const useUpdateProfile = (
     setFormData({
       fullName: userData?.fullName || "",
       gender: userData?.gender === 1 ? "1" : userData?.gender === 0 ? "0" : "",
+      bloodType: String(userData?.bloodType || ""),
       dateOfBirth: parseDateToInput(userData?.dateOfBirth),
       phoneNumber: userData?.phone || "",
       email: userData?.email || "",
@@ -238,6 +240,7 @@ export const useAddMedicalRecords = (
         FullName: values.fullName,
         DateOfBirth: dayjs(values.dateOfBirth).format("YYYY-MM-DD"),
         Gender: parseInt(values.gender, 10),
+        BloodType: parseInt(values.bloodType, 10),
         Phone: values.phoneNumber,
         Email: values.email,
         Address: values.address,

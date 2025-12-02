@@ -486,6 +486,45 @@ function MedicalRecordDetail() {
                             <polyline points="6 9 12 15 18 9" />
                           </svg>
                         </button>
+                        <button
+                          className="download-report-btn"
+                          onClick={async () => {
+                            try {
+                              const response =
+                                await PatientServiceAPI.TestReport(
+                                  appointment.id
+                                );
+
+                              const blob = new Blob([response.data], {
+                                type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                              });
+
+                              const url = window.URL.createObjectURL(blob);
+                              const link = document.createElement("a");
+                              link.href = url;
+                              link.download = `KetQuaXetNghiem_${appointment.id}.docx`;
+                              document.body.appendChild(link);
+                              link.click();
+                              document.body.removeChild(link);
+                              window.URL.revokeObjectURL(url);
+                            } catch (err) {
+                              console.error("Error:", err);
+                            }
+                          }}
+                        >
+                          <svg
+                            className="download-icon"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                          >
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" y1="15" x2="12" y2="3" />
+                          </svg>
+                          Tải kết quả xét nghiệm
+                        </button>
                       </div>
                     </div>
                     {expandedTests[appointment.id] && (
