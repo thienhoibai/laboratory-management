@@ -10,7 +10,7 @@ using IAM.Presentation.Middlewares;
 using IAM.Application.Security;
 using IAM.Application.Users.Services;
 using Common.Web.Extensions;
-using Common.Authorization; // ✅ Thêm
+using Common.Authorization;
 using Messaging.Email;
 using Messaging.Notifications;
 using IAM.Presentation.Grpc;
@@ -22,6 +22,7 @@ using Microsoft.IdentityModel.Tokens;
 using RabbitMQ.Client;
 using IAM.Application.Roles.Services;
 using IAM.Application.Permissions;
+using IAM.Application.Statistics.Services; // ✅ Add Statistics
 
 AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 var builder = WebApplication.CreateBuilder(args);
@@ -86,6 +87,7 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IRolePermissionService, RolePermissionService>();
 builder.Services.AddScoped<IPermissionQuery, PermissionQuery>();
+builder.Services.AddScoped<UserStatisticsService>(); // ✅ Add Statistics Service
 
 // Notifications via MassTransit -> RabbitMQ (no Outbox)
 builder.Services.AddScoped<INotificationPublisher, MassTransitNotificationPublisher>();
@@ -155,7 +157,8 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins(
             "http://localhost:5174",
-            "http://127.0.0.1:5174"
+            "http://127.0.0.1:5174",
+            "https://blood-test-eta.vercel.app"
         )
         .AllowAnyHeader()
         .AllowAnyMethod()

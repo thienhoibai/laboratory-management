@@ -1,15 +1,13 @@
 ﻿import React, { useEffect, useMemo, useRef, useState } from "react";
 import api from "../../../configs/axios";
 import { useSearchParams } from "react-router-dom";
-import {
-  startInstrumentRun,
-  getAllInstrument,
-} from "../../../apis/InstrumentAPI";
+import { startInstrumentRun } from "../../../apis/InstrumentAPI.jsx";
 import AdminLayout from "../../admin/layout/AdminLayout";
 import { setAuthToken } from "../../../utils/auth";
 import { FiDroplet, FiCheckCircle } from "react-icons/fi";
 import { Modal, Button, Card, Spin } from "antd";
 import "./InstrumentRun.css";
+import { getAllInstrument } from "../../../apis/InstrumentAPI.js";
 
 const BASE_URL = "http://localhost:8080";
 
@@ -44,35 +42,123 @@ const InstrumentRun = () => {
 
   useEffect(() => {
     if (!bookingId) return;
-    // Khi vào trang, show modal chọn máy nếu chưa chọn
-    setShowModal(true);
-    setSelectedInstrument(null);
-    setWaiting(false);
-    hasStartedRef.current = false;
-    setLoadingInstruments(true);
-    getAllInstrument()
-      .then((data) => {
-        setInstruments(Array.isArray(data.items) ? data.items : data);
-      })
-      .catch(() => setInstruments([]))
-      .finally(() => setLoadingInstruments(false));
+
+    // Kiểm tra xem đã có instrument run trong localStorage chưa
+    const storageKey = `instrument_run_${bookingId}`;
+    const stored = localStorage.getItem(storageKey);
+
+    if (stored) {
+      // Đã chọn máy rồi, khôi phục trạng thái
+      try {
+        const data = JSON.parse(stored);
+        const elapsed = Math.floor((Date.now() - data.startTime) / 1000);
+        const remaining = Math.max(0, (data.totalSeconds || 15) - elapsed);
+
+        setShowModal(false);
+        setWaiting(true);
+        hasStartedRef.current = false;
+
+        if (data.phase === "done") {
+          setPhase("done");
+          setProgress(100);
+          setSeconds(0);
+        } else if (remaining > 0) {
+          // Vẫn còn đang chạy
+          setPhase("pending");
+          setSeconds(remaining);
+          setProgress(0);
+        } else {
+          // Đã hết thời gian nhưng chưa gọi API
+          setPhase("pending");
+          setSeconds(0);
+          setProgress(0);
+        }
+
+        // Lấy thông tin máy đã chọn
+        if (data.instrumentCode) {
+          setLoadingInstruments(true);
+          getAllInstrument()
+            .then((instrumentData) => {
+              const instruments = Array.isArray(instrumentData.items)
+                ? instrumentData.items
+                : instrumentData;
+              const selected = instruments.find(
+                (ins) => ins.instrumentCode === data.instrumentCode
+              );
+              if (selected) {
+                setSelectedInstrument(selected);
+              }
+              setInstruments(instruments);
+            })
+            .catch(() => setInstruments([]))
+            .finally(() => setLoadingInstruments(false));
+        }
+      } catch (e) {
+        console.error("Error parsing stored run data:", e);
+        // Nếu có lỗi, hiển thị modal chọn máy
+        setShowModal(true);
+        setSelectedInstrument(null);
+        setWaiting(false);
+        hasStartedRef.current = false;
+        setLoadingInstruments(true);
+        getAllInstrument()
+          .then((data) => {
+            setInstruments(Array.isArray(data.items) ? data.items : data);
+          })
+          .catch(() => setInstruments([]))
+          .finally(() => setLoadingInstruments(false));
+      }
+    } else {
+      // Chưa chọn máy, hiển thị modal
+      setShowModal(true);
+      setSelectedInstrument(null);
+      setWaiting(false);
+      hasStartedRef.current = false;
+      setLoadingInstruments(true);
+      getAllInstrument()
+        .then((data) => {
+          setInstruments(Array.isArray(data.items) ? data.items : data);
+        })
+        .catch(() => setInstruments([]))
+        .finally(() => setLoadingInstruments(false));
+    }
+
     // Reset các state khác nếu cần
-    setPhase("pending");
-    setSeconds(30);
-    setProgress(0);
     setMessage("");
     setResults([]);
-    // Không chạy timer cho đến khi chọn máy và bấm tiếp tục
   }, [bookingId]);
 
   // Khi bấm tiếp tục, đợi 15s rồi run API
   useEffect(() => {
     if (!waiting || !selectedInstrument || !bookingId) return;
-    setPhase("pending");
-    setProgress(0);
-    setSeconds(15);
-    setMessage("");
-    // Đếm ngược 15s, sau đó gọi API
+
+    // Kiểm tra xem có đang khôi phục trạng thái từ localStorage không
+    const storageKey = `instrument_run_${bookingId}`;
+    const stored = localStorage.getItem(storageKey);
+
+    // Nếu chưa có localStorage, tạo mới
+    if (!stored) {
+      setPhase("pending");
+      setProgress(0);
+      setSeconds(15);
+      setMessage("");
+
+      // Lưu thông tin vào localStorage để theo dõi khi quay lại
+      localStorage.setItem(
+        storageKey,
+        JSON.stringify({
+          startTime: Date.now(),
+          phase: "pending",
+          instrumentCode: selectedInstrument.instrumentCode,
+          instrumentName:
+            selectedInstrument.name || selectedInstrument.instrumentName,
+          totalSeconds: 15,
+        })
+      );
+    }
+    // Nếu đã có localStorage, giữ nguyên seconds đã được set từ useEffect đầu tiên
+
+    // Luôn tạo timer để đếm ngược
     const timer = setInterval(() => {
       setSeconds((s) => {
         if (s <= 1) {
@@ -94,6 +180,19 @@ const InstrumentRun = () => {
               setProgress(100);
               if (status === 1) {
                 setPhase("done");
+                // Cập nhật localStorage
+                const storageKey = `instrument_run_${bookingId}`;
+                localStorage.setItem(
+                  storageKey,
+                  JSON.stringify({
+                    startTime: Date.now(),
+                    phase: "done",
+                    instrumentCode: selectedInstrument.instrumentCode,
+                    instrumentName:
+                      selectedInstrument.name ||
+                      selectedInstrument.instrumentName,
+                  })
+                );
               } else {
                 setPhase("error");
               }
@@ -121,8 +220,90 @@ const InstrumentRun = () => {
         return s - 1;
       });
     }, 1000);
+
     return () => clearInterval(timer);
   }, [waiting, selectedInstrument, bookingId]);
+
+  // Kick off API when countdown reaches 0
+  useEffect(() => {
+    if (phase !== "pending" || seconds !== 0 || !bookingId) return;
+
+    const run = async () => {
+      const storageKey = `instrument_run_${bookingId}`;
+      const stored = localStorage.getItem(storageKey);
+      const originalStartTime = stored
+        ? JSON.parse(stored).startTime
+        : Date.now();
+
+      try {
+        setPhase("running");
+        setProgress(35);
+
+        // Cập nhật localStorage - GIỮ NGUYÊN startTime gốc
+        localStorage.setItem(
+          storageKey,
+          JSON.stringify({
+            startTime: originalStartTime,
+            phase: "running",
+            progress: 35,
+            message: "",
+          })
+        );
+
+        const data = await startInstrumentRun(bookingId);
+        const status = data?.status || data?.Status || "";
+        const msg = String(data?.message || data?.Message || "");
+        setMessage(msg);
+
+        // Simulate progress finishing quickly after response
+        setProgress(100);
+        if (status === 1) {
+          setPhase("done");
+        } else {
+          setPhase("error");
+          localStorage.setItem(
+            storageKey,
+            JSON.stringify({
+              startTime: originalStartTime,
+              phase: "error",
+              progress: 100,
+              message: msg,
+            })
+          );
+        }
+      } catch (e) {
+        let msg = "Không thể khởi chạy thiết bị. Vui lòng thử lại.";
+
+        if (typeof e === "string") {
+          msg = e;
+        } else if (e?.response?.data?.message) {
+          msg = String(e.response.data.message);
+        } else if (e?.message) {
+          msg = String(e.message);
+        } else if (e) {
+          try {
+            msg = JSON.stringify(e);
+          } catch {
+            msg = "Không thể khởi chạy thiết bị. Vui lòng thử lại.";
+          }
+        }
+
+        setMessage(msg);
+        setPhase("error");
+        localStorage.setItem(
+          storageKey,
+          JSON.stringify({
+            startTime: originalStartTime,
+            phase: "error",
+            progress: 0,
+            message: msg,
+          })
+        );
+      }
+    };
+
+    run();
+  }, [seconds, phase, bookingId]);
 
   // Khi phase done, gọi API lấy kết quả thực tế
   useEffect(() => {
@@ -140,7 +321,6 @@ const InstrumentRun = () => {
           );
           if (res.data && Array.isArray(res.data.catalogs)) {
             setResults(res.data.catalogs);
-            console.log("Result: " + results);
           } else {
             setResults([]);
           }

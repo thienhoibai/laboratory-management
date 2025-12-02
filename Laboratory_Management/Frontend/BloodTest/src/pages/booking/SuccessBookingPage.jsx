@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import { Spin } from "antd";
 import SuccessBooking from "../../components/booking/SuccessBooking";
 import Navbar from "../../components/navbar/Navbar";
 import { bookingService } from "../../services/TestOrderService.jsx";
@@ -68,7 +69,7 @@ export default function SuccessBookingPage() {
   if (loading) {
     return (
       <div className="loading-container">
-        <div className="spinner"></div>
+        <Spin size="large" />
         <p>Đang tải thông tin đơn hàng...</p>
       </div>
     );

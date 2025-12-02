@@ -39,6 +39,7 @@ const AdminAppointmentSchedulePage = () => {
 
   const [Booking, SetBookings] = useState([]);
   const [checkingInId, setCheckingInId] = useState(null);
+  const [justCheckedInId, setJustCheckedInId] = useState(null); // Track booking vừa check-in
   // const [checkingOutId, setCheckingOutId] = useState(null); // track check-out
   // const [instrumentModal, setInstrumentModal] = useState({
   //   open: false,
@@ -313,6 +314,16 @@ const AdminAppointmentSchedulePage = () => {
     fetchAPI();
   }, [selectedDate, currentPage, pageSize, search]);
 
+  // Auto-refresh để cập nhật thời gian đếm ngược cho các booking đang xét nghiệm
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Force re-render để cập nhật thời gian
+      SetBookings((prev) => [...prev]);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   const handleCheckin = async (bookingId) => {
     const token = localStorage.getItem("accessToken");
     setAuthToken(token);
@@ -331,17 +342,9 @@ const AdminAppointmentSchedulePage = () => {
       } else if (data.responseCode === 0) {
         toast.success("Check in thành công!");
         await fetchAPI();
-        try {
-          const b =
-            (Booking || []).find((x) => x.bookingId === bookingId) || {};
-          navigate(
-            `/instruments?bookingId=${bookingId}&bookingCode=${encodeURIComponent(
-              b.bookingCode || ""
-            )}&patientName=${encodeURIComponent(b.patientName || "")}`
-          );
-        } catch (error) {
-          navigate(`/instruments?bookingId=${bookingId}`);
-        }
+
+        // Đánh dấu booking vừa check-in để hiển thị nút "Chọn máy"
+        setJustCheckedInId(bookingId);
       }
     } catch (err) {
       const message = "Bạn Chỉ Được CheckIn vào đúng ngày, giờ!!!";
@@ -533,21 +536,44 @@ const AdminAppointmentSchedulePage = () => {
                     //   checkingOutId === appointment.bookingId;
 
                     // Kiểm tra xem có instrument run đang chạy không
-                    const hasActiveRun = (() => {
+                    const getInstrumentRunStatus = () => {
                       const storageKey = `instrument_run_${appointment.bookingId}`;
                       const stored = localStorage.getItem(storageKey);
-                      if (!stored) return false;
+                      if (!stored)
+                        return {
+                          hasActiveRun: false,
+                          isRunning: false,
+                          remainingTime: 0,
+                        };
                       try {
                         const data = JSON.parse(stored);
                         const elapsed = Math.floor(
                           (Date.now() - data.startTime) / 1000
                         );
-                        const remaining = Math.max(0, 30 - elapsed);
-                        return remaining > 0 || data.phase === "running";
+                        const totalSeconds = data.totalSeconds || 30;
+                        const remaining = Math.max(0, totalSeconds - elapsed);
+                        const isRunning =
+                          remaining > 0 ||
+                          data.phase === "running" ||
+                          data.phase === "pending";
+                        const isDone = data.phase === "done";
+                        return {
+                          hasActiveRun: isRunning || isDone,
+                          isRunning: isRunning,
+                          remainingTime: remaining,
+                          phase: data.phase,
+                          instrumentName: data.instrumentName,
+                        };
                       } catch {
-                        return false;
+                        return {
+                          hasActiveRun: false,
+                          isRunning: false,
+                          remainingTime: 0,
+                        };
                       }
-                    })();
+                    };
+
+                    const runStatus = getInstrumentRunStatus();
 
                     return (
                       <tr key={appointment.bookingId}>
@@ -579,9 +605,9 @@ const AdminAppointmentSchedulePage = () => {
                               {isCheckingIn ? "Đang check in..." : "Check In"}
                             </button>
                           )}
-                          {canProcessSample && (
+                          {justCheckedInId === appointment.bookingId && (
                             <button
-                              onClick={() =>
+                              onClick={() => {
                                 navigate(
                                   `/instruments?bookingId=${
                                     appointment.bookingId
@@ -590,15 +616,40 @@ const AdminAppointmentSchedulePage = () => {
                                   )}&patientName=${encodeURIComponent(
                                     appointment.patientName || ""
                                   )}`
-                                )
-                              }
+                                );
+                                setJustCheckedInId(null);
+                              }}
                               className="Process-Button"
+                              style={{
+                                animation: "pulse 1.5s ease-in-out infinite",
+                              }}
                             >
-                              {hasActiveRun
-                                ? "⏱️ Tiếp tục xử lý"
-                                : "🔬 Xử lý mẫu"}
+                              🔬 Chọn máy
                             </button>
                           )}
+                          {canProcessSample &&
+                            justCheckedInId !== appointment.bookingId && (
+                              <button
+                                onClick={() =>
+                                  navigate(
+                                    `/instruments?bookingId=${
+                                      appointment.bookingId
+                                    }&bookingCode=${encodeURIComponent(
+                                      appointment.bookingCode || ""
+                                    )}&patientName=${encodeURIComponent(
+                                      appointment.patientName || ""
+                                    )}`
+                                  )
+                                }
+                                className="Process-Button"
+                              >
+                                {runStatus.isRunning
+                                  ? "⏱️ Đang xét nghiệm"
+                                  : runStatus.phase === "done"
+                                  ? "✅ Đã hoàn thành"
+                                  : "🔬 Chọn máy"}
+                              </button>
+                            )}
                         </td>
                         {/* <td>
                           <button

@@ -125,3 +125,20 @@
 html {
   scroll-behavior: smooth;
 }
+
+/* Responsive adjustments for Home page */
+@media (max-width: 768px) {
+  .home-container {
+    overflow-x: hidden;
+  }
+  
+  .section-animate {
+    transform: translateY(20px);
+  }
+}
+
+@media (max-width: 480px) {
+  .section-animate {
+    transform: translateY(15px);
+  }
+}

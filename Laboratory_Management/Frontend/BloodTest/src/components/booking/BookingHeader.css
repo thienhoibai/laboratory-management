@@ -27,37 +27,55 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 0;
+  flex-wrap: nowrap;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 20px 0;
+  -webkit-overflow-scrolling: touch;
 }
 
 .step {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   position: relative;
+  flex-shrink: 0;
+  min-width: 100px;
 }
 
 .step-circle {
-  width: 52px;
-  height: 52px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #e5e7eb;
+  background: #ffffff;
+  border: 2px solid rgba(15, 23, 42, 0.06);
   transition: all 0.3s ease;
+  box-shadow: 0 1px 2px rgba(14, 30, 50, 0.03);
+  position: relative;
+  z-index: 2;
 }
 
 .step.active .step-circle {
   background: #2563eb;
+  border-color: rgba(59, 130, 246, 0.22);
+  box-shadow: 0 6px 18px rgba(59, 130, 246, 0.08);
+}
+
+.step.completed .step-circle {
+  background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
+  border-color: transparent;
+  box-shadow: 0 8px 26px rgba(37, 99, 235, 0.12);
 }
 
 .step-number {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #6b7280;
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
   transition: color 0.3s ease;
 }
 
@@ -65,12 +83,18 @@
   color: #fff;
 }
 
+.step.completed .step-number {
+  display: none;
+}
+
 .step-label {
-  font-size: 0.875rem;
+  font-size: 13px;
   font-weight: 500;
   color: #6b7280;
   text-align: center;
   transition: color 0.3s ease;
+  min-width: 70px;
+  white-space: nowrap;
 }
 
 .step.active .step-label {
@@ -78,14 +102,35 @@
   font-weight: 600;
 }
 
-.step-arrow {
-  display: flex;
-  align-items: center;
-  color: #d1d5db;
-  margin: 0 8px;
+.step.completed .step-label {
+  color: #6b7280;
 }
 
-@media (max-width: 768px) {
+/* Connector line between steps */
+.step-connector {
+  width: 60px;
+  height: 3px;
+  background-color: rgba(37, 99, 235, 0.9);
+  border-radius: 2px;
+  margin: 0 6px;
+  position: relative;
+  top: -22px;
+  z-index: 1;
+  flex-shrink: 0;
+}
+
+/* Connector should be muted for future steps */
+.step:not(.completed) + .step-connector {
+  background: #e6eefc;
+}
+
+/* If previous step is completed, connector should be blue */
+.step.completed + .step-connector {
+  background-color: rgba(37, 99, 235, 0.9);
+}
+
+/* Tablet */
+@media (max-width: 1024px) {
   .booking-title {
     font-size: 2rem;
   }
@@ -93,9 +138,68 @@
   .booking-subtitle {
     font-size: 1rem;
   }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .booking-header {
+    margin-bottom: 24px;
+  }
+
+  .booking-title-section {
+    margin-bottom: 24px;
+  }
+
+  .booking-title {
+    font-size: 1.75rem;
+  }
+
+  .booking-subtitle {
+    font-size: 0.95rem;
+  }
 
   .booking-steps {
-    gap: 4px;
+    padding: 16px 0;
+    justify-content: flex-start;
+  }
+
+  .step {
+    min-width: 80px;
+  }
+
+  .step-circle {
+    width: 36px;
+    height: 36px;
+  }
+
+  .step-number {
+    font-size: 14px;
+  }
+
+  .step-label {
+    font-size: 11px;
+    min-width: 60px;
+  }
+
+  .step-connector {
+    width: 40px;
+    height: 2px;
+    top: -18px;
+    margin: 0 4px;
+  }
+}
+
+@media (max-width: 480px) {
+  .booking-title {
+    font-size: 1.5rem;
+  }
+
+  .booking-subtitle {
+    font-size: 0.875rem;
+  }
+
+  .step {
+    min-width: 70px;
   }
 
   .step-circle {
@@ -104,14 +208,18 @@
   }
 
   .step-number {
-    font-size: 0.875rem;
+    font-size: 12px;
   }
 
   .step-label {
-    font-size: 0.75rem;
+    font-size: 10px;
+    min-width: 50px;
   }
 
-  .step-arrow {
-    margin: 0 4px;
+  .step-connector {
+    width: 30px;
+    height: 2px;
+    top: -16px;
+    margin: 0 3px;
   }
 }

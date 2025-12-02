@@ -2,12 +2,12 @@
   rabbitmq:
     image: rabbitmq:3.13-management
     container_name: rabbitmq
-    ports: ["5672:5672","15672:15672"]
+    ports: [ "5672:5672", "15672:15672" ]
     environment:
       RABBITMQ_DEFAULT_USER: lab
       RABBITMQ_DEFAULT_PASS: lab123
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      test: [ "CMD", "rabbitmq-diagnostics", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -35,7 +35,7 @@
     depends_on:
       rabbitmq:
         condition: service_healthy
-    ports: ["5001:5001"]
+    ports: [ "5001:5001" ]
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
@@ -63,7 +63,7 @@
     depends_on:
       rabbitmq:
         condition: service_healthy
-    ports: ["5002:5002"]
+    ports: [ "5002:5002" ]
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
@@ -74,9 +74,9 @@
     container_name: api.gateway
     depends_on:
       - iam.api
-      - patient.api
+      -  patient.api
       - blogservice.api
-    ports: ["8080:8080"]
+    ports: [ "8080:8080" ]
 
   notify.api:
     build:
@@ -99,29 +99,28 @@
     depends_on:
       rabbitmq:
         condition: service_healthy
-    ports: ["5601:5601"]
+    ports: [ "5601:5601" ]
 
   testorder.api:
     build:
-     context: .
-     dockerfile: testorder.Dockerfile
+      context: .
+      dockerfile: testorder.Dockerfile
     container_name: testorder.api
     environment:
-     ASPNETCORE_ENVIRONMENT: "Docker"
-     TZ: Asia/Ho_Chi_Minh   # <== thêm cái nàyd
-     ConnectionStrings__DefaultConnection: "Server=host.docker.internal,1433;Database=TestOrderDB;User Id=sa;Password=12345;TrustServerCertificate=True;Encrypt=False"
-     RabbitMQ__Host: "rabbitmq"
-     RabbitMQ__User: "lab"
-     RabbitMQ__Pass: "lab123"
-      # JWT config (must match iam.api)
-     Jwt__Issuer: "lab-iam"
-     Jwt__Audience: "lab.api"
-     Jwt__SigningKey: "Jx6n2QvB5pTf8Kz3Wm9aS4Ld7Yh0Nr2Xu8Cj5Pk1Vg3Mz7Rb0Hq4Tn6Wy8Le2"
+      ASPNETCORE_ENVIRONMENT: "Docker"
+      TZ: Asia/Ho_Chi_Minh # <== thêm cái nàyd
+      ConnectionStrings__DefaultConnection: "Server=host.docker.internal,1433;Database=TestOrderDB;User Id=sa;Password=12345;TrustServerCertificate=True;Encrypt=False"
+      RabbitMQ__Host: "rabbitmq"
+      RabbitMQ__User: "lab"
+      RabbitMQ__Pass: "lab123" # JWT config (must match iam.api)
+      Jwt__Issuer: "lab-iam"
+      Jwt__Audience: "lab.api"
+      Jwt__SigningKey: "Jx6n2QvB5pTf8Kz3Wm9aS4Ld7Yh0Nr2Xu8Cj5Pk1Vg3Mz7Rb0Hq4Tn6Wy8Le2"
     depends_on:
-     rabbitmq:
-       condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     ports:
-     - "5003:5003"
+      - "5003:5003"
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
@@ -140,12 +139,14 @@
     depends_on:
       rabbitmq:
         condition: service_healthy
-    ports: ["5004:5004"]
+    ports: [ "5004:5004" ]
+    volumes:
+      - ./BlogService.Presentation/Images:/app/Images
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
   instrument.api:
-    build:  
+    build:
       context: .
       dockerfile: instrument.Dockerfile
     container_name: instrument.api
@@ -160,8 +161,8 @@
     depends_on:
       rabbitmq:
         condition: service_healthy
-    ports: ["5008:5008"]
-    volumes: 
-      - ./Instrument.Presentation/Images:/app/Images  # ✅ Bind mount - file sẽ sync với máy local
+    ports: [ "5008:5008" ]
+    volumes:
+      - ./Instrument.Presentation/Images:/app/Images # ✅ Bind mount - file sẽ sync với máy local
     extra_hosts:
       - "host.docker.internal:host-gateway"

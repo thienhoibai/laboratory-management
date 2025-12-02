@@ -6,6 +6,7 @@ using Instrument.Application.Services;
 using Instrument.Domain.Enums;
 using Swashbuckle.AspNetCore.Annotations;
 
+
 namespace Instrument.Presentation.Controllers;
 
 [ApiController]
@@ -42,7 +43,7 @@ public class InstrumentsController : ControllerBase
     {
         var (items, total) = await _service.GetAllWithFilterAsync(
             page, pageSize, search, status, runStatus, reagentStatus);
-        
+
         return Ok(new
         {
             total,
@@ -61,7 +62,7 @@ public class InstrumentsController : ControllerBase
     public async Task<IActionResult> GetById(int id)
     {
         var instrument = await _service.GetByIdAsync(id);
-        
+
         if (instrument == null)
             return NotFound(new { error = $"Instrument with ID {id} not found." });
 
@@ -72,11 +73,11 @@ public class InstrumentsController : ControllerBase
     /// GET /api/instruments/{code} - Lấy thông tin chi tiết máy theo code
     /// </summary>
     [HttpGet("{code}")]
-    
+
     public async Task<IActionResult> GetByCode(string code)
     {
         var instrument = await _service.GetByCodeAsync(code);
-        
+
         if (instrument == null)
             return NotFound(new { error = $"Instrument '{code}' not found." });
 
@@ -134,7 +135,7 @@ public class InstrumentsController : ControllerBase
                 // Tạo tên file unique
                 var fileName = $"{Guid.NewGuid()}{Path.GetExtension(request.Image.FileName)}";
                 var savePath = Path.Combine(folder, fileName);
-                
+
                 _logger.LogInformation($"💾 Saving to: {savePath}");
 
                 // Lưu file
@@ -181,8 +182,10 @@ public class InstrumentsController : ControllerBase
                 request.InstrumentCode,
                 request.Name,
                 (InstrumentStatus)request.Status,
+                (ReagentStatus)request.ReagentStatus,
+
                 imagePath);
-            
+
             var instrument = await _service.CreateAsync(appDto);
 
             _logger.LogInformation($"✅ Instrument created: {instrument.InstrumentCode}");
@@ -220,22 +223,63 @@ public class InstrumentsController : ControllerBase
     /// </remarks>
     [HttpPut("{code}")]
     [Authorize(Policy = "perm:Instrument.Update")]
-    public async Task<IActionResult> Update(string code, [FromBody] UpdateInstrumentRequest request)
+    public async Task<IActionResult> Update(string code, [FromForm] UpdateInstrumentHttpRequest request)
     {
-        try
-        {
-            var instrument = await _service.UpdateAsync(code, request);
-            
-            if (instrument == null)
-                return NotFound(new { error = $"Instrument '{code}' not found." });
+        // Lấy thông tin máy hiện có
+        var instrument = await _service.GetByCodeAsync(code);
+        if (instrument == null)
+            return NotFound(new { error = $"Instrument '{code}' not found." });
 
-            return Ok(instrument);
-        }
-        catch (InvalidOperationException ex)
+        string? newImagePath = instrument.ImagePath;
+
+        // Nếu có upload ảnh mới
+        if (request.Image != null)
         {
-            return BadRequest(new { error = ex.Message });
+            _logger.LogInformation("🔵 Updating image...");
+
+            var folder = Path.Combine(Directory.GetCurrentDirectory(), "Images");
+            Directory.CreateDirectory(folder);
+
+            var fileName = $"{Guid.NewGuid()}{Path.GetExtension(request.Image.FileName)}";
+            var savePath = Path.Combine(folder, fileName);
+
+            using (var stream = new FileStream(savePath, FileMode.Create))
+            {
+                await request.Image.CopyToAsync(stream);
+            }
+
+            // Lưu đường dẫn mới vào DB
+            newImagePath = Path.Combine("Images", fileName);
+
+            // Xóa ảnh cũ nếu tồn tại
+            if (!string.IsNullOrEmpty(instrument.ImagePath))
+            {
+                var oldImage = Path.Combine(Directory.GetCurrentDirectory(), instrument.ImagePath);
+                if (System.IO.File.Exists(oldImage))
+                {
+                    System.IO.File.Delete(oldImage);
+                    _logger.LogInformation($"🗑 Deleted old image: {oldImage}");
+                }
+            }
+
+            _logger.LogInformation($"📷 Updated image: {newImagePath}");
         }
+
+        // Map sang DTO Application
+        var appRequest = new Instrument.Application.Instruments.DTOs.Requests.UpdateInstrumentRequest(
+            request.Name,
+            request.Status,
+            request.ReagentStatus,
+            newImagePath
+        );
+
+        // Cập nhật instrument
+        var updated = await _service.UpdateAsync(code, appRequest);
+
+        return Ok(updated);
     }
+
+
 
     /// <summary>
     /// DELETE /api/instruments/{code} - Xóa máy xét nghiệm
@@ -247,7 +291,7 @@ public class InstrumentsController : ControllerBase
         try
         {
             var deleted = await _service.DeleteAsync(code);
-            
+
             if (!deleted)
                 return NotFound(new { error = $"Instrument '{code}' not found." });
 
@@ -266,7 +310,7 @@ public class InstrumentsController : ControllerBase
     public async Task<IActionResult> GetStatus(string code)
     {
         var status = await _service.GetStatusAsync(code);
-        
+
         if (status == null)
             return NotFound(new { error = $"Instrument '{code}' not found." });
 

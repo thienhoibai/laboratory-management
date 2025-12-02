@@ -9,6 +9,7 @@ import { setAuthToken } from "../../utils/auth";
 import { calculateAge } from "../../utils/formatDate";
 import api from "../../configs/axios";
 import { bookingService } from "../../services/TestOrderService.jsx";
+import Navbar from "../navbar/Navbar";
 
 function MedicalRecordDetail() {
   const navigate = useNavigate();
@@ -46,7 +47,7 @@ function MedicalRecordDetail() {
         const token = localStorage.getItem("accessToken");
         if (token) setAuthToken(token);
         const response = await api.get(
-          `testorder/api/Booking/patient?patientId=${patientId}&pageNumber=1&pageSize=1000`
+          `testorder/api/Booking/patient?patientId=${patientId}&pageNumber=1&pageSize=1000&filterStatus=5`
         );
         if (response.status >= 200 && response.status < 300) {
           // Hỗ trợ cả trường hợp trả về object có bookingResponses hoặc array
@@ -60,13 +61,9 @@ function MedicalRecordDetail() {
           } else if (Array.isArray(response.data?.data)) {
             bookingsRaw = response.data.data;
           }
-          // Lọc chỉ lấy booking status completed
-          const bookings = bookingsRaw.filter(
-            (b) => (b.status || "").toLowerCase() === "completed"
-          );
           // Xử lý từng booking để lấy thông tin gói hoặc catalog
           const processedBookings = await Promise.all(
-            bookings.map(async (booking) => {
+            bookingsRaw.map(async (booking) => {
               let title = "Xét nghiệm đơn lẻ";
               if (booking.bundleId) {
                 try {
@@ -159,26 +156,25 @@ function MedicalRecordDetail() {
 
   return (
     <div className="medical-record-detail">
+      <Navbar />
       {/* Header */}
       <div className="medical-record-header-1">
-        <div className="breadcrumb">
-          <button
-            className="breadcrumb-link"
-            onClick={() => navigate("/profile")}
+        <button
+          className="back-to-profile-btn"
+          onClick={() => navigate("/profile")}
+        >
+          <svg
+            className="back-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
           >
-            <svg
-              className="back-icon"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M19 12H5" />
-              <path d="M12 19l-7-7 7-7" />
-            </svg>
-            Quay về trang chủ
-          </button>
-        </div>
+            <path d="M19 12H5" />
+            <path d="M12 19l-7-7 7-7" />
+          </svg>
+          Quay lại thông tin cá nhân
+        </button>
         <h1 className="page-title-1">Chi tiết hồ sơ bệnh án</h1>
       </div>
 

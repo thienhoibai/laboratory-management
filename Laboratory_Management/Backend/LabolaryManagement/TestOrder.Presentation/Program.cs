@@ -3,15 +3,16 @@ using TestOrder.Application.Services;
 using TestOrder.Application.Services.Booking;
 using TestOrder.Application.Services.Payment;
 using TestOrder.Application.Services.InstrumentBridge;
+using TestOrder.Application.Statistics.Services; // ✅ Add Statistics
 using TestOrder.Infrastructure.Base;
 using TestOrder.Infrastructure.Data;
 using TestOrder.Infrastructure.Repository;
 using MassTransit;
 using Contracts.Notifications;
 using RabbitMQ.Client;
-using Common.Authorization; // ✅ Thêm
+using Common.Authorization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization; // ✅ Thêm
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
@@ -23,6 +24,10 @@ namespace TestOrder.Presentation
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            // ===== Kiểm tra môi trường =====
+            var isDocker = string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Docker", StringComparison.OrdinalIgnoreCase);
+            Console.WriteLine($"🔧 Environment: {builder.Configuration.GetValue<string>("ASPNETCORE_ENVIRONMENT")} (IsDocker: {isDocker})");
 
             // Add services to the container.
             builder.Services.AddControllers();
@@ -44,6 +49,21 @@ namespace TestOrder.Presentation
 
             // Đăng ký HttpClient factory
             builder.Services.AddHttpClient();
+
+            // ===== HttpClient cho Patient API =====
+            // Trong Docker: phải gọi qua API Gateway (port 8080)
+            // Local: gọi trực tiếp vào Patient API (port 5071)
+            var patientApiUrl = isDocker 
+                ? "http://api.gateway:8080/patient/" 
+                : (builder.Configuration["PatientApiUrl"] ?? "http://localhost:5071/");
+            
+            Console.WriteLine($"🔧 Patient API URL: {patientApiUrl}");
+            
+            builder.Services.AddHttpClient("PatientApi", client =>
+            {
+                client.BaseAddress = new Uri(patientApiUrl);
+                client.Timeout = TimeSpan.FromSeconds(30);
+            });
 
             // CSV Ingest Worker options & hosted service
             builder.Services.Configure<TestOrder.Presentation.Workers.CsvIngestOptions>(
@@ -71,6 +91,7 @@ namespace TestOrder.Presentation
             builder.Services.AddScoped<TestResultService>();
             builder.Services.AddScoped<TestReportRepository>();
             builder.Services.AddScoped<TestReportService>();
+            builder.Services.AddScoped<TestOrderStatisticsService>(); // ✅ Add Statistics Service
 
             builder.Services.AddHostedService<ExpiresBookingService>();
 
@@ -185,7 +206,8 @@ namespace TestOrder.Presentation
                     policy
                         .WithOrigins(
                             "http://localhost:5174",
-                            "http://127.0.0.1:5174"
+                            "http://127.0.0.1:5174",
+                            "https://blood-test-eta.vercel.app"
                         )
                         .AllowAnyHeader()
                         .AllowAnyMethod()
@@ -194,8 +216,6 @@ namespace TestOrder.Presentation
             });
 
             var app = builder.Build();
-
-            var isDocker = string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Docker", StringComparison.OrdinalIgnoreCase);
 
             // Configure the HTTP request pipeline
             if (app.Environment.IsDevelopment() || isDocker)

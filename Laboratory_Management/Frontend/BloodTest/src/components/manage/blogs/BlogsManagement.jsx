@@ -12,8 +12,10 @@ import {
   FiCheck,
   FiXCircle,
   FiEdit,
+  FiUpload,
+  FiImage,
 } from "react-icons/fi";
-import { Pagination } from "antd";
+import { Pagination, Spin } from "antd";
 import { toast } from "react-toastify";
 import BlogService from "../../../services/BlogService";
 import { setAuthToken } from "../../../utils/auth";
@@ -61,7 +63,9 @@ const BlogsManagement = () => {
     categoryId: "",
     content: "",
     img: "",
+    imageFile: null, // File object for upload
   });
+  const [imagePreview, setImagePreview] = useState(""); // Preview URL
   const [formErrors, setFormErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -102,6 +106,15 @@ const BlogsManagement = () => {
     loadCategories();
   }, []);
 
+  // Cleanup preview URL on unmount or when modal closes
+  useEffect(() => {
+    return () => {
+      if (imagePreview && imagePreview.startsWith("blob:")) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview]);
+
   const loadBlogs = async () => {
     setLoading(true);
     try {
@@ -139,7 +152,7 @@ const BlogsManagement = () => {
         setBlogs(blogsData);
       }
     } catch (error) {
-      console.error("Error loading blogs:", error);
+      "Error loading blogs:", error;
       toast.error("Không thể tải danh sách bài viết. Vui lòng thử lại!");
     } finally {
       setLoading(false);
@@ -155,7 +168,7 @@ const BlogsManagement = () => {
       const categoriesData = await BlogService.getCategories();
       setCategories(categoriesData);
     } catch (error) {
-      console.error("Error loading categories:", error);
+      "Error loading categories:", error;
       toast.error("Không thể tải danh mục. Vui lòng thử lại!");
     } finally {
       setCategoriesLoading(false);
@@ -196,7 +209,9 @@ const BlogsManagement = () => {
       categoryId: "",
       content: "",
       img: "",
+      imageFile: null,
     });
+    setImagePreview("");
     setFormErrors({});
     setIsEditMode(false);
     setEditingBlogId(null);
@@ -211,7 +226,9 @@ const BlogsManagement = () => {
       categoryId: "",
       content: "",
       img: "",
+      imageFile: null,
     });
+    setImagePreview("");
     setFormErrors({});
     setIsEditMode(false);
     setEditingBlogId(null);
@@ -223,6 +240,7 @@ const BlogsManagement = () => {
       toast.error("Không xác định được ID bài viết để chỉnh sửa");
       return;
     }
+    const existingImageUrl = blog.img || blog.thumbnailUrl || "";
     setFormData({
       title: blog.title || "",
       category: blog.category || "",
@@ -232,8 +250,10 @@ const BlogsManagement = () => {
           : "",
       status: blog.status || "pending",
       content: blog.content || "",
-      img: blog.img || blog.thumbnailUrl || "",
+      img: existingImageUrl,
+      imageFile: null, // Reset file when editing
     });
+    setImagePreview(existingImageUrl); // Show existing image as preview
     setFormErrors({});
     setIsEditMode(true);
     setEditingBlogId(resolvedId);
@@ -276,6 +296,47 @@ const BlogsManagement = () => {
     }
   };
 
+  // Handle file selection
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) {
+      setFormData((prev) => ({ ...prev, imageFile: null }));
+      setImagePreview(isEditMode ? formData.img : "");
+      return;
+    }
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      setFormErrors((prev) => ({
+        ...prev,
+        img: "Vui lòng chọn file ảnh hợp lệ",
+      }));
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setFormErrors((prev) => ({
+        ...prev,
+        img: "Kích thước file không được vượt quá 5MB",
+      }));
+      return;
+    }
+
+    // Create preview URL
+    const previewUrl = URL.createObjectURL(file);
+    setImagePreview(previewUrl);
+    setFormData((prev) => ({ ...prev, imageFile: file }));
+
+    // Clear error
+    if (formErrors.img) {
+      setFormErrors((prev) => ({
+        ...prev,
+        img: "",
+      }));
+    }
+  };
+
   // Form validation
   const validateForm = () => {
     const errors = {};
@@ -291,8 +352,9 @@ const BlogsManagement = () => {
     if (!formData.content.trim()) {
       errors.content = "Nội dung bài viết không được để trống";
     }
-    if (!formData.img) {
-      errors.img = "Vui lòng nhập đường dẫn ảnh bài viết";
+    // Validate image: require file for create, optional for edit
+    if (!isEditMode && !formData.imageFile) {
+      errors.img = "Vui lòng chọn ảnh bài viết";
     }
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -323,14 +385,14 @@ const BlogsManagement = () => {
       const categoryIdNumber = Number(formData.categoryId);
       const hasValidCategoryId = !Number.isNaN(categoryIdNumber);
 
-      // Prepare data
+      // Prepare data with imageFile
       const submitData = {
         title: formData.title.trim(),
         category: trimmedCategoryName,
         content: formData.content.trim(),
-        img: formData.img,
         tag: trimmedCategoryName,
         authorId: id,
+        imageFile: formData.imageFile, // Include file if exists
       };
 
       if (hasValidCategoryId) {
@@ -341,7 +403,6 @@ const BlogsManagement = () => {
         if (editingBlogId === null || editingBlogId === undefined) {
           throw new Error("Không tìm thấy ID bài viết để cập nhật");
         }
-        submitData.thumbnailUrl = formData.img;
         await BlogService.updateBlog(editingBlogId, submitData);
         toast.success("Cập nhật bài viết thành công!");
       } else {
@@ -352,7 +413,7 @@ const BlogsManagement = () => {
       closeModal();
       loadBlogs();
     } catch (error) {
-      console.error("Error saving blog:", error);
+      "Error saving blog:", error;
       toast.error(
         error.response?.data?.message ||
           "Có lỗi xảy ra khi lưu bài viết. Vui lòng thử lại!"
@@ -392,7 +453,7 @@ const BlogsManagement = () => {
       closeDeleteModal();
       loadBlogs();
     } catch (error) {
-      console.error("Error deleting blog:", error);
+      "Error deleting blog:", error;
       toast.error(
         error.response?.data?.message ||
           "Có lỗi xảy ra khi xóa bài viết. Vui lòng thử lại!"
@@ -417,7 +478,7 @@ const BlogsManagement = () => {
       toast.success("Đã duyệt bài viết thành công!");
       loadBlogs();
     } catch (error) {
-      console.error("Error approving blog:", error);
+      "Error approving blog:", error;
       toast.error(
         error.response?.data?.message ||
           "Có lỗi xảy ra khi duyệt bài viết. Vui lòng thử lại!"
@@ -440,7 +501,7 @@ const BlogsManagement = () => {
       toast.success("Đã hủy bài viết thành công!");
       loadBlogs();
     } catch (error) {
-      console.error("Error rejecting blog:", error);
+      "Error rejecting blog:", error;
       toast.error(
         error.response?.data?.message ||
           "Có lỗi xảy ra khi hủy bài viết. Vui lòng thử lại!"
@@ -449,9 +510,38 @@ const BlogsManagement = () => {
   };
 
   // View detail handlers
-  const openViewDetailModal = (blog) => {
-    setViewingBlog(blog);
-    setIsViewDetailOpen(true);
+  const openViewDetailModal = async (blog) => {
+    const blogId = resolveBlogId(blog);
+    if (!blogId && blogId !== 0) {
+      toast.error("Không xác định được ID bài viết để xem chi tiết");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (token) setAuthToken(token);
+
+      // Fetch fresh blog data from API to ensure we have the latest imagePath
+      const blogDetail = await BlogService.getBlogById(blogId);
+
+      // Check if blogDetail is valid
+      if (!blogDetail || Object.keys(blogDetail).length === 0) {
+        setViewingBlog(blog);
+        setIsViewDetailOpen(true);
+        return;
+      }
+
+      setViewingBlog(blogDetail);
+      setIsViewDetailOpen(true);
+    } catch (error) {
+      "Error loading blog detail:", error;
+      // Fallback to using blog from list if API call fails
+      setViewingBlog(blog);
+      setIsViewDetailOpen(true);
+      toast.warning(
+        "Không thể tải chi tiết bài viết. Hiển thị thông tin từ danh sách."
+      );
+    }
   };
 
   const closeViewDetailModal = () => {
@@ -600,7 +690,7 @@ const BlogsManagement = () => {
             </div>
             {loading ? (
               <div style={{ textAlign: "center", padding: "40px" }}>
-                <p>Đang tải dữ liệu...</p>
+                <Spin size="large" />
               </div>
             ) : displayedBlogs.length > 0 ? (
               displayedBlogs.map((blog) => (
@@ -730,36 +820,64 @@ const BlogsManagement = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="blogs-modal-form">
-              {/* Image URL */}
+              {/* Image Upload */}
               <div className="blogs-form-group">
                 <label className="blogs-form-label">
-                  Ảnh bài viết (Image URL)
+                  <FiImage /> Ảnh bài viết{" "}
+                  {!isEditMode && <span className="required-star">*</span>}
                 </label>
-                <input
-                  type="url"
-                  name="img"
-                  value={formData.img}
-                  onChange={handleInputChange}
-                  className={`blogs-form-input ${
-                    formErrors.img ? "error" : ""
-                  }`}
-                  placeholder="Dán đường dẫn ảnh (https://...)"
-                />
-                {formData.img && (
-                  <div className="blogs-image-preview">
-                    <img src={formData.img} alt="Preview" />
+                {!imagePreview ? (
+                  <div className="blogs-image-upload-area">
+                    <input
+                      type="file"
+                      name="imageFile"
+                      id="imageFile"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="blogs-file-input-hidden"
+                    />
+                    <label
+                      htmlFor="imageFile"
+                      className="blogs-image-upload-label"
+                    >
+                      <div className="blogs-upload-icon">
+                        <FiUpload />
+                      </div>
+                      <div className="blogs-upload-text">
+                        <span className="blogs-upload-primary">
+                          Nhấp để tải ảnh lên
+                        </span>
+                        <span className="blogs-upload-secondary">
+                          hoặc kéo thả ảnh vào đây
+                        </span>
+                      </div>
+                      <span className="blogs-upload-hint">
+                        JPG, PNG (tối đa 5MB)
+                      </span>
+                    </label>
+                  </div>
+                ) : (
+                  <div className="blogs-image-preview-wrapper">
+                    <div className="blogs-image-preview">
+                      <img src={imagePreview} alt="Preview" />
+                    </div>
                     <button
                       type="button"
-                      className="blogs-image-remove"
+                      className="blogs-image-change-btn"
                       onClick={() =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          img: "",
-                        }))
+                        document.getElementById("imageFile")?.click()
                       }
                     >
-                      <FiX />
+                      <FiUpload /> Thay đổi ảnh
                     </button>
+                    <input
+                      type="file"
+                      name="imageFile"
+                      id="imageFile"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="blogs-file-input-hidden"
+                    />
                   </div>
                 )}
                 {formErrors.img && (
@@ -769,7 +887,9 @@ const BlogsManagement = () => {
 
               {/* Title */}
               <div className="blogs-form-group">
-                <label className="blogs-form-label">Tiêu đề bài viết</label>
+                <label className="blogs-form-label">
+                  Tiêu đề bài viết <span className="required-star">*</span>
+                </label>
                 <input
                   type="text"
                   name="title"
@@ -778,7 +898,7 @@ const BlogsManagement = () => {
                   className={`blogs-form-input ${
                     formErrors.title ? "error" : ""
                   }`}
-                  placeholder="Nhập tiêu đề bài viết"
+                  placeholder="Nhập tiêu đề bài viết..."
                 />
                 {formErrors.title && (
                   <span className="blogs-form-error">{formErrors.title}</span>
@@ -787,12 +907,14 @@ const BlogsManagement = () => {
 
               {/* Category */}
               <div className="blogs-form-group">
-                <label className="blogs-form-label">Danh mục</label>
+                <label className="blogs-form-label">
+                  Danh mục <span className="required-star">*</span>
+                </label>
                 <select
                   name="categoryId"
                   value={formData.categoryId}
                   onChange={handleCategorySelect}
-                  className={`blogs-form-input ${
+                  className={`blogs-form-input blogs-form-select ${
                     formErrors.categoryId ? "error" : ""
                   }`}
                   disabled={categoriesLoading}
@@ -800,7 +922,7 @@ const BlogsManagement = () => {
                   <option value="">
                     {categoriesLoading
                       ? "Đang tải danh mục..."
-                      : "Chọn danh mục"}
+                      : "Chọn danh mục..."}
                   </option>
                   {!categoriesLoading &&
                     formData.categoryId &&
@@ -833,7 +955,9 @@ const BlogsManagement = () => {
 
               {/* Content */}
               <div className="blogs-form-group">
-                <label className="blogs-form-label">Nội dung</label>
+                <label className="blogs-form-label">
+                  Nội dung <span className="required-star">*</span>
+                </label>
                 <textarea
                   name="content"
                   value={formData.content}
@@ -841,9 +965,14 @@ const BlogsManagement = () => {
                   className={`blogs-form-textarea ${
                     formErrors.content ? "error" : ""
                   }`}
-                  placeholder="Nhập nội dung bài viết"
-                  rows={10}
+                  placeholder="Nhập nội dung bài viết..."
+                  rows={8}
                 />
+                <div className="blogs-textarea-footer">
+                  <span className="blogs-char-count">
+                    {formData.content.length} ký tự
+                  </span>
+                </div>
                 {formErrors.content && (
                   <span className="blogs-form-error">{formErrors.content}</span>
                 )}
@@ -864,11 +993,20 @@ const BlogsManagement = () => {
                   className="blogs-modal-submit"
                   disabled={isSubmitting}
                 >
-                  {isSubmitting
-                    ? "Đang lưu..."
-                    : isEditMode
-                    ? "Cập nhật"
-                    : "Lưu thay đổi"}
+                  {isSubmitting ? (
+                    <>
+                      <span className="blogs-spinner"></span>
+                      Đang xử lý...
+                    </>
+                  ) : isEditMode ? (
+                    <>
+                      <FiCheck /> Cập nhật bài viết
+                    </>
+                  ) : (
+                    <>
+                      <FiPlus /> Tạo bài viết
+                    </>
+                  )}
                 </button>
               </div>
             </form>
@@ -938,11 +1076,41 @@ const BlogsManagement = () => {
             </div>
 
             <div className="blogs-view-content">
-              {viewingBlog.img && (
-                <div className="blogs-view-image">
-                  <img src={viewingBlog.img} alt={viewingBlog.title} />
-                </div>
-              )}
+              {(() => {
+                // Get image URL - check all possible fields including imagePath
+                const imageUrl =
+                  viewingBlog.img ||
+                  viewingBlog.thumbnailUrl ||
+                  viewingBlog.imageUrl ||
+                  (viewingBlog.imagePath
+                    ? BlogService.buildImageUrl(viewingBlog.imagePath)
+                    : null);
+
+                return imageUrl ? (
+                  <div className="blogs-view-image">
+                    <img
+                      src={imageUrl}
+                      alt={viewingBlog.title || "Blog image"}
+                      onError={(e) => {
+                        const img = e.target;
+                        const container = img.closest(".blogs-view-image");
+                        if (container) {
+                          img.style.display = "none";
+                          const errorDiv =
+                            container.querySelector(".blogs-image-error");
+                          if (errorDiv) {
+                            errorDiv.classList.add("show");
+                          }
+                        }
+                      }}
+                    />
+                    <div className="blogs-image-error">
+                      <FiImage />
+                      <span>Không thể tải hình ảnh</span>
+                    </div>
+                  </div>
+                ) : null;
+              })()}
 
               <div className="blogs-view-info">
                 <div className="blogs-view-row">

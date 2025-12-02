@@ -1,4 +1,5 @@
 ﻿using BlogService.Application.Services;
+using BlogService.Application.Statistics.Services; // ✅ Add Statistics
 using BlogService.Infrastructure.Data;
 using BlogService.Infrastructure.Repository;
 using Common.Authorization; // ✅ Thêm
@@ -36,6 +37,7 @@ namespace BlogService.Presentation
             builder.Services.AddScoped<BlogPostTagRepository>();
             builder.Services.AddScoped<CommentRepository>();
             builder.Services.AddScoped<CommentService>();
+            builder.Services.AddScoped<BlogStatisticsService>(); // ✅ Add Statistics Service
 
             // ===== JWT Authentication =====
             var issuer = builder.Configuration["Jwt:Issuer"] ?? "lab-iam";
@@ -114,7 +116,8 @@ namespace BlogService.Presentation
                 {
                     policy.WithOrigins(
                         "http://localhost:5174",
-                        "http://127.0.0.1:5174"
+                        "http://127.0.0.1:5174",
+                        "https://blood-test-eta.vercel.app"
                     )
                     .AllowAnyHeader()
                     .AllowAnyMethod()

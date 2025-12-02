@@ -167,7 +167,17 @@ INSERT INTO TestCatalog (TestName, Description, Price) VALUES
 (N'Estradiol', N'Định lượng hormone estradiol', 80000),
 (N'Prolactin', N'Định lượng hormone prolactin', 80000),
 (N'CRP', N'Định lượng protein phản ứng C (CRP)', 55000),
-(N'RF', N'Định lượng yếu tố dạng thấp (RF)', 50000);
+(N'RF', N'Định lượng yếu tố dạng thấp (RF)', 50000),
+(N'Điện giải đồ', N'Đo các chất điện giải: Natri, Kali, Clo', 90000),          -- 11
+(N'Xét nghiệm tuyến giáp toàn phần (FT3, FT4)', N'Đánh giá hormone FT3 và FT4', 140000),  -- 12
+(N'Xét nghiệm HbA1c', N'Đánh giá đường huyết trung bình 3 tháng', 120000),     -- 13
+(N'Xét nghiệm viêm gan B (HBsAg)', N'Tầm soát kháng nguyên viêm gan B', 80000), -- 14
+(N'Xét nghiệm viêm gan C (Anti-HCV)', N'Tầm soát kháng thể HCV', 90000),       -- 15
+(N'Xét nghiệm nước tiểu 10 thông số', N'Đánh giá thận và chuyển hóa', 60000),  -- 16
+(N'Xét nghiệm acid uric', N'Đo nồng độ acid uric trong máu', 70000),           -- 17
+(N'Xét nghiệm amylase', N'Đo hoạt độ men amylase', 80000),                     -- 18
+(N'Xét nghiệm lipase', N'Đo hoạt độ men lipase', 85000),                       -- 19
+(N'Xét nghiệm Beta-hCG', N'Định lượng hormone hCG', 100000); 
 
 
 INSERT INTO TestParameter (ParameterName, Unit, ReferenceRange, MinRange, MaxRange) VALUES
@@ -203,7 +213,43 @@ INSERT INTO TestParameter (ParameterName, Unit, ReferenceRange, MinRange, MaxRan
 (N'Estradiol', N'pmol/L', N'70 - 220', 70, 220),
 (N'Prolactin', N'mU/L', N'127 - 637', 127, 637),
 (N'CRP', N'mg/L', N'0 - 10', 0, 10),
-(N'RF', N'IU/mL', N'0 - 14', 0, 14);
+(N'RF', N'IU/mL', N'0 - 14', 0, 14),
+
+(N'Natri (Na+)', N'mmol/L', N'135 - 145', 135, 145),          -- 23
+(N'Kali (K+)', N'mmol/L', N'3.5 - 5.0', 3.5, 5.0),            -- 24
+(N'Clo (Cl-)', N'mmol/L', N'96 - 106', 96, 106),              -- 25
+
+-- FT3 - FT4 (Catalog 12)
+(N'FT3', N'pg/mL', N'2.0 - 4.4', 2.0, 4.4),                    -- 26
+(N'FT4', N'ng/dL', N'0.8 - 1.8', 0.8, 1.8),                    -- 27
+
+-- HbA1c (Catalog 13)
+(N'HbA1c', N'%', N'4.0 - 5.6', 4.0, 5.6),                      -- 28
+
+-- HBsAg (Catalog 14)
+(N'HBsAg định tính', N'', N'Âm tính', NULL, NULL),            -- 29
+
+-- Anti-HCV (Catalog 15)
+(N'Anti-HCV định tính', N'', N'Âm tính', NULL, NULL),         -- 30
+
+-- Nước tiểu 10 thông số (Catalog 16)
+(N'pH nước tiểu', N'', N'4.5 - 8.0', 4.5, 8.0),               -- 31
+(N'Protein niệu', N'mg/dL', N'0 - 20', 0, 20),                -- 32
+(N'Glucose niệu', N'mg/dL', N'0 - 15', 0, 15),                -- 33
+(N'Ketone', N'mg/dL', N'0 - 5', 0, 5),                        -- 34
+(N'Bilirubin niệu', N'mg/dL', N'0 - 0.3', 0, 0.3),            -- 35
+
+-- Acid uric (Catalog 17)
+(N'Acid uric', N'mg/dL', N'3.5 - 7.2', 3.5, 7.2),             -- 36
+
+-- Amylase (Catalog 18)
+(N'Amylase', N'U/L', N'30 - 110', 30, 110),                   -- 37
+
+-- Lipase (Catalog 19)
+(N'Lipase', N'U/L', N'13 - 60', 13, 60),                      -- 38
+
+-- Beta-hCG (Catalog 20)
+(N'Beta-hCG', N'mIU/mL', N'0 - 25', 0, 25);                   -- 39
 
 
 INSERT INTO CatalogParameter (CatalogId, ParameterId) VALUES
@@ -227,7 +273,38 @@ INSERT INTO CatalogParameter (CatalogId, ParameterId) VALUES
 (7, 19),  -- Estradiol
 (8, 20),  -- Prolactin
 (9, 21),  -- CRP
-(10, 22); -- RF
+(10, 22), -- RF
+
+-- 11: Điện giải đồ
+(11, 23), (11, 24), (11, 25),
+
+-- 12: FT3 - FT4
+(12, 26), (12, 27),
+
+-- 13: HbA1c
+(13, 28),
+
+-- 14: HBsAg
+(14, 29),
+
+-- 15: Anti-HCV
+(15, 30),
+
+-- 16: Nước tiểu 10 thông số
+(16, 31), (16, 32), (16, 33), (16, 34), (16, 35),
+
+-- 17: Acid uric
+(17, 36),
+
+-- 18: Amylase
+(18, 37),
+
+-- 19: Lipase
+(19, 38),
+
+-- 20: Beta-hCG
+(20, 39);
+
 
 
 
@@ -236,6 +313,40 @@ VALUES
 (N'Xét nghiệm tổng quát',N'Gói xét nghiệm cơ bản bao gồm công thức máu, đường huyết, chức năng gan',450000, 1),
 (N'Xét nghiệm sinh hóa',N'Đánh giá chức năng gan, thận và các chỉ số sinh hóa quan trọng',650000, 1),
 (N'Xét nghiệm toàn diện',N'Gói xét nghiệm đầy đủ nhất cho sức khỏe tổng thể',1200000, 1)
+
+
+-- ========================
+-- Bundle 1: Xét nghiệm tổng quát (Id = 1)
+-- ========================
+INSERT INTO CatalogBundle (BundleId, CatalogId) VALUES
+(1, 1),   -- CBC
+(1, 2),   -- Đường huyết
+(1, 4),   -- Chức năng gan
+(1, 11),  -- Điện giải đồ
+(1, 13);  -- HbA1c
+
+
+-- ========================
+-- Bundle 2: Xét nghiệm sinh hóa (Id = 2)
+-- ========================
+INSERT INTO CatalogBundle (BundleId, CatalogId) VALUES
+(2, 3),   -- Mỡ máu
+(2, 5),   -- Chức năng thận
+(2, 16),  -- Nước tiểu 10 thông số
+(2, 17),  -- Acid uric
+(2, 18),  -- Amylase
+(2, 19);  -- Lipase
+
+
+-- ========================
+-- Bundle 3: Xét nghiệm toàn diện (Id = 3)
+-- Gồm tất cả 20 catalog
+-- ========================
+INSERT INTO CatalogBundle (BundleId, CatalogId) VALUES
+(3, 1), (3, 2), (3, 3), (3, 4), (3, 5),
+(3, 6), (3, 7), (3, 8), (3, 9), (3, 10),
+(3, 11), (3, 12), (3, 13), (3, 14), (3, 15),
+(3, 16), (3, 17), (3, 18), (3, 19), (3, 20);
 
 delete from Booking
 		select * from Booking

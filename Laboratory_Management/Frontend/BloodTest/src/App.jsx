@@ -1,4 +1,6 @@
 import "./App.css";
+import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import LoginPage from "./pages/login/Login";
 import RegisterPage from "./pages/register/Register";
 import HomePage from "./pages/home/Home";
@@ -38,134 +40,307 @@ import CreatePatient from "./components/profile/CreateProfile";
 import BlogPage from "./pages/blog/BlogPage";
 import BlogDetailPage from "./pages/blog/BlogDetailPage";
 import ChangePasswordModal from "./components/profile/ChangePassword";
+import LoadingOverlay from "./components/Loading/LoadingOverlay";
 
 import SuccessBooking from "./components/booking/SuccessBooking";
+
+// Wrapper component to handle loading state
+function AppContent() {
+  const [isLoading, setIsLoading] = useState(false);
+  const location = useLocation();
+
+  useEffect(() => {
+    setIsLoading(true);
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 300); // Short delay to show loading
+
+    return () => clearTimeout(timer);
+  }, [location.pathname]);
+
+  return <>{isLoading && <LoadingOverlay />}</>;
+}
 
 function App() {
   const router = createBrowserRouter([
     {
       path: "/",
-      element: <HomePage />,
+      element: (
+        <>
+          <AppContent />
+          <HomePage />
+        </>
+      ),
     },
     {
       path: "login",
-      element: <LoginPage />,
+      element: (
+        <>
+          <AppContent />
+          <LoginPage />
+        </>
+      ),
     },
     {
       path: "register",
-      element: <RegisterPage />,
+      element: (
+        <>
+          <AppContent />
+          <RegisterPage />
+        </>
+      ),
     },
     {
       path: "booking",
-      element: <BookingPage />,
+      element: (
+        <>
+          <AppContent />
+          <BookingPage />
+        </>
+      ),
     },
     {
       path: "history",
-      element: <HistoryPage />,
+      element: (
+        <>
+          <AppContent />
+          <HistoryPage />
+        </>
+      ),
     },
     {
       path: "profile",
-      element: <ProfilePage />,
+      element: (
+        <>
+          <AppContent />
+          <ProfilePage />
+        </>
+      ),
     },
     {
       path: "change-password",
-      element: <ChangePasswordModal />,
+      element: (
+        <>
+          <AppContent />
+          <ChangePasswordModal />
+        </>
+      ),
     },
     {
       path: "/booking",
-      element: <Booking />,
+      element: (
+        <>
+          <AppContent />
+          <Booking />
+        </>
+      ),
     },
     {
       path: "/booking/successBooking",
-      element: <SuccessBookingPage />,
+      element: (
+        <>
+          <AppContent />
+          <SuccessBookingPage />
+        </>
+      ),
     },
     {
       path: "/booking/catalog",
-      element: <CatalogSelection />,
+      element: (
+        <>
+          <AppContent />
+          <CatalogSelection />
+        </>
+      ),
     },
     {
       path: "/dashboard",
-      element: <AdminDashboardPage />,
+      element: (
+        <>
+          <AppContent />
+          <AdminDashboardPage />
+        </>
+      ),
     },
     {
       path: "/appointment-schedule",
-      element: <AdminAppointmentSchedulePage />,
+      element: (
+        <>
+          <AppContent />
+          <AdminAppointmentSchedulePage />
+        </>
+      ),
     },
     {
       path: "/users",
-      element: <AdminUsersPage />,
+      element: (
+        <>
+          <AppContent />
+          <AdminUsersPage />
+        </>
+      ),
     },
     {
       path: "/roles",
-      element: <AdminRolesPage />,
+      element: (
+        <>
+          <AppContent />
+          <AdminRolesPage />
+        </>
+      ),
     },
     {
       path: "/instruments",
-      element: <AdminInstrumentsPage />,
+      element: (
+        <>
+          <AppContent />
+          <AdminInstrumentsPage />
+        </>
+      ),
     },
     {
       path: "/blogs",
-      element: <AdminBlogsPage />,
+      element: (
+        <>
+          <AppContent />
+          <AdminBlogsPage />
+        </>
+      ),
     },
     {
       path: "/patients",
-      element: <AdminPatientsPage />,
+      element: (
+        <>
+          <AppContent />
+          <AdminPatientsPage />
+        </>
+      ),
     },
     {
       path: "/test-orders",
-      element: <AdminTestOrdersPage />,
+      element: (
+        <>
+          <AppContent />
+          <AdminTestOrdersPage />
+        </>
+      ),
     },
     {
       path: "/packages",
-      element: <AdminPackagesPage />,
+      element: (
+        <>
+          <AppContent />
+          <AdminPackagesPage />
+        </>
+      ),
     },
     {
       path: "/catalogs",
-      element: <AdminCatalogsPage />,
+      element: (
+        <>
+          <AppContent />
+          <AdminCatalogsPage />
+        </>
+      ),
     },
     {
       path: "/parameter",
-      element: <AdminParameterPage />,
+      element: (
+        <>
+          <AppContent />
+          <AdminParameterPage />
+        </>
+      ),
     },
     {
       path: "/reports",
-      element: <AdminReportsPage />,
+      element: (
+        <>
+          <AppContent />
+          <AdminReportsPage />
+        </>
+      ),
     },
     {
       path: "medical-record",
-      element: <MedicalRecord />,
+      element: (
+        <>
+          <AppContent />
+          <MedicalRecord />
+        </>
+      ),
     },
     {
       path: "forgot-password",
-      element: <ForgotPass />,
+      element: (
+        <>
+          <AppContent />
+          <ForgotPass />
+        </>
+      ),
     },
     {
       path: "reset-password",
-      element: <ResetPass />,
+      element: (
+        <>
+          <AppContent />
+          <ResetPass />
+        </>
+      ),
     },
     {
       path: "lab-staff",
-      element: <LabStaffLanding />,
+      element: (
+        <>
+          <AppContent />
+          <LabStaffLanding />
+        </>
+      ),
     },
     {
       path: "lab-staff/dashboard",
-      element: <LabStaffDashboard />,
+      element: (
+        <>
+          <AppContent />
+          <LabStaffDashboard />
+        </>
+      ),
     },
     {
       path: "lab-staff/appointment-schedule",
-      element: <AppointmentSchedule />,
+      element: (
+        <>
+          <AppContent />
+          <AppointmentSchedule />
+        </>
+      ),
     },
     {
       path: "create-profile",
-      element: <CreatePatient />,
+      element: (
+        <>
+          <AppContent />
+          <CreatePatient />
+        </>
+      ),
     },
     {
       path: "blog",
-      element: <BlogPage />,
+      element: (
+        <>
+          <AppContent />
+          <BlogPage />
+        </>
+      ),
     },
     {
       path: "blog/:id",
-      element: <BlogDetailPage />,
+      element: (
+        <>
+          <AppContent />
+          <BlogDetailPage />
+        </>
+      ),
     },
   ]);
 

@@ -10,7 +10,7 @@ import {
   FiPlus,
   FiTrash2,
 } from "react-icons/fi";
-import { Pagination } from "antd";
+import { Pagination, Spin } from "antd";
 import { setAuthToken } from "../../../utils/auth";
 import { toast } from "react-toastify";
 import {
@@ -599,9 +599,8 @@ const RolesManagement = () => {
                 {isLoading ? (
                   <tr>
                     <td colSpan="4" style={{ padding: "40px" }}>
-                      <div className="loading-container">
-                        <div className="loading-spinner"></div>
-                        <p>Đang tải dữ liệu...</p>
+                      <div style={{ textAlign: "center" }}>
+                        <Spin size="large" />
                       </div>
                     </td>
                   </tr>
@@ -749,9 +748,8 @@ const RolesManagement = () => {
 
               <div className="modal-body">
                 {isDetailLoading ? (
-                  <div className="loading-container">
-                    <div className="loading-spinner"></div>
-                    <p>Đang tải quyền...</p>
+                  <div style={{ textAlign: "center", padding: "40px" }}>
+                    <Spin size="large" />
                   </div>
                 ) : (
                   <div className="permissions-selector">
@@ -868,10 +866,9 @@ const RolesManagement = () => {
                     ) : (
                       <div className="loading-container">
                         {permissionGroupsLoading ? (
-                          <>
-                            <div className="loading-spinner"></div>
-                            <p>Đang tải nhóm quyền...</p>
-                          </>
+                          <div style={{ textAlign: "center" }}>
+                            <Spin />
+                          </div>
                         ) : (
                           <p className="empty-text">Không có nhóm quyền nào</p>
                         )}

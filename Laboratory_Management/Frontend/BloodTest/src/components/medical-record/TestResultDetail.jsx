@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Spin, Tag } from "antd";
 import "./TestResultDetail.css";
 import api from "../../configs/axios";
 
@@ -126,7 +127,7 @@ export default function TestResultDetail({
 
         {loading ? (
           <div style={{ padding: "24px", textAlign: "center" }}>
-            Đang tải kết quả xét nghiệm...
+            <Spin size="large" />
           </div>
         ) : error ? (
           <div style={{ padding: "24px", color: "red", textAlign: "center" }}>
@@ -195,9 +196,11 @@ export default function TestResultDetail({
                             {testItem.referenceRange}
                           </td>
                           <td className="test-status">
-                            {testItem.isNormal === true
-                              ? "Bình thường"
-                              : "Bất thường"}
+                            {testItem.isNormal === true ? (
+                              <Tag color="success">Bình thường</Tag>
+                            ) : (
+                              <Tag color="error">Bất thường</Tag>
+                            )}
                           </td>
                         </tr>
                       ))}

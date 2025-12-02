@@ -2,6 +2,12 @@
   min-height: 100vh;
   background: #f8fafc;
   width: 100%;
+  overflow-x: hidden;
+}
+
+.history-content {
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .history-header {
@@ -75,17 +81,33 @@
   font-family: "Geist", "Inter", Arial, sans-serif;
 }
 
+/* Tablet */
+@media (max-width: 1024px) {
+  .history-content {
+    padding: 28px 20px;
+  }
+
+  .history-title {
+    font-size: 2.25rem;
+  }
+}
+
+/* Mobile */
 @media (max-width: 768px) {
   .history-content {
     padding: 20px 16px;
   }
 
+  .history-header {
+    margin-bottom: 32px;
+  }
+
   .history-title {
-    font-size: 2rem;
+    font-size: 1.75rem;
   }
 
   .history-subtitle {
-    font-size: 1rem;
+    font-size: 0.95rem;
   }
 
   .history-placeholder {
@@ -95,5 +117,43 @@
 
   .placeholder-title {
     font-size: 1.5rem;
+  }
+
+  .placeholder-description {
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .history-content {
+    padding: 16px 12px;
+  }
+
+  .history-header {
+    margin-bottom: 24px;
+  }
+
+  .history-title {
+    font-size: 1.5rem;
+  }
+
+  .history-subtitle {
+    font-size: 0.875rem;
+  }
+
+  .history-placeholder {
+    padding: 24px 20px;
+  }
+
+  .placeholder-title {
+    font-size: 1.25rem;
+  }
+
+  .placeholder-description {
+    font-size: 0.9rem;
+  }
+
+  .feature-item {
+    font-size: 0.85rem;
   }
 }
