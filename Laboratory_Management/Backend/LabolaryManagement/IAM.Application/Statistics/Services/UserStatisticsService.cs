@@ -79,16 +79,16 @@ public class UserStatisticsService
     }
     public async Task<UserByDayDto> GetUserByDay()
     {
-        var Lastweek = DateTime.Now.AddDays(-6);
+        var LastMonth = DateTime.Now.AddDays(-6);
+
+
         var WeeklyUser =  _db.Users.AsNoTracking()
-            .Where(u => u.IsActive&& u.CreatedAt >= new DateTime(Lastweek.Year, Lastweek.Month, Lastweek.Day))
+            .Where(u => u.IsActive&& u.CreatedAt >= new DateTime(LastMonth.Year ,LastMonth.Month, LastMonth.Day))
             .GroupBy(u => u.CreatedAt.Date)
             .Select(g => new CountUserByDayDto
             {
                 Day = g.Key,
-                UserCount = g.Count()
-
-
+                UserCount = g.Count(),
             }).ToArrayAsync();
         return new UserByDayDto
         {
