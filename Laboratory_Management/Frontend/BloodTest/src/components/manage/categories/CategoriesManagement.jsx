@@ -45,6 +45,7 @@ const CategoriesManagement = () => {
 
   const [formData, setFormData] = useState(DEFAULT_FORM);
   const [formErrors, setFormErrors] = useState({});
+  const [originalCreatedDate, setOriginalCreatedDate] = useState(null);
 
   // Track which categories are being used by blogs (array of categoryIds)
   const [usedCategoryIds, setUsedCategoryIds] = useState([]);
@@ -166,6 +167,7 @@ const CategoriesManagement = () => {
   const handleOpenCreateModal = () => {
     setModalMode("create");
     setSelectedCategory(null);
+    setOriginalCreatedDate(null);
     setFormData(DEFAULT_FORM);
     setFormErrors({});
     setIsModalOpen(true);
@@ -176,6 +178,8 @@ const CategoriesManagement = () => {
     if (!categoryId) return;
     setModalMode("edit");
     setSelectedCategory(category);
+    // Lưu ngày tạo gốc để giữ nguyên khi cập nhật
+    setOriginalCreatedDate(category.createdDate || null);
     setFormData({
       name: getCategoryName(category) || "",
       description: category.description || "",
@@ -187,6 +191,7 @@ const CategoriesManagement = () => {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedCategory(null);
+    setOriginalCreatedDate(null);
     setFormData(DEFAULT_FORM);
     setFormErrors({});
     setIsSaving(false);
@@ -233,13 +238,18 @@ const CategoriesManagement = () => {
         });
         toast.success("Thêm danh mục thành công!");
       } else if (categoryId) {
+        // Đảm bảo giữ nguyên ngày tạo gốc khi cập nhật
+        const categoryWithOriginalDate = {
+          ...selectedCategory,
+          createdDate: originalCreatedDate || selectedCategory.createdDate,
+        };
         await BlogService.updateCategory(
           categoryId,
           {
             name: formData.name.trim(),
             description: formData.description.trim(),
           },
-          selectedCategory
+          categoryWithOriginalDate
         );
         toast.success("Cập nhật danh mục thành công!");
       }
@@ -440,11 +450,6 @@ const CategoriesManagement = () => {
                 />
               </div>
             </div>
-            <div className="page-info">
-              <span>
-                Hiển thị {categories.length} / {total || 0} danh mục
-              </span>
-            </div>
           </div>
 
           <div className="categories-table-container">
@@ -539,11 +544,6 @@ const CategoriesManagement = () => {
                 onChange={handlePageChange}
                 showSizeChanger
                 pageSizeOptions={["10", "20", "50", "100"]}
-                showTotal={(tot, range) =>
-                  tot > 0
-                    ? `${range[0]}-${range[1]} của ${tot} danh mục`
-                    : "0 danh mục"
-                }
               />
             </div>
           )}
@@ -597,6 +597,24 @@ const CategoriesManagement = () => {
                     rows={4}
                   />
                 </div>
+
+                {modalMode === "edit" && originalCreatedDate && (
+                  <div className="form-group">
+                    <label className="form-label">Ngày tạo</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={formatDate1(originalCreatedDate)}
+                      disabled
+                      readOnly
+                      style={{
+                        backgroundColor: "#f5f5f5",
+                        cursor: "not-allowed",
+                        color: "#666",
+                      }}
+                    />
+                  </div>
+                )}
               </div>
             </div>
 

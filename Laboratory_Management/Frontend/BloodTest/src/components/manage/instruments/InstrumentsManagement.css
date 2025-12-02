@@ -25,12 +25,12 @@
 /* Bộ lọc */
 .instruments-filters {
   background: #ffffff;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+  padding: 16px 20px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   border: 1px solid #e5e7eb;
   display: flex;
-  gap: 16px;
+  gap: 12px;
   flex-wrap: wrap;
   align-items: flex-end;
 }
@@ -38,24 +38,24 @@
 .filter-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   flex: 1;
-  min-width: 200px;
+  min-width: 180px;
 }
 
 .filter-group label {
-  font-size: 13px;
-  font-weight: 600;
-  color: #374151;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7280;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 .filter-input,
 .filter-select {
-  padding: 10px 14px;
+  padding: 8px 12px;
   border: 1px solid #d1d5db;
-  border-radius: 8px;
+  border-radius: 6px;
   font-size: 14px;
   color: #111827;
   outline: none;
@@ -70,7 +70,8 @@
 
 .filter-input:focus,
 .filter-select:focus {
-  border-color: #6b7280;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .filter-select {
@@ -315,9 +316,18 @@ tbody tr:last-child {
   background: #ef4444;
 }
 
+.action-column {
+  text-align: center;
+  width: 180px;
+  min-width: 180px;
+  white-space: nowrap;
+}
+
 .action-buttons {
   display: flex;
   gap: 8px;
+  justify-content: center;
+  align-items: center;
 }
 
 .ghost-btn,
@@ -329,6 +339,9 @@ tbody tr:last-child {
   font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
+  min-width: 70px;
+  text-align: center;
 }
 
 .ghost-btn {
@@ -833,15 +846,59 @@ tbody tr:last-child {
 }
 
 .instrument-modal.confirm-modal {
-  width: min(420px, calc(100% - 40px));
+  width: min(400px, calc(100% - 40px));
+  max-width: 400px;
+  height: auto;
+  max-height: none;
+}
+
+.instrument-modal.confirm-modal .modal-header {
+  padding: 16px 20px;
+}
+
+.instrument-modal.confirm-modal .modal-header h3 {
+  font-size: 18px;
 }
 
 .instrument-modal.confirm-modal .modal-body {
   background: #fff;
+  padding: 20px;
+  gap: 12px;
+}
+
+.instrument-modal.confirm-modal .modal-body p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #4b5563;
+  margin: 0;
+}
+
+.instrument-modal.confirm-modal .modal-body p:first-child {
+  margin-bottom: 8px;
+}
+
+.instrument-modal.confirm-modal .modal-body p:last-child {
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.instrument-modal.confirm-modal .close-btn {
+  width: 32px;
+  height: 32px;
+  font-size: 18px;
 }
 
 .instrument-modal.confirm-modal .modal-footer {
   justify-content: flex-end;
+  padding: 16px 20px;
+  gap: 10px;
+}
+
+.instrument-modal.confirm-modal .modal-footer .ghost-btn,
+.instrument-modal.confirm-modal .modal-footer .danger-btn {
+  padding: 8px 16px;
+  font-size: 14px;
+  min-width: 90px;
 }
 
 @media (max-width: 640px) {
@@ -852,10 +909,13 @@ tbody tr:last-child {
 
   .instruments-filters {
     flex-direction: column;
+    padding: 12px 16px;
+    gap: 10px;
   }
 
   .filter-group {
     min-width: 100%;
+    gap: 5px;
   }
 
   .pagination {
@@ -903,5 +963,22 @@ tbody tr:last-child {
   .modal-footer .ghost-btn,
   .modal-footer .primary-btn {
     width: 100%;
+  }
+
+  .instrument-modal.confirm-modal {
+    width: calc(100% - 32px);
+    max-width: 400px;
+  }
+
+  .instrument-modal.confirm-modal .modal-header {
+    padding: 14px 18px;
+  }
+
+  .instrument-modal.confirm-modal .modal-body {
+    padding: 16px 18px;
+  }
+
+  .instrument-modal.confirm-modal .modal-footer {
+    padding: 14px 18px;
   }
 }

@@ -4,6 +4,7 @@ import { FiUpload, FiImage } from "react-icons/fi";
 import { Spin } from "antd";
 import AdminLayout from "../../admin/layout/AdminLayout";
 import InstrumentService from "../../../services/InstrumentService";
+import { isManager } from "../../../utils/role";
 import "./InstrumentsManagement.css";
 
 const STATUS_CONFIG = {
@@ -123,6 +124,8 @@ const InstrumentsManagement = () => {
     { name: "Phòng xét nghiệm", link: "/dashboard" },
     { name: "Thiết bị" },
   ];
+
+  const isReadOnly = isManager(); // Manager chỉ được xem, không được thêm/sửa/xóa
 
   const [instruments, setInstruments] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -360,19 +363,21 @@ const InstrumentsManagement = () => {
             <h2>Danh sách thiết bị</h2>
             <p>Theo dõi trạng thái vận hành và thuốc thử cho từng máy.</p>
           </div>
-          <button className="primary-btn" onClick={openCreateModal}>
-            + Thêm thiết bị
-          </button>
+          {!isReadOnly && (
+            <button className="primary-btn" onClick={openCreateModal}>
+              + Thêm thiết bị
+            </button>
+          )}
         </div>
 
         {/* Bộ lọc và tìm kiếm */}
         <div className="instruments-filters">
           <div className="filter-group">
-            <label htmlFor="search-input">Tìm kiếm:</label>
+            <label htmlFor="search-input">Tìm kiếm</label>
             <input
               id="search-input"
               type="text"
-              placeholder="Nhập tên hoặc mã thiết bị..."
+              placeholder="Nhập tên hoặc mã thiết bị"
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
               className="filter-input"
@@ -380,7 +385,7 @@ const InstrumentsManagement = () => {
           </div>
 
           <div className="filter-group">
-            <label htmlFor="machine-status-filter">Trạng thái máy:</label>
+            <label htmlFor="machine-status-filter">Trạng thái máy</label>
             <select
               id="machine-status-filter"
               value={filterMachineStatus}
@@ -400,7 +405,7 @@ const InstrumentsManagement = () => {
           </div>
 
           <div className="filter-group">
-            <label htmlFor="reagent-status-filter">Trạng thái thuốc:</label>
+            <label htmlFor="reagent-status-filter">Trạng thái thuốc</label>
             <select
               id="reagent-status-filter"
               value={filterReagentStatus}
@@ -437,7 +442,9 @@ const InstrumentsManagement = () => {
                       <th>Tên máy</th>
                       <th>Trạng thái máy</th>
                       <th>Trạng thái thuốc</th>
-                      <th>Hành động</th>
+                      {!isReadOnly && (
+                        <th className="action-column">Hành động</th>
+                      )}
                     </tr>
                   </thead>
                   <tbody>
@@ -463,29 +470,31 @@ const InstrumentsManagement = () => {
                               {reagentStatus.label}
                             </span>
                           </td>
-                          <td>
-                            <div className="action-buttons">
-                              <button
-                                className="ghost-btn"
-                                onClick={() => openEditModal(instrument)}
-                              >
-                                Sửa
-                              </button>
-                              <button
-                                className="danger-btn"
-                                onClick={() => handleDeleteClick(instrument)}
-                                disabled={
-                                  deleteLoading &&
+                          {!isReadOnly && (
+                            <td className="action-column">
+                              <div className="action-buttons">
+                                <button
+                                  className="ghost-btn"
+                                  onClick={() => openEditModal(instrument)}
+                                >
+                                  Sửa
+                                </button>
+                                <button
+                                  className="danger-btn"
+                                  onClick={() => handleDeleteClick(instrument)}
+                                  disabled={
+                                    deleteLoading &&
+                                    code === pickInstrumentCode(deleteTarget)
+                                  }
+                                >
+                                  {deleteLoading &&
                                   code === pickInstrumentCode(deleteTarget)
-                                }
-                              >
-                                {deleteLoading &&
-                                code === pickInstrumentCode(deleteTarget)
-                                  ? "Đang xóa..."
-                                  : "Xóa"}
-                              </button>
-                            </div>
-                          </td>
+                                    ? "Đang xóa..."
+                                    : "Xóa"}
+                                </button>
+                              </div>
+                            </td>
+                          )}
                         </tr>
                       );
                     })}
@@ -811,8 +820,9 @@ const DeleteConfirmModal = ({
             <strong>
               {code} - {name}
             </strong>
-            ? Thao tác này không thể hoàn tác.
+            ?
           </p>
+          <p>Thao tác này không thể hoàn tác.</p>
         </div>
         <div className="modal-footer">
           <button type="button" className="ghost-btn" onClick={onClose}>
