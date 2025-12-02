@@ -62,6 +62,25 @@ namespace TestOrder.Infrastructure.Repository
             return lastBooking?.BookingCode;
         }
 
+        public async Task<List<Booking>?> GetAllBookingsSearchableAsync(string? keyword)
+        {
+            if (string.IsNullOrEmpty(keyword))
+            {
+                keyword = string.Empty;
+            }
+            var query = _context.Set<Booking>()
+                .Where(b =>
+            (b.BookingCode.Contains(keyword) ||
+            b.PatientName.Contains(keyword) ||
+            b.PatientEmail.Contains(keyword) ||
+            b.PatientPhone.Contains(keyword)));
+            if (query == null || !query.Any())
+            {
+                return null;
+            }
+            return await query.ToListAsync();
+        }
+
         public async Task<IEnumerable<Booking>?> GetBookingsByAppointmentSlotSearchableAsync 
             (Guid appointmentSlotId,string? keyword)
         {
