@@ -16,7 +16,7 @@ namespace TestOrder.Presentation.Controllers
     {
         private readonly IVnPayService vnPayService;
         private readonly PaymentService paymentService;
-        private const string paymentSuccess = "http://localhost:5174/booking/successBooking?bookingId=";
+        private const string paymentSuccess = "http://hema-link.io.vn/booking/successBooking?bookingId=";
 
         public PaymentController(IVnPayService vnPayService, PaymentService paymentService)
         {

@@ -15,6 +15,11 @@ public partial class TestResult
 
     public bool? IsNormal { get; set; }
 
+    /// <summary>
+    /// Nhận xét từ AI (Gemini) về chỉ số này
+    /// </summary>
+    public string? Comment { get; set; }
+
     public virtual TestParameter? Parameter { get; set; }
 
     public virtual BookingTest? TestBookingNoNavigation { get; set; }

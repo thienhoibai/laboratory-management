@@ -31,8 +31,8 @@ namespace TestOrder.Presentation.Controllers
         [HttpGet]
         [Route("info")]
         [Authorize(Policy = "perm:Booking.List")]
-        public async Task<IActionResult> GetAllBookingsInfoByDateAsync
-            ([FromQuery] DateOnly date,
+        public async Task<IActionResult> GetAllBookingsInfoAsync
+            ([FromQuery] DateOnly? date,
              [FromQuery] string? keyword,
              [FromQuery] string? sortBy,
              [FromQuery] string? sortDirection,
@@ -40,7 +40,7 @@ namespace TestOrder.Presentation.Controllers
              [FromQuery] int pageNumber)
         {
             try { 
-                var response = await _bookingService.GetAllBookingsByDateAsync
+                var response = await _bookingService.GetAllBookingsAsync
                 (date, keyword, sortBy, sortDirection, pageSize, pageNumber);
                 return Ok(response);
             }
@@ -48,7 +48,7 @@ namespace TestOrder.Presentation.Controllers
             {
                 return StatusCode(400, new ResponseMessage
                 {
-                    ResponseCode = ResponseCode.BadInstanceState,
+                    ResponseCode = ResponseCode.NotFound,
                     Message = "An error occurred while processing your request: " + ex.Message
                 });
             }

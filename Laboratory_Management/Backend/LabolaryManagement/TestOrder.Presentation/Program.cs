@@ -16,6 +16,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
+using TestOrder.Application.AIReview.Interfaces; // ✅ ADD
+using TestOrder.Application.AIReview.Services;   // ✅ ADD
 
 namespace TestOrder.Presentation
 {
@@ -49,6 +51,11 @@ namespace TestOrder.Presentation
 
             // Đăng ký HttpClient factory
             builder.Services.AddHttpClient();
+
+            // ✅ ===== AI REVIEW SERVICE CONFIGURATION =====
+            builder.Services.AddScoped<IIAReviewService, IAReviewService>();
+            Console.WriteLine("✅ AI Review Service registered");
+            // ✅ END AI REVIEW CONFIGURATION
 
             // ===== HttpClient cho Patient API =====
             // Trong Docker: phải gọi qua API Gateway (port 8080)
@@ -207,7 +214,7 @@ namespace TestOrder.Presentation
                         .WithOrigins(
                             "http://localhost:5174",
                             "http://127.0.0.1:5174",
-                            "https://blood-test-eta.vercel.app"
+                            "http://hema-link.io.vn"
                         )
                         .AllowAnyHeader()
                         .AllowAnyMethod()
@@ -238,6 +245,21 @@ namespace TestOrder.Presentation
             app.UseAuthorization();
             
             app.MapControllers();
+
+            // ===== DEBUG: List all registered endpoints =====
+            var endpoints = app.Services.GetRequiredService<IEnumerable<EndpointDataSource>>()
+                .SelectMany(es => es.Endpoints)
+                .OfType<RouteEndpoint>()
+                .Select(e => e.RoutePattern.RawText)
+                .Where(r => r != null);
+
+            Console.WriteLine("🔍 === REGISTERED ENDPOINTS ===");
+            foreach (var endpoint in endpoints.Where(e => e.Contains("AiReview")))
+            {
+                Console.WriteLine($"  ✅ {endpoint}");
+            }
+            Console.WriteLine("🔍 === END ENDPOINTS ===");
+            // ===== END DEBUG =====
 
             app.Run();
         }

@@ -126,7 +126,7 @@ public class RunService
         );
     }
 
-    // Helper: Sinh giá trị deterministic
+    // Helper: Sinh giá trị deterministic với phân bổ: 70% Normal, 15% Low, 15% High
     private static decimal GenerateDeterministicValue(Guid bookingId, int parameterId, decimal? refMin, decimal? refMax)
     {
         unchecked
@@ -140,8 +140,28 @@ public class RunService
 
             if (max <= min) max = min + 1;
 
-            var value = min + (decimal)rng.NextDouble() * (max - min);
-            return Math.Round(value, 2);
+            var range = max - min;
+            
+            // Quyết định xem giá trị sẽ Normal, Low hay High
+            var randomPercent = rng.NextDouble();
+            
+            if (randomPercent < 0.15) // 15% Low (thấp hơn min)
+            {
+                // Giá trị từ (min - 30% range) đến (min - 5% range)
+                var lowValue = min - (decimal)(rng.NextDouble() * 0.25 + 0.05) * range;
+                return Math.Round(Math.Max(lowValue, min * 0.5m), 2); // Không giảm quá 50% của min
+            }
+            else if (randomPercent < 0.30) // 15% High (cao hơn max)
+            {
+                // Giá trị từ (max + 5% range) đến (max + 30% range)
+                var highValue = max + (decimal)(rng.NextDouble() * 0.25 + 0.05) * range;
+                return Math.Round(Math.Min(highValue, max * 1.5m), 2); // Không tăng quá 150% của max
+            }
+            else // 70% Normal (trong khoảng)
+            {
+                var value = min + (decimal)rng.NextDouble() * range;
+                return Math.Round(value, 2);
+            }
         }
     }
 
