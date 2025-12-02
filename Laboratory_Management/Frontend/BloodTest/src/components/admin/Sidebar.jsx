@@ -11,6 +11,7 @@ import {
   FiActivity,
   FiBox,
   FiCalendar,
+  FiFolder,
 } from "react-icons/fi";
 import "./layout/AdminLayout.css";
 import { getMenuItems } from "../../utils/role";
@@ -23,6 +24,7 @@ const iconMap = {
   roles: <FiBriefcase />,
   instruments: <FiPackage />,
   blogs: <FiBook />,
+  categories: <FiFolder />,
   patients: <FiUsers />,
   packages: <FiBox />,
   catalogs: <FiPackage />,
