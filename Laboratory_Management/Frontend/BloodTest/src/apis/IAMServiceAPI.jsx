@@ -65,13 +65,13 @@ export const IAMServiceAPI = {
   // Note: This API is on port 5001, not 8080
   GetUsersStatistics: async () => {
     const iamApi = axios.create({
-      baseURL: "http://localhost:5001/",
+      baseURL: "http://20.6.88.113:8080/",
     });
     const token = localStorage.getItem("accessToken");
     if (token) {
       iamApi.defaults.headers.common["Authorization"] = `Bearer ${token}`;
     }
-    return await iamApi.get("api/statistics/users");
+    return await iamApi.get("iam/api/statistics/users");
   },
 };
 

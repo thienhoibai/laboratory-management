@@ -9,7 +9,7 @@ import { Modal, Button, Card, Spin } from "antd";
 import "./InstrumentRun.css";
 import { getAllInstrument } from "../../../apis/InstrumentAPI.js";
 
-const BASE_URL = "http://localhost:8080";
+const BASE_URL = "http://20.6.88.113:8080";
 
 // Không dùng defaultResults nữa, sẽ lấy từ API
 

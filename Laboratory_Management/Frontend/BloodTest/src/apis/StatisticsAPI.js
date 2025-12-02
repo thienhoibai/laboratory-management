@@ -1,5 +1,6 @@
 import axios from "axios";
 import { setAuthToken } from "../utils/auth";
+import api from "../configs/axios";
 
 // Helper function to set auth token before API calls
 const ensureAuth = () => {
@@ -44,38 +45,37 @@ export const StatisticsAPI = {
   // Get user statistics (from IAMService - port 5001)
   getUsersStatistics: async () => {
     ensureAuth();
-    const response = await iamApi.get("api/statistics/users");
+    const response = await api.get("iam/api/statistics/users");
     return response;
   },
 
   // Get catalog/bundle statistics (from TestOrderService - port 5003)
   getCatalogsStatistics: async () => {
     ensureAuth();
-    const response = await testOrderApi.get("api/statistics/catalogs");
+    const response = await api.get("testorder/api/statistics/catalogs");
     return response;
   },
 
   // Get booking/revenue statistics (from TestOrderService - port 5003)
   getBookingsStatistics: async () => {
     ensureAuth();
-    const response = await testOrderApi.get("api/statistics/bookings");
+    const response = await api.get("testorder/api/statistics/bookings");
     return response;
   },
 
   // Get blog statistics (from BlogService - port 5004)
   getBlogsStatistics: async () => {
     ensureAuth();
-    const response = await blogApi.get("api/statistics/blogs");
+    const response = await api.get("blog/api/statistics/blogs");
     return response;
   },
 
   // Get instrument statistics (from InstrumentService - port 5008)
   getInstrumentsStatistics: async () => {
     ensureAuth();
-    const response = await instrumentApi.get("api/statistics/instruments");
+    const response = await api.get("instrument/api/statistics/instruments");
     return response;
   },
 };
 
 export default StatisticsAPI;
-
