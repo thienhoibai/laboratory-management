@@ -141,7 +141,7 @@ namespace TestOrder.Application.Services
             // KẾT QUẢ XÉT NGHIỆM
             foreach (var catalog in testResult.Catalogs)
             {
-                doc.InsertParagraph($"\nTên Gói Xét Nghiệm: {catalog.CatalogName}")
+                doc.InsertParagraph($"\n{catalog.CatalogName}")
                     .FontSize(16)
                     .Bold()
                     .SpacingBefore(10)

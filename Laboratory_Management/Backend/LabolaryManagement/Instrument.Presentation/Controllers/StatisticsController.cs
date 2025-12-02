@@ -36,4 +36,18 @@ public class StatisticsController : ControllerBase
             return StatusCode(500, new { message = "Lỗi khi lấy thống kê máy xét nghiệm", details = ex.Message });
         }
     }
+    [HttpGet("ReagentStatus")]
+    [Authorize(Policy = "perm:Statistics.InstrumentReagentStatus.View")]
+    public async Task<IActionResult> GetReagentStatusStatistics(CancellationToken ct)
+    {
+        try
+        {
+            var data = await _statisticsService.GetReagentStatusStatisticsAsync(ct);
+            return Ok(data);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Lỗi khi lấy thống kê trạng thái hóa chất", details = ex.Message });
+        }
+    }
 }

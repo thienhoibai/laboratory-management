@@ -82,31 +82,43 @@ namespace TestOrder.Application.Services.Booking
         }
 
 
-        public async Task<object> GetAllBookingsByDateAsync
-            (DateOnly date, string? keyword, string? sortBy, string? sortDirection, int pageSize, int pageNumber)
+        public async Task<object> GetAllBookingsAsync
+            (DateOnly? date, string? keyword, string? sortBy, string? sortDirection, int pageSize, int pageNumber)
         {
-            var appointmentSlots = await _appointmentSlotService.GetAppointmentSlotsByDateAsync(date, 1, byte.MaxValue);
-
-            if (appointmentSlots == null)
-            {
-                throw new Exception("No Appointment Slots found on this date");
-            }
-
             List<Infrastructure.Models.Booking> bookings = new List<Infrastructure.Models.Booking>();
-
-            foreach (var slot in appointmentSlots)
+            if (date != null)
             {
-                var slotBookings = await _bookingRepository.GetBookingsByAppointmentSlotSearchableAsync
-                    (slot.SlotId, keyword);
+                var appointmentSlots = await _appointmentSlotService.GetAppointmentSlotsByDateAsync((DateOnly)date, 1, byte.MaxValue);
 
-                if (slotBookings != null)
+                if (appointmentSlots == null)
                 {
-                    bookings.AddRange(slotBookings);
+                    throw new Exception("No Appointment Slots found on this date");
                 }
+
+                foreach (var slot in appointmentSlots)
+                {
+                    var slotBookings = await _bookingRepository.GetBookingsByAppointmentSlotSearchableAsync
+                        (slot.SlotId, keyword);
+
+                    if (slotBookings != null)
+                    {
+                        bookings.AddRange(slotBookings);
+                    }
+                }
+
+            }
+            else
+            {
+                bookings = await _bookingRepository.GetAllBookingsSearchableAsync(keyword);
             }
 
-            var (pagedItems, totalItem) = await _bookingRepository.SortingAndPaging
-                (sortBy, sortDirection, pageSize, pageNumber, bookings);
+            if (bookings == null)
+            {
+                throw new Exception("No Bookings found");
+            }
+
+                var (pagedItems, totalItem) = await _bookingRepository.SortingAndPaging
+                    (sortBy, sortDirection, pageSize, pageNumber, bookings);
 
 
             var totalPages = (int)Math.Ceiling((double)totalItem / pageSize);

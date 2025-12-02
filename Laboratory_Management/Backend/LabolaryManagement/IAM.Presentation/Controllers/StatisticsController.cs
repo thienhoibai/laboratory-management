@@ -36,4 +36,33 @@ public class StatisticsController : ControllerBase
             return StatusCode(500, new { message = "Lỗi khi lấy thống kê người dùng", details = ex.Message });
         }
     }
+    [HttpGet("BlokedUsers")]
+    [Authorize(Policy = "perm:Statistics.Locked.User.View")]
+    public async Task<IActionResult> GetBlockedUserStatistics(CancellationToken ct)
+    {
+        try
+        {
+            var data = await _statisticsService.GetBlockedUserStatistic(ct);
+            return Ok(data);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Lỗi khi lấy thống kê người dùng bị khóa", details = ex.Message });
+        }
+    }
+    [HttpGet("UserByDay")]
+    [Authorize(Policy = "Statistics.CountUserByWeek.View")]
+    public async Task<IActionResult> GetUserByDay(CancellationToken ct)
+    {
+        try
+        {
+            var data = await _statisticsService.GetUserByDay();
+            return Ok(data);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Lỗi khi lấy thống kê người dùng theo ngày", details = ex.Message });
+        }
+
+    }
 }
