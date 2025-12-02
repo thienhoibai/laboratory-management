@@ -131,6 +131,8 @@
       Jwt__Issuer: "lab-iam"
       Jwt__Audience: "lab.api"
       Jwt__SigningKey: "Jx6n2QvB5pTf8Kz3Wm9aS4Ld7Yh0Nr2Xu8Cj5Pk1Vg3Mz7Rb0Hq4Tn6Wy8Le2"
+      AiSettings__ApiKey: "AIzaSyBLC2osUesI35WN6qaRiSbkzCk3d5lShL4"
+      AiSettings__ModelName: "gemini-2.5-flash"
     depends_on:
       rabbitmq:
         condition: service_healthy
