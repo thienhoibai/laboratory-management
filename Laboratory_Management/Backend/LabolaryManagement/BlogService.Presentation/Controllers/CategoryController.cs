@@ -20,11 +20,11 @@ namespace BlogService.Presentation.Controllers
         }
 
         [HttpGet]
-        [Authorize(Policy = "perm:BlogCategory.List")]
+        //[Authorize(Policy = "perm:BlogCategory.List")]
         public async Task<IActionResult> GetAll() => Ok(await _service.GetAllAsync());
 
         [HttpGet("{id}")]
-        [Authorize(Policy = "perm:BlogCategory.View")]
+        //[Authorize(Policy = "perm:BlogCategory.View")]
         public async Task<IActionResult> GetById(int id)
         {
             var category = await _service.GetByIdAsync(id);

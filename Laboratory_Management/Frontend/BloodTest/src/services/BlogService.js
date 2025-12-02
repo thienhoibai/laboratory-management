@@ -275,6 +275,7 @@ const BlogService = {
         categoryId: null,
         name: "",
         description: "",
+        createdDate: null,
       };
     }
     return {
@@ -282,6 +283,7 @@ const BlogService = {
       categoryId: apiCategory.categoryId || apiCategory.id,
       name: apiCategory.categoryName || apiCategory.name || "",
       description: apiCategory.description || "",
+      createdDate: apiCategory.createdDate || apiCategory.created || null,
     };
   },
 
@@ -604,6 +606,154 @@ const BlogService = {
         return [];
       }
       console.error("BlogService - Error getting categories:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Create a new category
+   * @param {Object} categoryData - Category data
+   * @param {string} categoryData.name - Category name
+   * @param {string} categoryData.description - Category description
+   * @returns {Promise<Object>} Created category in UI format
+   */
+  createCategory: async (categoryData) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (token) setAuthToken(token);
+      
+      // Transform UI data to API format - Backend may require PascalCase
+      const apiPayload = {
+        CategoryName: categoryData.name || categoryData.categoryName || categoryData.CategoryName || "",
+        Description: categoryData.description || categoryData.Description || "",
+      };
+      
+      console.log("Creating category with payload:", apiPayload);
+      
+      const createdCategory = await BlogAPI.createCategory(apiPayload);
+      return BlogService.transformCategoryFromAPI(createdCategory);
+    } catch (error) {
+      console.error("BlogService - Error creating category:", error);
+      if (error.response) {
+        console.error("Error response data:", error.response.data);
+        console.error("Error response status:", error.response.status);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Update an existing category
+   * @param {number} id - Category ID
+   * @param {Object} categoryData - Updated category data
+   * @param {string} categoryData.name - Category name
+   * @param {string} categoryData.description - Category description
+   * @param {string} categoryData.createdDate - Original created date
+   * @param {Object} existingCategory - Existing category object (optional)
+   * @returns {Promise<Object>} Updated category in UI format
+   */
+  updateCategory: async (id, categoryData, existingCategory = null) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (token) setAuthToken(token);
+      
+      // Get createdDate from existingCategory (original category from API)
+      // Try to get from existingCategory first (this should have the original API format)
+      let formattedCreatedDate = null;
+      if (existingCategory) {
+        // Check various possible date fields in existingCategory
+        const originalCreatedDate = 
+          existingCategory.createdDate || 
+          existingCategory.CreatedDate ||
+          null;
+        
+        if (originalCreatedDate) {
+          try {
+            // If it's already ISO format (contains 'T' and 'Z'), use it directly
+            if (typeof originalCreatedDate === 'string' && originalCreatedDate.includes('T')) {
+              formattedCreatedDate = originalCreatedDate;
+            } 
+            // If it's a Date object, convert to ISO
+            else if (originalCreatedDate instanceof Date) {
+              formattedCreatedDate = originalCreatedDate.toISOString();
+            }
+            // Otherwise, try to parse and convert
+            else {
+              const dateObj = new Date(originalCreatedDate);
+              if (!isNaN(dateObj.getTime())) {
+                formattedCreatedDate = dateObj.toISOString();
+              }
+            }
+          } catch (e) {
+            console.warn("Error formatting createdDate:", e);
+          }
+        }
+      }
+      
+      // Generate updatedDate with current time (ISO format: "2025-12-01T14:05:28.202Z")
+      const updatedDate = new Date().toISOString();
+      
+      // Use camelCase format as shown in backend API structure
+      const apiPayload = {
+        categoryId: id,
+        categoryName: categoryData.name || categoryData.categoryName || "",
+        description: categoryData.description || "",
+        createdDate: formattedCreatedDate,
+        updatedDate: updatedDate,
+      };
+      
+      console.log("Updating category with payload:", apiPayload);
+      
+      const updatedCategory = await BlogAPI.updateCategory(id, apiPayload);
+      return BlogService.transformCategoryFromAPI(updatedCategory);
+    } catch (error) {
+      console.error(`BlogService - Error updating category ${id}:`, error);
+      // Log detailed error response
+      if (error.response) {
+        console.error("Error response data:", JSON.stringify(error.response.data, null, 2));
+        console.error("Error response status:", error.response.status);
+        console.error("Error response headers:", error.response.headers);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Delete a category
+   * @param {number|string} id - Category ID (categoryId)
+   * @returns {Promise} Delete confirmation
+   */
+  deleteCategory: async (id) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (token) setAuthToken(token);
+      
+      // Ensure categoryId is a number
+      const categoryId = typeof id === 'string' ? parseInt(id, 10) : Number(id);
+      
+      if (isNaN(categoryId) || categoryId <= 0) {
+        throw new Error(`Invalid categoryId: ${id}. categoryId must be a positive number.`);
+      }
+      
+      console.log(`BlogService - Attempting to delete category with categoryId: ${categoryId} (type: ${typeof categoryId})`);
+      
+      const result = await BlogAPI.deleteCategory(categoryId);
+      
+      console.log(`BlogService - Category with categoryId ${categoryId} deleted successfully`);
+      return result;
+    } catch (error) {
+      console.error(`BlogService - Error deleting category with categoryId ${id}:`, error);
+      
+      // Log detailed error information
+      if (error.response) {
+        console.error("Delete error response:", {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data,
+          headers: error.response.headers,
+        });
+      }
+      
       throw error;
     }
   },

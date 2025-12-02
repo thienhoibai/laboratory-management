@@ -7,6 +7,10 @@ RUN dotnet publish TestOrder.Presentation/TestOrder.Presentation.csproj -c Relea
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
 COPY --from=build /app/out .
+
+# Copy images for report
+COPY TestOrder.Presentation/Img ./Img
+
 ENV ASPNETCORE_URLS=http://+:5003
 EXPOSE 5003
 ENTRYPOINT ["dotnet","TestOrder.Presentation.dll"]

@@ -303,6 +303,77 @@ const BlogAPI = {
   },
 
   /**
+   * Create a new category
+   * @param {Object} categoryData - Category data
+   * @param {string} categoryData.categoryName - Category name
+   * @param {string} categoryData.description - Category description
+   * @returns {Promise} Created category
+   */
+  createCategory: async (categoryData) => {
+    try {
+      const response = await api.post("blog/api/Category", categoryData);
+      return response.data;
+    } catch (error) {
+      console.log("Error creating category:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Update an existing category
+   * @param {number} id - Category ID
+   * @param {Object} categoryData - Updated category data
+   * @param {string} categoryData.categoryName - Category name
+   * @param {string} categoryData.description - Category description
+   * @returns {Promise} Updated category
+   */
+  updateCategory: async (id, categoryData) => {
+    try {
+      const response = await api.put(`blog/api/Category/${id}`, categoryData);
+      return response.data;
+    } catch (error) {
+      console.log(`Error updating category ${id}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Delete a category
+   * @param {number} id - Category ID (integer)
+   * @returns {Promise} Delete confirmation
+   */
+  deleteCategory: async (id) => {
+    try {
+      // Ensure id is a number
+      const categoryId = typeof id === 'string' ? parseInt(id, 10) : id;
+      
+      if (isNaN(categoryId) || categoryId <= 0) {
+        throw new Error(`Invalid category ID: ${id}`);
+      }
+      
+      console.log(`Deleting category with ID: ${categoryId}`);
+      const response = await api.delete(`blog/api/Category/${categoryId}`);
+      
+      // Accept both 200 OK and 204 No Content as success
+      if (response.status === 200 || response.status === 204) {
+        return response.data || { success: true };
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error(`Error deleting category ${id}:`, error);
+      if (error.response) {
+        console.error("Delete error details:", {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data,
+        });
+      }
+      throw error;
+    }
+  },
+
+  /**
    * Get blog image by image path
    * @param {string} imagePath - Image path from blog post
    * @returns {Promise<Blob>} Image blob

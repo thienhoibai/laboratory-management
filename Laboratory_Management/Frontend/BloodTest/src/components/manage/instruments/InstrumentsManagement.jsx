@@ -1,9 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { FiUpload, FiImage } from "react-icons/fi";
+import { FiUpload, FiImage, FiSettings } from "react-icons/fi";
 import { Spin } from "antd";
 import AdminLayout from "../../admin/layout/AdminLayout";
 import InstrumentService from "../../../services/InstrumentService";
+import { StatisticsAPI } from "../../../apis/StatisticsAPI";
+import { setAuthToken } from "../../../utils/auth";
+import { isManager } from "../../../utils/role";
 import "./InstrumentsManagement.css";
 
 const STATUS_CONFIG = {
@@ -124,6 +127,8 @@ const InstrumentsManagement = () => {
     { name: "Thiết bị" },
   ];
 
+  const isReadOnly = isManager(); // Manager chỉ được xem, không được thêm/sửa/xóa
+
   const [instruments, setInstruments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -146,6 +151,10 @@ const InstrumentsManagement = () => {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // Statistics state
+  const [instrumentsStats, setInstrumentsStats] = useState(null);
+  const [loadingStats, setLoadingStats] = useState(false);
 
   const tableData = useMemo(() => instruments ?? [], [instruments]);
 
@@ -193,6 +202,7 @@ const InstrumentsManagement = () => {
 
   useEffect(() => {
     fetchInstruments();
+    fetchInstrumentsStatistics();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     currentPage,
@@ -201,6 +211,25 @@ const InstrumentsManagement = () => {
     filterMachineStatus,
     filterReagentStatus,
   ]);
+
+  const fetchInstrumentsStatistics = async () => {
+    setLoadingStats(true);
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (token) setAuthToken(token);
+      const response = await StatisticsAPI.getInstrumentsStatistics();
+      if (response?.data) {
+        const instrumentsData = response.data.data || response.data;
+        if (instrumentsData && typeof instrumentsData === "object") {
+          setInstrumentsStats(instrumentsData);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching instruments statistics:", error);
+    } finally {
+      setLoadingStats(false);
+    }
+  };
 
   const releasePreview = (previewUrl) => {
     if (previewUrl && previewUrl.startsWith("blob:")) {
@@ -245,8 +274,9 @@ const InstrumentsManagement = () => {
       const previewImage =
         freshInstrument.imageUrl || freshInstrument.imageData || "";
       setImagePreview(previewImage);
-    } catch (error) {
+    } catch (err) {
       // Fallback to using instrument from list if API call fails
+      console.error("Error fetching instrument details:", err);
       setFormState(mapInstrumentToForm(instrument));
       releasePreview(imagePreview);
       const previewImage = instrument.imageUrl || instrument.imageData || "";
@@ -360,19 +390,117 @@ const InstrumentsManagement = () => {
             <h2>Danh sách thiết bị</h2>
             <p>Theo dõi trạng thái vận hành và thuốc thử cho từng máy.</p>
           </div>
-          <button className="primary-btn" onClick={openCreateModal}>
-            + Thêm thiết bị
-          </button>
+          {!isReadOnly && (
+            <button className="primary-btn" onClick={openCreateModal}>
+              + Thêm thiết bị
+            </button>
+          )}
         </div>
+
+        {/* Statistics Cards */}
+        {loadingStats ? (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              padding: "20px",
+              marginBottom: "24px",
+            }}
+          >
+            <Spin />
+          </div>
+        ) : instrumentsStats ? (
+          <div className="instruments-stats-cards">
+            <div className="instruments-stat-card">
+              <div
+                className="instruments-stat-icon"
+                style={{ color: "#3b82f6" }}
+              >
+                <FiSettings />
+              </div>
+              <div className="instruments-stat-content">
+                <div className="instruments-stat-title">Tổng số máy</div>
+                <div className="instruments-stat-value">
+                  {instrumentsStats.totalInstruments || 0}
+                </div>
+                <div className="instruments-stat-change">Tất cả máy</div>
+              </div>
+            </div>
+
+            <div className="instruments-stat-card">
+              <div
+                className="instruments-stat-icon"
+                style={{ color: "#10b981" }}
+              >
+                <FiSettings />
+              </div>
+              <div className="instruments-stat-content">
+                <div className="instruments-stat-title">Máy đang hoạt động</div>
+                <div className="instruments-stat-value">
+                  {instrumentsStats.onlineInstruments || 0}
+                </div>
+                <div className="instruments-stat-change">Đang sử dụng</div>
+              </div>
+            </div>
+
+            <div className="instruments-stat-card">
+              <div
+                className="instruments-stat-icon"
+                style={{ color: "#6b7280" }}
+              >
+                <FiSettings />
+              </div>
+              <div className="instruments-stat-content">
+                <div className="instruments-stat-title">Máy đang tắt</div>
+                <div className="instruments-stat-value">
+                  {instrumentsStats.offlineInstruments || 0}
+                </div>
+                <div className="instruments-stat-change">Không hoạt động</div>
+              </div>
+            </div>
+
+            <div className="instruments-stat-card">
+              <div
+                className="instruments-stat-icon"
+                style={{ color: "#f59e0b" }}
+              >
+                <FiSettings />
+              </div>
+              <div className="instruments-stat-content">
+                <div className="instruments-stat-title">Máy đang bảo trì</div>
+                <div className="instruments-stat-value">
+                  {instrumentsStats.maintenanceInstruments || 0}
+                </div>
+                <div className="instruments-stat-change">Cần xử lý</div>
+              </div>
+            </div>
+
+            <div className="instruments-stat-card">
+              <div
+                className="instruments-stat-icon"
+                style={{ color: "#ef4444" }}
+              >
+                <FiSettings />
+              </div>
+              <div className="instruments-stat-content">
+                <div className="instruments-stat-title">Máy đang lỗi</div>
+                <div className="instruments-stat-value">
+                  {instrumentsStats.faultInstruments || 0}
+                </div>
+                <div className="instruments-stat-change">Nguy cấp</div>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         {/* Bộ lọc và tìm kiếm */}
         <div className="instruments-filters">
           <div className="filter-group">
-            <label htmlFor="search-input">Tìm kiếm:</label>
+            <label htmlFor="search-input">Tìm kiếm</label>
             <input
               id="search-input"
               type="text"
-              placeholder="Nhập tên hoặc mã thiết bị..."
+              placeholder="Nhập tên hoặc mã thiết bị"
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
               className="filter-input"
@@ -380,7 +508,7 @@ const InstrumentsManagement = () => {
           </div>
 
           <div className="filter-group">
-            <label htmlFor="machine-status-filter">Trạng thái máy:</label>
+            <label htmlFor="machine-status-filter">Trạng thái máy</label>
             <select
               id="machine-status-filter"
               value={filterMachineStatus}
@@ -400,7 +528,7 @@ const InstrumentsManagement = () => {
           </div>
 
           <div className="filter-group">
-            <label htmlFor="reagent-status-filter">Trạng thái thuốc:</label>
+            <label htmlFor="reagent-status-filter">Trạng thái thuốc</label>
             <select
               id="reagent-status-filter"
               value={filterReagentStatus}
@@ -437,7 +565,9 @@ const InstrumentsManagement = () => {
                       <th>Tên máy</th>
                       <th>Trạng thái máy</th>
                       <th>Trạng thái thuốc</th>
-                      <th>Hành động</th>
+                      {!isReadOnly && (
+                        <th className="action-column">Hành động</th>
+                      )}
                     </tr>
                   </thead>
                   <tbody>
@@ -463,29 +593,31 @@ const InstrumentsManagement = () => {
                               {reagentStatus.label}
                             </span>
                           </td>
-                          <td>
-                            <div className="action-buttons">
-                              <button
-                                className="ghost-btn"
-                                onClick={() => openEditModal(instrument)}
-                              >
-                                Sửa
-                              </button>
-                              <button
-                                className="danger-btn"
-                                onClick={() => handleDeleteClick(instrument)}
-                                disabled={
-                                  deleteLoading &&
+                          {!isReadOnly && (
+                            <td className="action-column">
+                              <div className="action-buttons">
+                                <button
+                                  className="ghost-btn"
+                                  onClick={() => openEditModal(instrument)}
+                                >
+                                  Sửa
+                                </button>
+                                <button
+                                  className="danger-btn"
+                                  onClick={() => handleDeleteClick(instrument)}
+                                  disabled={
+                                    deleteLoading &&
+                                    code === pickInstrumentCode(deleteTarget)
+                                  }
+                                >
+                                  {deleteLoading &&
                                   code === pickInstrumentCode(deleteTarget)
-                                }
-                              >
-                                {deleteLoading &&
-                                code === pickInstrumentCode(deleteTarget)
-                                  ? "Đang xóa..."
-                                  : "Xóa"}
-                              </button>
-                            </div>
-                          </td>
+                                    ? "Đang xóa..."
+                                    : "Xóa"}
+                                </button>
+                              </div>
+                            </td>
+                          )}
                         </tr>
                       );
                     })}
@@ -811,8 +943,9 @@ const DeleteConfirmModal = ({
             <strong>
               {code} - {name}
             </strong>
-            ? Thao tác này không thể hoàn tác.
+            ?
           </p>
+          <p>Thao tác này không thể hoàn tác.</p>
         </div>
         <div className="modal-footer">
           <button type="button" className="ghost-btn" onClick={onClose}>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import AdminLayout from "../../admin/layout/AdminLayout";
 import {
   FiSearch,
@@ -80,27 +80,68 @@ const BlogsManagement = () => {
   const [isViewDetailOpen, setIsViewDetailOpen] = useState(false);
   const [viewingBlog, setViewingBlog] = useState(null);
 
-  const token = localStorage.getItem("accessToken");
-  const decode = jwtDecode(token);
-  let role = null;
-  role = decode["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
+  // User role and ID state
+  const [userRole, setUserRole] = useState(null);
+  const [userId, setUserId] = useState(null);
+
+  // Get user role and ID from token
+  const getCurrentUserInfo = () => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) return { role: null, userId: null };
+
+      const decode = jwtDecode(token);
+      const role =
+        decode[
+          "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+        ] || decode.role;
+      // Try multiple claims to get userId
+      const userId =
+        decode["sub"] ||
+        decode.userId ||
+        decode.nameid ||
+        decode[
+          "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
+        ];
+
+      return { role, userId };
+    } catch (error) {
+      console.error("Error decoding token:", error);
+      return { role: null, userId: null };
+    }
+  };
+
+  // Initialize user info on mount
+  useEffect(() => {
+    const { role, userId } = getCurrentUserInfo();
+    setUserRole(role);
+    setUserId(userId);
+  }, []);
 
   // Load data on mount and when filter changes
   useEffect(() => {
-    loadBlogs();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter]);
-
-  useEffect(() => {
-    // Only trigger search when user stops typing (debounce effect)
-    if (search.trim() !== "") {
-      loadBlogs();
-    } else {
-      // Clear search, reload with current filter
+    if (userRole !== null) {
+      // Only load blogs after userRole is set
+      setPage(1); // Reset to first page when filter changes
       loadBlogs();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search]);
+  }, [filter, userRole, userId]);
+
+  useEffect(() => {
+    if (userRole !== null) {
+      // Only load blogs after userRole is set
+      setPage(1); // Reset to first page when search changes
+      // Only trigger search when user stops typing (debounce effect)
+      if (search.trim() !== "") {
+        loadBlogs();
+      } else {
+        // Clear search, reload with current filter
+        loadBlogs();
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, userRole, userId]);
 
   useEffect(() => {
     loadCategories();
@@ -140,16 +181,26 @@ const BlogsManagement = () => {
       if (search && search.trim() !== "") {
         params.search = search.trim();
       }
-      if (role === "Manager" || role === "Admin") {
+
+      // Load blogs based on role
+      if (userRole === "Manager" || userRole === "Admin") {
+        // Manager and Admin can see all blogs
         const blogsData = await BlogService.getAllBlogs(params);
         setBlogs(blogsData);
-      } else if (role === "Staff") {
-        const decode = jwtDecode(token);
-        let id = null;
-        id = decode["sub"];
-        params.authorId = id;
-        const blogsData = await BlogService.getAllBlogs(params);
-        setBlogs(blogsData);
+      } else if (userRole === "LabBlogger") {
+        // LabBlogger can only see their own blogs
+        if (userId) {
+          params.authorId = userId;
+          const blogsData = await BlogService.getAllBlogs(params);
+          setBlogs(blogsData);
+        } else {
+          console.error("Cannot get userId for LabBlogger");
+          toast.error("Không thể xác định người dùng. Vui lòng đăng nhập lại!");
+          setBlogs([]);
+        }
+      } else {
+        // Other roles - no access or empty list
+        setBlogs([]);
       }
     } catch (error) {
       "Error loading blogs:", error;
@@ -175,16 +226,38 @@ const BlogsManagement = () => {
     }
   };
 
-  // API handles both status filter and search
-  // Just slice for pagination
-  const displayedBlogs = blogs.slice((page - 1) * pageSize, page * pageSize);
+  // Filter blogs by status (frontend filter as backup in case API doesn't filter correctly)
+  const filteredBlogs = useMemo(() => {
+    if (filter === "all") {
+      return blogs;
+    }
+    return blogs.filter((blog) => {
+      const blogStatus = blog.status?.toLowerCase();
+      if (filter === "pending") {
+        return blogStatus === "pending" || blogStatus === "0";
+      }
+      if (filter === "approved") {
+        return blogStatus === "approved" || blogStatus === "1";
+      }
+      if (filter === "rejected") {
+        return blogStatus === "rejected" || blogStatus === "2";
+      }
+      return true;
+    });
+  }, [blogs, filter]);
+
+  // Slice for pagination
+  const displayedBlogs = filteredBlogs.slice(
+    (page - 1) * pageSize,
+    page * pageSize
+  );
 
   // Statistics
   const stats = {
     total: blogs.length,
     approved: blogs.filter((b) => b.status === "approved").length,
-    views: blogs.reduce((sum, b) => sum + b.views, 0),
-    comments: blogs.reduce((sum, b) => sum + (b.comments || 0), 0),
+    pending: blogs.filter((b) => b.status === "pending").length,
+    rejected: blogs.filter((b) => b.status === "rejected").length,
   };
 
   const getStatusTag = (status) => {
@@ -370,11 +443,24 @@ const BlogsManagement = () => {
     setIsSubmitting(true);
     try {
       const token = localStorage.getItem("accessToken");
-      const decode = jwtDecode(token);
-      let id = null;
-      id = decode["sub"];
-
       if (token) setAuthToken(token);
+
+      // Use userId from state, or get from token as fallback
+      let id = userId;
+      if (!id && token) {
+        try {
+          const decode = jwtDecode(token);
+          id =
+            decode["sub"] ||
+            decode.userId ||
+            decode.nameid ||
+            decode[
+              "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
+            ];
+        } catch (error) {
+          console.error("Error decoding token in handleSubmit:", error);
+        }
+      }
 
       const selectedCategory = categories.find(
         (category) =>
@@ -550,7 +636,7 @@ const BlogsManagement = () => {
   };
 
   const gridCols =
-    role === "Admin" || role === "Manager"
+    userRole === "Admin" || userRole === "Manager"
       ? "2fr 1fr 1fr 1fr 1fr 0.8fr 1.5fr" // Có cột Tác giả
       : "1fr 1fr 0.75fr 0.75fr 0.75fr 1fr"; // Không có cột Tác giả
 
@@ -564,7 +650,7 @@ const BlogsManagement = () => {
               Quản lý, phê duyệt và xuất bản các bài viết blog
             </p>
           </div>
-          {(role === "Staff" || role === "Admin") && (
+          {(userRole === "LabBlogger" || userRole === "Admin") && (
             <button className="blogs-create-button" onClick={openCreateModal}>
               <FiPlus /> Tạo bài viết mới
             </button>
@@ -580,42 +666,36 @@ const BlogsManagement = () => {
             <div className="blogs-stat-content">
               <div className="blogs-stat-title">Tổng bài viết</div>
               <div className="blogs-stat-value">{stats.total}</div>
-              <div className="blogs-stat-change">+3 bài mới</div>
             </div>
           </div>
 
           <div className="blogs-stat-card">
             <div className="blogs-stat-icon" style={{ color: "#10b981" }}>
-              <FiEye />
+              <FiCheck />
             </div>
             <div className="blogs-stat-content">
-              <div className="blogs-stat-title">Bài đã phê duyệt</div>
+              <div className="blogs-stat-title">Bài đã duyệt</div>
               <div className="blogs-stat-value">{stats.approved}</div>
-              <div className="blogs-stat-change">Đang hoạt động</div>
-            </div>
-          </div>
-
-          <div className="blogs-stat-card">
-            <div className="blogs-stat-icon" style={{ color: "#8b5cf6" }}>
-              <FiTrendingUp />
-            </div>
-            <div className="blogs-stat-content">
-              <div className="blogs-stat-title">Tổng lượt xem</div>
-              <div className="blogs-stat-value">
-                {(stats.views / 1000).toFixed(1)}K
-              </div>
-              <div className="blogs-stat-change">+15% tuần này</div>
             </div>
           </div>
 
           <div className="blogs-stat-card">
             <div className="blogs-stat-icon" style={{ color: "#f59e0b" }}>
-              <FiMessageCircle />
+              <FiTrendingUp />
             </div>
             <div className="blogs-stat-content">
-              <div className="blogs-stat-title">Bình luận</div>
-              <div className="blogs-stat-value">{stats.comments}</div>
-              <div className="blogs-stat-change">+23 bình luận mới</div>
+              <div className="blogs-stat-title">Bài chờ duyệt</div>
+              <div className="blogs-stat-value">{stats.pending}</div>
+            </div>
+          </div>
+
+          <div className="blogs-stat-card">
+            <div className="blogs-stat-icon" style={{ color: "#ef4444" }}>
+              <FiXCircle />
+            </div>
+            <div className="blogs-stat-content">
+              <div className="blogs-stat-title">Bài đã hủy</div>
+              <div className="blogs-stat-value">{stats.rejected}</div>
             </div>
           </div>
         </div>
@@ -681,7 +761,9 @@ const BlogsManagement = () => {
             >
               <span>Tiêu đề</span>
 
-              {(role === "Admin" || role === "Manager") && <span>Tác giả</span>}
+              {(userRole === "Admin" || userRole === "Manager") && (
+                <span>Tác giả</span>
+              )}
               <span>Danh mục</span>
               <span>Ngày tạo</span>
               <span>Ngày cập nhật</span>
@@ -704,7 +786,7 @@ const BlogsManagement = () => {
                 >
                   <span className="blogs-table-title">{blog.title}</span>
 
-                  {(role === "Admin" || role === "Manager") && (
+                  {(userRole === "Admin" || userRole === "Manager") && (
                     <span>{blog.author || ""}</span>
                   )}
 
@@ -715,7 +797,7 @@ const BlogsManagement = () => {
                   </span>
                   <span>{getStatusTag(blog.status)}</span>
                   <span className="blogs-table-actions">
-                    {(role === "Manager" || role === "Admin") && (
+                    {(userRole === "Manager" || userRole === "Admin") && (
                       <>
                         <button
                           className={`blogs-action-btn approve-btn ${
@@ -746,7 +828,7 @@ const BlogsManagement = () => {
                     >
                       <FiEye />
                     </button>
-                    {(role === "Staff" || role === "Admin") && (
+                    {(userRole === "LabBlogger" || userRole === "Admin") && (
                       <button
                         className="blogs-action-btn edit-btn"
                         onClick={() => openEditModal(blog)}
@@ -755,13 +837,15 @@ const BlogsManagement = () => {
                         <FiEdit />
                       </button>
                     )}
-                    <button
-                      className="blogs-action-btn delete-btn"
-                      onClick={() => openDeleteModal(blog)}
-                      title="Xóa"
-                    >
-                      <FiTrash2 />
-                    </button>
+                    {(userRole === "LabBlogger" || userRole === "Admin") && (
+                      <button
+                        className="blogs-action-btn delete-btn"
+                        onClick={() => openDeleteModal(blog)}
+                        title="Xóa"
+                      >
+                        <FiTrash2 />
+                      </button>
+                    )}
                   </span>
                 </div>
               ))
@@ -776,7 +860,7 @@ const BlogsManagement = () => {
             <Pagination
               current={page}
               pageSize={pageSize}
-              total={blogs.length}
+              total={filteredBlogs.length}
               onChange={(newPage, newPageSize) => {
                 setPage(newPage);
                 if (newPageSize !== pageSize) {
@@ -785,11 +869,6 @@ const BlogsManagement = () => {
               }}
               showSizeChanger
               showQuickJumper
-              showTotal={(total, range) =>
-                total > 0
-                  ? `${range[0]}-${range[1]} của ${total} bài viết`
-                  : "0 bài viết"
-              }
               pageSizeOptions={["5", "10", "20", "50", "100"]}
             />
           </div>

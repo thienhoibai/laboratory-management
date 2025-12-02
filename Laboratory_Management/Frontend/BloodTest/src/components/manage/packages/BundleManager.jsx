@@ -1,7 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
 import AdminLayout from "../../admin/layout/AdminLayout";
 import { Pagination, Spin } from "antd";
-import { FiPlus, FiSearch, FiEdit2, FiTrash2, FiX } from "react-icons/fi";
+import {
+  FiPlus,
+  FiSearch,
+  FiEdit2,
+  FiTrash2,
+  FiX,
+  FiPackage,
+} from "react-icons/fi";
 import { toast } from "react-toastify";
 import { setAuthToken } from "../../../utils/auth";
 import {
@@ -15,6 +22,7 @@ import {
   getBundleById,
   getAllCatalogs,
 } from "../../../services/TestOrderService.jsx";
+import { StatisticsAPI } from "../../../apis/StatisticsAPI";
 import "./BundleManager.css";
 
 const getCatalogId = (catalog) =>
@@ -86,11 +94,37 @@ const BundleManager = () => {
   const [bundleToDelete, setBundleToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Statistics state
+  const [catalogsStats, setCatalogsStats] = useState(null);
+  const [loadingStats, setLoadingStats] = useState(false);
+
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
     if (token) setAuthToken(token);
     preloadCatalogs();
+    fetchCatalogsStatistics();
   }, []);
+
+  const fetchCatalogsStatistics = async () => {
+    setLoadingStats(true);
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (token) setAuthToken(token);
+      const response = await StatisticsAPI.getCatalogsStatistics();
+      if (response?.data) {
+        // Handle different response structures
+        const catalogsData = response.data.data || response.data;
+        if (catalogsData && typeof catalogsData === "object") {
+          setCatalogsStats(catalogsData);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching catalogs statistics:", error);
+      console.error("Error details:", error.response?.data || error.message);
+    } finally {
+      setLoadingStats(false);
+    }
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -1053,6 +1087,65 @@ const BundleManager = () => {
             <span>Thêm gói mới</span>
           </button>
         </div>
+
+        {/* Statistics Cards */}
+        {loadingStats ? (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              padding: "20px",
+              marginBottom: "24px",
+            }}
+          >
+            <Spin />
+          </div>
+        ) : catalogsStats ? (
+          <div className="bundle-stats-cards">
+            <div className="bundle-stat-card">
+              <div className="bundle-stat-icon" style={{ color: "#8b5cf6" }}>
+                <FiPackage />
+              </div>
+              <div className="bundle-stat-content">
+                <div className="bundle-stat-title">Tổng số gói xét nghiệm</div>
+                <div className="bundle-stat-value">
+                  {catalogsStats.totalBundles || 0}
+                </div>
+                <div className="bundle-stat-change">Tất cả gói</div>
+              </div>
+            </div>
+
+            <div className="bundle-stat-card">
+              <div className="bundle-stat-icon" style={{ color: "#10b981" }}>
+                <FiPackage />
+              </div>
+              <div className="bundle-stat-content">
+                <div className="bundle-stat-title">
+                  Gói xét nghiệm đang hoạt động
+                </div>
+                <div className="bundle-stat-value">
+                  {catalogsStats.activeBundles || 0}
+                </div>
+                <div className="bundle-stat-change">Đang sử dụng</div>
+              </div>
+            </div>
+
+            <div className="bundle-stat-card">
+              <div className="bundle-stat-icon" style={{ color: "#ef4444" }}>
+                <FiPackage />
+              </div>
+              <div className="bundle-stat-content">
+                <div className="bundle-stat-title">
+                  Gói xét nghiệm không hoạt động
+                </div>
+                <div className="bundle-stat-value">
+                  {catalogsStats.inactiveBundles || 0}
+                </div>
+                <div className="bundle-stat-change">Đã vô hiệu hóa</div>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         <div className="bundle-content">
           <div className="bundle-controls">

@@ -11,16 +11,18 @@ import {
   FiLock,
   FiUnlock,
   FiShield,
+  FiUsers,
 } from "react-icons/fi";
-import { Pagination } from "antd";
+import { Pagination, Card, Spin } from "antd";
 import api from "../../../configs/axios.js";
 import { setAuthToken } from "../../../utils/auth.js";
 import { toast } from "react-toastify";
 import { getRoles } from "../../../services/IAMService.jsx";
 import { updateUserRoles } from "../../../services/IAMService.jsx";
+import { IAMServiceAPI } from "../../../apis/IAMServiceAPI.jsx";
 import "./UsersManagement.css";
 
-const endPoint = "http://localhost:8080/iam/api/Users";
+const endPoint = "http://20.6.88.113:8080/iam/api/Users";
 
 const getUserId = (user) =>
   user?.id ?? user?.userId ?? user?.uuid ?? user?.Id ?? null;
@@ -104,6 +106,10 @@ const UsersManagement = () => {
   const [selectedRoleIds, setSelectedRoleIds] = useState([]);
   const [isUpdatingRoles, setIsUpdatingRoles] = useState(false);
 
+  // Statistics state
+  const [usersStats, setUsersStats] = useState(null);
+  const [loadingStats, setLoadingStats] = useState(false);
+
   const roleMapping = {
     Manager: 2,
     Staff: 3,
@@ -122,8 +128,25 @@ const UsersManagement = () => {
     if (token) setAuthToken(token);
     fetchUsers();
     fetchRolesList();
+    fetchUsersStatistics();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, pageSize, searchDebounce, role, status, sortBy, sortDir]);
+
+  const fetchUsersStatistics = async () => {
+    setLoadingStats(true);
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (token) setAuthToken(token);
+      const response = await IAMServiceAPI.GetUsersStatistics();
+      if (response?.data?.data) {
+        setUsersStats(response.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching users statistics:", error);
+    } finally {
+      setLoadingStats(false);
+    }
+  };
 
   const fetchRolesList = async () => {
     setIsLoadingRoles(true);
@@ -761,6 +784,95 @@ const UsersManagement = () => {
             <span>Thêm người dùng</span>
           </button>
         </div>
+
+        {/* Statistics Cards */}
+        {loadingStats ? (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              padding: "20px",
+              marginBottom: "24px",
+            }}
+          >
+            <Spin />
+          </div>
+        ) : usersStats ? (
+          <div className="users-stats-cards">
+            <Card className="users-stat-card">
+              <div
+                className="users-stat-icon"
+                style={{ backgroundColor: "#3b82f6" }}
+              >
+                <FiUsers />
+              </div>
+              <div className="users-stat-content">
+                <div className="users-stat-label">Tổng số người dùng</div>
+                <div className="users-stat-value">
+                  {usersStats.totalUsers || 0}
+                </div>
+              </div>
+            </Card>
+            <Card className="users-stat-card">
+              <div
+                className="users-stat-icon"
+                style={{ backgroundColor: "#10b981" }}
+              >
+                <FiUsers />
+              </div>
+              <div className="users-stat-content">
+                <div className="users-stat-label">Tổng số khách hàng</div>
+                <div className="users-stat-value">
+                  {usersStats.totalCustomers || 0}
+                </div>
+              </div>
+            </Card>
+            <Card className="users-stat-card">
+              <div
+                className="users-stat-icon"
+                style={{ backgroundColor: "#ef4444" }}
+              >
+                <FiUsers />
+              </div>
+              <div className="users-stat-content">
+                <div className="users-stat-label">
+                  Khách hàng không hoạt động
+                </div>
+                <div className="users-stat-value">
+                  {usersStats.inactiveCustomers || 0}
+                </div>
+              </div>
+            </Card>
+            <Card className="users-stat-card">
+              <div
+                className="users-stat-icon"
+                style={{ backgroundColor: "#8b5cf6" }}
+              >
+                <FiUsers />
+              </div>
+              <div className="users-stat-content">
+                <div className="users-stat-label">Khách hàng mới tháng này</div>
+                <div className="users-stat-value">
+                  {usersStats.newCustomersThisMonth || 0}
+                </div>
+              </div>
+            </Card>
+            <Card className="users-stat-card">
+              <div
+                className="users-stat-icon"
+                style={{ backgroundColor: "#f59e0b" }}
+              >
+                <FiUsers />
+              </div>
+              <div className="users-stat-content">
+                <div className="users-stat-label">Khách hàng mới hôm nay</div>
+                <div className="users-stat-value">
+                  {usersStats.newCustomersToday || 0}
+                </div>
+              </div>
+            </Card>
+          </div>
+        ) : null}
 
         <div className="users-content">
           {/* Filters Section */}
