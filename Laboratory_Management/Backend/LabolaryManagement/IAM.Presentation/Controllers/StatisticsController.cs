@@ -51,7 +51,7 @@ public class StatisticsController : ControllerBase
         }
     }
     [HttpGet("UserByDay")]
-    [Authorize(Policy = "perm:Statistics.User.View")]
+    [Authorize(Policy = "perm:Statistics.CountUserByWeek.View")]
     public async Task<IActionResult> GetUserByDay(CancellationToken ct)
     {
         try
