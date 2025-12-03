@@ -19,10 +19,4 @@
     </Content>
   </ItemGroup>
 
-  <ItemGroup>
-    <!-- ✅ CHỈ GIỮ LẠI NHỮNG FILE THỰC SỰ KHÔNG CẦN EMBED -->
-    <EmbeddedResource Remove="Templates\Emails\InviteUser.en-US.html" />
-    <EmbeddedResource Remove="Templates\Emails\ResetPassword.en-US.html" />
-  </ItemGroup>
-
 </Project>
