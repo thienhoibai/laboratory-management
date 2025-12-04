@@ -27,14 +27,18 @@
                     <!-- Booking Code -->
                     <tr>
                         <td style="padding:24px;">
-                            <table width="100%" cellpadding="0" cellspacing="0" style="background:#5b50ea; color:#ffffff; border-radius:14px; padding:20px;">
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background:#5b50ea; color:#ffffff; border-radius:14px; padding:20px; table-layout:fixed;">
                                 <tr>
-                                    <td style="font-size:13px; opacity:0.85;">Mã đặt lịch</td>
-                                    <td style="font-size:13px; opacity:0.85; text-align:right;">Tổng thanh toán</td>
+                                    <td style="font-size:13px; opacity:0.85; width:50%;">Mã đặt lịch</td>
+                                    <td style="font-size:13px; opacity:0.85; text-align:right; width:50%;">Tổng thanh toán</td>
                                 </tr>
-                                <tr>Q
-                                    <td style="font-size:22px; font-weight:bold; letter-spacing:1px;">{{BookingCode}}</td>
-                                    <td style="font-size:22px; font-weight:bold; letter-spacing:1px; text-align:right;">{{TotalAmount}}</td>
+                                <tr>
+                                    <td style="font-size:22px; font-weight:bold; letter-spacing:1px; width:50%; white-space:nowrap;">
+                                        {{BookingCode}}
+                                    </td>
+                                    <td style="font-size:22px; font-weight:bold; letter-spacing:1px; text-align:right; width:50%; white-space:nowrap;">
+                                        {{TotalAmount}}
+                                    </td>
                                 </tr>
                             </table>
                         </td>
@@ -43,26 +47,51 @@
                     <!-- Booking Details -->
                     <tr>
                         <td style="padding:0 24px;">
-                            <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc; border:1px solid #e5e7eb; border-radius:12px; padding:20px;">
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                   style="background:#f8fafc; border:1px solid #e5e7eb; border-radius:12px; padding:20px; table-layout:fixed;">
 
                                 <tr>
-                                    <td style="padding:12px 0; border-bottom:1px solid #e5e7eb; color:#64748b;">Gói xét nghiệm</td>
-                                    <td style="padding:12px 0; border-bottom:1px solid #e5e7eb; text-align:right; font-weight:bold; color:#1e293b;">{{TestPackage}}</td>
+                                    <td style="padding:12px 0; border-bottom:1px solid #e5e7eb; color:#64748b; width:38%; white-space:nowrap;">
+                                        Gói xét nghiệm
+                                    </td>
+                                    <td style="padding:12px 0; border-bottom:1px solid #e5e7eb; text-align:right; font-weight:bold; color:#1e293b; width:62%;">
+                                        <div style="margin-left:auto; word-break:break-all; overflow-wrap:break-word;">
+                                            {{TestPackage}}
+                                        </div>
+                                    </td>
                                 </tr>
 
                                 <tr>
-                                    <td style="padding:12px 0; border-bottom:1px solid #e5e7eb; color:#64748b;">Địa điểm</td>
-                                    <td style="padding:12px 0; border-bottom:1px solid #e5e7eb; text-align:right; font-weight:bold;">{{Location}}</td>
+                                    <td style="padding:12px 0; border-bottom:1px solid #e5e7eb; color:#64748b; width:38%; white-space:nowrap;">
+                                        Địa điểm
+                                    </td>
+                                    <td style="padding:12px 0; border-bottom:1px solid #e5e7eb; text-align:right; font-weight:bold; width:62%;">
+                                        <div style="margin-left:auto; word-break:break-all; overflow-wrap:break-word;">
+                                            {{Location}}
+                                        </div>
+                                    </td>
                                 </tr>
 
                                 <tr>
-                                    <td style="padding:12px 0; border-bottom:1px solid #e5e7eb; color:#64748b;">Ngày khám</td>
-                                    <td style="padding:12px 0; border-bottom:1px solid #e5e7eb; text-align:right; font-weight:bold;">{{AppointmentDate}}</td>
+                                    <td style="padding:12px 0; border-bottom:1px solid #e5e7eb; color:#64748b; width:38%; white-space:nowrap;">
+                                        Ngày khám
+                                    </td>
+                                    <td style="padding:12px 0; border-bottom:1px solid #e5e7eb; text-align:right; font-weight:bold; width:62%;">
+                                        <div style="margin-left:auto; word-break:break-word;">
+                                            {{AppointmentDate}}
+                                        </div>
+                                    </td>
                                 </tr>
 
                                 <tr>
-                                    <td style="padding:12px 0; color:#64748b;">Giờ khám</td>
-                                    <td style="padding:12px 0; text-align:right; font-weight:bold;">{{AppointmentTime}}</td>
+                                    <td style="padding:12px 0; color:#64748b; width:38%; white-space:nowrap;">
+                                        Giờ khám
+                                    </td>
+                                    <td style="padding:12px 0; text-align:right; font-weight:bold; width:62%;">
+                                        <div style="margin-left:auto; word-break:break-word;">
+                                            {{AppointmentTime}}
+                                        </div>
+                                    </td>
                                 </tr>
 
                             </table>
@@ -72,7 +101,9 @@
                     <!-- Customer Info -->
                     <tr>
                         <td style="padding:24px;">
-                            <table width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff; border-radius:12px; border:1px solid #e5e7eb; padding:20px;">
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                   style="background:#ffffff; border-radius:12px; border:1px solid #e5e7eb; padding:20px; table-layout:fixed;">
+
                                 <tr>
                                     <td colspan="2" style="font-size:18px; font-weight:bold; color:#1e293b; padding-bottom:10px; border-bottom:2px solid #e2e8f0;">
                                         Thông tin khách hàng
@@ -80,18 +111,36 @@
                                 </tr>
 
                                 <tr>
-                                    <td style="padding:12px 0; color:#64748b;">Họ và tên:</td>
-                                    <td style="padding:12px 0; text-align:right; font-weight:bold; color:#1e293b;">{{PatientName}}</td>
+                                    <td style="padding:12px 0; color:#64748b; width:38%; white-space:nowrap;">
+                                        Họ và tên:
+                                    </td>
+                                    <td style="padding:12px 0; text-align:right; font-weight:bold; color:#1e293b; width:62%;">
+                                        <div style="margin-left:auto; word-break:break-all; overflow-wrap:break-word;">
+                                            {{PatientName}}
+                                        </div>
+                                    </td>
                                 </tr>
 
                                 <tr>
-                                    <td style="padding:12px 0; color:#64748b;">Email:</td>
-                                    <td style="padding:12px 0; text-align:right; font-weight:bold; color:#1e293b;">{{PatientEmail}}</td>
+                                    <td style="padding:12px 0; color:#64748b; width:38%; white-space:nowrap;">
+                                        Email:
+                                    </td>
+                                    <td style="padding:12px 0; text-align:right; font-weight:bold; color:#1e293b; width:62%;">
+                                        <div style="margin-left:auto; word-break:break-all; overflow-wrap:break-word;">
+                                            {{PatientEmail}}
+                                        </div>
+                                    </td>
                                 </tr>
 
                                 <tr>
-                                    <td style="padding:12px 0; color:#64748b;">Số điện thoại:</td>
-                                    <td style="padding:12px 0; text-align:right; font-weight:bold; color:#1e293b;">{{PatientPhone}}</td>
+                                    <td style="padding:12px 0; color:#64748b; width:38%; white-space:nowrap;">
+                                        Số điện thoại:
+                                    </td>
+                                    <td style="padding:12px 0; text-align:right; font-weight:bold; color:#1e293b; width:62%;">
+                                        <div style="margin-left:auto; word-break:break-all; overflow-wrap:break-word;">
+                                            {{PatientPhone}}
+                                        </div>
+                                    </td>
                                 </tr>
 
                             </table>
@@ -102,7 +151,11 @@
                     <tr>
                         <td style="padding:0 24px 24px 24px;">
                             <table width="100%" cellpadding="0" cellspacing="0" style="background:#e5e7ff; border-left:4px solid #6366f1; border-radius:8px; padding:20px;">
-                                <tr><td style="font-size:17px; font-weight:bold; color:#4338ca; padding-bottom:10px;">Lưu ý quan trọng</td></tr>
+                                <tr>
+                                    <td style="font-size:17px; font-weight:bold; color:#4338ca; padding-bottom:10px;">
+                                        Lưu ý quan trọng
+                                    </td>
+                                </tr>
 
                                 <tr><td style="padding:6px 0; font-size:15px; color:#475569;">• Vui lòng đến trước 15 phút để làm thủ tục</td></tr>
                                 <tr><td style="padding:6px 0; font-size:15px; color:#475569;">• Nhịn ăn 8-12 tiếng trước khi xét nghiệm</td></tr>
@@ -116,9 +169,15 @@
                     <!-- FOOTER -->
                     <tr>
                         <td style="background:#f8fafc; padding:24px; text-align:center;">
-                            <p style="margin:0; font-size:15px; font-weight:bold; color:#1e293b;">Cần hỗ trợ? Hotline: 1900 1234</p>
-                            <p style="margin:6px 0; font-size:13px; color:#64748b;">Email: managermentlabolary@gmail.com</p>
-                            <p style="margin-top:18px; font-size:11px; color:#a0aec0;">Email này được gửi tự động, vui lòng không trả lời.</p>
+                            <p style="margin:0; font-size:15px; font-weight:bold; color:#1e293b;">
+                                Cần hỗ trợ vui lòng liên hệ Hotline: 1900 1234
+                            </p>
+                            <p style="margin:6px 0; font-size:13px; color:#64748b;">
+                                Email: managermentlabolary@gmail.com
+                            </p>
+                            <p style="margin-top:18px; font-size:11px; color:#a0aec0;">
+                                Email này được gửi tự động, vui lòng không trả lời.
+                            </p>
                         </td>
                     </tr>
 
