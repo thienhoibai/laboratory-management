@@ -375,7 +375,7 @@ public partial class AuthService : IAuthService
 
             await _db.SaveChangesAsync(ct);
 
-            var baseUrl = _config["Email:ResetPasswordBaseUrl"] ?? "http://localhost:5274/reset-password";
+            var baseUrl = _config["Email:ResetPasswordBaseUrl"] ?? "http://hema-link.io.vn/reset-password";
             var link = $"{baseUrl}?token={token}";
 
             await _publisher.PublishAsync("PasswordResetRequested", new { to = user.Email, Username = user.Username, Link = link, ExpireMinutes = ((int)ResetTokenTtl.TotalMinutes).ToString() }, ct);
