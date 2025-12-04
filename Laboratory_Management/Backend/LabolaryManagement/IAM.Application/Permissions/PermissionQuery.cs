@@ -12,23 +12,25 @@ namespace IAM.Application.Permissions
         public async Task<List<PermissionGroupDto>> GetGroupsAsync(CancellationToken ct = default)
         {
             var all = await _db.Permissions.AsNoTracking()
-                .Select(p => p.Name)
+                .Select(p => new { p.Name, p.Description })
                 .ToListAsync(ct);
 
             var groups = all
-                .Select(n =>
+                .Select(p =>
                 {
-                    var parts = n.Split('.', 2);
-                    var module = parts.Length > 1 ? parts[0] : n;
+                    var parts = p.Name.Split('.', 2);
+                    var module = parts.Length > 1 ? parts[0] : p.Name;
                     var action = parts.Length > 1 ? parts[1] : "View";
-                    return new { module, action, key = n };
+                    return new { module, action, key = p.Name, description = p.Description };
                 })
                 .GroupBy(x => x.module)
                 .OrderBy(g => g.Key)
                 .Select(g => new PermissionGroupDto(
                     Module: g.Key,
                     Label: g.Key, // simple label; FE can localize
-                    Permissions: g.OrderBy(x => x.action).Select(x => new PermissionItemDto(x.key, x.action)).ToList()
+                    Permissions: g.OrderBy(x => x.action)
+                        .Select(x => new PermissionItemDto(x.key, x.action, x.description))
+                        .ToList()
                 ))
                 .ToList();
 
