@@ -25,6 +25,10 @@ namespace TestOrder.Presentation
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            // ===== Kiểm tra môi trường =====
+            var isDocker = string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Docker", StringComparison.OrdinalIgnoreCase);
+            Console.WriteLine($"🔧 Environment: {builder.Configuration.GetValue<string>("ASPNETCORE_ENVIRONMENT")} (IsDocker: {isDocker})");
+
             // Add services to the container.
             builder.Services.AddControllers();
 
@@ -47,7 +51,14 @@ namespace TestOrder.Presentation
             builder.Services.AddHttpClient();
 
             // ===== HttpClient cho Patient API =====
-            var patientApiUrl = builder.Configuration["PatientApiUrl"] ?? "http://localhost:5001/";
+            // Trong Docker: phải gọi qua API Gateway (port 8080)
+            // Local: gọi trực tiếp vào Patient API (port 5071)
+            var patientApiUrl = isDocker 
+                ? "http://api.gateway:8080/patient/" 
+                : (builder.Configuration["PatientApiUrl"] ?? "http://localhost:5071/");
+            
+            Console.WriteLine($"🔧 Patient API URL: {patientApiUrl}");
+            
             builder.Services.AddHttpClient("PatientApi", client =>
             {
                 client.BaseAddress = new Uri(patientApiUrl);
@@ -205,8 +216,6 @@ namespace TestOrder.Presentation
             });
 
             var app = builder.Build();
-
-            var isDocker = string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Docker", StringComparison.OrdinalIgnoreCase);
 
             // Configure the HTTP request pipeline
             if (app.Environment.IsDevelopment() || isDocker)
