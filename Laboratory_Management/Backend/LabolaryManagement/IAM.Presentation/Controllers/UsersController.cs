@@ -45,7 +45,7 @@ namespace IAM.Presentation.Controllers
         }
 
         [HttpGet("{id}")]
-        //[Authorize(Policy = "perm:User.View")]
+        [AllowAnonymous]
         public async Task<ActionResult<UserDetailDto>> Get(Guid id, CancellationToken ct)
         {
             var actorId = GetActorId(User);

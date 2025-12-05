@@ -17,6 +17,9 @@ namespace TestOrder.Presentation.Controllers
         private readonly IVnPayService vnPayService;
         private readonly PaymentService paymentService;
         private const string paymentSuccess = "http://hema-link.io.vn/booking/successBooking?bookingId=";
+        private const string paymentFaile = "http://hema-link.io.vn/booking/failBooking?bookingId=";
+        //private const string paymentSuccess = "http://localhost:5174/booking/successBooking?bookingId=";
+        //private const string paymentFaile = "http://localhost:5174/booking/failBooking?bookingId=";
 
         public PaymentController(IVnPayService vnPayService, PaymentService paymentService)
         {
@@ -26,7 +29,7 @@ namespace TestOrder.Presentation.Controllers
 
         private Guid GetUserId()
         {
-            var id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+            var id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                      ?? User.FindFirst("sub")?.Value;
             return id != null && Guid.TryParse(id, out var g) ? g : Guid.Empty;
         }
@@ -96,7 +99,7 @@ namespace TestOrder.Presentation.Controllers
                     amount = Convert.ToInt64(Request.Query["vnp_Amount"]) / 100;
                 }
 
-                if (vnPayResponse.IsSuccess)
+                if (vnPayResponse.IsSuccess && vnPayResponse.ResponseCode == "00")
                 {
                     string token = vnPayResponse.OrderId;
                     var updatePaymentDto = new UpdatePaymentDTO
@@ -114,10 +117,10 @@ namespace TestOrder.Presentation.Controllers
                     string token = vnPayResponse.OrderId;
                     var updatePaymentDto = new UpdatePaymentDTO
                     {
-                        Status = (byte?)PaymentStatusEnum.Failed,            
+                        Status = (byte?)PaymentStatusEnum.Failed,
                     };
                     string id = await paymentService.UpdatePaymentAsync(token, updatePaymentDto, vnPayResponse.IsSuccess);
-                    return BadRequest("Payment failed");
+                    return Redirect($"{paymentFaile}{id}&Amount={amount}");
                 }
             }
             catch (Exception ex)
