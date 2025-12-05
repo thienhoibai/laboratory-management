@@ -189,36 +189,179 @@
   background: #1d4ed8;
 }
 
-/* ------------------- Responsive ------------------- */
+/* Tablet */
 @media (max-width: 1100px) {
+  .dt-selection {
+    padding: 32px 20px 60px;
+  }
+
+  .dt-sub {
+    margin-left: 20px;
+    font-size: 18px;
+  }
+
   .dt-day-grid {
     grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+  }
+
+  .dt-slot-row {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+  }
+
+  .dt-location-card {
+    padding: 24px 18px;
   }
 }
 
+/* Mobile */
 @media (max-width: 800px) {
+  .dt-selection {
+    padding: 24px 16px 60px;
+  }
+
+  .dt-sub {
+    margin-left: 16px;
+    font-size: 16px;
+    margin-bottom: 20px;
+  }
+
+  .dt-title {
+    font-size: 15px;
+  }
+
   .dt-day-grid {
     grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media (max-width: 640px) {
-  .dt-selection {
-    padding: 24px 10px 60px;
+    gap: 10px;
   }
 
-  .dt-day-grid {
-    grid-template-columns: repeat(2, 1fr);
+  .dt-day {
+    padding: 18px 8px;
+    font-size: 12px;
+  }
+
+  .dt-slot-row {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+
+  .dt-slot {
+    padding: 12px 16px;
+    font-size: 13px;
+  }
+
+  .dt-location-card {
+    padding: 20px 16px;
+    margin: 0 16px 24px;
+  }
+
+  .dt-slots {
+    margin: 20px 16px 0;
+  }
+
+  .dt-slots h4 {
+    font-size: 14px;
   }
 
   .dt-actions {
     flex-direction: column-reverse;
     gap: 12px;
     align-items: stretch;
+    padding: 0 16px;
   }
 
   .dt-back,
   .dt-continue {
     width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .dt-selection {
+    padding: 20px 12px 60px;
+  }
+
+  .dt-sub {
+    margin-left: 12px;
+    font-size: 15px;
+    margin-bottom: 16px;
+  }
+
+  .dt-day-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .dt-day {
+    padding: 16px 6px;
+    font-size: 11px;
+  }
+
+  .dt-slot-row {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .dt-slot {
+    padding: 10px 12px;
+    font-size: 12px;
+    min-width: auto;
+  }
+
+  .dt-location-card {
+    padding: 16px 12px;
+    margin: 0 12px 20px;
+    font-size: 13px;
+  }
+
+  .dt-location-sub {
+    font-size: 12px;
+  }
+
+  .dt-slots {
+    margin: 16px 12px 0;
+  }
+
+  .dt-actions {
+    padding: 0 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .dt-selection {
+    padding: 16px 8px 50px;
+  }
+
+  .dt-sub {
+    margin-left: 8px;
+    font-size: 14px;
+  }
+
+  .dt-day-grid {
+    gap: 6px;
+  }
+
+  .dt-day {
+    padding: 14px 4px;
+    font-size: 10px;
+  }
+
+  .dt-slot-row {
+    gap: 6px;
+  }
+
+  .dt-slot {
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+
+  .dt-location-card {
+    padding: 14px 10px;
+    margin: 0 8px 16px;
+  }
+
+  .dt-actions {
+    padding: 0 8px;
   }
 }

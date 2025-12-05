@@ -243,9 +243,92 @@
 }
 
 /* === Responsive === */
+/* Tablet */
+@media (max-width: 1024px) {
+  .sb-page {
+    padding: 32px 16px;
+  }
+
+  .sb-inner {
+    padding: 28px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .sb-page {
+    padding: 24px 12px;
+  }
+
+  .sb-inner {
+    padding: 24px;
+  }
+
+  .sb-title {
+    font-size: 1.5rem;
+  }
+
+  .sb-desc {
+    font-size: 0.9rem;
+  }
+
+  .sb-receipt,
+  .sb-customer,
+  .sb-note {
+    padding: 18px;
+  }
+
+  .sb-code-val {
+    font-size: 20px;
+  }
+
+  .sb-total {
+    font-size: 1.1rem;
+  }
+
+  .sb-cust-title {
+    font-size: 1.1rem;
+  }
+
+  .sb-note-title {
+    font-size: 1rem;
+  }
+
+  .sb-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .btn {
+    width: 100%;
+    padding: 12px 20px;
+  }
+}
+
 @media (max-width: 480px) {
+  .sb-page {
+    padding: 20px 8px;
+  }
+
   .sb-inner {
     padding: 20px;
+    border-width: 1px;
+  }
+
+  .sb-top {
+    margin-bottom: 24px;
+  }
+
+  .sb-title {
+    font-size: 1.25rem;
+  }
+
+  .sb-desc {
+    font-size: 0.85rem;
+  }
+
+  .sb-content {
+    gap: 18px;
   }
 
   .sb-receipt,
@@ -254,11 +337,56 @@
     padding: 16px;
   }
 
-  .sb-actions {
+  .sb-receipt-top {
     flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .sb-code-val {
+    font-size: 18px;
+  }
+
+  .sb-total {
+    font-size: 1rem;
+  }
+
+  .sb-label,
+  .sb-value-1 {
+    font-size: 0.8rem;
+  }
+
+  .sb-value {
+    font-size: 0.9rem;
+  }
+
+  .sb-cust-title {
+    font-size: 1rem;
+  }
+
+  .c-l,
+  .c-v {
+    font-size: 0.85rem;
+  }
+
+  .sb-note-title {
+    font-size: 0.95rem;
+  }
+
+  .sb-note li {
+    font-size: 0.85rem;
+  }
+
+  .sb-actions {
+    gap: 8px;
   }
 
   .btn {
-    width: 100%;
+    padding: 10px 16px;
+    font-size: 0.9rem;
+  }
+
+  .sb-help {
+    font-size: 0.85rem;
   }
 }
