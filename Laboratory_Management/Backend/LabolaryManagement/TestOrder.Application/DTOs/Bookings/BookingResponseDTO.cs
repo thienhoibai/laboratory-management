@@ -33,9 +33,7 @@ namespace TestOrder.Application.DTOs.Bookings
 
         public string? CreatedBy { get; set; }
         public int? BundleId { get; set; }
-        public DateTime CreatedDate { get; set; }
-
-        public TimeOnly? CreatedTime { get; set; }
+        public DateTime CreatedAt { get; set; }
 
         public DateTime? RunDate { get; set; }
         public string RanBy { get; set; } = string.Empty;

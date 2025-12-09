@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using TestOrder.Application.DTOs.Bookings;
 using TestOrder.Infrastructure.Data;
+using TestOrder.Infrastructure.Enums;
 using TestOrder.Infrastructure.Models;
 
 namespace TestOrder.Presentation.Workers
