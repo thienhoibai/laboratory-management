@@ -41,4 +41,8 @@
     <Protobuf Include="..\Contracts\Grpc\iam\iam.proto" GrpcServices="Client" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Middleware\" />
+  </ItemGroup>
+
 </Project>

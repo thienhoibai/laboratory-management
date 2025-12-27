@@ -3,15 +3,16 @@ using TestOrder.Application.Services;
 using TestOrder.Application.Services.Booking;
 using TestOrder.Application.Services.Payment;
 using TestOrder.Application.Services.InstrumentBridge;
+using TestOrder.Application.Statistics.Services; // ✅ Add Statistics
 using TestOrder.Infrastructure.Base;
 using TestOrder.Infrastructure.Data;
 using TestOrder.Infrastructure.Repository;
 using MassTransit;
 using Contracts.Notifications;
 using RabbitMQ.Client;
-using Common.Authorization; // ✅ Thêm
+using Common.Authorization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization; // ✅ Thêm
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
@@ -45,6 +46,14 @@ namespace TestOrder.Presentation
             // Đăng ký HttpClient factory
             builder.Services.AddHttpClient();
 
+            // ===== HttpClient cho Patient API =====
+            var patientApiUrl = builder.Configuration["PatientApiUrl"] ?? "http://localhost:5001/";
+            builder.Services.AddHttpClient("PatientApi", client =>
+            {
+                client.BaseAddress = new Uri(patientApiUrl);
+                client.Timeout = TimeSpan.FromSeconds(30);
+            });
+
             // CSV Ingest Worker options & hosted service
             builder.Services.Configure<TestOrder.Presentation.Workers.CsvIngestOptions>(
                 builder.Configuration.GetSection("CsvIngest"));
@@ -71,6 +80,7 @@ namespace TestOrder.Presentation
             builder.Services.AddScoped<TestResultService>();
             builder.Services.AddScoped<TestReportRepository>();
             builder.Services.AddScoped<TestReportService>();
+            builder.Services.AddScoped<TestOrderStatisticsService>(); // ✅ Add Statistics Service
 
             builder.Services.AddHostedService<ExpiresBookingService>();
 

@@ -1,5 +1,6 @@
 ﻿using Instrument.Application.Results;
 using Instrument.Application.Services;
+using Instrument.Application.Statistics.Services; // ✅ Add Statistics
 using Common.Authorization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -67,6 +68,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddScoped<IResultGenerator, ResultGenerator>();
 builder.Services.AddScoped<InstrumentService>();
 builder.Services.AddScoped<RunService>();
+builder.Services.AddScoped<InstrumentStatisticsService>(); // ✅ Add Statistics Service
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
