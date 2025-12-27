@@ -46,7 +46,7 @@ function MedicalRecordDetail() {
         const token = localStorage.getItem("accessToken");
         if (token) setAuthToken(token);
         const response = await api.get(
-          `testorder/api/Booking/patient?patientId=${patientId}&pageNumber=1&pageSize=1000`
+          `testorder/api/Booking/patient?patientId=${patientId}&pageNumber=1&pageSize=1000&filterStatus=5`
         );
         if (response.status >= 200 && response.status < 300) {
           // Hỗ trợ cả trường hợp trả về object có bookingResponses hoặc array
@@ -60,13 +60,9 @@ function MedicalRecordDetail() {
           } else if (Array.isArray(response.data?.data)) {
             bookingsRaw = response.data.data;
           }
-          // Lọc chỉ lấy booking status completed
-          const bookings = bookingsRaw.filter(
-            (b) => (b.status || "").toLowerCase() === "completed"
-          );
           // Xử lý từng booking để lấy thông tin gói hoặc catalog
           const processedBookings = await Promise.all(
-            bookings.map(async (booking) => {
+            bookingsRaw.map(async (booking) => {
               let title = "Xét nghiệm đơn lẻ";
               if (booking.bundleId) {
                 try {

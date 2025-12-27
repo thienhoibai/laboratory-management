@@ -20,31 +20,34 @@ const BlogAPI = {
    * @returns {Promise} Array of blog posts
    */
   getAllBlogs: async (params = {}) => {
-    try {
-      const { page = 1, pageSize = 100, status, authorId, search, categoryId } = params;
-      let url = `blog/api/BlogPost?page=${page}&pageSize=${pageSize}`;
-      
-      if (status !== undefined && status !== null) {
-        url += `&status=${status}`;
-      }
-      
-      if (authorId) {
-        url += `&authorId=${authorId}`;
-      }
-      
-      if (categoryId !== undefined && categoryId !== null) {
-        url += `&categoryId=${categoryId}`;
-      }
-      
-      if (search && search.trim() !== "") {
-        url += `&search=${encodeURIComponent(search.trim())}`;
-      }
-      
-      const response = await api.get(url);
-      return response.data;
-    } catch (error) {
-      throw error;
+    const {
+      page = 1,
+      pageSize = 100,
+      status,
+      authorId,
+      search,
+      categoryId,
+    } = params;
+    let url = `blog/api/BlogPost?page=${page}&pageSize=${pageSize}`;
+
+    if (status !== undefined && status !== null) {
+      url += `&status=${status}`;
     }
+
+    if (authorId) {
+      url += `&authorId=${authorId}`;
+    }
+
+    if (categoryId !== undefined && categoryId !== null) {
+      url += `&categoryId=${categoryId}`;
+    }
+
+    if (search && search.trim() !== "") {
+      url += `&search=${encodeURIComponent(search.trim())}`;
+    }
+
+    const response = await api.get(url);
+    return response.data;
   },
 
   /**
@@ -58,11 +61,11 @@ const BlogAPI = {
     try {
       const { page: p = 1, pageSize: ps = 100 } = { page, pageSize };
       let url = `blog/api/BlogPost?page=${p}&pageSize=${ps}&status=1`;
-      
+
       if (search && search.trim() !== "") {
         url += `&search=${encodeURIComponent(search.trim())}`;
       }
-      
+
       // Try with token first if available
       const token = localStorage.getItem("accessToken");
       if (token) {
@@ -78,7 +81,7 @@ const BlogAPI = {
           throw authError;
         }
       }
-      
+
       // Use publicApi for public requests (no auth required)
       const response = await publicApi.get(url);
       return response.data;
@@ -102,19 +105,25 @@ const BlogAPI = {
     try {
       const { page: p = 1, pageSize: ps = 100 } = { page, pageSize };
       let url = `blog/api/BlogPost?page=${p}&pageSize=${ps}&status=1`;
-      
+
       // Ensure categoryId is properly formatted
-      if (categoryId !== undefined && categoryId !== null && categoryId !== 'null' && categoryId !== '') {
+      if (
+        categoryId !== undefined &&
+        categoryId !== null &&
+        categoryId !== "null" &&
+        categoryId !== ""
+      ) {
         // Convert to number if it's a string
-        const normalizedCategoryId = typeof categoryId === 'string' 
-          ? parseInt(categoryId, 10) 
-          : categoryId;
-        
+        const normalizedCategoryId =
+          typeof categoryId === "string"
+            ? parseInt(categoryId, 10)
+            : categoryId;
+
         if (!isNaN(normalizedCategoryId)) {
           url += `&categoryId=${normalizedCategoryId}`;
         }
       }
-      
+
       // Try with token first if available
       const token = localStorage.getItem("accessToken");
       if (token) {
@@ -130,7 +139,7 @@ const BlogAPI = {
           throw authError;
         }
       }
-      
+
       // Use publicApi for public requests (no auth required)
       const response = await publicApi.get(url);
       return response.data;
@@ -149,29 +158,25 @@ const BlogAPI = {
    * @returns {Promise} Blog post object
    */
   getBlogById: async (id) => {
-    try {
-      // Try with token first if available
-      const token = localStorage.getItem("accessToken");
-      if (token) {
-        try {
-          const response = await api.get(`blog/api/BlogPost/${id}`);
+    // Try with token first if available
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      try {
+        const response = await api.get(`blog/api/BlogPost/${id}`);
+        return response.data;
+      } catch (authError) {
+        // If 401, try without auth
+        if (authError.response?.status === 401) {
+          const response = await publicApi.get(`blog/api/BlogPost/${id}`);
           return response.data;
-        } catch (authError) {
-          // If 401, try without auth
-          if (authError.response?.status === 401) {
-            const response = await publicApi.get(`blog/api/BlogPost/${id}`);
-            return response.data;
-          }
-          throw authError;
         }
+        throw authError;
       }
-      
-      // Use publicApi for public requests (no auth required)
-      const response = await publicApi.get(`blog/api/BlogPost/${id}`);
-      return response.data;
-    } catch (error) {
-      throw error;
     }
+
+    // Use publicApi for public requests (no auth required)
+    const response = await publicApi.get(`blog/api/BlogPost/${id}`);
+    return response.data;
   },
 
   /**
@@ -185,7 +190,7 @@ const BlogAPI = {
       const response = await api.post("blog/api/BlogPost", blogData);
       return response.data;
     } catch (error) {
-("Error creating blog:", error);
+      console.log("Error creating blog:", error);
       throw error;
     }
   },
@@ -202,7 +207,7 @@ const BlogAPI = {
       const response = await api.put(`blog/api/BlogPost/${id}`, blogData);
       return response.data;
     } catch (error) {
-(`Error updating blog ${id}:`, error);
+      console.log(`Error updating blog ${id}:`, error);
       throw error;
     }
   },
@@ -217,7 +222,7 @@ const BlogAPI = {
       const response = await api.delete(`blog/api/BlogPost/${id}`);
       return response.data;
     } catch (error) {
-(`Error deleting blog ${id}:`, error);
+      console.log(`Error deleting blog ${id}:`, error);
       throw error;
     }
   },
@@ -235,7 +240,7 @@ const BlogAPI = {
       });
       return response.data;
     } catch (error) {
-(`Error approving blog ${id}:`, error);
+      console.log(`Error approving blog ${id}:`, error);
       throw error;
     }
   },
@@ -253,7 +258,7 @@ const BlogAPI = {
       });
       return response.data;
     } catch (error) {
-(`Error rejecting blog ${id}:`, error);
+      console.log(`Error rejecting blog ${id}:`, error);
       throw error;
     }
   },
@@ -273,24 +278,26 @@ const BlogAPI = {
         } catch (authError) {
           // If 401, try without auth
           if (authError.response?.status === 401) {
-("Auth failed, trying public access for categories");
+            console.log("Auth failed, trying public access for categories");
             const response = await publicApi.get("blog/api/Category");
             return response.data;
           }
           throw authError;
         }
       }
-      
+
       // Use publicApi for public requests (no auth required)
       const response = await publicApi.get("blog/api/Category");
       return response.data;
     } catch (error) {
       // If still 401, return empty array instead of throwing
       if (error.response?.status === 401) {
-("Category API requires authentication, returning empty array");
+        console.log(
+          "Category API requires authentication, returning empty array"
+        );
         return [];
       }
-("Error fetching categories:", error);
+      console.log("Error fetching categories:", error);
       throw error;
     }
   },
@@ -305,11 +312,11 @@ const BlogAPI = {
       // Try different possible endpoints
       // If backend has a specific endpoint for images
       const response = await api.get(`blog/api/BlogPost/image/${imagePath}`, {
-        responseType: 'blob'
+        responseType: "blob",
       });
       return response.data;
     } catch (error) {
-("Error fetching blog image:", error);
+      console.log("Error fetching blog image:", error);
       throw error;
     }
   },
@@ -334,7 +341,9 @@ const BlogAPI = {
       } catch (authError) {
         if (authError.response?.status === 401) {
           // Try public access for viewing comments
-          const response = await publicApi.get(`blog/api/Comment/post/${postId}`);
+          const response = await publicApi.get(
+            `blog/api/Comment/post/${postId}`
+          );
           return response.data;
         }
         throw authError;
@@ -342,10 +351,12 @@ const BlogAPI = {
     } catch (error) {
       // If still 401, return empty array instead of throwing
       if (error.response?.status === 401) {
-("Comment API requires authentication, returning empty array");
+        console.log(
+          "Comment API requires authentication, returning empty array"
+        );
         return [];
       }
-(`Error fetching comments for post ${postId}:`, error);
+      console.log(`Error fetching comments for post ${postId}:`, error);
       throw error;
     }
   },
@@ -362,7 +373,7 @@ const BlogAPI = {
       const response = await api.get(`blog/api/Comment/${commentId}`);
       return response.data;
     } catch (error) {
-(`Error fetching comment ${commentId}:`, error);
+      console.log(`Error fetching comment ${commentId}:`, error);
       throw error;
     }
   },
@@ -381,15 +392,15 @@ const BlogAPI = {
         throw new Error("Authentication required to create comment");
       }
       setAuthToken(token);
-      
+
       // Lấy thông tin user hiện tại để lấy userId
       const userResponse = await IAMServiceAPI.GetCurrentUser();
       const userId = userResponse?.data?.data?.userId;
-      
+
       if (!userId) {
         throw new Error("Unable to get current user information");
       }
-      
+
       // Thêm userId vào commentData nếu chưa có
       const commentPayload = {
         ...commentData,
@@ -397,11 +408,11 @@ const BlogAPI = {
         commentId: commentData.commentId || 0,
         isUpdated: commentData.isUpdated || false,
       };
-      
+
       const response = await api.post("blog/api/Comment", commentPayload);
       return response.data;
     } catch (error) {
-("Error creating comment:", error);
+      console.log("Error creating comment:", error);
       throw error;
     }
   },
@@ -420,10 +431,13 @@ const BlogAPI = {
         throw new Error("Authentication required to update comment");
       }
       setAuthToken(token);
-      const response = await api.put(`blog/api/Comment/${commentId}`, commentData);
+      const response = await api.put(
+        `blog/api/Comment/${commentId}`,
+        commentData
+      );
       return response.data;
     } catch (error) {
-(`Error updating comment ${commentId}:`, error);
+      console.log(`Error updating comment ${commentId}:`, error);
       throw error;
     }
   },
@@ -443,7 +457,7 @@ const BlogAPI = {
       const response = await api.delete(`blog/api/Comment/${commentId}`);
       return response.data;
     } catch (error) {
-(`Error deleting comment ${commentId}:`, error);
+      console.log(`Error deleting comment ${commentId}:`, error);
       throw error;
     }
   },
@@ -461,7 +475,7 @@ const BlogAPI = {
       if (token) setAuthToken(token);
       const { search, postId } = params;
       let url = "blog/api/Comment/search";
-      
+
       const queryParams = [];
       if (search && search.trim() !== "") {
         queryParams.push(`search=${encodeURIComponent(search.trim())}`);
@@ -469,15 +483,15 @@ const BlogAPI = {
       if (postId) {
         queryParams.push(`postId=${postId}`);
       }
-      
+
       if (queryParams.length > 0) {
         url += `?${queryParams.join("&")}`;
       }
-      
+
       const response = await api.get(url);
       return response.data;
     } catch (error) {
-("Error searching comments:", error);
+      console.log("Error searching comments:", error);
       throw error;
     }
   },

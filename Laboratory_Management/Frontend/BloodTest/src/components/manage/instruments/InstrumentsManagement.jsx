@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { FiUpload, FiImage } from "react-icons/fi";
+import { Spin } from "antd";
 import AdminLayout from "../../admin/layout/AdminLayout";
 import InstrumentService from "../../../services/InstrumentService";
 import "./InstrumentsManagement.css";

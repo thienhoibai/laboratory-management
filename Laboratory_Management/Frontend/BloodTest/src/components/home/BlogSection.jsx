@@ -1,6 +1,7 @@
 // src/components/home/BlogSection.jsx
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { Spin } from "antd";
 import "./BlogSection.css";
 import BlogService from "../../services/BlogService";
 
@@ -30,7 +31,7 @@ export default function BlogSection() {
       }
 
       setBlogs(latestBlogs);
-      
+
       // Only show error if we expected data but got none
       // (Don't show error if backend just has no blogs)
       if (latestBlogs.length === 0) {
@@ -65,7 +66,7 @@ export default function BlogSection() {
 
       {loading ? (
         <div className="blog-loading">
-          <p>Đang tải bài viết...</p>
+          <Spin size="large" />
         </div>
       ) : error ? (
         <div className="blog-error">
@@ -80,12 +81,12 @@ export default function BlogSection() {
           {blogs.map((blog) => (
             <div key={blog.id} className="blog-card">
               <Link to={`/blog/${blog.id}`} className="blog-card-link">
-                <img 
-                  src={blog.img || blog.thumbnailUrl || blog.imageUrl} 
-                  alt={blog.title} 
+                <img
+                  src={blog.img || blog.thumbnailUrl || blog.imageUrl}
+                  alt={blog.title}
                   className="blog-img"
                   onError={(e) => {
-                    e.target.style.display = 'none';
+                    e.target.style.display = "none";
                   }}
                 />
                 <div className="blog-card-content">

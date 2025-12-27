@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import AdminLayout from "../../admin/layout/AdminLayout";
 import { FiSearch, FiPlus, FiX, FiTrash2 } from "react-icons/fi";
-import { Pagination } from "antd";
+import { Pagination, Spin } from "antd";
 import { setAuthToken } from "../../../utils/auth";
 import { toast } from "react-toastify";
 import {
@@ -254,9 +254,8 @@ const ParameterManagement = () => {
           {/* Parameters Table */}
           <div className="parameters-table-container">
             {isLoading ? (
-              <div className="loading-container">
-                <div className="loading-spinner"></div>
-                <p>Đang tải dữ liệu...</p>
+              <div style={{ textAlign: "center", padding: "40px" }}>
+                <Spin size="large" />
               </div>
             ) : (
               <table className="parameters-table">

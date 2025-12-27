@@ -1,5 +1,6 @@
 // src/components/home/EquipmentSection.jsx
 import React, { useEffect, useState } from "react";
+import { Spin } from "antd";
 import "./EquipmentSection.css";
 import InstrumentService from "../../services/InstrumentService";
 import { setAuthToken } from "../../utils/auth";
@@ -66,9 +67,11 @@ export default function EquipmentSection() {
           toàn.
         </p>
         <div className="equipment-cards">
-          <p style={{ textAlign: "center", width: "100%", color: "#6b7280" }}>
-            Đang tải dữ liệu thiết bị...
-          </p>
+          <div
+            style={{ textAlign: "center", width: "100%", padding: "40px 0" }}
+          >
+            <Spin size="large" />
+          </div>
         </div>
       </div>
     );

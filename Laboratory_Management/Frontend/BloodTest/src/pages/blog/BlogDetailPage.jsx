@@ -1,6 +1,7 @@
 // src/pages/blog/BlogDetailPage.jsx
 import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { Spin } from "antd";
 import Navbar from "../../components/navbar/Navbar";
 import Footer from "../../components/footer/Footer";
 import BlogService from "../../services/BlogService";
@@ -287,7 +288,7 @@ export default function BlogDetailPage() {
         <Navbar />
         <div className="blog-detail-content">
           <div className="blog-detail-loading">
-            <p>Đang tải bài viết...</p>
+            <Spin size="large" />
           </div>
         </div>
         <Footer />
@@ -423,7 +424,7 @@ export default function BlogDetailPage() {
           {/* Comments List */}
           {commentsLoading ? (
             <div className="blog-comments-loading">
-              <p>Đang tải bình luận...</p>
+              <Spin size="large" />
             </div>
           ) : comments.length === 0 ? (
             <div className="blog-comments-empty">
@@ -433,15 +434,19 @@ export default function BlogDetailPage() {
             <div className="blog-comments-list">
               {comments.map((comment) => {
                 // Normalize IDs for comparison (remove whitespace, convert to lowercase)
-                const normalizedCurrentUserId = currentUserId ? String(currentUserId).trim().toLowerCase() : null;
-                const normalizedCommentAuthorId = comment.authorId ? String(comment.authorId).trim().toLowerCase() : null;
-                
+                const normalizedCurrentUserId = currentUserId
+                  ? String(currentUserId).trim().toLowerCase()
+                  : null;
+                const normalizedCommentAuthorId = comment.authorId
+                  ? String(comment.authorId).trim().toLowerCase()
+                  : null;
+
                 const isOwner =
                   isAuthenticated &&
                   normalizedCurrentUserId &&
                   normalizedCommentAuthorId &&
                   normalizedCurrentUserId === normalizedCommentAuthorId;
-                
+
                 // Debug log
                 if (isAuthenticated && currentUserId) {
                   console.log("Comment ownership check:", {
@@ -450,7 +455,7 @@ export default function BlogDetailPage() {
                     normalizedCommentAuthorId: normalizedCommentAuthorId,
                     currentUserId: currentUserId,
                     normalizedCurrentUserId: normalizedCurrentUserId,
-                    isOwner: isOwner
+                    isOwner: isOwner,
                   });
                 }
 
@@ -498,43 +503,43 @@ export default function BlogDetailPage() {
                             )}
                           </div>
                           {isOwner && (
-                              <div className="blog-comment-menu-container">
-                                <button
-                                  className="blog-comment-menu-btn"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleMenuToggle(comment.id);
-                                  }}
-                                  title="Tùy chọn"
-                                >
-                                  ⋮
-                                </button>
-                                {openMenuCommentId === comment.id && (
-                                  <div className="blog-comment-menu">
-                                    <button
-                                      className="blog-comment-menu-item"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleEditComment(comment);
-                                        handleMenuClose();
-                                      }}
-                                    >
-                                      Sửa
-                                    </button>
-                                    <button
-                                      className="blog-comment-menu-item delete"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleDeleteComment(comment.id);
-                                        handleMenuClose();
-                                      }}
-                                    >
-                                      Xóa
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
-                            )}
+                            <div className="blog-comment-menu-container">
+                              <button
+                                className="blog-comment-menu-btn"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleMenuToggle(comment.id);
+                                }}
+                                title="Tùy chọn"
+                              >
+                                ⋮
+                              </button>
+                              {openMenuCommentId === comment.id && (
+                                <div className="blog-comment-menu">
+                                  <button
+                                    className="blog-comment-menu-item"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleEditComment(comment);
+                                      handleMenuClose();
+                                    }}
+                                  >
+                                    Sửa
+                                  </button>
+                                  <button
+                                    className="blog-comment-menu-item delete"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteComment(comment.id);
+                                      handleMenuClose();
+                                    }}
+                                  >
+                                    Xóa
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                         <div className="blog-comment-content">
                           {comment.content}

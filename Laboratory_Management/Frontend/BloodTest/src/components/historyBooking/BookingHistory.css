@@ -10,7 +10,7 @@
   background: linear-gradient(135deg, #4c8dff 0%, #3b7ae8 100%);
   color: #fff;
   padding: 40px; /* dùng padding đồng nhất */
-
+  text-align: center;
   width: 100vw;
   margin-left: calc(50% - 50vw);
   margin-right: calc(50% - 50vw);

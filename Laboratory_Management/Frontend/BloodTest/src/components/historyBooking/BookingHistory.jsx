@@ -29,6 +29,7 @@ function BookingHistory() {
   const [pageSize, setPageSize] = useState(5);
   const [totalRecords, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [filterStatus, setFilterStatus] = useState(""); // "" means all statuses
 
   useEffect(() => {
     const fetchAPi = async () => {
@@ -36,10 +37,14 @@ function BookingHistory() {
         setLoading(true);
         const token = localStorage.getItem("accessToken");
         if (token) setAuthToken(token);
-        // Fetch all data with large pageSize
-        const response = await api.get(
-          `${endPoint}?patientId=${patientId}&pageNumber=1&pageSize=1000000`
-        );
+
+        // Build API URL with filters
+        let apiUrl = `${endPoint}?patientId=${patientId}&pageNumber=${page}&pageSize=${pageSize}`;
+        if (filterStatus) {
+          apiUrl += `&filterStatus=${filterStatus}`;
+        }
+
+        const response = await api.get(apiUrl);
         const data = response.data.bookingResponses;
         if (response.status >= 200 && response.status < 300) {
           let allItems = [];
@@ -52,27 +57,23 @@ function BookingHistory() {
           }
 
           setAllBookings(allItems);
-          setTotal(allItems.length);
+          // Get total from API response
+          setTotal(response.data.totalRecords || allItems.length);
+          setBookingHistory(allItems);
 
-          // Paginate on client-side
-          const startIndex = (page - 1) * pageSize;
-          const endIndex = startIndex + pageSize;
-          const paginatedItems = allItems.slice(startIndex, endIndex);
-          setBookingHistory(paginatedItems);
-
-          // Build unique ids from paginated items
+          // Build unique ids from all items
           const bundleIds = [
-            ...new Set(paginatedItems.map((i) => i.bundleId).filter(Boolean)),
+            ...new Set(allItems.map((i) => i.bundleId).filter(Boolean)),
           ];
           const catalogIds = [
             ...new Set(
-              paginatedItems
+              allItems
                 .filter((i) => !i.bundleId && i.catalogId)
                 .map((i) => i.catalogId)
             ),
           ];
           const bookingIds = [
-            ...new Set(paginatedItems.map((i) => i.bookingId).filter(Boolean)),
+            ...new Set(allItems.map((i) => i.bookingId).filter(Boolean)),
           ];
 
           // Fetch packages by bundleId in parallel
@@ -159,7 +160,7 @@ function BookingHistory() {
     };
 
     if (patientId) fetchAPi();
-  }, [patientId, page, pageSize]);
+  }, [patientId, page, pageSize, filterStatus]);
 
   const toggle = (bookingCode) => {
     setExpanded((s) => ({ ...s, [bookingCode]: !s[bookingCode] }));
@@ -256,12 +257,22 @@ function BookingHistory() {
             <label htmlFor="status" className="filter-label">
               Trạng thái
             </label>
-            <select id="status" className="filter-status-select">
+            <select
+              id="status"
+              className="filter-status-select"
+              value={filterStatus}
+              onChange={(e) => {
+                setFilterStatus(e.target.value);
+                setPage(1); // Reset to first page when filter changes
+              }}
+            >
               <option value="">Tất cả</option>
-              <option value="pending">Chờ xác nhận</option>
-              <option value="confirmed">Đã xác nhận</option>
-              <option value="completed">Hoàn thành</option>
-              <option value="cancelled">Hủy</option>
+              <option value="1">Chờ xác nhận</option>
+              <option value="2">Đã xác nhận</option>
+              <option value="3">Đã check-in</option>
+              <option value="4">Đang xử lý</option>
+              <option value="5">Hoàn thành</option>
+              <option value="6">Đã hủy</option>
             </select>
           </div>
         </div>
@@ -317,7 +328,7 @@ function BookingHistory() {
                     </div>
                   </div>
                   <div className="booking-created">
-                    Đặt lịch ngày: {formatDate(b.createdDate)}
+                    Đặt lịch ngày: {formatDate(b.createdAt)}
                   </div>
                   <div className="booking-actions">
                     <button
@@ -513,22 +524,24 @@ function BookingHistory() {
           })
         )}
         {/* Pagination */}
-        <div style={{ textAlign: "center", marginTop: 16 }}>
-          <Pagination
-            current={page}
-            pageSize={pageSize}
-            total={totalRecords}
-            onChange={(p, ps) => {
-              setPage(p);
-              if (ps !== pageSize) {
-                setPageSize(ps);
-                setPage(1); // reset to first when pageSize changes
-              }
-            }}
-            showSizeChanger
-            pageSizeOptions={[5, 10, 20, 50]}
-          />
-        </div>
+        {totalRecords > 0 && (
+          <div style={{ textAlign: "center", marginTop: 16 }}>
+            <Pagination
+              current={page}
+              pageSize={pageSize}
+              total={totalRecords}
+              onChange={(p, ps) => {
+                setPage(p);
+                if (ps !== pageSize) {
+                  setPageSize(ps);
+                  setPage(1); // reset to first when pageSize changes
+                }
+              }}
+              showSizeChanger
+              pageSizeOptions={[5, 10, 20, 50]}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
