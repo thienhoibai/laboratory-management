@@ -20,6 +20,7 @@ import {
 import "./AdminAppointmentSchedulePage.css";
 import api from "../../../configs/axios";
 import { formatDate1 } from "../../../utils/formatDate";
+import { setAuthToken } from "../../../utils/auth";
 // import { CgLayoutGrid } from "react-icons/cg";
 
 const AdminAppointmentSchedulePage = () => {
@@ -250,6 +251,8 @@ const AdminAppointmentSchedulePage = () => {
   };
 
   const fetchAPI = async () => {
+    const token = localStorage.getItem("accessToken");
+    setAuthToken(token);
     try {
       const response = await api.get(
         `testorder/api/Booking/info?date=${formatDate1(
@@ -311,6 +314,8 @@ const AdminAppointmentSchedulePage = () => {
   }, [selectedDate, currentPage, pageSize, search]);
 
   const handleCheckin = async (bookingId) => {
+    const token = localStorage.getItem("accessToken");
+    setAuthToken(token);
     try {
       setCheckingInId(bookingId);
       const response = await api.put(
