@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Pagination, Spin } from "antd";
 import { useNavigate } from "react-router-dom";
 import "./MedicalRecordDetail.css";
 import TestResultDetail from "./TestResultDetail";
@@ -9,7 +10,7 @@ import { calculateAge } from "../../utils/formatDate";
 import api from "../../configs/axios";
 import { bookingService } from "../../services/TestOrderService.jsx";
 
-export default function MedicalRecordDetail() {
+function MedicalRecordDetail() {
   const navigate = useNavigate();
   const [expandedTests, setExpandedTests] = useState({});
   const [searchParams] = useSearchParams();
@@ -17,6 +18,9 @@ export default function MedicalRecordDetail() {
   const [patients, setPatient] = useState(null);
   const [appointmentHistory, setAppointmentHistory] = useState([]);
   const [loading, setLoading] = useState(false);
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
 
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
@@ -36,24 +40,31 @@ export default function MedicalRecordDetail() {
   useEffect(() => {
     const fetchBookingHistory = async () => {
       if (!patientId) return;
-
       try {
         setLoading(true);
         const response = await api.get(
-          `testorder/api/Booking/patient?patientId=${patientId}&pageNumber=1&pageSize=100`
+          `testorder/api/Booking/patient?patientId=${patientId}&pageNumber=1&pageSize=1000`
         );
-
         if (response.status >= 200 && response.status < 300) {
-          const bookings = Array.isArray(response.data)
-            ? response.data
-            : response.data?.items || response.data?.data || [];
-
+          // Hỗ trợ cả trường hợp trả về object có bookingResponses hoặc array
+          let bookingsRaw = [];
+          if (Array.isArray(response.data)) {
+            bookingsRaw = response.data;
+          } else if (Array.isArray(response.data?.bookingResponses)) {
+            bookingsRaw = response.data.bookingResponses;
+          } else if (Array.isArray(response.data?.items)) {
+            bookingsRaw = response.data.items;
+          } else if (Array.isArray(response.data?.data)) {
+            bookingsRaw = response.data.data;
+          }
+          // Lọc chỉ lấy booking status completed
+          const bookings = bookingsRaw.filter(
+            (b) => (b.status || "").toLowerCase() === "completed"
+          );
           // Xử lý từng booking để lấy thông tin gói hoặc catalog
           const processedBookings = await Promise.all(
             bookings.map(async (booking) => {
-              let title = "Xét nghiệm";
-
-              // Nếu có bundleId, lấy tên gói
+              let title = "Xét nghiệm đơn lẻ";
               if (booking.bundleId) {
                 try {
                   const bundleData = await bookingService.getTestBundle(
@@ -67,9 +78,7 @@ export default function MedicalRecordDetail() {
                   console.error("Error fetching bundle:", error);
                   title = "Gói xét nghiệm";
                 }
-              }
-              // Nếu không có bundleId nhưng có testCatalogs, lấy testName từ các catalog
-              else if (
+              } else if (
                 booking.testCatalogs &&
                 Array.isArray(booking.testCatalogs) &&
                 booking.testCatalogs.length > 0
@@ -83,13 +92,14 @@ export default function MedicalRecordDetail() {
                     .map((cat) => cat?.testName || cat?.name)
                     .filter(Boolean);
                   title =
-                    testNames.length > 0 ? testNames.join(", ") : "Xét nghiệm";
+                    testNames.length > 0
+                      ? testNames.join(", ")
+                      : "Xét nghiệm đơn lẻ";
                 } catch (error) {
                   console.error("Error fetching catalogs:", error);
-                  title = "Xét nghiệm";
+                  title = "Xét nghiệm đơn lẻ";
                 }
               }
-              // Format ngày
               const formatDate = (dateStr) => {
                 if (!dateStr) return "—";
                 try {
@@ -104,7 +114,6 @@ export default function MedicalRecordDetail() {
                   return dateStr;
                 }
               };
-
               return {
                 id: booking.bookingId || booking.id,
                 title: title,
@@ -392,93 +401,120 @@ export default function MedicalRecordDetail() {
         <div className="appointment-list">
           {loading ? (
             <div style={{ padding: "40px", textAlign: "center" }}>
-              <p>Đang tải lịch sử xét nghiệm...</p>
-            </div>
-          ) : appointmentHistory.length === 0 ? (
-            <div style={{ padding: "40px", textAlign: "center" }}>
-              <p>Chưa có lịch sử xét nghiệm</p>
+              <Spin size="large" />
             </div>
           ) : (
-            appointmentHistory.map((appointment) => (
-              <div key={appointment.id} className="appointment-card-wrapper">
-                <div className="appointment-card">
-                  <div className="appointment-icon">
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                      <polyline points="14,2 14,8 20,8" />
-                      <line x1="16" y1="13" x2="8" y2="13" />
-                      <line x1="16" y1="17" x2="8" y2="17" />
-                      <polyline points="10,9 9,9 8,9" />
-                    </svg>
-                  </div>
-                  <div className="appointment-content">
-                    <h3 className="appointment-title">{appointment.title}</h3>
-                    <div className="appointment-info">
-                      <div className="appointment-date">
+            <>
+              {appointmentHistory
+                .slice((page - 1) * pageSize, page * pageSize)
+                .map((appointment) => (
+                  <div
+                    key={appointment.id}
+                    className="appointment-card-wrapper"
+                  >
+                    <div className="appointment-card">
+                      <div className="appointment-icon">
                         <svg
-                          className="date-icon"
                           viewBox="0 0 24 24"
                           fill="none"
                           stroke="currentColor"
                           strokeWidth="2"
                         >
-                          <rect
-                            x="3"
-                            y="4"
-                            width="18"
-                            height="18"
-                            rx="2"
-                            ry="2"
-                          />
-                          <line x1="16" y1="2" x2="16" y2="6" />
-                          <line x1="8" y1="2" x2="8" y2="6" />
-                          <line x1="3" y1="10" x2="21" y2="10" />
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                          <polyline points="14,2 14,8 20,8" />
+                          <line x1="16" y1="13" x2="8" y2="13" />
+                          <line x1="16" y1="17" x2="8" y2="17" />
+                          <polyline points="10,9 9,9 8,9" />
                         </svg>
-                        <span>Ngày xét nghiệm: {appointment.date}</span>
                       </div>
-                      <div className="appointment-location">
-                        <span>Khám tại: {appointment.location}</span>
+                      <div className="appointment-content">
+                        <h3 className="appointment-title">
+                          {appointment.title}
+                        </h3>
+                        <div className="appointment-info">
+                          <div className="appointment-date">
+                            <svg
+                              className="date-icon"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                            >
+                              <rect
+                                x="3"
+                                y="4"
+                                width="18"
+                                height="18"
+                                rx="2"
+                                ry="2"
+                              />
+                              <line x1="16" y1="2" x2="16" y2="6" />
+                              <line x1="8" y1="2" x2="8" y2="6" />
+                              <line x1="3" y1="10" x2="21" y2="10" />
+                            </svg>
+                            <span>Ngày xét nghiệm: {appointment.date}</span>
+                          </div>
+                          <div className="appointment-location">
+                            <span>Khám tại: {appointment.location}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="appointment-actions">
+                        <button
+                          className={`view-detail-btn ${
+                            expandedTests[appointment.id] ? "active" : ""
+                          }`}
+                          onClick={() => toggleTestDetail(appointment.id)}
+                        >
+                          {expandedTests[appointment.id] ? "Ẩn" : "Xem"} chi
+                          tiết kết quả
+                          <svg
+                            className={`chevron-icon ${
+                              expandedTests[appointment.id] ? "expanded" : ""
+                            }`}
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                          >
+                            <polyline points="6 9 12 15 18 9" />
+                          </svg>
+                        </button>
                       </div>
                     </div>
+                    {expandedTests[appointment.id] && (
+                      <div className="test-detail-dropdown">
+                        <TestResultDetail
+                          test={appointment}
+                          inline={true}
+                          bookingId={appointment.id}
+                        />
+                      </div>
+                    )}
                   </div>
-                  <div className="appointment-actions">
-                    <button
-                      className={`view-detail-btn ${
-                        expandedTests[appointment.id] ? "active" : ""
-                      }`}
-                      onClick={() => toggleTestDetail(appointment.id)}
-                    >
-                      {expandedTests[appointment.id] ? "Ẩn" : "Xem"} chi tiết
-                      kết quả
-                      <svg
-                        className={`chevron-icon ${
-                          expandedTests[appointment.id] ? "expanded" : ""
-                        }`}
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <polyline points="6 9 12 15 18 9" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-                {expandedTests[appointment.id] && (
-                  <div className="test-detail-dropdown">
-                    <TestResultDetail test={appointment} inline={true} />
-                  </div>
-                )}
+                ))}
+              <div style={{ textAlign: "center", marginTop: 16 }}>
+                <Pagination
+                  current={page}
+                  pageSize={pageSize}
+                  total={appointmentHistory.length}
+                  onChange={(p, ps) => {
+                    setPage(p);
+                    if (ps !== pageSize) {
+                      setPageSize(ps);
+                      setPage(1);
+                    }
+                  }}
+                  showSizeChanger
+                  pageSizeOptions={[5, 10, 20, 50]}
+                />
               </div>
-            ))
+            </>
           )}
         </div>
       </div>
     </div>
   );
 }
+
+export default MedicalRecordDetail;

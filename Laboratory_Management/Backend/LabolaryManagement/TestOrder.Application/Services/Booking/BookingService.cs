@@ -23,13 +23,15 @@ namespace TestOrder.Application.Services.Booking
         private readonly CatalogBundleService _catalogBundleService;
         private readonly TestBundleService testBundleService;
         private readonly TestCatalogService testCatalogService;
+        private readonly IPublishEndpoint _publishEndpoint;
 
         public BookingService(BookingRepository bookingRepository,
                               BookingTestService bookingTestService,
                               AppointmentSlotService appointmentSlotService,
                               CatalogBundleService catalogBundleService,
                               TestBundleService testBundleService,
-                              TestCatalogService testCatalogService)
+                              TestCatalogService testCatalogService,
+                               IPublishEndpoint publishEndpoint)
         {
             _bookingTestService = bookingTestService;
             _bookingRepository = bookingRepository;
@@ -37,6 +39,7 @@ namespace TestOrder.Application.Services.Booking
             _catalogBundleService = catalogBundleService;
             this.testBundleService = testBundleService;
             this.testCatalogService = testCatalogService;
+            _publishEndpoint = publishEndpoint;
         }
 
         internal async Task<BookingResponseDTO> MapToDTOAsync(Infrastructure.Models.Booking booking)

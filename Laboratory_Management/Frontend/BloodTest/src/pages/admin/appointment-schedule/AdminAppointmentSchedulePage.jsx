@@ -39,6 +39,12 @@ const AdminAppointmentSchedulePage = () => {
   const [Booking, SetBookings] = useState([]);
   const [checkingInId, setCheckingInId] = useState(null);
   // const [checkingOutId, setCheckingOutId] = useState(null); // track check-out
+  // const [instrumentModal, setInstrumentModal] = useState({
+  //   open: false,
+  //   bookingId: null,
+  //   bookingCode: "",
+  //   patientName: "",
+  // });
   const totalFetchedRef = React.useRef(false); // Đánh dấu đã fetch total chưa
 
   // Format date to YYYY-MM-DD
@@ -327,7 +333,6 @@ const AdminAppointmentSchedulePage = () => {
             )}&patientName=${encodeURIComponent(b.patientName || "")}`
           );
         } catch (error) {
-          console.log(error);
           navigate(`/instruments?bookingId=${bookingId}`);
         }
       }
