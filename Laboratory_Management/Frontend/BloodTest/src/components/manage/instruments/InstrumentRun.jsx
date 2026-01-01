@@ -5,6 +5,7 @@ import { startInstrumentRun } from "../../../apis/InstrumentAPI";
 import AdminLayout from "../../admin/layout/AdminLayout";
 import { FiDroplet, FiCheckCircle } from "react-icons/fi";
 import "./InstrumentRun.css";
+import { setAuthToken } from "../../../utils/auth";
 
 // Không dùng defaultResults nữa, sẽ lấy từ API
 
@@ -176,6 +177,8 @@ const InstrumentRun = () => {
 
   // Khi phase done, gọi API lấy kết quả thực tế
   useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    setAuthToken(token);
     if (phase === "done" && bookingId) {
       const storageKey = `instrument_run_${bookingId}`;
       localStorage.removeItem(storageKey);
