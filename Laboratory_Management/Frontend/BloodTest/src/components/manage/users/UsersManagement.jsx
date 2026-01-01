@@ -159,6 +159,8 @@ const UsersManagement = () => {
 
       console.log("Request params:", params.toString());
 
+      const token = localStorage.getItem("accessToken");
+      if (token) setAuthToken(token);
       const response = await api.get(`${endPoint}?${params.toString()}`);
 
       if (response.status === 200) {
@@ -209,6 +211,8 @@ const UsersManagement = () => {
     }
     setIsDeleting(true);
     try {
+      const token = localStorage.getItem("accessToken");
+      if (token) setAuthToken(token);
       const response = await api.delete(`${endPoint}/${id}`);
       if (response.status === 200 || response.status === 204) {
         toast("Xóa người dùng thành công!");
@@ -352,6 +356,8 @@ const UsersManagement = () => {
     };
 
     try {
+      const token = localStorage.getItem("accessToken");
+      if (token) setAuthToken(token);
       const response = await api.post(endPoint, requestData);
 
       if (response.status === 200 || response.status === 201) {
@@ -405,6 +411,8 @@ const UsersManagement = () => {
     }
     setLockLoadingId(id);
     try {
+      const token = localStorage.getItem("accessToken");
+      if (token) setAuthToken(token);
       const response = await api.post(`iam/api/Users/${id}/lock`);
       if (
         response?.data?.data?.status === "locked" ||
@@ -564,6 +572,8 @@ const UsersManagement = () => {
     }
     setLockLoadingId(id);
     try {
+      const token = localStorage.getItem("accessToken");
+      if (token) setAuthToken(token);
       const response = await api.post(`iam/api/Users/${id}/unlock`);
       if (
         response?.data?.data?.status === "unlocked" ||
@@ -693,6 +703,8 @@ const UsersManagement = () => {
     };
 
     try {
+      const token = localStorage.getItem("accessToken");
+      if (token) setAuthToken(token);
       const response = await api.put(`iam/api/Users/${id}`, requestData);
 
       if (response.status === 200 || response.status === 204) {

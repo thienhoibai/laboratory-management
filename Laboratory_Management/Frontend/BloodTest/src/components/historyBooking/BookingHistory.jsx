@@ -3,16 +3,19 @@ import { Pagination, Spin } from "antd";
 import "./BookingHistory.css";
 import api from "../../configs/axios";
 import { formatDate, formatTime } from "../../utils/formatDate";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+
 import TestOrderServiceAPI from "../../apis/TestOrderServiceAPI";
+import { setAuthToken } from "../../utils/auth";
 
-const endPoint = "testorder/api/Booking/patient";
-const endPoint1 = "testorder/api/TestBundle";
-const endPointCatalog = "testorder/api/TestCatalog";
+function BookingHistory() {
+  const endPoint = "testorder/api/Booking/patient";
+  const endPoint1 = "testorder/api/TestBundle";
+  const endPointCatalog = "testorder/api/TestCatalog";
 
-export default function BookingHistory() {
   const [expanded, setExpanded] = useState({});
+  const navigate = useNavigate();
   const [BookingHistory, setBookingHistory] = useState([]);
   const [allBookings, setAllBookings] = useState([]); // Store all bookings
   const [Package, setPackage] = useState({}); // map: bundleId -> package
@@ -31,6 +34,8 @@ export default function BookingHistory() {
     const fetchAPi = async () => {
       try {
         setLoading(true);
+        const token = localStorage.getItem("accessToken");
+        if (token) setAuthToken(token);
         // Fetch all data with large pageSize
         const response = await api.get(
           `${endPoint}?patientId=${patientId}&pageNumber=1&pageSize=1000000`
@@ -72,6 +77,8 @@ export default function BookingHistory() {
 
           // Fetch packages by bundleId in parallel
           if (bundleIds.length) {
+            const token = localStorage.getItem("accessToken");
+            if (token) setAuthToken(token);
             const pkgEntries = await Promise.all(
               bundleIds.map(async (id) => {
                 try {
@@ -91,6 +98,8 @@ export default function BookingHistory() {
 
           // Fetch catalogs by catalogId in parallel
           if (catalogIds.length) {
+            const token = localStorage.getItem("accessToken");
+            if (token) setAuthToken(token);
             const catalogEntries = await Promise.all(
               catalogIds.map(async (id) => {
                 try {
@@ -112,6 +121,8 @@ export default function BookingHistory() {
 
           // Fetch payments by bookingId in parallel
           if (bookingIds.length) {
+            const token = localStorage.getItem("accessToken");
+            if (token) setAuthToken(token);
             const payEntries = await Promise.all(
               bookingIds.map(async (id) => {
                 try {
@@ -188,6 +199,8 @@ export default function BookingHistory() {
       if (!bookingId) return toast.error("Thiếu bookingId");
       if (!amount || amount <= 0)
         return toast.error("Không xác định được số tiền");
+      const token = localStorage.getItem("accessToken");
+      if (token) setAuthToken(token);
       const resp = await TestOrderServiceAPI.bookingService.createVnPayUrl(
         bookingId,
         amount
@@ -454,9 +467,17 @@ export default function BookingHistory() {
                         >
                           Vui lòng liên hệ phòng khám để nhận kết quả.
                         </p>
-                        <button className="btn-primary-history-booking">
+                        <button
+                          className="btn-primary-history-booking"
+                          onClick={() => {
+                            // Điều hướng sang trang MedicalRecordDetail và truyền bookingId
+                            navigate(
+                              `/medical-record?patientId=${b.patientId}&bookingId=${b.bookingId}`
+                            );
+                          }}
+                        >
                           <img
-                            src="src\assets\icon\Document_white.svg"
+                            src="src/assets/icon/Document_white.svg"
                             alt=""
                           />
                           Xem chi tiết kết quả xét nghiệm
@@ -512,3 +533,5 @@ export default function BookingHistory() {
     </div>
   );
 }
+
+export default BookingHistory;

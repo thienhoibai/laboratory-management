@@ -9,8 +9,8 @@ const generateInstrumentCode = () => {
 };
 
 export const startInstrumentRun = async (bookingId) => {
-   const token = localStorage.getItem("accessToken");
-    setAuthToken(token);
+  const token = localStorage.getItem("accessToken");
+  if (token) setAuthToken(token);
   const instrumentCode = generateInstrumentCode();
   const payload = { bookingId, instrumentCode };
   const res = await api.post("instrument/api/instrument/runs/start", payload);

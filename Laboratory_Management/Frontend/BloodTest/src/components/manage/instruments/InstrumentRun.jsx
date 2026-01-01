@@ -3,6 +3,7 @@ import api from "../../../configs/axios";
 import { useSearchParams } from "react-router-dom";
 import { startInstrumentRun } from "../../../apis/InstrumentAPI";
 import AdminLayout from "../../admin/layout/AdminLayout";
+import { setAuthToken } from "../../../utils/auth";
 import { FiDroplet, FiCheckCircle } from "react-icons/fi";
 import "./InstrumentRun.css";
 import { setAuthToken } from "../../../utils/auth";
@@ -119,15 +120,14 @@ const InstrumentRun = () => {
         );
 
         const data = await startInstrumentRun(bookingId);
-        const status = (data?.status || data?.Status || "")
-          .toString()
-          .toUpperCase();
+        console.log(data);
+        const status = data?.status || data?.Status || "";
         const msg = String(data?.message || data?.Message || "");
         setMessage(msg);
 
         // Simulate progress finishing quickly after response
         setProgress(100);
-        if (status === "COMPLETED") {
+        if (status === 1) {
           setPhase("done");
         } else {
           setPhase("error");

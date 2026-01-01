@@ -15,6 +15,7 @@ function MedicalRecordDetail() {
   const [expandedTests, setExpandedTests] = useState({});
   const [searchParams] = useSearchParams();
   const patientId = searchParams.get("patientId");
+  const autoExpandBookingId = searchParams.get("bookingId");
   const [patients, setPatient] = useState(null);
   const [appointmentHistory, setAppointmentHistory] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -42,6 +43,8 @@ function MedicalRecordDetail() {
       if (!patientId) return;
       try {
         setLoading(true);
+        const token = localStorage.getItem("accessToken");
+        if (token) setAuthToken(token);
         const response = await api.get(
           `testorder/api/Booking/patient?patientId=${patientId}&pageNumber=1&pageSize=1000`
         );
@@ -146,6 +149,13 @@ function MedicalRecordDetail() {
       [testId]: !prev[testId],
     }));
   };
+
+  // Tự động expand nếu có bookingId trên URL
+  useEffect(() => {
+    if (autoExpandBookingId) {
+      setExpandedTests((prev) => ({ ...prev, [autoExpandBookingId]: true }));
+    }
+  }, [autoExpandBookingId]);
 
   return (
     <div className="medical-record-detail">
