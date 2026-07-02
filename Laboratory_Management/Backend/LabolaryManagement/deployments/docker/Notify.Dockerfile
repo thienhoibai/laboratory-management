@@ -9,5 +9,6 @@ RUN dotnet publish Notify.Api/Notify.Api.csproj -c Release -o /app/publish /p:Us
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
 COPY --from=build /app/publish .
+ENV ASPNETCORE_URLS=http://0.0.0.0:5601
 EXPOSE 5601
 ENTRYPOINT ["dotnet", "Notify.Api.dll"]

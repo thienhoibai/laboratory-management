@@ -25,6 +25,8 @@ namespace TestOrder.Presentation
     {
         public static void Main(string[] args)
         {
+            AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
             var builder = WebApplication.CreateBuilder(args);
 
             // ===== Kiểm tra môi trường =====
@@ -39,7 +41,7 @@ namespace TestOrder.Presentation
 
             // Sử dụng PooledDbContextFactory cho cả Controllers và Background Services
             builder.Services.AddPooledDbContextFactory<TestOrderDBContext>(options =>
-                options.UseSqlServer(connectionString));
+                options.UseNpgsql(connectionString));
 
 
             // Đăng ký DbContext với Scoped lifetime để inject vào Controllers/Services
@@ -60,9 +62,9 @@ namespace TestOrder.Presentation
             // ===== HttpClient cho Patient API =====
             // Trong Docker: phải gọi qua API Gateway (port 8080)
             // Local: gọi trực tiếp vào Patient API (port 5071)
-            var patientApiUrl = isDocker 
-                ? "http://api.gateway:8080/patient/" 
-                : (builder.Configuration["PatientApiUrl"] ?? "http://localhost:5071/");
+            // Ưu tiên env/config PatientApiUrl (Render), sau đó tới gateway nội bộ Docker, cuối cùng là local
+            var patientApiUrl = builder.Configuration["PatientApiUrl"]
+                ?? (isDocker ? "http://api.gateway:8080/patient/" : "http://localhost:5071/");
             
             Console.WriteLine($"🔧 Patient API URL: {patientApiUrl}");
             
@@ -122,10 +124,19 @@ namespace TestOrder.Presentation
             {
                 x.UsingRabbitMq((context, cfg) =>
                 {
-                    var host = builder.Configuration["RabbitMQ:Host"] ?? "rabbitmq";
-                    var user = builder.Configuration["RabbitMQ:User"] ?? "guest";
-                    var pass = builder.Configuration["RabbitMQ:Pass"] ?? "guest";
-                    cfg.Host(host, h => { h.Username(user); h.Password(pass); });
+                    // CloudAMQP (amqps://user:pass@host/vhost) takes priority over host/user/pass
+                    var rabbitUrl = builder.Configuration["RabbitMQ:Url"];
+                    if (!string.IsNullOrWhiteSpace(rabbitUrl))
+                    {
+                        cfg.Host(new Uri(rabbitUrl));
+                    }
+                    else
+                    {
+                        var host = builder.Configuration["RabbitMQ:Host"] ?? "rabbitmq";
+                        var user = builder.Configuration["RabbitMQ:User"] ?? "guest";
+                        var pass = builder.Configuration["RabbitMQ:Pass"] ?? "guest";
+                        cfg.Host(host, h => { h.Username(user); h.Password(pass); });
+                    }
                     
                     cfg.Message<NotificationRequestedV1>(m => m.SetEntityName(notifyExchange));
                     cfg.Publish<NotificationRequestedV1>(p =>
@@ -223,6 +234,17 @@ namespace TestOrder.Presentation
             });
 
             var app = builder.Build();
+
+            // Ensure database schema exists (PostgreSQL)
+            using (var scope = app.Services.CreateScope())
+            {
+                var factory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<TestOrderDBContext>>();
+                using var db = factory.CreateDbContext();
+                db.Database.EnsureCreated();
+                Console.WriteLine("✅ TestOrder database schema ensured");
+            }
+
+            app.MapGet("/healthz", () => Results.Ok("TestOrder up"));
 
             // Configure the HTTP request pipeline
             if (app.Environment.IsDevelopment() || isDocker)

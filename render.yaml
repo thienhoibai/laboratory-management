@@ -1,0 +1,200 @@
+# Render Blueprint - Laboratory Management (free tier)
+# Database: Neon PostgreSQL (external, free) - dien connection string khi deploy
+# Message queue: CloudAMQP (external, free) - dien RabbitMQ__Url khi deploy
+#
+# LUU Y: neu ten service bi trung tren Render (bi them hau to ngau nhien),
+# phai sua lai cac bien *_URL ben duoi cho khop voi URL that.
+
+services:
+  # ===== API Gateway (YARP) =====
+  - type: web
+    name: hemalink-gateway
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./Laboratory_Management/Backend/LabolaryManagement/gateway.Dockerfile
+    dockerContext: ./Laboratory_Management/Backend/LabolaryManagement
+    healthCheckPath: /healthz
+    envVars:
+      - key: PORT
+        value: "8080"
+      - key: IAM_URL
+        value: https://hemalink-iam.onrender.com/
+      - key: PATIENT_URL
+        value: https://hemalink-patient.onrender.com/
+      - key: TESTORDER_URL
+        value: https://hemalink-testorder.onrender.com/
+      - key: BLOG_URL
+        value: https://hemalink-blog.onrender.com/
+      - key: INSTRUMENT_URL
+        value: https://hemalink-instrument.onrender.com/
+
+  # ===== IAM Service =====
+  - type: web
+    name: hemalink-iam
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./Laboratory_Management/Backend/LabolaryManagement/iam.Dockerfile
+    dockerContext: ./Laboratory_Management/Backend/LabolaryManagement
+    healthCheckPath: /healthz
+    envVars:
+      - key: PORT
+        value: "5001"
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Docker
+      - key: ConnectionStrings__LabIAM
+        sync: false # Neon: Host=...;Database=LabIAM;Username=...;Password=...;SSL Mode=Require;Trust Server Certificate=true
+      - key: RabbitMQ__Url
+        sync: false # CloudAMQP: amqps://user:pass@host/vhost
+      - key: Jwt__Issuer
+        value: lab-iam
+      - key: Jwt__Audience
+        value: lab.api
+      - key: Jwt__SigningKey
+        value: Jx6n2QvB5pTf8Kz3Wm9aS4Ld7Yh0Nr2Xu8Cj5Pk1Vg3Mz7Rb0Hq4Tn6Wy8Le2
+      - key: Jwt__AccessTokenMinutes
+        value: "60"
+      - key: Jwt__RefreshTokenDays
+        value: "14"
+      - key: Auth__Google__ClientId
+        value: 834593887103-av11ov3n9l5pp160ekmr68e844nq2kg2.apps.googleusercontent.com
+      - key: Email__ResetPasswordBaseUrl
+        value: http://hema-link.io.vn/reset-password
+
+  # ===== Patient Service =====
+  - type: web
+    name: hemalink-patient
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./Laboratory_Management/Backend/LabolaryManagement/patient.Dockerfile
+    dockerContext: ./Laboratory_Management/Backend/LabolaryManagement
+    healthCheckPath: /healthz
+    envVars:
+      - key: PORT
+        value: "5002"
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ConnectionStrings__PatientService4
+        sync: false # Neon: Host=...;Database=PatientService4;Username=...;Password=...;SSL Mode=Require;Trust Server Certificate=true
+      - key: RabbitMQ__Url
+        sync: false # CloudAMQP: amqps://user:pass@host/vhost
+      - key: PATIENT_PII_KEYS
+        sync: false # 3 dong base64 key nhu trong docker-compose.yml
+      - key: Grpc__IamUrl
+        value: https://hemalink-iam.onrender.com
+      - key: Jwt__Issuer
+        value: lab-iam
+      - key: Jwt__Audience
+        value: lab.api
+      - key: Jwt__SigningKey
+        value: Jx6n2QvB5pTf8Kz3Wm9aS4Ld7Yh0Nr2Xu8Cj5Pk1Vg3Mz7Rb0Hq4Tn6Wy8Le2
+
+  # ===== TestOrder Service =====
+  - type: web
+    name: hemalink-testorder
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./Laboratory_Management/Backend/LabolaryManagement/testorder.Dockerfile
+    dockerContext: ./Laboratory_Management/Backend/LabolaryManagement
+    healthCheckPath: /healthz
+    envVars:
+      - key: PORT
+        value: "5003"
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Docker
+      - key: TZ
+        value: Asia/Ho_Chi_Minh
+      - key: ConnectionStrings__DefaultConnection
+        sync: false # Neon: Host=...;Database=TestOrderDB;Username=...;Password=...;SSL Mode=Require;Trust Server Certificate=true
+      - key: RabbitMQ__Url
+        sync: false # CloudAMQP: amqps://user:pass@host/vhost
+      - key: PatientApiUrl
+        value: https://hemalink-gateway.onrender.com/patient/
+      - key: VnPay__PaymentReturnUrl
+        value: https://hemalink-gateway.onrender.com/testorder/api/Payment/vnpay-return
+      - key: Jwt__Issuer
+        value: lab-iam
+      - key: Jwt__Audience
+        value: lab.api
+      - key: Jwt__SigningKey
+        value: Jx6n2QvB5pTf8Kz3Wm9aS4Ld7Yh0Nr2Xu8Cj5Pk1Vg3Mz7Rb0Hq4Tn6Wy8Le2
+
+  # ===== Instrument Service =====
+  - type: web
+    name: hemalink-instrument
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./Laboratory_Management/Backend/LabolaryManagement/instrument.Dockerfile
+    dockerContext: ./Laboratory_Management/Backend/LabolaryManagement
+    healthCheckPath: /healthz
+    envVars:
+      - key: PORT
+        value: "5008"
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Docker
+      - key: ConnectionStrings__InstrumentDb
+        sync: false # Neon: Host=...;Database=InstrumentDB;Username=...;Password=...;SSL Mode=Require;Trust Server Certificate=true
+      - key: TestOrderBaseUrl
+        value: https://hemalink-testorder.onrender.com
+      - key: Jwt__Issuer
+        value: lab-iam
+      - key: Jwt__Audience
+        value: lab.api
+      - key: Jwt__SigningKey
+        value: Jx6n2QvB5pTf8Kz3Wm9aS4Ld7Yh0Nr2Xu8Cj5Pk1Vg3Mz7Rb0Hq4Tn6Wy8Le2
+
+  # ===== Blog Service =====
+  - type: web
+    name: hemalink-blog
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./Laboratory_Management/Backend/LabolaryManagement/deployments/docker/BlogService.Dockerfile
+    dockerContext: ./Laboratory_Management/Backend/LabolaryManagement
+    healthCheckPath: /healthz
+    envVars:
+      - key: PORT
+        value: "5004"
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Docker
+      - key: ConnectionStrings__DefaultConnection
+        sync: false # Neon: Host=...;Database=BlogServiceDB;Username=...;Password=...;SSL Mode=Require;Trust Server Certificate=true
+      - key: Jwt__Issuer
+        value: lab-iam
+      - key: Jwt__Audience
+        value: lab.api
+      - key: Jwt__SigningKey
+        value: Jx6n2QvB5pTf8Kz3Wm9aS4Ld7Yh0Nr2Xu8Cj5Pk1Vg3Mz7Rb0Hq4Tn6Wy8Le2
+
+  # ===== Notify Service =====
+  - type: web
+    name: hemalink-notify
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./Laboratory_Management/Backend/LabolaryManagement/deployments/docker/Notify.Dockerfile
+    dockerContext: ./Laboratory_Management/Backend/LabolaryManagement
+    healthCheckPath: /healthz
+    envVars:
+      - key: PORT
+        value: "5601"
+      - key: ConnectionStrings__Notify
+        sync: false # Neon: Host=...;Database=notify;Username=...;Password=...;SSL Mode=Require;Trust Server Certificate=true
+      - key: RabbitMQ__Url
+        sync: false # CloudAMQP: amqps://user:pass@host/vhost
+      - key: Email__Smtp__Host
+        value: smtp.gmail.com
+      - key: Email__Smtp__Port
+        value: "587"
+      - key: Email__Smtp__UseStartTls
+        value: "true"
+      - key: Email__Smtp__User
+        value: managermentlabolary@gmail.com
+      - key: Email__Smtp__Password
+        sync: false # Gmail app password
+      - key: Email__Smtp__From
+        value: managermentlabolary@gmail.com

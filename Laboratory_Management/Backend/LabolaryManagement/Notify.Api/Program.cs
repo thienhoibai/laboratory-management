@@ -7,12 +7,14 @@ using Notify.Infrastructure;
 using RabbitMQ.Client;
 using System.Globalization;
 
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddHealthChecks();
 
-var conn = builder.Configuration.GetConnectionString("Notify") ?? builder.Configuration["ConnectionStrings:Notify"] ?? "Server=localhost;Database=notify;Trusted_Connection=True;TrustServerCertificate=True";
-builder.Services.AddDbContext<NotifyDbContext>(opt => opt.UseSqlServer(conn));
+var conn = builder.Configuration.GetConnectionString("Notify") ?? builder.Configuration["ConnectionStrings:Notify"] ?? "Host=localhost;Database=notify;Username=postgres;Password=12345";
+builder.Services.AddDbContext<NotifyDbContext>(opt => opt.UseNpgsql(conn));
 
 builder.Services.AddSingleton<IEmailSender, SmtpEmailSender>();
 builder.Services.AddSingleton<IEmailTemplateRenderer, FileEmailTemplateRenderer>();
@@ -24,10 +26,19 @@ builder.Services.AddMassTransit(x =>
     x.AddConsumer<NotificationRequestedConsumer>();
     x.UsingRabbitMq((context, cfg) =>
     {
-        var host = builder.Configuration["RabbitMQ:Host"] ?? "rabbitmq";
-        var user = builder.Configuration["RabbitMQ:User"] ?? "guest";
-        var pass = builder.Configuration["RabbitMQ:Pass"] ?? "guest";
-        cfg.Host(host, h => { h.Username(user); h.Password(pass); });
+        // CloudAMQP (amqps://user:pass@host/vhost) takes priority over host/user/pass
+        var rabbitUrl = builder.Configuration["RabbitMQ:Url"];
+        if (!string.IsNullOrWhiteSpace(rabbitUrl))
+        {
+            cfg.Host(new Uri(rabbitUrl));
+        }
+        else
+        {
+            var host = builder.Configuration["RabbitMQ:Host"] ?? "rabbitmq";
+            var user = builder.Configuration["RabbitMQ:User"] ?? "guest";
+            var pass = builder.Configuration["RabbitMQ:Pass"] ?? "guest";
+            cfg.Host(host, h => { h.Username(user); h.Password(pass); });
+        }
 
         cfg.Message<Contracts.Notifications.NotificationRequestedV1>(m => m.SetEntityName(notifyExchange));
         cfg.Publish<Contracts.Notifications.NotificationRequestedV1>(p =>

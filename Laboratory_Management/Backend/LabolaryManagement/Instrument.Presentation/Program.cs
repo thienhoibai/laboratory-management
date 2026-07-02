@@ -11,12 +11,14 @@ using Instrument.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
 builder.Services.AddDbContext<InstrumentDbContext>(opt =>
-    opt.UseSqlServer(builder.Configuration.GetConnectionString("InstrumentDb")));
+    opt.UseNpgsql(builder.Configuration.GetConnectionString("InstrumentDb")));
 
 builder.Services.AddHttpClient("testorder", c =>
 {
@@ -109,6 +111,15 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 var app = builder.Build();
+
+// Ensure database schema exists (PostgreSQL)
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<InstrumentDbContext>();
+    db.Database.EnsureCreated();
+}
+
+app.MapGet("/healthz", () => Results.Ok("Instrument up"));
 
 var isDocker = string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Docker", StringComparison.OrdinalIgnoreCase);
 

@@ -105,7 +105,7 @@ namespace IAM.Infrastructure
                 b.ToTable("AuditLogs");
                 b.HasKey(x => x.AuditLogId);
                 b.Property(x => x.AuditLogId).ValueGeneratedOnAdd();
-                b.Property(x => x.AuditLogId).HasDefaultValueSql("NEWSEQUENTIALID()");
+                b.Property(x => x.AuditLogId).HasDefaultValueSql("gen_random_uuid()");
                 b.Property(x => x.Action).IsRequired().HasMaxLength(64);
                 b.Property(x => x.Resource).IsRequired().HasMaxLength(128);
                 b.Property(x => x.Description).HasMaxLength(512);
@@ -128,7 +128,7 @@ namespace IAM.Infrastructure
                 b.ToTable("PasswordHistories");
                 b.HasKey(x => x.PasswordHistoryId);
                 b.Property(x => x.PasswordHistoryId).ValueGeneratedNever();
-                b.Property(x => x.PasswordHistoryId).HasDefaultValueSql("NEWSEQUENTIALID()");
+                b.Property(x => x.PasswordHistoryId).HasDefaultValueSql("gen_random_uuid()");
                 b.Property(x => x.PasswordHash).IsRequired().HasMaxLength(255);
                 b.Property(x => x.CreatedAt);
                 b.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
@@ -139,7 +139,7 @@ namespace IAM.Infrastructure
                 b.ToTable("PasswordResetTokens");
                 b.HasKey(x => x.PasswordResetTokenId);
                 b.Property(x => x.PasswordResetTokenId).ValueGeneratedNever();
-                b.Property(x => x.PasswordResetTokenId).HasDefaultValueSql("NEWSEQUENTIALID()");
+                b.Property(x => x.PasswordResetTokenId).HasDefaultValueSql("gen_random_uuid()");
                 b.Property(x => x.TokenHash).IsRequired();
                 b.Property(x => x.ExpiresAt);
                 b.Property(x => x.UsedAt);

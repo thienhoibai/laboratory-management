@@ -17,14 +17,16 @@ namespace BlogService.Presentation
     {
         public static void Main(string[] args)
         {
+            AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
             builder.Services.AddControllers();
-            
+
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddDbContext<DBContext>(options =>
-                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+                options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
             // Dependency Injection for Repositories and Services
             builder.Services.AddScoped<TagRepository>();
@@ -126,6 +128,15 @@ namespace BlogService.Presentation
             });
 
             var app = builder.Build();
+
+            // Ensure database schema exists (PostgreSQL)
+            using (var scope = app.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<DBContext>();
+                db.Database.EnsureCreated();
+            }
+
+            app.MapGet("/healthz", () => Results.Ok("Blog up"));
 
             var isDocker = string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Docker", StringComparison.OrdinalIgnoreCase);
 

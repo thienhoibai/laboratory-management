@@ -80,10 +80,10 @@ public partial class TestOrderDBContext : DbContext
 
             entity.Property(e => e.BookingId).ValueGeneratedNever();
             entity.Property(e => e.BookingCode).HasMaxLength(50);
-            entity.Property(e => e.CancelAt).HasColumnType("datetime");
+            entity.Property(e => e.CancelAt).HasColumnType("timestamp without time zone");
             entity.Property(e => e.CreateAt)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime");
+                .HasDefaultValueSql("now()")
+                .HasColumnType("timestamp without time zone");
             entity.Property(e => e.CreatedBy).HasMaxLength(255);
             entity.Property(e => e.PatientEmail).HasMaxLength(255);
             entity.Property(e => e.PatientName).HasMaxLength(255);
@@ -153,10 +153,10 @@ public partial class TestOrderDBContext : DbContext
             entity.ToTable("PaymentEnvoice");
 
             entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime");
+                .HasDefaultValueSql("now()")
+                .HasColumnType("timestamp without time zone");
             entity.Property(e => e.Method).HasMaxLength(50);
-            entity.Property(e => e.PaidAt).HasColumnType("datetime");
+            entity.Property(e => e.PaidAt).HasColumnType("timestamp without time zone");
 
             entity.HasOne(d => d.Booking).WithMany(p => p.PaymentEnvoices)
                 .HasForeignKey(d => d.BookingId)
@@ -218,7 +218,7 @@ public partial class TestOrderDBContext : DbContext
 
             entity.ToTable("TestReport");
 
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("now()");
             entity.Property(e => e.Filename).HasMaxLength(255);
 
             entity.HasOne(d => d.Booking).WithMany(p => p.TestReports)

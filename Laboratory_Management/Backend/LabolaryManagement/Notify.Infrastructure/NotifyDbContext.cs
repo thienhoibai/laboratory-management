@@ -22,7 +22,7 @@ public class NotifyDbContext : DbContext
             b.Property(x => x.DataJson).HasColumnName("data_json").IsRequired();
             b.Property(x => x.Status).HasColumnName("status").HasDefaultValue(0);
             b.Property(x => x.Error).HasColumnName("error").HasMaxLength(1000);
-            b.Property(x => x.QueuedAt).HasColumnName("queued_at").HasDefaultValueSql("SYSUTCDATETIME()");
+            b.Property(x => x.QueuedAt).HasColumnName("queued_at").HasDefaultValueSql("now()");
             b.Property(x => x.SentAt).HasColumnName("sent_at");
             b.Property(x => x.ProviderMessageId).HasColumnName("provider_message_id").HasMaxLength(200);
             b.HasIndex(x => new { x.Status, x.QueuedAt }).HasDatabaseName("IX_jobs_status");

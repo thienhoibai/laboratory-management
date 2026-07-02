@@ -24,6 +24,6 @@ public class InstrumentConfig : IEntityTypeConfiguration<DomainInstrument>
             .HasConversion<byte>()
             .HasDefaultValue(ReagentStatus.OK);
         
-        b.Property(x => x.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+        b.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
     }
 }

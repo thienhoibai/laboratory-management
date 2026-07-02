@@ -33,13 +33,13 @@ public partial class DBContext : DbContext
             entity.ToTable("BlogPost");
 
             entity.Property(e => e.CreatedDate)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime");
+                .HasDefaultValueSql("now()")
+                .HasColumnType("timestamp without time zone");
             entity.Property(e => e.IsApproved).HasDefaultValue(false);
             entity.Property(e => e.IsPublished).HasDefaultValue(false);
             entity.Property(e => e.ImagePath).HasMaxLength(500);
             entity.Property(e => e.Title).HasMaxLength(255);
-            entity.Property(e => e.UpdatedDate).HasColumnType("datetime");
+            entity.Property(e => e.UpdatedDate).HasColumnType("timestamp without time zone");
 
             entity.HasOne(d => d.Category).WithMany(p => p.BlogPosts)
                 .HasForeignKey(d => d.CategoryId)
@@ -70,7 +70,7 @@ public partial class DBContext : DbContext
             entity.ToTable("Category");
 
             entity.Property(e => e.CategoryName).HasMaxLength(100);
-            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.CreatedDate).HasColumnType("timestamp without time zone");
             entity.Property(e => e.Description).HasMaxLength(500);
         });
 
@@ -80,7 +80,7 @@ public partial class DBContext : DbContext
 
             entity.ToTable("Comment");
 
-            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.CreatedDate).HasColumnType("timestamp without time zone");
 
             entity.HasOne(d => d.Post).WithMany(p => p.Comments)
                 .HasForeignKey(d => d.PostId)

@@ -25,6 +25,7 @@ using IAM.Application.Permissions;
 using IAM.Application.Statistics.Services; // ✅ Add Statistics
 
 AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 var builder = WebApplication.CreateBuilder(args);
 
 // Config
@@ -98,10 +99,19 @@ builder.Services.AddMassTransit(x =>
 {
     x.UsingRabbitMq((ctx, cfg) =>
     {
-        var host = builder.Configuration["RabbitMQ:Host"] ?? "rabbitmq";
-        var user = builder.Configuration["RabbitMQ:User"] ?? "guest";
-        var pass = builder.Configuration["RabbitMQ:Pass"] ?? "guest";
-        cfg.Host(host, h => { h.Username(user); h.Password(pass); });
+        // CloudAMQP (amqps://user:pass@host/vhost) takes priority over host/user/pass
+        var rabbitUrl = builder.Configuration["RabbitMQ:Url"];
+        if (!string.IsNullOrWhiteSpace(rabbitUrl))
+        {
+            cfg.Host(new Uri(rabbitUrl));
+        }
+        else
+        {
+            var host = builder.Configuration["RabbitMQ:Host"] ?? "rabbitmq";
+            var user = builder.Configuration["RabbitMQ:User"] ?? "guest";
+            var pass = builder.Configuration["RabbitMQ:Pass"] ?? "guest";
+            cfg.Host(host, h => { h.Username(user); h.Password(pass); });
+        }
 
         cfg.Message<NotificationRequestedV1>(m => m.SetEntityName(notifyExchange));
         cfg.Publish<NotificationRequestedV1>(p =>
@@ -114,10 +124,10 @@ builder.Services.AddMassTransit(x =>
 });
 
 // DbContext
-var conn = builder.Configuration.GetConnectionString("LabIAM") ?? builder.Configuration["ConnectionStrings:LabIAM"] ?? "Server=localhost;Database=LabIAM;Trusted_Connection=True;TrustServerCertificate=True";
+var conn = builder.Configuration.GetConnectionString("LabIAM") ?? builder.Configuration["ConnectionStrings:LabIAM"] ?? "Host=localhost;Database=LabIAM;Username=postgres;Password=12345";
 builder.Services.AddDbContext<IamDbContext>(opt =>
 {
-    opt.UseSqlServer(conn, sql =>
+    opt.UseNpgsql(conn, sql =>
     {
         // ❌ DISABLED: EnableRetryOnFailure conflicts with BeginTransaction in RolePermissionService
         // If you need retry logic, wrap transactions with CreateExecutionStrategy()
@@ -179,11 +189,11 @@ using (var scope = app.Services.CreateScope())
     db.Database.SetCommandTimeout(TimeSpan.FromMinutes(5));
     try
     {
-        db.Database.Migrate();
+        db.Database.EnsureCreated();
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "Database migration failed. Connection: {Conn}", conn);
+        logger.LogError(ex, "Database schema creation failed. Connection: {Conn}", conn);
         throw;
     }
 }

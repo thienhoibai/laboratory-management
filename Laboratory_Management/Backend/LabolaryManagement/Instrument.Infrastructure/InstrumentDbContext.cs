@@ -36,7 +36,7 @@ public class InstrumentDbContext : DbContext
                 .HasConversion<byte>()
                 .HasDefaultValue(RunStatus.Running);
             
-            entity.Property(e => e.StartedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+            entity.Property(e => e.StartedAt).HasDefaultValueSql("now()");
             
             // Indexes
             entity.HasIndex(e => e.BookingId);

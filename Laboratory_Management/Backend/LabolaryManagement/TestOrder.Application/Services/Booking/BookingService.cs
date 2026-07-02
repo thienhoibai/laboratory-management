@@ -1,8 +1,6 @@
-﻿using Azure;
 using Contracts.Notifications;
 using MassTransit;
 using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -238,7 +236,7 @@ namespace TestOrder.Application.Services.Booking
                 totalPrice += _testBundleService.GetBundlePriceByIdAsync((int)bundleId);
             }
 
-            if (!bookingRequest.Catalogs.IsNullOrEmpty())
+            if (bookingRequest.Catalogs != null && bookingRequest.Catalogs.Count > 0)
             {
                 totalPrice += _testCatalogService.GetPriceForMultipleTests(bookingRequest.Catalogs);
             }

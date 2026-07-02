@@ -17,6 +17,7 @@ using RabbitMQ.Client;
 using System.Text;
 
 AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -96,9 +97,9 @@ builder.Services.AddSingleton<ISensitiveDataProtector, AesGcmProtector>();
 var connectionString = builder.Configuration.GetConnectionString("PatientService4")
     ?? throw new InvalidOperationException("Connection string 'PatientService4' not found in appsettings.json");
 
-Console.WriteLine($"✅ Using SQL Server: {connectionString}");
+Console.WriteLine($"✅ Using PostgreSQL: {connectionString}");
 builder.Services.AddDbContext<PatientDbContext>(options =>
-    options.UseSqlServer(connectionString));
+    options.UseNpgsql(connectionString));
 
 builder.Services.AddScoped<IPatientService, PatientService>();
 
@@ -108,10 +109,19 @@ builder.Services.AddMassTransit(x =>
 {
     x.UsingRabbitMq((context, cfg) =>
     {
-        var host = builder.Configuration["RabbitMQ:Host"] ?? "rabbitmq";
-        var user = builder.Configuration["RabbitMQ:User"] ?? "guest";
-        var pass = builder.Configuration["RabbitMQ:Pass"] ?? "guest";
-        cfg.Host(host, h => { h.Username(user); h.Password(pass); });
+        // CloudAMQP (amqps://user:pass@host/vhost) takes priority over host/user/pass
+        var rabbitUrl = builder.Configuration["RabbitMQ:Url"];
+        if (!string.IsNullOrWhiteSpace(rabbitUrl))
+        {
+            cfg.Host(new Uri(rabbitUrl));
+        }
+        else
+        {
+            var host = builder.Configuration["RabbitMQ:Host"] ?? "rabbitmq";
+            var user = builder.Configuration["RabbitMQ:User"] ?? "guest";
+            var pass = builder.Configuration["RabbitMQ:Pass"] ?? "guest";
+            cfg.Host(host, h => { h.Username(user); h.Password(pass); });
+        }
         cfg.Message<NotificationRequestedV1>(m => m.SetEntityName(notifyExchange));
         cfg.Publish<NotificationRequestedV1>(p =>
         {
