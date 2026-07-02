@@ -8,7 +8,7 @@ Kiến trúc sau khi chuyển đổi:
 ## Bước 1 — Tạo database trên Neon (miễn phí)
 
 1. Vào https://neon.tech → đăng ký (đăng nhập bằng Google/GitHub đều được)
-2. Tạo 1 project mới, region chọn **Singapore (ap-southeast-1)**
+2. Tạo 1 project mới, region: bạn đã tạo ở **US East 1 (N. Virginia)** — vì vậy các service Render cũng đặt ở region `virginia` cho gần database
 3. Trong project, vào tab **Databases** → tạo đủ 6 database:
    - `LabIAM`
    - `PatientService4`
@@ -26,7 +26,7 @@ Kiến trúc sau khi chuyển đổi:
 ## Bước 2 — Tạo RabbitMQ trên CloudAMQP (miễn phí)
 
 1. Vào https://www.cloudamqp.com → đăng ký
-2. Create New Instance → chọn plan **Little Lemur (Free)**, region Singapore
+2. Create New Instance → chọn plan **Little Lemur (Free)**, region **US-East-1** (gần database Neon)
 3. Vào instance → copy **AMQP URL**, dạng:
    ```
    amqps://user:password@host.rmq.cloudamqp.com/vhost

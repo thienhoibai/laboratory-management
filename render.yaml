@@ -11,7 +11,7 @@ services:
     name: hemalink-gateway
     runtime: docker
     plan: free
-    region: singapore
+    region: virginia
     dockerfilePath: ./Laboratory_Management/Backend/LabolaryManagement/gateway.Dockerfile
     dockerContext: ./Laboratory_Management/Backend/LabolaryManagement
     healthCheckPath: /healthz
@@ -34,7 +34,7 @@ services:
     name: hemalink-iam
     runtime: docker
     plan: free
-    region: singapore
+    region: virginia
     dockerfilePath: ./Laboratory_Management/Backend/LabolaryManagement/iam.Dockerfile
     dockerContext: ./Laboratory_Management/Backend/LabolaryManagement
     healthCheckPath: /healthz
@@ -67,7 +67,7 @@ services:
     name: hemalink-patient
     runtime: docker
     plan: free
-    region: singapore
+    region: virginia
     dockerfilePath: ./Laboratory_Management/Backend/LabolaryManagement/patient.Dockerfile
     dockerContext: ./Laboratory_Management/Backend/LabolaryManagement
     healthCheckPath: /healthz
@@ -96,7 +96,7 @@ services:
     name: hemalink-testorder
     runtime: docker
     plan: free
-    region: singapore
+    region: virginia
     dockerfilePath: ./Laboratory_Management/Backend/LabolaryManagement/testorder.Dockerfile
     dockerContext: ./Laboratory_Management/Backend/LabolaryManagement
     healthCheckPath: /healthz
@@ -127,7 +127,7 @@ services:
     name: hemalink-instrument
     runtime: docker
     plan: free
-    region: singapore
+    region: virginia
     dockerfilePath: ./Laboratory_Management/Backend/LabolaryManagement/instrument.Dockerfile
     dockerContext: ./Laboratory_Management/Backend/LabolaryManagement
     healthCheckPath: /healthz
@@ -152,7 +152,7 @@ services:
     name: hemalink-blog
     runtime: docker
     plan: free
-    region: singapore
+    region: virginia
     dockerfilePath: ./Laboratory_Management/Backend/LabolaryManagement/deployments/docker/BlogService.Dockerfile
     dockerContext: ./Laboratory_Management/Backend/LabolaryManagement
     healthCheckPath: /healthz
@@ -175,7 +175,7 @@ services:
     name: hemalink-notify
     runtime: docker
     plan: free
-    region: singapore
+    region: virginia
     dockerfilePath: ./Laboratory_Management/Backend/LabolaryManagement/deployments/docker/Notify.Dockerfile
     dockerContext: ./Laboratory_Management/Backend/LabolaryManagement
     healthCheckPath: /healthz
