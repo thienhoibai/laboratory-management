@@ -19,15 +19,15 @@ services:
       - key: PORT
         value: "8080"
       - key: IAM_URL
-        value: https://hemalink-iam.onrender.com/
+        value: https://hemalink-iam-5ils.onrender.com/
       - key: PATIENT_URL
-        value: https://hemalink-patient.onrender.com/
+        value: https://hemalink-patient-5ils.onrender.com/
       - key: TESTORDER_URL
-        value: https://hemalink-testorder.onrender.com/
+        value: https://hemalink-testorder-5ils.onrender.com/
       - key: BLOG_URL
-        value: https://hemalink-blog.onrender.com/
+        value: https://hemalink-blog-5ils.onrender.com/
       - key: INSTRUMENT_URL
-        value: https://hemalink-instrument.onrender.com/
+        value: https://hemalink-instrument-5ils.onrender.com/
 
   # ===== IAM Service =====
   - type: web
@@ -83,7 +83,7 @@ services:
       - key: PATIENT_PII_KEYS
         sync: false # 3 dong base64 key nhu trong docker-compose.yml
       - key: Grpc__IamUrl
-        value: https://hemalink-iam.onrender.com
+        value: https://hemalink-iam-5ils.onrender.com
       - key: Jwt__Issuer
         value: lab-iam
       - key: Jwt__Audience
@@ -112,9 +112,9 @@ services:
       - key: RabbitMQ__Url
         sync: false # CloudAMQP: amqps://user:pass@host/vhost
       - key: PatientApiUrl
-        value: https://hemalink-gateway.onrender.com/patient/
+        value: https://hemalink-gateway-5ils.onrender.com/patient/
       - key: VnPay__PaymentReturnUrl
-        value: https://hemalink-gateway.onrender.com/testorder/api/Payment/vnpay-return
+        value: https://hemalink-gateway-5ils.onrender.com/testorder/api/Payment/vnpay-return
       - key: Jwt__Issuer
         value: lab-iam
       - key: Jwt__Audience
@@ -139,7 +139,7 @@ services:
       - key: ConnectionStrings__InstrumentDb
         sync: false # Neon: Host=...;Database=InstrumentDB;Username=...;Password=...;SSL Mode=Require;Trust Server Certificate=true
       - key: TestOrderBaseUrl
-        value: https://hemalink-testorder.onrender.com
+        value: https://hemalink-testorder-5ils.onrender.com
       - key: Jwt__Issuer
         value: lab-iam
       - key: Jwt__Audience
