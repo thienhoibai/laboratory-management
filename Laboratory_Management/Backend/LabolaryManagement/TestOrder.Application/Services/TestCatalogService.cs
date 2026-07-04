@@ -22,6 +22,10 @@ namespace TestOrder.Application.Services
 
         public async Task<object> GetAllCatalogAsync(int page, int pageSize, string? search)
         {
+            // Chuẩn hoá phân trang: tránh OFFSET âm (PostgreSQL báo lỗi) và chia cho 0
+            if (page < 1) page = 1;
+            if (pageSize < 1) pageSize = 10;
+
             var (items, totalItems) = await _repository.GetAllPagedAsync(page, pageSize, search);
             List<TestCatalogResponseDTO> catalogDTOs = new List<TestCatalogResponseDTO>();
 

@@ -25,6 +25,8 @@ namespace TestOrder.Infrastructure.Base
 
         public async Task<List<T>> GetAllPagedAsync(int pageNumber, int pageSize)
         {
+            if (pageNumber < 1) pageNumber = 1;
+            if (pageSize < 1) pageSize = 10;
             return await _context.Set<T>()
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)

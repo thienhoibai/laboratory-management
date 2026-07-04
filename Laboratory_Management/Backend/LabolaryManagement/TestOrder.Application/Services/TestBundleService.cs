@@ -17,6 +17,10 @@ namespace TestOrder.Application.Services
 
         public async Task<object> GetAllBundleAsync(int page = 1, int pageSize = 10, string? search = null)
         {
+            // Chuẩn hoá phân trang: tránh OFFSET âm (PostgreSQL báo lỗi) và chia cho 0
+            if (page < 1) page = 1;
+            if (pageSize < 1) pageSize = 10;
+
             var (items, totalItems) = await _repository.GetAllPagedAsync(page, pageSize, search);
 
             return new
