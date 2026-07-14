@@ -1,4 +1,4 @@
-﻿using BlogService.Application.DTOs;
+using BlogService.Application.DTOs;
 using BlogService.Application.Enums;
 using BlogService.Infrastructure.Models;
 using BlogService.Infrastructure.Repository;
@@ -39,7 +39,7 @@ namespace BlogService.Application.Services
                 Content = dto.Content,
                 AuthorId = dto.AuthorId,
                 CategoryId = dto.CategoryId,
-                CreatedDate = DateTime.Now,
+                CreatedDate = DateTime.UtcNow,
                 IsPublished = dto.IsPublished ?? false,
                 IsApproved = false,
                 ImagePath = dto.ImagePath,
@@ -67,7 +67,7 @@ namespace BlogService.Application.Services
             if (dto.AuthorId.HasValue)
                 post.AuthorId = dto.AuthorId.Value;
 
-            post.UpdatedDate = DateTime.Now;
+            post.UpdatedDate = DateTime.UtcNow;
 
             await _repository.UpdateAsync(post);
         }
@@ -103,7 +103,7 @@ namespace BlogService.Application.Services
 
             post.Status = (int)status;
             post.IsApproved = status == BlogPostStatus.Approved;// lưu enum dưới dạng int
-            post.UpdatedDate = DateTime.Now;
+            post.UpdatedDate = DateTime.UtcNow;
 
             await _repository.UpdateAsync(post);
         }

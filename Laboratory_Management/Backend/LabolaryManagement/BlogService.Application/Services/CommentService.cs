@@ -1,4 +1,4 @@
-﻿using BlogService.Application.DTOs;
+using BlogService.Application.DTOs;
 using BlogService.Infrastructure.Models;
 using BlogService.Infrastructure.Repository;
 
@@ -40,7 +40,7 @@ namespace BlogService.Application.Services
                 PostId = dto.PostId,
                 UserId = dto.UserId,
                 Content = dto.Content,
-                CreatedDate = DateTime.Now,
+                CreatedDate = DateTime.UtcNow,
                 IsUpdated = false
             };
 
