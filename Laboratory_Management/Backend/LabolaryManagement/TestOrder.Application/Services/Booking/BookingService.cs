@@ -358,7 +358,7 @@ namespace TestOrder.Application.Services.Booking
             return response;
         }
 
-        internal async Task PaymentConfirmBooking(Guid bookingId)
+        internal async Task PaymentConfirmBooking(Guid bookingId, double? actualPaidAmount = null)
         {
             var booking = await _bookingRepository.GetByIdAsync(bookingId);
             if (booking == null)
@@ -368,6 +368,10 @@ namespace TestOrder.Application.Services.Booking
             if (booking.Status == (byte)BookingStatusEnum.Pending)
             {
                 booking.Status = (byte?)BookingStatusEnum.Confirmed;
+                if (actualPaidAmount.HasValue && actualPaidAmount.Value > 0)
+                {
+                    booking.TotalPrice = actualPaidAmount.Value;
+                }
                 await _bookingRepository.UpdateAsync(booking);
             }
             else

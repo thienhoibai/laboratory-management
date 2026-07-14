@@ -1,4 +1,4 @@
-﻿
+
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using System;
@@ -162,7 +162,7 @@ namespace TestOrder.Application.Services
             }
             if (isSuccess)
             {
-                await _bookingService.PaymentConfirmBooking(payment.BookingId);
+                await _bookingService.PaymentConfirmBooking(payment.BookingId, payment.Amount);
             }
             payment.Method = dto.Method ?? payment.Method;
             payment.Status = dto.Status ?? payment.Status;
