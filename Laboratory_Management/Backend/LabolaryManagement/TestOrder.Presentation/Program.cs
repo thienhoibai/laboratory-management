@@ -17,6 +17,7 @@ using System.Text;
 using Microsoft.OpenApi.Models;
 using TestOrder.Application.AIReview.Interfaces; // ✅ ADD
 using TestOrder.Application.AIReview.Services;   // ✅ ADD
+using Common.Web.Extensions;
 
 namespace TestOrder.Presentation
 {
@@ -33,7 +34,6 @@ namespace TestOrder.Presentation
             Console.WriteLine($"🔧 Environment: {builder.Configuration.GetValue<string>("ASPNETCORE_ENVIRONMENT")} (IsDocker: {isDocker})");
 
             // Add services to the container.
-            builder.Services.AddControllers();
 
             // ===== DbContext Configuration =====
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -187,7 +187,7 @@ namespace TestOrder.Presentation
                 });
             });
 
-            builder.Services.AddControllers()
+            builder.Services.AddStandardApi()
                 .AddJsonOptions(x =>
                     x.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
 

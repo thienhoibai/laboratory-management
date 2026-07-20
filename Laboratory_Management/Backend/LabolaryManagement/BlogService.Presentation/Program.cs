@@ -1,4 +1,4 @@
-﻿using BlogService.Application.Services;
+using BlogService.Application.Services;
 using BlogService.Application.Statistics.Services; // ✅ Add Statistics
 using BlogService.Infrastructure.Data;
 using BlogService.Infrastructure.Repository;
@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Authorization; // ✅ Thêm
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
+using Common.Web.Extensions;
 
 namespace BlogService.Presentation
 {
@@ -22,7 +23,6 @@ namespace BlogService.Presentation
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
-            builder.Services.AddControllers();
 
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddDbContext<DBContext>(options =>
@@ -106,7 +106,7 @@ namespace BlogService.Presentation
                 });
             });
 
-            builder.Services.AddControllers()
+            builder.Services.AddStandardApi()
                 .AddJsonOptions(options =>
                 {
                     options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;

@@ -1,11 +1,17 @@
 # Render Blueprint - Laboratory Management (free tier)
 # Database: Neon PostgreSQL (external, free) - dien connection string khi deploy
-# Message queue: CloudAMQP (external, free) - dien RabbitMQ__Url khi deploy
+# Message queue: Redis (Render private redis service)
 #
 # LUU Y: neu ten service bi trung tren Render (bi them hau to ngau nhien),
 # phai sua lai cac bien *_URL ben duoi cho khop voi URL that.
 
 services:
+  # ===== Redis (Private) =====
+  - type: redis
+    name: hemalink-redis
+    plan: free
+    ipAllowList: [] # Private access only
+
   # ===== API Gateway (YARP) =====
   - type: web
     name: hemalink-gateway
@@ -45,8 +51,11 @@ services:
         value: Docker
       - key: ConnectionStrings__LabIAM
         sync: false # Neon: Host=...;Database=LabIAM;Username=...;Password=...;SSL Mode=Require;Trust Server Certificate=true
-      - key: RabbitMQ__Url
-        sync: false # CloudAMQP: amqps://user:pass@host/vhost
+      - key: Redis__ConnectionString
+        fromService:
+          type: redis
+          name: hemalink-redis
+          property: connectionString
       - key: Jwt__Issuer
         value: lab-iam
       - key: Jwt__Audience
@@ -78,8 +87,6 @@ services:
         value: Production
       - key: ConnectionStrings__PatientService4
         sync: false # Neon: Host=...;Database=PatientService4;Username=...;Password=...;SSL Mode=Require;Trust Server Certificate=true
-      - key: RabbitMQ__Url
-        sync: false # CloudAMQP: amqps://user:pass@host/vhost
       - key: PATIENT_PII_KEYS
         sync: false # 3 dong base64 key nhu trong docker-compose.yml
       - key: Grpc__IamUrl
@@ -109,8 +116,11 @@ services:
         value: Asia/Ho_Chi_Minh
       - key: ConnectionStrings__DefaultConnection
         sync: false # Neon: Host=...;Database=TestOrderDB;Username=...;Password=...;SSL Mode=Require;Trust Server Certificate=true
-      - key: RabbitMQ__Url
-        sync: false # CloudAMQP: amqps://user:pass@host/vhost
+      - key: Redis__ConnectionString
+        fromService:
+          type: redis
+          name: hemalink-redis
+          property: connectionString
       - key: PatientApiUrl
         value: https://hemalink-gateway-5ils.onrender.com/patient/
       - key: VnPay__PaymentReturnUrl
@@ -184,8 +194,11 @@ services:
         value: "5601"
       - key: ConnectionStrings__Notify
         sync: false # Neon: Host=...;Database=notify;Username=...;Password=...;SSL Mode=Require;Trust Server Certificate=true
-      - key: RabbitMQ__Url
-        sync: false # CloudAMQP: amqps://user:pass@host/vhost
+      - key: Redis__ConnectionString
+        fromService:
+          type: redis
+          name: hemalink-redis
+          property: connectionString
       - key: Email__Smtp__Host
         value: smtp.gmail.com
       - key: Email__Smtp__Port

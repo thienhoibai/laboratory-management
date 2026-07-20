@@ -1,4 +1,4 @@
-﻿using Instrument.Application.Results;
+using Instrument.Application.Results;
 using Instrument.Application.Services;
 using Instrument.Application.Statistics.Services; // ✅ Add Statistics
 using Common.Authorization;
@@ -10,12 +10,13 @@ using Microsoft.OpenApi.Models;
 using Instrument.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
+using Common.Web.Extensions;
 
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services.AddStandardApi();
 
 builder.Services.AddDbContext<InstrumentDbContext>(opt =>
     opt.UseNpgsql(builder.Configuration.GetConnectionString("InstrumentDb")));

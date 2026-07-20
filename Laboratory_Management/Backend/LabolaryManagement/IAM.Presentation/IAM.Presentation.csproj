@@ -29,8 +29,4 @@
     <ProjectReference Include="..\Contracts\Contracts.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Protobuf Include="..\Contracts\Grpc\iam\iam.proto" GrpcServices="Server" />
-  </ItemGroup>
-
 </Project>

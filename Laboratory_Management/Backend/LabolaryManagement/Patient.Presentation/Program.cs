@@ -12,6 +12,7 @@ using Patient.Application.Services;
 using Patient.Infrastructure;
 using Patient.Presentation.Infrastructure;
 using System.Text;
+using Common.Web.Extensions;
 
 AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
@@ -19,7 +20,7 @@ AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 var builder = WebApplication.CreateBuilder(args);
 
 // MVC + Authorization
-builder.Services.AddControllers();
+builder.Services.AddStandardApi();
 
 // Authentication + Authorization
 var issuer = builder.Configuration["Jwt:Issuer"] ?? "lab-iam";

@@ -13,6 +13,6 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <Protobuf Include="Grpc\iam\iam.proto" GrpcServices="Client" />
+    <Protobuf Include="Grpc\iam\iam.proto" GrpcServices="Both" />
   </ItemGroup>
 </Project>
