@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using System.Threading.Tasks;
 using TestOrder.Application.DTOs;
@@ -8,9 +8,9 @@ using Swashbuckle.AspNetCore.Annotations;
 
 namespace TestOrder.Presentation.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/test-parameters")]
     [ApiController]
-    [Tags("Thông số xét nghiệm")]
+    [Tags("Test Parameters")]
     public class TestParameterController : ControllerBase
     {
         private readonly TestParameterService _service;
@@ -53,8 +53,9 @@ namespace TestOrder.Presentation.Controllers
                 MaxRange = parameter.MaxRange
             };
             await _service.AddParameterAsync(parameter);
-            return Ok(entity);
+            return StatusCode(201, entity);
         }
+
         [HttpDelete("{id}")]
         [Authorize(Policy = "perm:TestParameter.Delete")]
         public async Task<IActionResult> RemoveParameterAsync(int id)
@@ -62,7 +63,5 @@ namespace TestOrder.Presentation.Controllers
             await _service.RemoveParameterAsync(id);
             return NoContent();
         }
-
-
     }
 }

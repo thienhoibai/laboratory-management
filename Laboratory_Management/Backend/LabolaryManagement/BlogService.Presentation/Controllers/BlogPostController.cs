@@ -1,4 +1,4 @@
-﻿using BlogService.Application.Services;
+using BlogService.Application.Services;
 using BlogService.Infrastructure.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -11,9 +11,9 @@ using Microsoft.AspNetCore.Hosting;
 
 namespace BlogService.Presentation.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/blog-posts")]
     [ApiController]
-    [Tags("Bài viết")]
+    [Tags("Blog Posts")]
     public class BlogPostController : ControllerBase
     {
         private readonly BlogPostService _service;
@@ -26,15 +26,14 @@ namespace BlogService.Presentation.Controllers
         }
 
         [HttpGet]
-     
         public async Task<IActionResult> GetAllBlogs(
-    [FromQuery] Guid? authorId,
-    [FromQuery] int? status,
-    [FromQuery] string? search,
-    [FromQuery] int page,
-    [FromQuery] int pageSize)
+            [FromQuery] Guid? authorId,
+            [FromQuery] int? status,
+            [FromQuery] string? search,
+            [FromQuery] int page,
+            [FromQuery] int pageSize)
         {
-            var totalItems = await _service.GetAllWithCategoryAsync(authorId, status, 1, int.MaxValue,search)
+            var totalItems = await _service.GetAllWithCategoryAsync(authorId, status, 1, int.MaxValue, search)
                 .ContinueWith(t => t.Result.Count);
 
             var data = await _service.GetAllWithCategoryAsync(authorId, status, page, pageSize, search);
@@ -50,12 +49,12 @@ namespace BlogService.Presentation.Controllers
         }
 
         [HttpGet("{id}")]
-      
         public async Task<IActionResult> GetById(int id)
         {
             var post = await _service.GetByIdAsync(id);
+            if (post == null) return NotFound();
             post.ImagePath = post.ImagePath != null ? Path.Combine(_env.ContentRootPath, post.ImagePath) : null;
-            return post == null ? NotFound() : Ok(post);
+            return Ok(post);
         }
 
         [HttpPost]
@@ -92,7 +91,7 @@ namespace BlogService.Presentation.Controllers
             };
 
             await _service.AddAsync(dto);
-            return Ok(new { message = "Bài viết đã tạo thành công" });
+            return Ok(new { message = "Blog post created successfully." });
         }
 
 
@@ -104,7 +103,7 @@ namespace BlogService.Presentation.Controllers
             if (post == null)
                 return NotFound();
 
-            string? newImagePath = post.ImagePath; 
+            string? newImagePath = post.ImagePath;
 
             if (request.Image != null)
             {
@@ -139,7 +138,7 @@ namespace BlogService.Presentation.Controllers
 
             await _service.UpdateAsync(dto, id);
 
-            return Ok(new { message = "Cập nhật bài viết thành công", image = newImagePath });
+            return Ok(new { message = "Blog post updated successfully.", image = newImagePath });
         }
 
 
@@ -153,12 +152,12 @@ namespace BlogService.Presentation.Controllers
             return Ok("Post deleted successfully.");
         }
 
-        [HttpGet("Approve")]
+        [HttpGet("approved")]
         [Authorize(Policy = "perm:BlogPost.Approved.View")]
         public async Task<IActionResult> GetApproval() =>
             Ok(await _service.GetApprovalAsync());
 
-        [HttpPut("status/{postId}")]
+        [HttpPatch("{postId}/status")]
         [Authorize(Policy = "perm:BlogPost.Status.Update")]
         public async Task<IActionResult> UpdateStatus(int postId, [FromBody] UpdateBlogStatusDTO dto)
         {

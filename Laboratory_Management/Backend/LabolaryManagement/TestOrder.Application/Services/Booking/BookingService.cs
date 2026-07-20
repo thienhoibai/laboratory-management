@@ -1,5 +1,5 @@
 using Contracts.Notifications;
-using MassTransit;
+using Messaging.Notifications;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
@@ -22,7 +22,7 @@ namespace TestOrder.Application.Services.Booking
         private readonly CatalogBundleService _catalogBundleService;
         private readonly TestBundleService _testBundleService;
         private readonly TestCatalogService _testCatalogService;
-        private readonly IPublishEndpoint _publishEndpoint;
+        private readonly INotificationPublisher _notificationPublisher;
         private readonly IConfiguration configuration;
 
         private TimeZoneInfo timeZoneById;
@@ -32,7 +32,7 @@ namespace TestOrder.Application.Services.Booking
                               CatalogBundleService catalogBundleService,
                               TestBundleService testBundleService,
                               TestCatalogService testCatalogService,
-                              IPublishEndpoint publishEndpoint,
+                              INotificationPublisher notificationPublisher,
                               IConfiguration configuration)
         {
             _bookingTestService = bookingTestService;
@@ -41,7 +41,7 @@ namespace TestOrder.Application.Services.Booking
             _catalogBundleService = catalogBundleService;
             _testBundleService = testBundleService;
             _testCatalogService = testCatalogService;
-            _publishEndpoint = publishEndpoint;
+            _notificationPublisher = notificationPublisher;
             this.configuration = configuration ?? throw new ArgumentNullException(nameof(configuration), "Configuration cannot be null.");
 
             timeZoneById = TZConvert.GetTimeZoneInfo(configuration.GetValue<string>("TimeZoneId") ?? "SE Asia Standard Time");
@@ -420,7 +420,7 @@ namespace TestOrder.Application.Services.Booking
                         { "AppointmentTime", slot?.TimeBlock.ToString(@"hh\:mm") ?? "Chưa xác định" }
                     };
 
-                    await _publishEndpoint.Publish(new NotificationRequestedV1(
+                    await _notificationPublisher.PublishAsync("BookingConfirmation", new NotificationRequestedV1(
                         MessageId: Guid.NewGuid().ToString(),
                         Channel: "email",
                         To: booking.PatientEmail,

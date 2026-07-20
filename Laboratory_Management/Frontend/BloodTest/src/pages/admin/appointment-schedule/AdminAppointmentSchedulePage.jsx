@@ -262,7 +262,7 @@ const AdminAppointmentSchedulePage = () => {
       const token = localStorage.getItem("accessToken");
       if (token) setAuthToken(token);
       const response = await api.get(
-        `testorder/api/Booking/info?date=${formatDate1(
+        `testorder/api/bookings?date=${formatDate1(
           selectedDate
         )}&keyword=${search}&pageSize=${pageSize}&pageNumber=${currentPage}`
       );
@@ -357,8 +357,8 @@ const AdminAppointmentSchedulePage = () => {
       setCheckingInId(bookingId);
       const token = localStorage.getItem("accessToken");
       if (token) setAuthToken(token);
-      const response = await api.put(
-        `testorder/api/Booking/check-in?bookingId=${bookingId}`
+      const response = await api.post(
+        `testorder/api/bookings/${bookingId}/check-in`
       );
       const data = response.data || {};
 
@@ -385,7 +385,7 @@ const AdminAppointmentSchedulePage = () => {
   //   try {
   //     setCheckingOutId(bookingId);
   //     const response = await api.put(
-  //       `testorder/api/Booking/check-out?bookingId=${bookingId}`
+  //       `testorder/api/bookings/${bookingId}/check-out`
   //     );
 
   //     if (response.status >= 200 && response.status < 300) {

@@ -10,7 +10,7 @@ import { formatDate1 } from "../../utils/formatDate";
 import { setAuthToken } from "../../utils/auth";
 // import { toast } from "react-toastify";
 
-const endPoint = "testorder/api/Booking";
+const endPoint = "testorder/api/bookings";
 
 function AcceptInfo({
   selectedItems,

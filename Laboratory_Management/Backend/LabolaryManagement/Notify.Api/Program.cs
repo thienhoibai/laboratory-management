@@ -1,10 +1,10 @@
-﻿using MassTransit;
+using StackExchange.Redis;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 using Messaging.Email;
 using Notify.App.Consumers;
 using Notify.Infrastructure;
-using RabbitMQ.Client;
+using Notify.Api.Services;
 using System.Globalization;
 
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
@@ -19,44 +19,13 @@ builder.Services.AddDbContext<NotifyDbContext>(opt => opt.UseNpgsql(conn));
 builder.Services.AddSingleton<IEmailSender, SmtpEmailSender>();
 builder.Services.AddSingleton<IEmailTemplateRenderer, FileEmailTemplateRenderer>();
 
-const string notifyExchange = "lab.notify.v1";
+// Register Redis Connection Multiplexer
+var redisConnectionString = builder.Configuration["Redis:ConnectionString"] ?? "localhost:6379";
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp => ConnectionMultiplexer.Connect(redisConnectionString));
 
-builder.Services.AddMassTransit(x =>
-{
-    x.AddConsumer<NotificationRequestedConsumer>();
-    x.UsingRabbitMq((context, cfg) =>
-    {
-        // CloudAMQP (amqps://user:pass@host/vhost) takes priority over host/user/pass
-        var rabbitUrl = builder.Configuration["RabbitMQ:Url"];
-        if (!string.IsNullOrWhiteSpace(rabbitUrl))
-        {
-            cfg.Host(new Uri(rabbitUrl));
-        }
-        else
-        {
-            var host = builder.Configuration["RabbitMQ:Host"] ?? "rabbitmq";
-            var user = builder.Configuration["RabbitMQ:User"] ?? "guest";
-            var pass = builder.Configuration["RabbitMQ:Pass"] ?? "guest";
-            cfg.Host(host, h => { h.Username(user); h.Password(pass); });
-        }
-
-        cfg.Message<Contracts.Notifications.NotificationRequestedV1>(m => m.SetEntityName(notifyExchange));
-        cfg.Publish<Contracts.Notifications.NotificationRequestedV1>(p =>
-        {
-            p.ExchangeType = ExchangeType.Topic;
-            p.Durable = true;
-            p.AutoDelete = false;
-        });
-
-        cfg.ReceiveEndpoint("notify.email", e =>
-        {
-            e.Bind(notifyExchange, x => { x.RoutingKey = "email"; x.ExchangeType = ExchangeType.Topic; });
-            // Retry đúng yêu cầu: 3 lần exponential (5s, 15s, 30s)
-            e.UseMessageRetry(r => r.Exponential(3, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(5)));
-            e.ConfigureConsumer<NotificationRequestedConsumer>(context);
-        });
-    });
-});
+// Register Consumer and Subscriber Background Service
+builder.Services.AddScoped<NotificationRequestedConsumer>();
+builder.Services.AddHostedService<RedisNotificationSubscriberService>();
 
 var app = builder.Build();
 

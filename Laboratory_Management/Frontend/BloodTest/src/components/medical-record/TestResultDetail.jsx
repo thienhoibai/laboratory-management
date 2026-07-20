@@ -21,7 +21,7 @@ export default function TestResultDetail({
     const fetchAPI = async () => {
       try {
         const response = await api.get(
-          `testorder/api/TestResult/booking/${bookingId}`
+          `testorder/api/bookings/${bookingId}/results`
         );
         if (response.status >= 200 && response.status < 300) {
           setRealResult(response.data);

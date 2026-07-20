@@ -1,7 +1,5 @@
-﻿using Contracts.Notifications;
 using Grpc.Net.Client;
 using Iam.Grpc;
-using MassTransit;
 using Common.Authorization; // ✅ Thêm
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization; // ✅ Thêm
@@ -13,7 +11,6 @@ using Patient.Application.Security;
 using Patient.Application.Services;
 using Patient.Infrastructure;
 using Patient.Presentation.Infrastructure;
-using RabbitMQ.Client;
 using System.Text;
 
 AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
@@ -102,35 +99,7 @@ builder.Services.AddDbContext<PatientDbContext>(options =>
     options.UseNpgsql(connectionString));
 
 builder.Services.AddScoped<IPatientService, PatientService>();
-
-// MassTransit
-const string notifyExchange = "lab.notify.v1";
-builder.Services.AddMassTransit(x =>
-{
-    x.UsingRabbitMq((context, cfg) =>
-    {
-        // CloudAMQP (amqps://user:pass@host/vhost) takes priority over host/user/pass
-        var rabbitUrl = builder.Configuration["RabbitMQ:Url"];
-        if (!string.IsNullOrWhiteSpace(rabbitUrl))
-        {
-            cfg.Host(new Uri(rabbitUrl));
-        }
-        else
-        {
-            var host = builder.Configuration["RabbitMQ:Host"] ?? "rabbitmq";
-            var user = builder.Configuration["RabbitMQ:User"] ?? "guest";
-            var pass = builder.Configuration["RabbitMQ:Pass"] ?? "guest";
-            cfg.Host(host, h => { h.Username(user); h.Password(pass); });
-        }
-        cfg.Message<NotificationRequestedV1>(m => m.SetEntityName(notifyExchange));
-        cfg.Publish<NotificationRequestedV1>(p =>
-        {
-            p.ExchangeType = ExchangeType.Topic;
-            p.Durable = true;
-            p.AutoDelete = false;
-        });
-    });
-});
+builder.Services.AddScoped<IPatientEventPublisher, MassTransitPatientEventPublisher>();
 
 // gRPC Client
 builder.Services.AddScoped<UserService.UserServiceClient>(provider =>

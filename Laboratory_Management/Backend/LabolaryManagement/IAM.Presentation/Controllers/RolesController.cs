@@ -1,4 +1,4 @@
-﻿using Common.Errors;
+using Common.Errors;
 using Common.Web.Filters;
 using IAM.Application.Roles.Services;
 using IAM.Application.Roles.DTOs.Requests;
@@ -9,7 +9,7 @@ using System.Security.Claims;
 namespace IAM.Presentation.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/roles")]
     public class RolesController : ControllerBase
     {
         private readonly IRoleService _roles;

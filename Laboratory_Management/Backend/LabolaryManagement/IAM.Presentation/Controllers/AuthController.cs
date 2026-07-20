@@ -1,4 +1,4 @@
-﻿using IAM.Application.Auth.Services;
+using IAM.Application.Auth.Services;
 using IAM.Application.Auth.DTOs.Requests;
 using IAM.Application.Auth.DTOs.Responses;
 using Microsoft.AspNetCore.Authorization;
@@ -9,7 +9,7 @@ using System.Security.Claims;
 namespace IAM.Presentation.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/auth")]
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _auth;

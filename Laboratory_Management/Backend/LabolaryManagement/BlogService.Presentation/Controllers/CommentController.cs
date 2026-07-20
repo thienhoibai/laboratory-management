@@ -1,13 +1,13 @@
-﻿using BlogService.Application.Services;
+using BlogService.Application.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using BlogService.Application.DTOs;
 
 namespace BlogService.Presentation.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/comments")]
     [ApiController]
-    [Tags("Bình luận")]
+    [Tags("Comments")]
     public class CommentController : ControllerBase
     {
         private readonly CommentService _service;
@@ -17,8 +17,7 @@ namespace BlogService.Presentation.Controllers
             _service = service;
         }
 
-        [HttpGet("post/{postId}")]
-
+        [HttpGet("/api/blog-posts/{postId}/comments")]
         public async Task<IActionResult> GetByPost(
             int postId,
             [FromQuery] int page = 1,
@@ -43,8 +42,7 @@ namespace BlogService.Presentation.Controllers
         }
 
         [HttpGet("{id}")]
-        
-            public async Task<IActionResult> GetById(int id)
+        public async Task<IActionResult> GetById(int id)
         {
             var comment = await _service.GetByIdAsync(id);
             return comment == null ? NotFound() : Ok(comment);
@@ -63,7 +61,7 @@ namespace BlogService.Presentation.Controllers
         public async Task<IActionResult> Update(int id, [FromBody] CommentDTO dto)
         {
             await _service.UpdateAsync(id, dto);
-            return Ok(new { message = "Cập nhật bình luận thành công" });
+            return Ok(new { message = "Comment updated successfully." });
         }
 
         [HttpDelete("{id}")]
@@ -74,7 +72,7 @@ namespace BlogService.Presentation.Controllers
             return Ok("Comment deleted successfully.");
         }
 
-        [HttpGet("search")]
+        [HttpGet]
         [Authorize(Policy = "perm:Comment.Search")]
         public async Task<IActionResult> Search([FromQuery] string keyword)
         {

@@ -1,15 +1,14 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using System.Threading.Tasks;
 using TestOrder.Application.DTOs;
 using TestOrder.Application.Services;
-using TestOrder.Infrastructure.Repository;
 
 namespace TestOrder.API.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
-    [Tags("Danh mục gói xét nghiệm")]
+    [Route("api/catalog-bundles")]
+    [Tags("Catalog Bundles")]
     public class CatalogBundleController : ControllerBase
     {
         private readonly CatalogBundleService _service;
@@ -20,15 +19,13 @@ namespace TestOrder.API.Controllers
         }
 
         [HttpGet]
-        
         public async Task<IActionResult> GetAll()
         {
             var result = await _service.GetAllAsync();
             return Ok(result);
         }
 
-        [HttpGet("{bundleId}")]
-        
+        [HttpGet("/api/test-bundles/{bundleId}/catalogs")]
         public async Task<IActionResult> GetCatalogsByBundle(int bundleId)
         {
             var result = await _service.GetCatalogsByBundleAsync(bundleId);
@@ -44,7 +41,7 @@ namespace TestOrder.API.Controllers
             try
             {
                 await _service.AddCatalogToBundleAsync(dto);
-                return Ok(new { message = "Thêm Catalog vào Bundle thành công" });
+                return StatusCode(201, new { message = "Catalog associated with bundle successfully." });
             }
             catch (InvalidOperationException ex)
             {
@@ -54,10 +51,10 @@ namespace TestOrder.API.Controllers
 
         [HttpDelete("{bundleId}")]
         [Authorize(Policy = "perm:CatalogBundle.Delete")]
-        public async Task<IActionResult> RemoveCatalogFromBundle(int bundleId, List<int> catalogId)
+        public async Task<IActionResult> RemoveCatalogFromBundle(int bundleId, [FromQuery] List<int> catalogId)
         {
             await _service.RemoveCatalogFromBundleAsync(bundleId, catalogId);
-            return Ok("Catalog removed from bundle successfully");
+            return NoContent();
         }
     }
 }

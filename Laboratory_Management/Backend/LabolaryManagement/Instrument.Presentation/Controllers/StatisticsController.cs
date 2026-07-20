@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Instrument.Application.Statistics.Services;
@@ -9,7 +9,7 @@ namespace Instrument.Presentation.Controllers;
 
 [ApiController]
 [Route("api/statistics")]
-[Tags("Thống kê Instrument")]
+[Tags("Statistics")]
 public class StatisticsController : ControllerBase
 {
     private readonly InstrumentStatisticsService _statisticsService;
@@ -36,7 +36,7 @@ public class StatisticsController : ControllerBase
             return StatusCode(500, new { message = "Lỗi khi lấy thống kê máy xét nghiệm", details = ex.Message });
         }
     }
-    [HttpGet("ReagentStatus")]
+    [HttpGet("reagent-status")]
     [Authorize(Policy = "perm:Statistics.InstrumentReagentStatus.View")]
     public async Task<IActionResult> GetReagentStatusStatistics(CancellationToken ct)
     {

@@ -1,13 +1,13 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using TestOrder.Application.Services;
 
 namespace TestOrder.Presentation.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/appointment-slots")]
     [ApiController]
-    [Tags("Khung giờ hẹn")]
+    [Tags("Appointment Slots")]
     public class AppointmentSlotController : ControllerBase
     {
         private readonly AppointmentSlotService _appointmentSlotService;
@@ -18,21 +18,24 @@ namespace TestOrder.Presentation.Controllers
 
         [HttpGet]
         [Authorize(Policy = "perm:AppointmentSlot.List")]
-        public async Task<IActionResult> GetAllAppointmentSlots([FromQuery] int pageNumber, [FromQuery] int pageSize)
+        public async Task<IActionResult> GetAppointmentSlots(
+            [FromQuery] DateOnly? date,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 10)
         {
-            var response = await _appointmentSlotService.GetAllAppointmentSlot(pageNumber, pageSize);
-            return Ok(response);
+            if (date.HasValue)
+            {
+                var response = await _appointmentSlotService.GetAppointmentSlotsByDateAsync(date.Value, pageNumber, pageSize);
+                return Ok(response);
+            }
+            else
+            {
+                var response = await _appointmentSlotService.GetAllAppointmentSlot(pageNumber, pageSize);
+                return Ok(response);
+            }
         }
 
-        [HttpGet("by-date")]
-        [Authorize(Policy = "perm:AppointmentSlot.ByDate.View")]
-        public async Task<IActionResult> GetAppointmentSlotsByDate([FromQuery] DateOnly appointmentDate, [FromQuery] int pageNumber, [FromQuery] int pageSize)
-        {
-            var response = await _appointmentSlotService.GetAppointmentSlotsByDateAsync(appointmentDate, pageNumber, pageSize);
-            return Ok(response);
-        }
-
-        [HttpGet("count")]
+        [HttpGet("bookings-count")]
         [Authorize(Policy = "perm:AppointmentSlot.CountByDate.View")]
         public async Task<IActionResult> GetBookingsCountForSlot([FromQuery] List<Guid> appointmentSlotIds)
         {
@@ -40,11 +43,11 @@ namespace TestOrder.Presentation.Controllers
             return Ok(response);
         }
 
-        [HttpGet("count-all")]
+        [HttpGet("bookings-count-summary")]
         [Authorize(Policy = "perm:AppointmentSlot.CountAll.View")]
         public async Task<IActionResult> GetBookingsCountForAllSlots([FromQuery] int pageNumber, [FromQuery] int pageSize)
         {
-            var response = await _appointmentSlotService.GetBookingCountForAllSlotAsync(pageNumber,pageSize);
+            var response = await _appointmentSlotService.GetBookingCountForAllSlotAsync(pageNumber, pageSize);
             return Ok(response);
         }
     }

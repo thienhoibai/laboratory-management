@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using BlogService.Application.Statistics.Services;
@@ -9,7 +9,7 @@ namespace BlogService.Presentation.Controllers;
 
 [ApiController]
 [Route("api/statistics")]
-[Tags("Thống kê Blog")]
+[Tags("Statistics")]
 public class StatisticsController : ControllerBase
 {
     private readonly BlogStatisticsService _statisticsService;

@@ -1,5 +1,4 @@
-﻿using Contracts.Notifications;
-using MassTransit;
+using Contracts.Notifications;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Messaging.Email;
@@ -9,7 +8,7 @@ using System.Text.Json;
 
 namespace Notify.App.Consumers;
 
-public class NotificationRequestedConsumer : IConsumer<NotificationRequestedV1>
+public class NotificationRequestedConsumer
 {
     private readonly NotifyDbContext _db;
     private readonly IEmailSender _email;
@@ -21,15 +20,14 @@ public class NotificationRequestedConsumer : IConsumer<NotificationRequestedV1>
         _db = db; _email = email; _renderer = renderer; _logger = logger;
     }
 
-    public async Task Consume(ConsumeContext<NotificationRequestedV1> context)
+    public async Task ConsumeAsync(NotificationRequestedV1 evt, CancellationToken cancellationToken)
     {
         // ✅ Set culture to vi-VN for email template rendering
         CultureInfo.CurrentUICulture = new CultureInfo("vi-VN");
         CultureInfo.CurrentCulture = new CultureInfo("vi-VN");
 
-        var evt = context.Message;
         // Idempotency (unique index on message_id already exists)
-        var existing = await _db.Jobs.AsNoTracking().FirstOrDefaultAsync(j => j.MessageId == evt.MessageId, context.CancellationToken);
+        var existing = await _db.Jobs.AsNoTracking().FirstOrDefaultAsync(j => j.MessageId == evt.MessageId, cancellationToken);
         if (existing != null && existing.Status == 2)
         {
             _logger.LogInformation("Skip duplicate message {MessageId}", evt.MessageId);
@@ -49,18 +47,18 @@ public class NotificationRequestedConsumer : IConsumer<NotificationRequestedV1>
         if (existing == null)
         {
             _db.Jobs.Add(job);
-            await _db.SaveChangesAsync(context.CancellationToken);
+            await _db.SaveChangesAsync(cancellationToken);
         }
 
         try
         {
             job.Status = 1; // sending
-            await _db.SaveChangesAsync(context.CancellationToken);
+            await _db.SaveChangesAsync(cancellationToken);
 
             if (evt.Channel == "email")
             {
-                var html = await _renderer.RenderAsync(evt.Template, evt.Data, context.CancellationToken);
-                await _email.SendAsync(evt.To, evt.Template, html, context.CancellationToken);
+                var html = await _renderer.RenderAsync(evt.Template, evt.Data, cancellationToken);
+                await _email.SendAsync(evt.To, evt.Template, html, cancellationToken);
             }
             else
             {
@@ -69,14 +67,14 @@ public class NotificationRequestedConsumer : IConsumer<NotificationRequestedV1>
 
             job.Status = 2; // sent
             job.SentAt = DateTime.UtcNow;
-            await _db.SaveChangesAsync(context.CancellationToken);
+            await _db.SaveChangesAsync(cancellationToken);
         }
         catch (Exception ex)
         {
             job.Status = 3; // failed
             job.Error = ex.Message;
-            await _db.SaveChangesAsync(context.CancellationToken);
-            throw; // allow MassTransit retry (configured in bus)
+            await _db.SaveChangesAsync(cancellationToken);
+            throw; // allow Caller retry
         }
     }
 }

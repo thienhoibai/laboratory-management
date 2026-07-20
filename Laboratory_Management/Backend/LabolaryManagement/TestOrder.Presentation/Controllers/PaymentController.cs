@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using System.Threading.Tasks;
@@ -9,17 +9,15 @@ using System.Security.Claims;
 
 namespace TestOrder.Presentation.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/payments")]
     [ApiController]
-    [Tags("Thanh Toán và hóa đơn")]
+    [Tags("Payments")]
     public class PaymentController : ControllerBase
     {
         private readonly IVnPayService vnPayService;
         private readonly PaymentService paymentService;
         private const string paymentSuccess = "http://hema-link.io.vn/booking/successBooking?bookingId=";
         private const string paymentFaile = "http://hema-link.io.vn/booking/failBooking?bookingId=";
-        //private const string paymentSuccess = "http://localhost:5174/booking/successBooking?bookingId=";
-        //private const string paymentFaile = "http://localhost:5174/booking/failBooking?bookingId=";
 
         public PaymentController(IVnPayService vnPayService, PaymentService paymentService)
         {
@@ -35,7 +33,6 @@ namespace TestOrder.Presentation.Controllers
         }
 
         [HttpGet]
-        [Route("all")]
         [Authorize(Policy = "perm:Payment.List")]
         public async Task<IActionResult> GetAllPayments([FromQuery] int pageNumber, [FromQuery] int pageSize)
         {
@@ -43,10 +40,9 @@ namespace TestOrder.Presentation.Controllers
             return Ok(payments);
         }
 
-        [HttpGet]
-        [Route("by-booking")]
+        [HttpGet("/api/bookings/{bookingId:guid}/payments")]
         [Authorize(Policy = "perm:Payment.ByBooking.View")]
-        public async Task<IActionResult> GetPaymentByBookingId([FromQuery] Guid bookingId)
+        public async Task<IActionResult> GetPaymentByBookingId([FromRoute] Guid bookingId)
         {
             try
             {
@@ -59,8 +55,7 @@ namespace TestOrder.Presentation.Controllers
             }
         }
 
-        [HttpGet]
-        [Route("id={id:int}")]
+        [HttpGet("{id:int}")]
         [Authorize(Policy = "perm:Payment.View")]
         public async Task<IActionResult> GetPaymentById([FromRoute] int id)
         {
@@ -68,8 +63,7 @@ namespace TestOrder.Presentation.Controllers
             return Ok(payment);
         }
 
-        [HttpPost]
-        [Route("vnpay-url")]
+        [HttpPost("vnpay-url")]
         [Authorize(Policy = "perm:Payment.Create")]
         public IActionResult CreatePaymentUrl(PaymentRequestDTO model)
         {
@@ -84,8 +78,7 @@ namespace TestOrder.Presentation.Controllers
             }
         }
 
-        [HttpGet]
-        [Route("vnpay-return")]
+        [HttpGet("vnpay-return")]
         [AllowAnonymous]
         public async Task<IActionResult> VnPayReturn()
         {

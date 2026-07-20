@@ -2,9 +2,9 @@
 import api from "../configs/axios";
 import axios from "axios";
 
-const URL = "iam/api/Auth/";
+const URL = "iam/api/auth/";
 const URL_Google = "iam/v1/auth/";
-const URL_User = "iam/api/Users/";
+const URL_User = "iam/api/users/";
 const URL_RBAC = "iam/api/rbac/";
 
 // ==================== Auth APIs ====================
@@ -95,7 +95,7 @@ export const getRoles = async (params = {}) => {
 // Tạo role mới
 export const createRole = async (data) => {
   if (!data) throw new Error("Role data is required");
-  const response = await api.post("iam/api/Roles", data);
+  const response = await api.post("iam/api/roles", data);
   return response;
 };
 
@@ -103,7 +103,7 @@ export const createRole = async (data) => {
 // Xóa role
 export const deleteRole = async (id) => {
   if (!id) throw new Error("Role ID is required");
-  const response = await api.delete(`iam/api/Roles/${id}`);
+  const response = await api.delete(`iam/api/roles/${id}`);
   return response;
 };
 

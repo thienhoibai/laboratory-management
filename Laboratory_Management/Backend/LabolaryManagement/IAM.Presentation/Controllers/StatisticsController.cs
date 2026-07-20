@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using IAM.Application.Statistics.Services;
@@ -9,7 +9,7 @@ namespace IAM.Presentation.Controllers;
 
 [ApiController]
 [Route("api/statistics")]
-[Tags("Thống kê User")]
+[Tags("Statistics")]
 public class StatisticsController : ControllerBase
 {
     private readonly UserStatisticsService _statisticsService;
@@ -36,7 +36,7 @@ public class StatisticsController : ControllerBase
             return StatusCode(500, new { message = "Lỗi khi lấy thống kê người dùng", details = ex.Message });
         }
     }
-    [HttpGet("BlokedUsers")]
+    [HttpGet("blocked-users")]
     [Authorize(Policy = "perm:Statistics.Locked.User.View")]
     public async Task<IActionResult> GetBlockedUserStatistics(CancellationToken ct)
     {
@@ -50,7 +50,7 @@ public class StatisticsController : ControllerBase
             return StatusCode(500, new { message = "Lỗi khi lấy thống kê người dùng bị khóa", details = ex.Message });
         }
     }
-    [HttpGet("UserByDay")]
+    [HttpGet("users-by-day")]
     [Authorize(Policy = "perm:Statistics.CountUserByWeek.View")]
     public async Task<IActionResult> GetUserByDay(CancellationToken ct)
     {

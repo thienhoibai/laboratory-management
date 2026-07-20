@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using System.Threading.Tasks;
 using TestOrder.Application.DTOs;
@@ -7,9 +7,9 @@ using TestOrder.Infrastructure.Models;
 
 namespace TestOrder.Presentation.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/test-bundles")]
     [ApiController]
-    [Tags("Gói xét nghiệm")]
+    [Tags("Test Bundles")]
     public class TestBundleController : ControllerBase
     {
         private readonly TestBundleService _service;
@@ -20,7 +20,6 @@ namespace TestOrder.Presentation.Controllers
         }
 
         [HttpGet]
-
         public async Task<IActionResult> GetAllBundleAsync(
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10,
@@ -51,7 +50,7 @@ namespace TestOrder.Presentation.Controllers
             };
 
             await _service.AddBundleAsync(dto);
-            return Ok(entity);
+            return StatusCode(201, entity);
         }
 
         [HttpPut("{id}")]

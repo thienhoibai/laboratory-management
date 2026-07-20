@@ -2,10 +2,10 @@
 import api from "../configs/axios";
 
 // ==================== API Base URLs ====================
-const BUNDLE_BASE = "testorder/api/TestBundle";
-const CATALOG_BUNDLE_BASE = "testorder/api/CatalogBundle";
-const CATALOG_BASE = "testorder/api/TestCatalog";
-const PARAMETER_BASE = "testorder/api/TestParameter";
+const BUNDLE_BASE = "testorder/api/test-bundles";
+const CATALOG_BUNDLE_BASE = "testorder/api/catalog-bundles";
+const CATALOG_BASE = "testorder/api/test-catalogs";
+const PARAMETER_BASE = "testorder/api/test-parameters";
 
 // ==================== Bundle Service APIs ====================
 export const getAllBundles = async (params = {}) => {
@@ -43,7 +43,7 @@ export const deleteBundle = async (id) => {
 
 export const getCatalogsOfBundle = async (bundleId) => {
   if (!bundleId) throw new Error("Bundle ID is required");
-  const response = await api.get(`${CATALOG_BUNDLE_BASE}/${bundleId}`);
+  const response = await api.get(`testorder/api/test-bundles/${bundleId}/catalogs`);
   return response;
 };
 
@@ -60,9 +60,8 @@ export const addCatalogsToBundle = async (bundleId, catalogIds = []) => {
 export const removeCatalogsFromBundle = async (bundleId, catalogIds = []) => {
   if (!bundleId) throw new Error("Bundle ID is required");
   const payload = Array.isArray(catalogIds) ? catalogIds : [];
-  const response = await api.delete(`${CATALOG_BUNDLE_BASE}/${bundleId}`, {
-    data: payload,
-  });
+  const queryString = payload.map(id => `catalogId=${id}`).join("&");
+  const response = await api.delete(`${CATALOG_BUNDLE_BASE}/${bundleId}?${queryString}`);
   return response;
 };
 
@@ -91,7 +90,7 @@ export const updateCatalog = async (id, payload) => {
 
 export const addParametersToCatalog = async (id, parameterIds = []) => {
   if (!id) throw new Error("Catalog ID is required");
-  const response = await api.put(
+  const response = await api.post(
     `${CATALOG_BASE}/${id}/parameters`,
     parameterIds
   );
@@ -100,9 +99,9 @@ export const addParametersToCatalog = async (id, parameterIds = []) => {
 
 export const removeParametersFromCatalog = async (id, parameterIds = []) => {
   if (!id) throw new Error("Catalog ID is required");
-  const response = await api.put(
-    `${CATALOG_BASE}/${id}/paramters-remove`,
-    parameterIds
+  const response = await api.delete(
+    `${CATALOG_BASE}/${id}/parameters`,
+    { data: parameterIds }
   );
   return response;
 };
@@ -151,26 +150,26 @@ export const bookingService = {
   // Lấy thông tin booking theo ID
   getBookingById: async (bookingId) => {
     const response = await api.get(
-      `testorder/api/Booking?bookingId=${bookingId}`
+      `testorder/api/bookings/${bookingId}`
     );
     return response;
   },
 
   // Lấy thông tin test catalog
   getTestCatalog: async (catalogId) => {
-    const response = await api.get(`testorder/api/TestCatalog/${catalogId}`);
+    const response = await api.get(`testorder/api/test-catalogs/${catalogId}`);
     return response;
   },
 
   // Lấy thông tin test bundle
   getTestBundle: async (bundleId) => {
-    const response = await api.get(`testorder/api/TestBundle/${bundleId}`);
+    const response = await api.get(`testorder/api/test-bundles/${bundleId}`);
     return response;
   },
 
   // Tạo VNPay URL
   createVnPayUrl: async (bookingId, amount) => {
-    const response = await api.post(`testorder/api/Payment/vnpay-url`, {
+    const response = await api.post(`testorder/api/payments/vnpay-url`, {
       bookingId,
       amount,
     });
@@ -180,7 +179,7 @@ export const bookingService = {
   // Lấy thông tin số lượng booking của các appointment slots
   getAppointmentSlotCounts: async () => {
     const response = await api.get(
-      `testorder/api/AppointmentSlot/count-all?pageNumber=1&pageSize=10000`
+      `testorder/api/appointment-slots/bookings-count-summary?pageNumber=1&pageSize=10000`
     );
     return response;
   },

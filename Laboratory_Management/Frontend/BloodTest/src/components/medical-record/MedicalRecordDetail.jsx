@@ -47,7 +47,7 @@ function MedicalRecordDetail() {
         const token = localStorage.getItem("accessToken");
         if (token) setAuthToken(token);
         const response = await api.get(
-          `testorder/api/Booking/patient?patientId=${patientId}&pageNumber=1&pageSize=1000&filterStatus=5`
+          `testorder/api/patients/${patientId}/bookings?pageNumber=1&pageSize=1000&filterStatus=5`
         );
         if (response.status >= 200 && response.status < 300) {
           // Hỗ trợ cả trường hợp trả về object có bookingResponses hoặc array

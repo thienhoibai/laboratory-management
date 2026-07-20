@@ -1,4 +1,4 @@
-﻿using Common.Errors;
+using Common.Errors;
 using Common.Pagination;
 using IAM.Application.Users.Services;
 using IAM.Application.Users.DTOs.Requests;
@@ -11,7 +11,7 @@ using System.Security.Claims;
 namespace IAM.Presentation.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/users")]
     public class UsersController : ControllerBase
     {
         private readonly IUserService _users;

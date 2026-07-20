@@ -1,4 +1,4 @@
-﻿using IAM.Application.Auth.Services;
+using IAM.Application.Auth.Services;
 using IAM.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -15,11 +15,10 @@ using Messaging.Email;
 using Messaging.Notifications;
 using IAM.Presentation.Grpc;
 using IAM.Infrastructure.Notifications;
-using MassTransit;
+using StackExchange.Redis;
 using Contracts.Notifications;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
-using RabbitMQ.Client;
 using IAM.Application.Roles.Services;
 using IAM.Application.Permissions;
 using IAM.Application.Statistics.Services; // ✅ Add Statistics
@@ -90,38 +89,10 @@ builder.Services.AddScoped<IRolePermissionService, RolePermissionService>();
 builder.Services.AddScoped<IPermissionQuery, PermissionQuery>();
 builder.Services.AddScoped<UserStatisticsService>(); // ✅ Add Statistics Service
 
-// Notifications via MassTransit -> RabbitMQ (no Outbox)
-builder.Services.AddScoped<INotificationPublisher, MassTransitNotificationPublisher>();
-
-const string notifyExchange = "lab.notify.v1";
-
-builder.Services.AddMassTransit(x =>
-{
-    x.UsingRabbitMq((ctx, cfg) =>
-    {
-        // CloudAMQP (amqps://user:pass@host/vhost) takes priority over host/user/pass
-        var rabbitUrl = builder.Configuration["RabbitMQ:Url"];
-        if (!string.IsNullOrWhiteSpace(rabbitUrl))
-        {
-            cfg.Host(new Uri(rabbitUrl));
-        }
-        else
-        {
-            var host = builder.Configuration["RabbitMQ:Host"] ?? "rabbitmq";
-            var user = builder.Configuration["RabbitMQ:User"] ?? "guest";
-            var pass = builder.Configuration["RabbitMQ:Pass"] ?? "guest";
-            cfg.Host(host, h => { h.Username(user); h.Password(pass); });
-        }
-
-        cfg.Message<NotificationRequestedV1>(m => m.SetEntityName(notifyExchange));
-        cfg.Publish<NotificationRequestedV1>(p =>
-        {
-            p.ExchangeType = ExchangeType.Topic;
-            p.Durable = true;
-            p.AutoDelete = false;
-        });
-    });
-});
+// Notifications via Redis Pub/Sub
+var redisConnectionString = builder.Configuration["Redis:ConnectionString"] ?? "localhost:6379";
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp => ConnectionMultiplexer.Connect(redisConnectionString));
+builder.Services.AddScoped<INotificationPublisher, IamRedisNotificationPublisher>();
 
 // DbContext
 var conn = builder.Configuration.GetConnectionString("LabIAM") ?? builder.Configuration["ConnectionStrings:LabIAM"] ?? "Host=localhost;Database=LabIAM;Username=postgres;Password=12345";

@@ -10,9 +10,8 @@ import TestOrderServiceAPI from "../../apis/TestOrderServiceAPI";
 import { setAuthToken } from "../../utils/auth";
 
 function BookingHistory() {
-  const endPoint = "testorder/api/Booking/patient";
-  const endPoint1 = "testorder/api/TestBundle";
-  const endPointCatalog = "testorder/api/TestCatalog";
+  const endPoint1 = "testorder/api/test-bundles";
+  const endPointCatalog = "testorder/api/test-catalogs";
 
   const [expanded, setExpanded] = useState({});
   const navigate = useNavigate();
@@ -39,7 +38,7 @@ function BookingHistory() {
         if (token) setAuthToken(token);
 
         // Build API URL with filters
-        let apiUrl = `${endPoint}?patientId=${patientId}&pageNumber=${page}&pageSize=${pageSize}`;
+        let apiUrl = `testorder/api/patients/${patientId}/bookings?pageNumber=${page}&pageSize=${pageSize}`;
         if (filterStatus) {
           apiUrl += `&filterStatus=${filterStatus}`;
         }
@@ -128,7 +127,7 @@ function BookingHistory() {
               bookingIds.map(async (id) => {
                 try {
                   const r = await api.get(
-                    `testorder/api/Payment/by-booking?bookingId=${id}`
+                    `testorder/api/bookings/${id}/payments`
                   );
                   if (r.status >= 200 && r.status < 300) {
                     console.log("data" + r);

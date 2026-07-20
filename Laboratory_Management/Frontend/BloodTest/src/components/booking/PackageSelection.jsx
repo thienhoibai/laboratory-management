@@ -3,7 +3,7 @@ import "./PackageSelection.css";
 import api from "../../configs/axios";
 import { setAuthToken } from "../../utils/auth";
 
-const EndPoint = "testorder/api/CatalogBundle";
+const EndPoint = "testorder/api/catalog-bundles";
 
 function PackageSelection({
   selectedPackage,

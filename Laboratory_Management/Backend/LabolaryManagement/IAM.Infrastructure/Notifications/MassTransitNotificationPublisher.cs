@@ -1,18 +1,19 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Contracts.Notifications;
-using MassTransit;
 using Messaging.Notifications;
+using StackExchange.Redis;
 
 namespace IAM.Infrastructure.Notifications;
 
-public class MassTransitNotificationPublisher : INotificationPublisher
+public class IamRedisNotificationPublisher : INotificationPublisher
 {
-    private readonly IPublishEndpoint _bus;
+    private readonly IConnectionMultiplexer _redis;
+    private const string ChannelName = "lab.notify.v1";
 
-    public MassTransitNotificationPublisher(IPublishEndpoint bus)
+    public IamRedisNotificationPublisher(IConnectionMultiplexer redis)
     {
-        _bus = bus;
+        _redis = redis;
     }
 
     public Task PublishAsync(string eventName, object payload, CancellationToken ct = default)
@@ -55,7 +56,7 @@ public class MassTransitNotificationPublisher : INotificationPublisher
             Data: data
         );
 
-        // Routing key = channel ("email"). Exchange is configured in MassTransit.
-        return _bus.Publish(evt, ctx => { ctx.SetRoutingKey(evt.Channel); }, ct);
+        var json = JsonSerializer.Serialize(evt);
+        return _redis.GetDatabase().PublishAsync(ChannelName, json);
     }
 }

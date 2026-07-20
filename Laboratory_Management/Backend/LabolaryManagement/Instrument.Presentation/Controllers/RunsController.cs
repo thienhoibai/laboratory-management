@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Instrument.Application.Runs.DTOs.Requests;
 using Instrument.Application.Services;
 using Instrument.Domain.Enums;
@@ -6,7 +6,7 @@ using Instrument.Domain.Enums;
 namespace Instrument.Presentation.Controllers;
 
 [ApiController]
-[Route("api/instrument/runs")]
+[Route("api/instruments/runs")]
 [Tags("Run Management")]
 public class RunsController : ControllerBase
 {
@@ -17,7 +17,7 @@ public class RunsController : ControllerBase
         _service = service;
     }
 
-    [HttpPost("start")]
+    [HttpPost]
     public async Task<IActionResult> StartRun([FromBody] StartRunRequest request)
     {
         try

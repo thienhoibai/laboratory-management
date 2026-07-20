@@ -1,4 +1,4 @@
-﻿using BlogService.Application.Services;
+using BlogService.Application.Services;
 using BlogService.Infrastructure.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -7,9 +7,9 @@ using BlogService.Application.DTOs;
 
 namespace BlogService.Presentation.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/categories")]
     [ApiController]
-    [Tags("Danh mục bài viết")]
+    [Tags("Categories")]
     public class CategoryController : ControllerBase
     {
         private readonly CategoryService _service;
@@ -20,11 +20,9 @@ namespace BlogService.Presentation.Controllers
         }
 
         [HttpGet]
-        //[Authorize(Policy = "perm:BlogCategory.List")]
         public async Task<IActionResult> GetAll() => Ok(await _service.GetAllAsync());
 
         [HttpGet("{id}")]
-        //[Authorize(Policy = "perm:BlogCategory.View")]
         public async Task<IActionResult> GetById(int id)
         {
             var category = await _service.GetByIdAsync(id);

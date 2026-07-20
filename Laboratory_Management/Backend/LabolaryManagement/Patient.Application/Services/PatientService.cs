@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
@@ -12,15 +12,19 @@ using Patient.Application.Patients.DTOs.Responses;
 using Patient.Domain.Entities;
 using Patient.Infrastructure;
 
+using Iam.Grpc;
+
 namespace Patient.Application.Services;
 
 public class PatientService : IPatientService
 {
     private readonly PatientDbContext _db;
+    private readonly UserService.UserServiceClient _grpcClient;
     
-    public PatientService(PatientDbContext db)
+    public PatientService(PatientDbContext db, UserService.UserServiceClient grpcClient)
     {
         _db = db;
+        _grpcClient = grpcClient;
     }
 
     public Task<bool> IsOwnerAsync(Guid patientId, Guid actorUserId, CancellationToken ct)
@@ -93,6 +97,20 @@ public class PatientService : IPatientService
 
         var isCreateForSelf = request.CreatedChannel == "self" || request.CreatedChannel == "user";
         var ownerId = isCreateForSelf ? actorUserId : (Guid?)null;
+
+        // Verify owner/actor user via gRPC from IAM Service
+        if (actorUserId != Guid.Empty)
+        {
+            try
+            {
+                var userReply = await _grpcClient.GetUserAsync(new GetUserRequest { UserId = actorUserId.ToString() }, cancellationToken: ct);
+                Console.WriteLine($"[gRPC] Verified Actor User: {userReply.FullName} ({userReply.Email})");
+            }
+            catch (Exception ex)
+            {
+                return OperationResult<PatientDetailDto>.Fail($"Lỗi xác thực người dùng qua gRPC: {ex.Message}");
+            }
+        }
 
         var entity = new PatientEntity
         {

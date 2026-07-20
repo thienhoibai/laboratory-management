@@ -50,7 +50,7 @@ export const PatientServiceAPI = {
     return await api.delete(`${URL}/${id}`);
   },
   TestReport: async (BookingId) => {
-    return await api.get(`${URL_REPORT}/DownloadReport/${BookingId}`, {
+    return await api.get(`testorder/api/bookings/${BookingId}/reports/file`, {
       responseType: "arraybuffer",
     });
   },

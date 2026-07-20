@@ -1,12 +1,12 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 
 namespace BlogService.Presentation.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/tags")]
     [ApiController]
-    [Tags("Nhãn bài viết")]
+    [Tags("Tags")]
     public class TagController : ControllerBase
     {
         private readonly Application.Services.TagService _tagService;
@@ -15,7 +15,7 @@ namespace BlogService.Presentation.Controllers
             _tagService = tagService;
         }
 
-        [HttpGet("GetAll")]
+        [HttpGet]
         [Authorize(Policy = "perm:Tag.List")]
         public async Task<IActionResult> GetAllTags()
         {
@@ -23,7 +23,7 @@ namespace BlogService.Presentation.Controllers
             return Ok(tags);
         }
 
-        [HttpGet("GetById/{id}")]
+        [HttpGet("{id}")]
         [Authorize(Policy = "perm:Tag.View")]
         public async Task<IActionResult> GetTagById(int id)
         {
@@ -35,7 +35,7 @@ namespace BlogService.Presentation.Controllers
             return Ok(tag);
         }
         
-        [HttpPost("Add")]
+        [HttpPost]
         [Authorize(Policy = "perm:Tag.Create")]
         public async Task<IActionResult> AddTag([FromBody] string tag)
         {
@@ -50,7 +50,7 @@ namespace BlogService.Presentation.Controllers
             }
         }
 
-        [HttpDelete("Delete/{id}")]
+        [HttpDelete("{id}")]
         [Authorize(Policy = "perm:Tag.Delete")]
         public async Task<IActionResult> DeleteTag(int id)
         {
@@ -63,7 +63,7 @@ namespace BlogService.Presentation.Controllers
             return Ok("Tag deleted successfully.");
         }
 
-        [HttpPut("Update/{id}")]
+        [HttpPut("{id}")]
         [Authorize(Policy = "perm:Tag.Update")]
         public async Task<IActionResult> UpdateTag(int id, [FromBody] string tagName)
         {

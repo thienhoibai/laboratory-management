@@ -1,28 +1,22 @@
-﻿services:
-  sqlserver:
-    image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: sqlserver
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
     restart: always
     environment:
-      - ACCEPT_EULA=Y
-      - MSSQL_PID=Developer
-      - SA_PASSWORD=Lab@2024_sql!
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: yourpassword
     ports:
-      - "1433:1433"
+      - "5432:5432"
     volumes:
-      - sql_data:/var/opt/mssql
-  rabbitmq:
-    image: rabbitmq:3.13-management
-    container_name: rabbitmq
-    ports: [ "5672:5672", "15672:15672" ]
-    environment:
-      RABBITMQ_DEFAULT_USER: lab
-      RABBITMQ_DEFAULT_PASS: lab123
-    healthcheck:
-      test: [ "CMD", "rabbitmq-diagnostics", "ping" ]
-      interval: 10s
-      timeout: 5s
-      retries: 12
+      - pg_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
 
   iam.api:
     build:
@@ -31,25 +25,18 @@
     container_name: iam.api
     environment:
       ASPNETCORE_ENVIRONMENT: "Docker"
-      ConnectionStrings__LabIAM: "Server=sqlserver,1433;Database=LabIAM;User Id=sa;Password=Lab@2024_sql!;TrustServerCertificate=True;Encrypt=False"
-      RabbitMQ__Host: "rabbitmq"
-      RabbitMQ__User: "lab"
-      RabbitMQ__Pass: "lab123"
-      # JWT config (must match patient.api)
+      ConnectionStrings__LabIAM: "Host=postgres;Port=5432;Database=LabIAM;Username=postgres;Password=yourpassword;"
+      Redis__ConnectionString: "redis:6379"
       Jwt__Issuer: "lab-iam"
       Jwt__Audience: "lab.api"
       Jwt__SigningKey: "Jx6n2QvB5pTf8Kz3Wm9aS4Ld7Yh0Nr2Xu8Cj5Pk1Vg3Mz7Rb0Hq4Tn6Wy8Le2"
       Jwt__AccessTokenMinutes: "60"
       Jwt__RefreshTokenDays: "14"
-
       Auth__Google__ClientId: "834593887103-av11ov3n9l5pp160ekmr68e844nq2kg2.apps.googleusercontent.com"
-      
-      # ✅ Frontend URL for password reset email
       Email__ResetPasswordBaseUrl: "http://hema-link.io.vn/reset-password"
-
     depends_on:
-      rabbitmq:
-        condition: service_healthy
+      - postgres
+      - redis
     ports: [ "5001:5001" ]
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -61,23 +48,18 @@
     container_name: patient.api
     environment:
       ASPNETCORE_ENVIRONMENT: "Production"
-      ConnectionStrings__PatientService4: "Server=sqlserver,1433;Database=PatientService4;User Id=sa;Password=Lab@2024_sql!;TrustServerCertificate=True;Encrypt=False"
-      RabbitMQ__Host: "rabbitmq"
-      RabbitMQ__User: "lab"
-      RabbitMQ__Pass: "lab123"
-      # JWT config (must match iam.api)
+      ConnectionStrings__PatientService4: "Host=postgres;Port=5432;Database=PatientService4;Username=postgres;Password=yourpassword;"
+      Grpc__IamUrl: "http://iam.api:5001"
       Jwt__Issuer: "lab-iam"
       Jwt__Audience: "lab.api"
       Jwt__SigningKey: "Jx6n2QvB5pTf8Kz3Wm9aS4Ld7Yh0Nr2Xu8Cj5Pk1Vg3Mz7Rb0Hq4Tn6Wy8Le2"
-      # PII encryption keys (primary first, then legacy). Keep them secret.
       PATIENT_PII_KEYS: |
         FES03/bBdxXAmpgtDTccC15qDWd112gVLcksrZEib98=
         8wCAUQo+Bggcq7suyJ2io37vmFLjOORzl7RMbhmipR0=
         W2mPvA+pi08SJGTUV43coZxqWVNP3guFg0puMHW4jdc=
-      Grpc__IamUrl: "http://iam.api:5001"
     depends_on:
-      rabbitmq:
-        condition: service_healthy
+      - postgres
+      - iam.api
     ports: [ "5002:5002" ]
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -89,7 +71,7 @@
     container_name: api.gateway
     depends_on:
       - iam.api
-      -  patient.api
+      - patient.api
       - blogservice.api
     ports: [ "8080:8080" ]
 
@@ -100,11 +82,8 @@
     container_name: notify.api
     environment:
       ASPNETCORE_URLS: "http://0.0.0.0:5601"
-      ConnectionStrings__Notify: "Server=sqlserver,1433;Database=notify;User Id=sa;Password=Lab@2024_sql!;TrustServerCertificate=True;Encrypt=False"
-      RabbitMQ__Host: "rabbitmq"
-      RabbitMQ__User: "lab"
-      RabbitMQ__Pass: "lab123"
-      # SMTP settings consumed by Messaging.Email.SmtpEmailSender (Email:Smtp:*)
+      ConnectionStrings__Notify: "Host=postgres;Port=5432;Database=notify;Username=postgres;Password=yourpassword;"
+      Redis__ConnectionString: "redis:6379"
       Email__Smtp__Host: "smtp.gmail.com"
       Email__Smtp__Port: "587"
       Email__Smtp__UseStartTls: "true"
@@ -112,8 +91,8 @@
       Email__Smtp__Password: "qivyvznissngdvhn"
       Email__Smtp__From: "managermentlabolary@gmail.com"
     depends_on:
-      rabbitmq:
-        condition: service_healthy
+      - postgres
+      - redis
     ports: [ "5601:5601" ]
 
   testorder.api:
@@ -123,19 +102,17 @@
     container_name: testorder.api
     environment:
       ASPNETCORE_ENVIRONMENT: "Docker"
-      TZ: Asia/Ho_Chi_Minh # <== thêm cái nàyd
-      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=TestOrderDB;User Id=sa;Password=Lab@2024_sql!;TrustServerCertificate=True;Encrypt=False"
-      RabbitMQ__Host: "rabbitmq"
-      RabbitMQ__User: "lab"
-      RabbitMQ__Pass: "lab123" # JWT config (must match iam.api)
+      TZ: Asia/Ho_Chi_Minh
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=TestOrderDB;Username=postgres;Password=yourpassword;"
+      Redis__ConnectionString: "redis:6379"
       Jwt__Issuer: "lab-iam"
       Jwt__Audience: "lab.api"
       Jwt__SigningKey: "Jx6n2QvB5pTf8Kz3Wm9aS4Ld7Yh0Nr2Xu8Cj5Pk1Vg3Mz7Rb0Hq4Tn6Wy8Le2"
       AiSettings__ApiKey: "AIzaSyBLC2osUesI35WN6qaRiSbkzCk3d5lShL4"
       AiSettings__ModelName: "gemini-2.5-flash"
     depends_on:
-      rabbitmq:
-        condition: service_healthy
+      - postgres
+      - redis
     ports:
       - "5003:5003"
     extra_hosts:
@@ -148,14 +125,12 @@
     container_name: blogservice.api
     environment:
       ASPNETCORE_ENVIRONMENT: "Docker"
-      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=BlogServiceDB;User Id=sa;Password=Lab@2024_sql!;TrustServerCertificate=True;Encrypt=False"
-      # JWT config (must match iam.api)
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=BlogServiceDB;Username=postgres;Password=yourpassword;"
       Jwt__Issuer: "lab-iam"
       Jwt__Audience: "lab.api"
       Jwt__SigningKey: "Jx6n2QvB5pTf8Kz3Wm9aS4Ld7Yh0Nr2Xu8Cj5Pk1Vg3Mz7Rb0Hq4Tn6Wy8Le2"
     depends_on:
-      rabbitmq:
-        condition: service_healthy
+      - postgres
     ports: [ "5004:5004" ]
     volumes:
       - ./BlogService.Presentation/Images:/app/Images
@@ -169,19 +144,18 @@
     container_name: instrument.api
     environment:
       ASPNETCORE_ENVIRONMENT: "Docker"
-      ConnectionStrings__InstrumentDb: "Server=sqlserver,1433;Database=InstrumentDB;User Id=sa;Password=Lab@2024_sql!;TrustServerCertificate=True;Encrypt=False"
+      ConnectionStrings__InstrumentDb: "Host=postgres;Port=5432;Database=InstrumentDB;Username=postgres;Password=yourpassword;"
       TestOrderBaseUrl: "http://testorder.api:5003"
-      # JWT config (must match iam.api)
       Jwt__Issuer: "lab-iam"
       Jwt__Audience: "lab.api"
       Jwt__SigningKey: "Jx6n2QvB5pTf8Kz3Wm9aS4Ld7Yh0Nr2Xu8Cj5Pk1Vg3Mz7Rb0Hq4Tn6Wy8Le2"
     depends_on:
-      rabbitmq:
-        condition: service_healthy
+      - postgres
     ports: [ "5008:5008" ]
     volumes:
-      - ./Instrument.Presentation/Images:/app/Images # ✅ Bind mount - file sẽ sync với máy local
+      - ./Instrument.Presentation/Images:/app/Images
     extra_hosts:
       - "host.docker.internal:host-gateway"
+
 volumes:
-  sql_data:
+  pg_data:

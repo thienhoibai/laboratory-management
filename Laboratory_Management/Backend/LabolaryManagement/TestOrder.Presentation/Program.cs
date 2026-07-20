@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using TestOrder.Application.Services;
 using TestOrder.Application.Services.Booking;
 using TestOrder.Application.Services.Payment;
@@ -7,9 +7,8 @@ using TestOrder.Application.Statistics.Services; // ✅ Add Statistics
 using TestOrder.Infrastructure.Base;
 using TestOrder.Infrastructure.Data;
 using TestOrder.Infrastructure.Repository;
-using MassTransit;
-using Contracts.Notifications;
-using RabbitMQ.Client;
+using StackExchange.Redis;
+using Messaging.Notifications;
 using Common.Authorization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -118,35 +117,10 @@ namespace TestOrder.Presentation
             builder.Services.AddScoped<PaymentService>();
             builder.Services.AddScoped<PaymentRepository>();
 
-            // ✅ THÊM MASSTRANSIT + RABBITMQ
-            const string notifyExchange = "lab.notify.v1";
-            builder.Services.AddMassTransit(x =>
-            {
-                x.UsingRabbitMq((context, cfg) =>
-                {
-                    // CloudAMQP (amqps://user:pass@host/vhost) takes priority over host/user/pass
-                    var rabbitUrl = builder.Configuration["RabbitMQ:Url"];
-                    if (!string.IsNullOrWhiteSpace(rabbitUrl))
-                    {
-                        cfg.Host(new Uri(rabbitUrl));
-                    }
-                    else
-                    {
-                        var host = builder.Configuration["RabbitMQ:Host"] ?? "rabbitmq";
-                        var user = builder.Configuration["RabbitMQ:User"] ?? "guest";
-                        var pass = builder.Configuration["RabbitMQ:Pass"] ?? "guest";
-                        cfg.Host(host, h => { h.Username(user); h.Password(pass); });
-                    }
-                    
-                    cfg.Message<NotificationRequestedV1>(m => m.SetEntityName(notifyExchange));
-                    cfg.Publish<NotificationRequestedV1>(p =>
-                    {
-                        p.ExchangeType = ExchangeType.Topic;
-                        p.Durable = true;
-                        p.AutoDelete = false;
-                    });
-                });
-            });
+            // ✅ REGISTER REDIS PUB/SUB
+            var redisConnectionString = builder.Configuration["Redis:ConnectionString"] ?? "localhost:6379";
+            builder.Services.AddSingleton<IConnectionMultiplexer>(sp => ConnectionMultiplexer.Connect(redisConnectionString));
+            builder.Services.AddScoped<INotificationPublisher, RedisNotificationPublisher>();
 
             // ===== JWT Authentication =====
             var issuer = builder.Configuration["Jwt:Issuer"] ?? "lab-iam";

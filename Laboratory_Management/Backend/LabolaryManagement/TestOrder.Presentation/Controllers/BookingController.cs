@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using TestOrder.Application.Services.Booking;
@@ -9,9 +9,9 @@ using System.Security.Claims;
 
 namespace TestOrder.Presentation.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/bookings")]
     [ApiController]
-    [Tags("Đặt lịch xét nghiệm")]
+    [Tags("Bookings")]
     public class BookingController : ControllerBase
     {
         private readonly BookingService _bookingService;
@@ -29,7 +29,6 @@ namespace TestOrder.Presentation.Controllers
         }
 
         [HttpGet]
-        [Route("info")]
         [Authorize(Policy = "perm:Booking.List")]
         public async Task<IActionResult> GetAllBookingsInfoAsync
             ([FromQuery] DateOnly? date,
@@ -54,19 +53,18 @@ namespace TestOrder.Presentation.Controllers
             }
         }
 
-        [HttpGet]
+        [HttpGet("{id:guid}")]
         [Authorize(Policy = "perm:Booking.View")]
-        public IActionResult GetBookingInfo([FromQuery] Guid bookingId)
+        public IActionResult GetBookingInfo([FromRoute] Guid id)
         {
-            var response = _bookingService.GetBookingByIdAsync(bookingId).Result;
+            var response = _bookingService.GetBookingByIdAsync(id).Result;
             return Ok(response);
         }
 
-
-        [HttpGet("patient")]
+        [HttpGet("/api/patients/{patientId:guid}/bookings")]
         [Authorize(Policy = "perm:Booking.View.Own")]
         public async Task<IActionResult> GetBookingsByPatientId
-            ([FromQuery] Guid patientId, [FromQuery] int pageNumber, [FromQuery] int pageSize, [FromQuery] byte? filterStatus)
+            ([FromRoute] Guid patientId, [FromQuery] int pageNumber, [FromQuery] int pageSize, [FromQuery] byte? filterStatus)
         {
             try
             {
@@ -91,7 +89,7 @@ namespace TestOrder.Presentation.Controllers
             switch (response.ResponseCode)
             {
                 default:
-                    return Ok(response);
+                    return StatusCode(201, response);
                     
                 case ResponseCode.NotFound:
                     return NotFound(response);
@@ -101,12 +99,11 @@ namespace TestOrder.Presentation.Controllers
             }
         }
 
-        [HttpPut]
-        [Route("check-in")]
+        [HttpPost("{id:guid}/check-in")]
         [Authorize(Policy = "perm:Booking.Update.CheckIn")]
-        public async Task<IActionResult> CheckInBooking([FromQuery] Guid bookingId)
+        public async Task<IActionResult> CheckInBooking([FromRoute] Guid id)
         {
-            var response = await _bookingService.CheckInBooking(bookingId);
+            var response = await _bookingService.CheckInBooking(id);
             switch (response.ResponseCode)
             {
                 case ResponseCode.NotFound:
@@ -118,12 +115,11 @@ namespace TestOrder.Presentation.Controllers
             }
         }
 
-        [HttpPut]
-        [Route("check-out")]
+        [HttpPost("{id:guid}/check-out")]
         [Authorize(Policy = "perm:Booking.Update.CheckOut")]
-        public async Task<IActionResult> CheckOutBooking([FromQuery] Guid bookingId)
+        public async Task<IActionResult> CheckOutBooking([FromRoute] Guid id)
         {
-            var response = await _bookingService.CheckOutBooking(bookingId);
+            var response = await _bookingService.CheckOutBooking(id);
             
             switch (response.ResponseCode)
             {
@@ -133,7 +129,6 @@ namespace TestOrder.Presentation.Controllers
                     return BadRequest(response);
                 default:
                     return Ok(response);
-
             }
         }
     }
