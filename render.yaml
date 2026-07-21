@@ -1,17 +1,11 @@
 # Render Blueprint - Laboratory Management (free tier)
 # Database: Neon PostgreSQL (external, free) - dien connection string khi deploy
-# Message queue: Redis (Render private redis service)
+# Message queue: Redis Cloud (external) - dien Redis__ConnectionString khi deploy
 #
 # LUU Y: neu ten service bi trung tren Render (bi them hau to ngau nhien),
 # phai sua lai cac bien *_URL ben duoi cho khop voi URL that.
 
 services:
-  # ===== Redis (Private) =====
-  - type: redis
-    name: hemalink-redis
-    plan: free
-    ipAllowList: [] # Private access only
-
   # ===== API Gateway (YARP) =====
   - type: web
     name: hemalink-gateway
@@ -52,10 +46,7 @@ services:
       - key: ConnectionStrings__LabIAM
         sync: false # Neon: Host=...;Database=LabIAM;Username=...;Password=...;SSL Mode=Require;Trust Server Certificate=true
       - key: Redis__ConnectionString
-        fromService:
-          type: redis
-          name: hemalink-redis
-          property: connectionString
+        sync: false # Redis Cloud (redis.io): redis://default:<password>@<host>:<port>
       - key: Jwt__Issuer
         value: lab-iam
       - key: Jwt__Audience
@@ -117,10 +108,7 @@ services:
       - key: ConnectionStrings__DefaultConnection
         sync: false # Neon: Host=...;Database=TestOrderDB;Username=...;Password=...;SSL Mode=Require;Trust Server Certificate=true
       - key: Redis__ConnectionString
-        fromService:
-          type: redis
-          name: hemalink-redis
-          property: connectionString
+        sync: false # Redis Cloud (redis.io): redis://default:<password>@<host>:<port>
       - key: PatientApiUrl
         value: https://hemalink-gateway-5ils.onrender.com/patient/
       - key: FrontendUrl
@@ -197,10 +185,7 @@ services:
       - key: ConnectionStrings__Notify
         sync: false # Neon: Host=...;Database=notify;Username=...;Password=...;SSL Mode=Require;Trust Server Certificate=true
       - key: Redis__ConnectionString
-        fromService:
-          type: redis
-          name: hemalink-redis
-          property: connectionString
+        sync: false # Redis Cloud (redis.io): redis://default:<password>@<host>:<port>
       - key: Email__Smtp__Host
         value: smtp.gmail.com
       - key: Email__Smtp__Port
