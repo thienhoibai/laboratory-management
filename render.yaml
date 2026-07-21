@@ -69,7 +69,7 @@ services:
       - key: Auth__Google__ClientId
         value: 834593887103-av11ov3n9l5pp160ekmr68e844nq2kg2.apps.googleusercontent.com
       - key: Email__ResetPasswordBaseUrl
-        value: http://hema-link.io.vn/reset-password
+        value: https://laboratory-management-fe.vercel.app/reset-password
 
   # ===== Patient Service =====
   - type: web
@@ -123,6 +123,8 @@ services:
           property: connectionString
       - key: PatientApiUrl
         value: https://hemalink-gateway-5ils.onrender.com/patient/
+      - key: FrontendUrl
+        value: https://laboratory-management-fe.vercel.app
       - key: VnPay__PaymentReturnUrl
         value: https://hemalink-gateway-5ils.onrender.com/testorder/api/Payment/vnpay-return
       - key: Jwt__Issuer

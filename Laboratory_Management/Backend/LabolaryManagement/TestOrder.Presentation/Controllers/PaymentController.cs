@@ -6,6 +6,7 @@ using TestOrder.Application.DTOs.Payment;
 using TestOrder.Application.Services;
 using TestOrder.Application.Services.Payment;
 using System.Security.Claims;
+using Microsoft.Extensions.Configuration;
 
 namespace TestOrder.Presentation.Controllers
 {
@@ -16,13 +17,15 @@ namespace TestOrder.Presentation.Controllers
     {
         private readonly IVnPayService vnPayService;
         private readonly PaymentService paymentService;
-        private const string paymentSuccess = "http://hema-link.io.vn/booking/successBooking?bookingId=";
-        private const string paymentFaile = "http://hema-link.io.vn/booking/failBooking?bookingId=";
+        private readonly string frontendBaseUrl;
+        private string paymentSuccess => $"{frontendBaseUrl}/booking/successBooking?bookingId=";
+        private string paymentFaile => $"{frontendBaseUrl}/booking/failBooking?bookingId=";
 
-        public PaymentController(IVnPayService vnPayService, PaymentService paymentService)
+        public PaymentController(IVnPayService vnPayService, PaymentService paymentService, IConfiguration configuration)
         {
             this.vnPayService = vnPayService;
             this.paymentService = paymentService;
+            this.frontendBaseUrl = (configuration["FrontendUrl"] ?? "https://laboratory-management-fe.vercel.app").TrimEnd('/');
         }
 
         private Guid GetUserId()
