@@ -365,6 +365,16 @@ namespace TestOrder.Application.Services.Booking
             {
                 throw new Exception("Booking not found");
             }
+
+            // If the booking has already been paid and confirmed, return successfully (idempotent)
+            if (booking.Status == (byte)BookingStatusEnum.Confirmed ||
+                booking.Status == (byte)BookingStatusEnum.CheckedIn ||
+                booking.Status == (byte)BookingStatusEnum.InProgress ||
+                booking.Status == (byte)BookingStatusEnum.Completed)
+            {
+                return;
+            }
+
             if (booking.Status == (byte)BookingStatusEnum.Pending)
             {
                 booking.Status = (byte?)BookingStatusEnum.Confirmed;
