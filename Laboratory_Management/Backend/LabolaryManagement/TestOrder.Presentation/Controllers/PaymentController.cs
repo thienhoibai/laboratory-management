@@ -11,6 +11,7 @@ using Microsoft.Extensions.Configuration;
 namespace TestOrder.Presentation.Controllers
 {
     [Route("api/payments")]
+    [Route("api/Payment")]
     [ApiController]
     [Tags("Payments")]
     public class PaymentController : ControllerBase
