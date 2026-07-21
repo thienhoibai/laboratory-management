@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using TestOrder.Infrastructure.Models;
@@ -21,6 +21,8 @@ public partial class TestOrderDBContext : DbContext
     public virtual DbSet<AuditLog> AuditLogs { get; set; }
 
     public virtual DbSet<Booking> Bookings { get; set; }
+
+    public virtual DbSet<Voucher> Vouchers { get; set; }
 
     public virtual DbSet<BookingTest> BookingTests { get; set; }
 
@@ -97,6 +99,24 @@ public partial class TestOrderDBContext : DbContext
             entity.HasOne(d => d.Bundle).WithMany(p => p.Bookings)
                 .HasForeignKey(d => d.BundleId)
                 .HasConstraintName("FK__Booking__BundleI__571DF1D5");
+
+            entity.HasOne(d => d.Voucher).WithMany(p => p.Bookings)
+                .HasForeignKey(d => d.VoucherId)
+                .HasConstraintName("FK_Booking_Voucher")
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<Voucher>(entity =>
+        {
+            entity.HasKey(e => e.VoucherId);
+            entity.ToTable("Voucher");
+            entity.Property(e => e.Code).HasMaxLength(50).IsRequired();
+            entity.HasIndex(e => e.Code).IsUnique();
+            entity.Property(e => e.DiscountType).IsRequired();
+            entity.Property(e => e.DiscountValue).IsRequired();
+            entity.Property(e => e.CreatedAt).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.StartDate).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.ExpiryDate).HasColumnType("timestamp without time zone");
         });
 
         modelBuilder.Entity<BookingTest>(entity =>

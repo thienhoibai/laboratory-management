@@ -24,6 +24,8 @@ namespace TestOrder.Application.Services.Booking
         private readonly TestCatalogService _testCatalogService;
         private readonly INotificationPublisher _notificationPublisher;
         private readonly IConfiguration configuration;
+        private readonly VoucherService _voucherService;
+        private readonly VoucherRepository _voucherRepository;
 
         private TimeZoneInfo timeZoneById;
         public BookingService(BookingRepository bookingRepository,
@@ -33,7 +35,9 @@ namespace TestOrder.Application.Services.Booking
                               TestBundleService testBundleService,
                               TestCatalogService testCatalogService,
                               INotificationPublisher notificationPublisher,
-                              IConfiguration configuration)
+                              IConfiguration configuration,
+                              VoucherService voucherService,
+                              VoucherRepository voucherRepository)
         {
             _bookingTestService = bookingTestService;
             _bookingRepository = bookingRepository;
@@ -43,6 +47,8 @@ namespace TestOrder.Application.Services.Booking
             _testCatalogService = testCatalogService;
             _notificationPublisher = notificationPublisher;
             this.configuration = configuration ?? throw new ArgumentNullException(nameof(configuration), "Configuration cannot be null.");
+            _voucherService = voucherService;
+            _voucherRepository = voucherRepository;
 
             timeZoneById = TZConvert.GetTimeZoneInfo(configuration.GetValue<string>("TimeZoneId") ?? "SE Asia Standard Time");
         }
@@ -51,6 +57,13 @@ namespace TestOrder.Application.Services.Booking
 
         internal async Task<BookingResponseDTO> MapToDTOAsync(Infrastructure.Models.Booking booking)
         {
+            var voucherCode = "";
+            if (booking.VoucherId.HasValue)
+            {
+                var voucher = await _voucherRepository.GetByIdAsync(booking.VoucherId.Value);
+                voucherCode = voucher?.Code;
+            }
+
             var response = new BookingResponseDTO
             {
                 BookingCode = booking.BookingCode ??= "",
@@ -62,6 +75,8 @@ namespace TestOrder.Application.Services.Booking
                 CreatedBy = booking.CreatedBy,
                 BundleId = booking.BundleId,
                 TotalAmount = booking.TotalPrice,
+                VoucherCode = voucherCode,
+                DiscountAmount = booking.DiscountAmount,
                 CreatedAt = booking.CreateAt.HasValue
                         ? booking.CreateAt.Value
                         : DateTime.MinValue,
@@ -241,7 +256,30 @@ namespace TestOrder.Application.Services.Booking
                 totalPrice += _testCatalogService.GetPriceForMultipleTests(bookingRequest.Catalogs);
             }
 
+            int? voucherId = null;
+            double discountAmount = 0d;
 
+            if (!string.IsNullOrWhiteSpace(bookingRequest.VoucherCode))
+            {
+                var validationResult = await _voucherService.ValidateAndCalculateDiscountAsync(bookingRequest.VoucherCode, totalPrice);
+                if (!validationResult.IsValid)
+                {
+                    response.ResponseCode = ResponseCode.BadInstanceState;
+                    response.Message = validationResult.Message ?? "Mã giảm giá không hợp lệ.";
+                    return response;
+                }
+
+                discountAmount = validationResult.DiscountAmount;
+                totalPrice = validationResult.FinalAmount;
+                
+                var voucher = await _voucherRepository.GetByCodeAsync(bookingRequest.VoucherCode);
+                if (voucher != null)
+                {
+                    voucherId = voucher.VoucherId;
+                    voucher.UsageCount++;
+                    await _voucherRepository.UpdateAsync(voucher);
+                }
+            }
 
             var newBooking = new Infrastructure.Models.Booking
                 {
@@ -256,7 +294,9 @@ namespace TestOrder.Application.Services.Booking
                     AppointmentSlotId = appointmentSlot.SlotId,
                     Status = (byte?)BookingStatusEnum.Pending,
                     BookingCode = nextCode,
-                    TotalPrice = totalPrice
+                    TotalPrice = totalPrice,
+                    VoucherId = voucherId,
+                    DiscountAmount = discountAmount
                 };
 
             await _bookingRepository.AddAsync(newBooking);

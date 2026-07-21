@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace TestOrder.Infrastructure.Models;
@@ -35,11 +35,17 @@ public partial class Booking
 
     public DateTime? CancelAt { get; set; }
 
+    public int? VoucherId { get; set; }
+
+    public double? DiscountAmount { get; set; }
+
     public virtual AppointmentSlot? AppointmentSlot { get; set; }
 
     public virtual ICollection<BookingTest> BookingTests { get; set; } = new List<BookingTest>();
 
     public virtual TestBundle? Bundle { get; set; }
+
+    public virtual Voucher? Voucher { get; set; }
 
     public virtual ICollection<Comment> Comments { get; set; } = new List<Comment>();
 

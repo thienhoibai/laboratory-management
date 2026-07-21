@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -27,6 +27,8 @@ namespace TestOrder.Application.DTOs.Bookings
         public int? BundleId { get; set; }
 
         public List<int>? Catalogs { get; set; }
+
+        public string? VoucherCode { get; set; }
 
         public AppointmentSlotDTO slotDTO { get; set; } = new AppointmentSlotDTO();
 

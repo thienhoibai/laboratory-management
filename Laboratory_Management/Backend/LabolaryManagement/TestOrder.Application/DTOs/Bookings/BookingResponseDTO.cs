@@ -1,4 +1,4 @@
-﻿ using System;
+ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
@@ -30,6 +30,10 @@ namespace TestOrder.Application.DTOs.Bookings
         public string? PatientEmail { get; set; }
 
         public double? TotalAmount { get; set; }
+
+        public string? VoucherCode { get; set; }
+
+        public double? DiscountAmount { get; set; }
 
         public string? CreatedBy { get; set; }
         public int? BundleId { get; set; }
