@@ -9,6 +9,7 @@
     <ProjectReference Include="..\Notify.Infrastructure\Notify.Infrastructure.csproj" />
     <ProjectReference Include="..\Messaging\Messaging.csproj" />
     <ProjectReference Include="..\Contracts\Contracts.csproj" />
+    <ProjectReference Include="..\Common\Common.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="StackExchange.Redis" Version="2.8.0" />

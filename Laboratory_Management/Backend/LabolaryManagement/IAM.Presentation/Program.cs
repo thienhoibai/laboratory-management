@@ -90,7 +90,7 @@ builder.Services.AddScoped<IPermissionQuery, PermissionQuery>();
 builder.Services.AddScoped<UserStatisticsService>(); // ✅ Add Statistics Service
 
 // Notifications via Redis Pub/Sub
-var redisConnectionString = builder.Configuration["Redis:ConnectionString"] ?? "localhost:6379";
+var redisConnectionString = Common.Extensions.RedisConnectionHelper.ConvertConnectionString(builder.Configuration["Redis:ConnectionString"] ?? "localhost:6379");
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp => ConnectionMultiplexer.Connect(redisConnectionString));
 builder.Services.AddScoped<INotificationPublisher, IamRedisNotificationPublisher>();
 

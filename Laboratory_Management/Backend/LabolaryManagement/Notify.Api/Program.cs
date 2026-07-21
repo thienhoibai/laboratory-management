@@ -20,7 +20,7 @@ builder.Services.AddSingleton<IEmailSender, SmtpEmailSender>();
 builder.Services.AddSingleton<IEmailTemplateRenderer, FileEmailTemplateRenderer>();
 
 // Register Redis Connection Multiplexer
-var redisConnectionString = builder.Configuration["Redis:ConnectionString"] ?? "localhost:6379";
+var redisConnectionString = Common.Extensions.RedisConnectionHelper.ConvertConnectionString(builder.Configuration["Redis:ConnectionString"] ?? "localhost:6379");
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp => ConnectionMultiplexer.Connect(redisConnectionString));
 
 // Register Consumer and Subscriber Background Service
