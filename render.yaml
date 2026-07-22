@@ -58,7 +58,7 @@ services:
       - key: Jwt__RefreshTokenDays
         value: "14"
       - key: Auth__Google__ClientId
-        value: 834593887103-av11ov3n9l5pp160ekmr68e844nq2kg2.apps.googleusercontent.com
+        value: 1037103717152-a63mvuqkkainigu8q232knqpbmci430v.apps.googleusercontent.com
       - key: Email__ResetPasswordBaseUrl
         value: https://laboratory-management-fe.vercel.app/reset-password
 
@@ -114,7 +114,7 @@ services:
       - key: FrontendUrl
         value: https://laboratory-management-fe.vercel.app
       - key: VnPay__PaymentReturnUrl
-        value: https://hemalink-gateway-5ils.onrender.com/testorder/api/Payment/vnpay-return
+        value: https://hemalink-gateway-5ils.onrender.com/testorder/api/payments/vnpay-return
       - key: Jwt__Issuer
         value: lab-iam
       - key: Jwt__Audience
