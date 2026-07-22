@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using TestOrder.Application.DTOs.InstrumentBridge;
 using TestOrder.Infrastructure.Data;
+using TestOrder.Infrastructure.Enums;
 using TestOrder.Infrastructure.Models;
 using BookingEntity = TestOrder.Infrastructure.Models.Booking;
 
@@ -28,7 +29,7 @@ public class InstrumentBridgeService
             .Select(b => new { b.BookingId, b.Status, b.PatientName, b.BundleId })
             .FirstOrDefaultAsync();
 
-        if (booking == null || (booking.Status != 1 && booking.Status != 2 && booking.Status != 3 && booking.Status != 4)) 
+        if (booking == null || booking.Status != (byte)BookingStatusEnum.InProgress)
             return null;
 
         // 🔍 DEBUG: Kiểm tra số lượng BookingTest
@@ -83,7 +84,7 @@ public class InstrumentBridgeService
     {
         // Kiểm tra booking tồn tại và Status == 4
         var booking = await _db.Set<BookingEntity>().FirstOrDefaultAsync(b => b.BookingId == bookingId);
-        if (booking == null || (booking.Status != 1 && booking.Status != 2 && booking.Status != 3 && booking.Status != 4)) 
+        if (booking == null || booking.Status != (byte)BookingStatusEnum.InProgress)
             return null;
 
         // ✅ FIX: Sử dụng SelectMany với navigation property

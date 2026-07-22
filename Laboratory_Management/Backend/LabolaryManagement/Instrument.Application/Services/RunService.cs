@@ -45,8 +45,9 @@ public class RunService
             bridgeRes = payload.Deserialize<BridgeResponse>(JsonOpts);
         }
 
-        if (bridgeRes == null || (bridgeRes.Status != 1 && bridgeRes.Status != 2 && bridgeRes.Status != 3 && bridgeRes.Status != 4))
-            return new StartRunResponse(0, RunStatus.Failed, "Booking not ready (Status must be 1, 2, 3 or 4)", 0);
+        // Chi chay may khi benh nhan da check-in (Status 4 = InProgress)
+        if (bridgeRes == null || bridgeRes.Status != 4)
+            return new StartRunResponse(0, RunStatus.Failed, "Booking chưa check-in (Status phải bằng 4)", 0);
 
         // ✅ THÊM VALIDATION: Kiểm tra Items có dữ liệu không
         if (bridgeRes.Items == null || bridgeRes.Items.Count == 0)
