@@ -172,6 +172,8 @@ using (var scope = app.Services.CreateScope())
 
 app.UseMiddleware<ProblemDetailsMiddleware>();
 app.UseRouting();
+// gRPC-Web cho phép gRPC chạy qua HTTP/1.1 (bắt buộc khi deploy sau proxy của Render)
+app.UseGrpcWeb();
 app.UseCors("AllowFrontend");
 app.UseSwagger();
 app.UseSwaggerUI();
@@ -179,7 +181,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-app.MapGrpcService<IamGrpcUserService>();
+app.MapGrpcService<IamGrpcUserService>().EnableGrpcWeb();
 if (app.Environment.IsDevelopment()) app.MapGrpcReflectionService();
 
 app.MapGet("/", () => Results.Ok("IAM up"));

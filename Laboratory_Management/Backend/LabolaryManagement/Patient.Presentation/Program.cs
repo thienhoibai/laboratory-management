@@ -1,4 +1,5 @@
 using Grpc.Net.Client;
+using Grpc.Net.Client.Web;
 using Iam.Grpc;
 using Common.Authorization; // ✅ Thêm
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -103,10 +104,13 @@ builder.Services.AddScoped<IPatientService, PatientService>();
 builder.Services.AddScoped<IPatientEventPublisher, MassTransitPatientEventPublisher>();
 
 // gRPC Client
+// Dùng gRPC-Web để gọi được IAM qua proxy HTTP/1.1 của Render.
+// Local/docker-compose vẫn chạy tốt vì gRPC-Web tương thích cả HTTP/2 lẫn HTTP/1.1.
 builder.Services.AddScoped<UserService.UserServiceClient>(provider =>
 {
     var url = builder.Configuration["Grpc:IamUrl"] ?? "http://localhost:5001";
-    var channel = GrpcChannel.ForAddress(url);
+    var httpHandler = new GrpcWebHandler(GrpcWebMode.GrpcWeb, new HttpClientHandler());
+    var channel = GrpcChannel.ForAddress(url, new GrpcChannelOptions { HttpHandler = httpHandler });
     return new UserService.UserServiceClient(channel);
 });
 
