@@ -1,4 +1,4 @@
-﻿using IAM.Application.Permissions;
+using IAM.Application.Permissions;
 using IAM.Application.Permissions.DTOs.Responses;
 using IAM.Application.Roles.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -101,6 +101,77 @@ namespace IAM.Presentation.Controllers
                 await _rolePerms.UpdateRolePermissionsDeltaByKeysAsync(roleId, Array.Empty<string>(), moduleKeys, actorId, ct);
                 return Ok(new { updated = true, removed = moduleKeys });
             }
+        }
+
+        // ==================== PERMISSION CRUD ENDPOINTS ====================
+        public record CreatePermissionRequest(string Name, string? Description);
+        public record UpdatePermissionRequest(string Name, string? Description);
+
+        [HttpPost("permissions")]
+        public async Task<IActionResult> CreatePermission([FromBody] CreatePermissionRequest body, CancellationToken ct)
+        {
+            if (string.IsNullOrWhiteSpace(body?.Name))
+                return BadRequest(new { message = "Tên quyền (Name) không được để trống." });
+
+            var name = body.Name.Trim();
+            var exists = await _db.Permissions.AnyAsync(p => p.Name.ToLower() == name.ToLower(), ct);
+            if (exists)
+                return BadRequest(new { message = $"Quyền '{name}' đã tồn tại trong hệ thống." });
+
+            var permission = new IAM.Domain.Entities.Permission
+            {
+                Name = name,
+                Description = body.Description?.Trim(),
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            _db.Permissions.Add(permission);
+            await _db.SaveChangesAsync(ct);
+
+            return Ok(permission);
+        }
+
+        [HttpPut("permissions/{id:int}")]
+        public async Task<IActionResult> UpdatePermission(int id, [FromBody] UpdatePermissionRequest body, CancellationToken ct)
+        {
+            var permission = await _db.Permissions.FindAsync(new object[] { id }, ct);
+            if (permission == null)
+                return NotFound(new { message = $"Không tìm thấy quyền có ID {id}." });
+
+            if (string.IsNullOrWhiteSpace(body?.Name))
+                return BadRequest(new { message = "Tên quyền (Name) không được để trống." });
+
+            var name = body.Name.Trim();
+            var duplicate = await _db.Permissions.AnyAsync(p => p.PermissionId != id && p.Name.ToLower() == name.ToLower(), ct);
+            if (duplicate)
+                return BadRequest(new { message = $"Quyền '{name}' đã được sử dụng." });
+
+            permission.Name = name;
+            permission.Description = body.Description?.Trim();
+            permission.UpdatedAt = DateTime.UtcNow;
+
+            await _db.SaveChangesAsync(ct);
+            return Ok(permission);
+        }
+
+        [HttpDelete("permissions/{id:int}")]
+        public async Task<IActionResult> DeletePermission(int id, CancellationToken ct)
+        {
+            var permission = await _db.Permissions.FindAsync(new object[] { id }, ct);
+            if (permission == null)
+                return NotFound(new { message = $"Không tìm thấy quyền có ID {id}." });
+
+            var rolePerms = await _db.RolePermissions.Where(rp => rp.PermissionId == id).ToListAsync(ct);
+            if (rolePerms.Count > 0)
+            {
+                _db.RolePermissions.RemoveRange(rolePerms);
+            }
+
+            _db.Permissions.Remove(permission);
+            await _db.SaveChangesAsync(ct);
+
+            return Ok(new { deleted = true, permissionId = id });
         }
     }
 }
