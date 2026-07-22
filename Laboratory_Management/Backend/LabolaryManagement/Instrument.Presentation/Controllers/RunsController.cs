@@ -18,6 +18,7 @@ public class RunsController : ControllerBase
     }
 
     [HttpPost]
+    [HttpPost("start")]
     public async Task<IActionResult> StartRun([FromBody] StartRunRequest request)
     {
         try
