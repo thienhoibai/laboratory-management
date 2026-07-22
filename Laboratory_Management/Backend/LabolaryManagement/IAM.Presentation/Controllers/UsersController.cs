@@ -44,13 +44,21 @@ namespace IAM.Presentation.Controllers
             return Ok(res.Data);
         }
 
+        // AllowAnonymous vi trang blog cong khai can hien ten tac gia bai viet/binh luan.
+        // Khach chua dang nhap chi duoc thay ten hien thi, khong duoc thay email/roles/trang thai khoa.
         [HttpGet("{id}")]
         [AllowAnonymous]
-        public async Task<ActionResult<UserDetailDto>> Get(Guid id, CancellationToken ct)
+        public async Task<IActionResult> Get(Guid id, CancellationToken ct)
         {
             var actorId = GetActorId(User);
             var res = await _users.GetAsync(id, actorId, allowOther: true, ct);
             if (!res.Succeeded) throw new ApiException(res.Error ?? ErrorCodes.NotFound);
+
+            if (User.Identity?.IsAuthenticated != true)
+            {
+                return Ok(new { res.Data!.UserId, res.Data.FullName });
+            }
+
             return Ok(res.Data);
         }
 
