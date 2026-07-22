@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Instrument.Application.Runs.DTOs.Requests;
 using Instrument.Application.Runs.DTOs.Responses;
 using Instrument.Domain.Entities;
@@ -30,8 +31,19 @@ public class RunService
     {
         // 1. Gọi TestOrder bridge lấy danh sách Catalog/Parameter
         var testOrderClient = _httpFactory.CreateClient("testorder");
-        var bridgeRes = await testOrderClient.GetFromJsonAsync<BridgeResponse>(
+        var bridgeJson = await testOrderClient.GetStringAsync(
             $"/api/bridge/bookings/{req.BookingId}/for-instrument");
+
+        // TestOrder boc moi response trong envelope {code, message, data}.
+        // Doc thang tu goc se lay nham lop vo va Status ve 0, nen phai boc "data" ra truoc.
+        BridgeResponse? bridgeRes;
+        using (var doc = JsonDocument.Parse(bridgeJson))
+        {
+            var payload = doc.RootElement.TryGetProperty("data", out var data)
+                ? data
+                : doc.RootElement;
+            bridgeRes = payload.Deserialize<BridgeResponse>(JsonOpts);
+        }
 
         if (bridgeRes == null || (bridgeRes.Status != 1 && bridgeRes.Status != 2 && bridgeRes.Status != 3 && bridgeRes.Status != 4))
             return new StartRunResponse(0, RunStatus.Failed, "Booking not ready (Status must be 1, 2, 3 or 4)", 0);
@@ -164,6 +176,8 @@ public class RunService
             }
         }
     }
+
+    private static readonly JsonSerializerOptions JsonOpts = new(JsonSerializerDefaults.Web);
 
     // DTOs cho bridge response
     private record BridgeResponse(Guid BookingId, byte Status, List<BridgeItem> Items);
