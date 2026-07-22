@@ -276,8 +276,6 @@ namespace TestOrder.Application.Services.Booking
                 if (voucher != null)
                 {
                     voucherId = voucher.VoucherId;
-                    voucher.UsageCount++;
-                    await _voucherRepository.UpdateAsync(voucher);
                 }
             }
 
@@ -423,6 +421,17 @@ namespace TestOrder.Application.Services.Booking
                     booking.TotalPrice = actualPaidAmount.Value;
                 }
                 await _bookingRepository.UpdateAsync(booking);
+
+                // Increment voucher usage count only upon successful payment confirmation
+                if (booking.VoucherId.HasValue)
+                {
+                    var voucher = await _voucherRepository.GetByIdAsync(booking.VoucherId.Value);
+                    if (voucher != null)
+                    {
+                        voucher.UsageCount++;
+                        await _voucherRepository.UpdateAsync(voucher);
+                    }
+                }
             }
             else
             {

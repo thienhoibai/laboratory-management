@@ -19,17 +19,17 @@ namespace TestOrder.Application.Services
     public class PaymentService : IVnPayService
     {
         private readonly PaymentRepository _paymentRepository;
-        
+        private readonly BookingRepository _bookingRepository;
         private readonly IConfiguration configuration;
         private readonly BookingService _bookingService;
 
-        
-
         public PaymentService(IConfiguration configuration, 
                               PaymentRepository paymentRepository,
+                              BookingRepository bookingRepository,
                               BookingService bookingService)
         {
             _paymentRepository = paymentRepository;
+            _bookingRepository = bookingRepository;
             _bookingService = bookingService;
             this.configuration = configuration ?? throw new ArgumentNullException(nameof(configuration), "Configuration cannot be null.");
         }
@@ -97,6 +97,16 @@ namespace TestOrder.Application.Services
         #region Processing Payment
         private async Task<PaymentEnvoice> CreatePaymentAsync(PaymentRequestDTO model)
         {
+            double paymentAmount = model.Amount;
+            if (_bookingRepository != null)
+            {
+                var booking = await _bookingRepository.GetByIdAsync(model.BookingId);
+                if (booking != null && booking.TotalPrice > 0)
+                {
+                    paymentAmount = booking.TotalPrice;
+                }
+            }
+
             var envoice = await _paymentRepository.GetByBookingIdAsync(model.BookingId);
             var tick = DateTime.Now.Ticks.ToString();
             if (envoice != null)
@@ -106,7 +116,7 @@ namespace TestOrder.Application.Services
             var payment = new PaymentEnvoice
             {
                 BookingId = model.BookingId,
-                Amount = model.Amount,
+                Amount = paymentAmount,
                 Method = "",
                 Status = (byte?)PaymentStatusEnum.Pending,
                 CreatedAt = DateTime.Now,
