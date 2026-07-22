@@ -97,13 +97,13 @@ namespace TestOrder.Application.Services
         #region Processing Payment
         private async Task<PaymentEnvoice> CreatePaymentAsync(PaymentRequestDTO model)
         {
-            double paymentAmount = model.Amount;
+            double paymentAmount = model.Amount ?? 0;
             if (_bookingRepository != null)
             {
                 var booking = await _bookingRepository.GetByIdAsync(model.BookingId);
-                if (booking != null && booking.TotalPrice > 0)
+                if (booking != null && booking.TotalPrice.HasValue && booking.TotalPrice.Value > 0)
                 {
-                    paymentAmount = booking.TotalPrice;
+                    paymentAmount = booking.TotalPrice.Value;
                 }
             }
 
