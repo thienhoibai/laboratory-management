@@ -30,9 +30,13 @@ namespace BlogService.Presentation.Controllers
             [FromQuery] Guid? authorId,
             [FromQuery] int? status,
             [FromQuery] string? search,
-            [FromQuery] int page,
-            [FromQuery] int pageSize)
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10)
         {
+            // Chan gia tri am/0: page am lam Skip() nem exception, pageSize = 0 lam totalPages tran int
+            if (page < 1) page = 1;
+            if (pageSize < 1) pageSize = 10;
+
             var totalItems = await _service.GetAllWithCategoryAsync(authorId, status, 1, int.MaxValue, search)
                 .ContinueWith(t => t.Result.Count);
 

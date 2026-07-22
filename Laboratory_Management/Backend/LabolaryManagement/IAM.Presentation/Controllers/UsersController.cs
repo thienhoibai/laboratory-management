@@ -25,7 +25,7 @@ namespace IAM.Presentation.Controllers
         }
 
         [HttpGet]
-        //[Authorize(Policy = "perm:User.List")]
+        [Authorize(Policy = "perm:User.List")]
         public async Task<ActionResult<PageResult<UserSummaryDto>>> List([FromQuery] int page = 1, [FromQuery] int pageSize = 20, [FromQuery] string? search = null,
             [FromQuery] string? role = null, [FromQuery] string? type = null, [FromQuery] string? status = null, [FromQuery] string? sortBy = null, [FromQuery] string? sort = null, CancellationToken ct = default)
         {
