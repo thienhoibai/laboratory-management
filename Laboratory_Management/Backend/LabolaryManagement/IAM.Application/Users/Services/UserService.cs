@@ -1,4 +1,4 @@
-﻿using Common.Errors;
+using Common.Errors;
 using Common.Pagination;
 using Common.Results;
 using IAM.Application.Auth.Services;
@@ -49,12 +49,12 @@ public class UserService : IUserService
             FullName = null,
             PasswordHash = _passwords.Hash(plainPassword),
             IsActive = true,
-            CreatedAt = DateTime.Now,
-            UpdatedAt = DateTime.Now,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
             AuthProvider = "Password"
         };
         _db.Users.Add(user);
-        _db.UserRoles.Add(new UserRole { UserId = user.UserId, RoleId = role.RoleId, AssignedAt = DateTime.Now });
+        _db.UserRoles.Add(new UserRole { UserId = user.UserId, RoleId = role.RoleId, AssignedAt = DateTime.UtcNow });
 
         _db.AuditLogs.Add(new AuditLog
         {
@@ -62,7 +62,7 @@ public class UserService : IUserService
             UserId = actorId,
             Resource = $"User:{user.UserId}",
             Description = $"Created user {user.Username} with role #{role.RoleId}",
-            CreatedAt = DateTime.Now
+            CreatedAt = DateTime.UtcNow
         });
 
         await _db.SaveChangesAsync(ct);
@@ -79,7 +79,7 @@ public class UserService : IUserService
                 UserId = actorId,
                 Resource = $"User:{user.UserId}",
                 Description = ex.Message,
-                CreatedAt = DateTime.Now
+                CreatedAt = DateTime.UtcNow
             });
             await _db.SaveChangesAsync(ct);
         }
@@ -119,7 +119,7 @@ public class UserService : IUserService
             user.Email = request.Email!;
         }
         if (!string.IsNullOrWhiteSpace(request.FullName)) user.FullName = request.FullName;
-        user.UpdatedAt = DateTime.Now;
+        user.UpdatedAt = DateTime.UtcNow;
 
         _db.AuditLogs.Add(new AuditLog
         {
@@ -127,7 +127,7 @@ public class UserService : IUserService
             UserId = actorId,
             Resource = $"User:{user.UserId}",
             Description = "Update user profile",
-            CreatedAt = DateTime.Now
+            CreatedAt = DateTime.UtcNow
         });
         await _db.SaveChangesAsync(ct);
 
@@ -142,7 +142,7 @@ public class UserService : IUserService
         if (user == null) return OperationResult.Fail(ErrorCodes.NotFound);
 
         _db.Users.Remove(user);
-        _db.AuditLogs.Add(new AuditLog { Action = "DELETE_USER", UserId = actorId, Resource = $"User:{id}", Description = "Delete user", CreatedAt = DateTime.Now });
+        _db.AuditLogs.Add(new AuditLog { Action = "DELETE_USER", UserId = actorId, Resource = $"User:{id}", Description = "Delete user", CreatedAt = DateTime.UtcNow });
         await _db.SaveChangesAsync(ct);
         return OperationResult.Success();
     }
@@ -204,8 +204,8 @@ public class UserService : IUserService
         var roles = await _db.Roles.Where(r => request.RoleIds.Contains(r.RoleId)).ToListAsync(ct);
         var existing = await _db.UserRoles.Where(ur => ur.UserId == id).ToListAsync(ct);
         _db.UserRoles.RemoveRange(existing);
-        foreach (var r in roles) _db.UserRoles.Add(new UserRole { UserId = id, RoleId = r.RoleId, AssignedAt = DateTime.Now });
-        _db.AuditLogs.Add(new AuditLog { Action = "ASSIGN_ROLES", UserId = actorId, Resource = $"User:{id}", Description = $"Assign roles: {string.Join(',', roles.Select(x => x.RoleId))}", CreatedAt = DateTime.Now });
+        foreach (var r in roles) _db.UserRoles.Add(new UserRole { UserId = id, RoleId = r.RoleId, AssignedAt = DateTime.UtcNow });
+        _db.AuditLogs.Add(new AuditLog { Action = "ASSIGN_ROLES", UserId = actorId, Resource = $"User:{id}", Description = $"Assign roles: {string.Join(',', roles.Select(x => x.RoleId))}", CreatedAt = DateTime.UtcNow });
         await _db.SaveChangesAsync(ct);
         return OperationResult.Success();
     }
@@ -222,10 +222,10 @@ public class UserService : IUserService
             _db.UserSecurities.Add(sec);
         }
         
-        sec.LockoutEnd = DateTime.Now.AddYears(100);
+        sec.LockoutEnd = DateTime.UtcNow.AddYears(100);
         user.IsLocked = true;  // ✅ Set User.IsLocked = true
         
-        _db.AuditLogs.Add(new AuditLog { Action = "LOCK_USER", UserId = actorId, Resource = $"User:{id}", Description = "Lock user", CreatedAt = DateTime.Now });
+        _db.AuditLogs.Add(new AuditLog { Action = "LOCK_USER", UserId = actorId, Resource = $"User:{id}", Description = "Lock user", CreatedAt = DateTime.UtcNow });
         await _db.SaveChangesAsync(ct);
         return OperationResult.Success();
     }
@@ -242,7 +242,7 @@ public class UserService : IUserService
         sec.FailedAccessCount = 0;
         user.IsLocked = false;  // ✅ Set User.IsLocked = false
         
-        _db.AuditLogs.Add(new AuditLog { Action = "UNLOCK_USER", UserId = actorId, Resource = $"User:{id}", Description = "Unlock user", CreatedAt = DateTime.Now });
+        _db.AuditLogs.Add(new AuditLog { Action = "UNLOCK_USER", UserId = actorId, Resource = $"User:{id}", Description = "Unlock user", CreatedAt = DateTime.UtcNow });
         await _db.SaveChangesAsync(ct);
         return OperationResult.Success();
     }

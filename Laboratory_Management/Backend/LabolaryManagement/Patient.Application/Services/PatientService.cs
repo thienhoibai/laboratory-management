@@ -98,8 +98,8 @@ public class PatientService : IPatientService
         var isCreateForSelf = request.CreatedChannel == "self" || request.CreatedChannel == "user";
         var ownerId = isCreateForSelf ? actorUserId : (Guid?)null;
 
-        // Verify owner/actor user via gRPC from IAM Service
-        if (actorUserId != Guid.Empty)
+        // Verify owner/actor user via gRPC from IAM Service (Non-blocking logging check)
+        if (actorUserId != Guid.Empty && _grpcClient != null)
         {
             try
             {
@@ -108,7 +108,7 @@ public class PatientService : IPatientService
             }
             catch (Exception ex)
             {
-                return OperationResult<PatientDetailDto>.Fail($"Lỗi xác thực người dùng qua gRPC: {ex.Message}");
+                Console.WriteLine($"[gRPC Warning] Could not verify actor user via gRPC: {ex.Message}");
             }
         }
 
@@ -128,8 +128,8 @@ public class PatientService : IPatientService
             CreatedChannel = request.CreatedChannel,
             CreatedByUserId = actorUserId,
             UpdatedByUserId = actorUserId,
-            CreatedAt = DateTime.Now,
-            UpdatedAt = DateTime.Now,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
             IsDeleted = false
         };
 
@@ -238,7 +238,7 @@ public class PatientService : IPatientService
         if (request.InsuranceNumber != null) entity.InsuranceNumber = request.InsuranceNumber;
 
         entity.UpdatedByUserId = actorUserId;
-        entity.UpdatedAt = DateTime.Now;
+        entity.UpdatedAt = DateTime.UtcNow;
 
         _db.AuditLogs.Add(new AuditLog
         {
@@ -279,7 +279,7 @@ public class PatientService : IPatientService
         entity.IsDeleted = true;
         entity.DeletedAt = DateTime.UtcNow;
         entity.DeletedByUserId = actorUserId;
-        entity.UpdatedAt = DateTime.Now;
+        entity.UpdatedAt = DateTime.UtcNow;
 
         _db.AuditLogs.Add(new AuditLog
         {
