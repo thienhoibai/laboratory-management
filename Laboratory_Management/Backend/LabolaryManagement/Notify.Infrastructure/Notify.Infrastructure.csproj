@@ -12,7 +12,5 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.11" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.11" />
-    <PackageReference Include="MassTransit" Version="8.3.2" />
-    <PackageReference Include="MassTransit.RabbitMQ" Version="8.3.2" />
   </ItemGroup>
 </Project>
