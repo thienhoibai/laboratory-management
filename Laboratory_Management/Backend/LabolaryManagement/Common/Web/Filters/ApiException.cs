@@ -7,10 +7,19 @@ namespace Common.Web.Filters
     public class ApiException : Exception
     {
         public string Code { get; }
+
+        /// <summary>
+        /// Mo ta do noi nem truyen vao, null neu chi nem kem ma loi.
+        /// Khong dung Message vi khi message null thi .NET tra ve chuoi mac dinh
+        /// "Exception of type '...' was thrown." - vo nghia voi nguoi dung cuoi.
+        /// </summary>
+        public string? Detail { get; }
+
         public List<(string field, string code, string message)>? FieldErrors { get; }
         public ApiException(string code, string? message = null, List<(string field, string code, string message)>? fieldErrors = null) : base(message)
         {
             Code = code;
+            Detail = message;
             FieldErrors = fieldErrors;
         }
     }
@@ -28,6 +37,7 @@ namespace Common.Web.Filters
             {
                 code = aex.Code;
                 fieldErrors = aex.FieldErrors;
+                detail = aex.Detail;
             }
 
             var def = ErrorCatalog.Get(code);
@@ -36,7 +46,8 @@ namespace Common.Web.Filters
                 Type = def.Type,
                 Title = def.Title,
                 Status = def.Status,
-                Detail = detail
+                // Khong co mo ta rieng thi dung mo ta trong catalog thay vi chuoi mac dinh cua .NET
+                Detail = string.IsNullOrWhiteSpace(detail) ? def.Title : detail
             };
             pd.Extensions["code"] = def.Code;
             if (fieldErrors != null && fieldErrors.Count > 0)
