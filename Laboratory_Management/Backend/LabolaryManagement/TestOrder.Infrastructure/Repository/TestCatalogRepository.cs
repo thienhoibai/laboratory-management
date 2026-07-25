@@ -43,14 +43,6 @@ namespace TestOrder.Infrastructure.Repository
 
         }
 
-        public async Task<IEnumerable<TestCatalog>> GetActiveCataLogAsync()
-        {
-            return await _context.Set<TestCatalog>()
-                .Where(c => c.Price > 0)
-                .OrderBy(c => c.TestName)
-                .ToListAsync();
-
-        }
         public async Task<TestCatalog> AddParameter(int catalogId, List<int> parameterId)
         {
             var catalog = await _context.TestCatalogs

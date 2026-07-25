@@ -22,11 +22,6 @@ namespace TestOrder.Application.Services.Booking
             _bookingTestRepository = new BookingTestRepository();
         }
 
-        public async Task<IEnumerable<BookingTest>> GetBookingTestsByBookingIdAsync(Guid bookingId)
-        {
-            return await _bookingTestRepository.GetByBookingIdAsync(bookingId);
-        }
-
         public async Task<IEnumerable<int>> GetCatalogIdsByBookingIdAsync(Guid bookingId)
         {
             var bookingTests = await _bookingTestRepository.GetByBookingIdAsync(bookingId);

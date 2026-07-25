@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
-using Security.Authorization;
 using Security.Jwt;
 using IAM.Presentation.Middlewares;
 using IAM.Application.Security;

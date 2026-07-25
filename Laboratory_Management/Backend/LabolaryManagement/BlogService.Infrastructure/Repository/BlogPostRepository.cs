@@ -54,18 +54,6 @@ namespace BlogService.Infrastructure.Repository
                 .ToListAsync();
         }
 
-        public async Task UpdateStatusAsync(int postId, UpdateStatus status)
-        {
-            var post = await _context.BlogPosts.FindAsync(postId);
-            if (post != null)
-            {
-                post.Status = (int)status; // lưu enum dưới dạng int
-
-                post.UpdatedDate = DateTime.Now;
-                await _context.SaveChangesAsync();
-            }
-        }
-
     }
 }
 

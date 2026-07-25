@@ -81,22 +81,6 @@ namespace TestOrder.Application.Services
             return bookingsCount >= existingSlot.MaxBooking;
         }
 
-        public List<bool> CheckAvailabilityForMultipleSlotsAsync(List<AppointmentSlotDTO> appointmentSlots)
-        {
-            var availabilityResults = new List<bool>();
-            foreach (var slot in appointmentSlots)
-            {
-                var isMaxedOut = IsAppointmentSlotMaxedOut(slot);
-                availabilityResults.Add(!isMaxedOut);
-            }
-            return  availabilityResults;
-        }
-
-        public async Task<int> GetBookingsCountForSlotAsync(Guid slotId)
-        {
-            return await _repository.GetBookingsCountForSlot(slotId);
-        }
-
         public async Task<List<SlotCountResponse>> GetBookingsCountForMultipleSlotsAsync(List<Guid> slotIds)
         {
             var bookingsCounts = new List<int>();

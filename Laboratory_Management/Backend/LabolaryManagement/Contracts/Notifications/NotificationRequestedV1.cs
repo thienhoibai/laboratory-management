@@ -10,6 +10,3 @@ public record NotificationRequestedV1(
     string? CausationId = null,
     DateTimeOffset? ScheduledAt = null
 );
-
-public record NotificationSentV1(string MessageId, DateTimeOffset SentAt);
-public record NotificationFailedV1(string MessageId, string Error, int RetryCount);
