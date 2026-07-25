@@ -37,11 +37,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{B899BB
 		gateway.Dockerfile = gateway.Dockerfile
 		iam.Dockerfile = iam.Dockerfile
 		instrument.Dockerfile = instrument.Dockerfile
-		monitoring.Dockerfile = monitoring.Dockerfile
 		deployments\docker\Notify.Dockerfile = deployments\docker\Notify.Dockerfile
 		patient.Dockerfile = patient.Dockerfile
 		testorder.Dockerfile = testorder.Dockerfile
-		warehouse.Dockerfile = warehouse.Dockerfile
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "k8s", "k8s", "{D260A10F-598A-4F67-971A-CA1068501A1F}"
