@@ -41,11 +41,8 @@ public partial class AuthService
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == email, ct);
         if (user != null)
         {
-            if (user.AuthProvider.Equals("Password", StringComparison.OrdinalIgnoreCase))
-            {
-                return OperationResult<LoginResponse>.Fail(ErrorCodes.AccountLinkRequired);
-            }
-
+            // Google da xac minh email thuoc ve nguoi dang nhap, nen cho phep dang nhap
+            // ca voi tai khoan tao bang mat khau (khong con chan AccountLinkRequired).
             if (!user.IsActive)
                 return OperationResult<LoginResponse>.Fail(ErrorCodes.Forbidden);
         }
