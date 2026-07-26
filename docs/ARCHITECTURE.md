@@ -101,17 +101,43 @@ Mỗi service theo kiến trúc phân tầng: `Presentation → Application → 
 
 ### 2.3 Runtime Architecture Diagram
 
+Sơ đồ đầy đủ luồng runtime: từ người dùng (Web) → Gateway → các service → database riêng,
+kèm giao tiếp nội bộ (gRPC-Web/REST), message broker (Redis Pub/Sub) và hệ thống ngoài.
+
 ```mermaid
-graph LR
-    subgraph Backend["Microservices (.NET 8)"]
+graph TB
+    User(["Người dùng<br/>Customer / Staff / Consultant / Admin"])
+    Web["Web React (Vercel)"]
+    GW["API Gateway (YARP) :8080"]
+
+    User -->|HTTPS| Web
+    Web -->|REST| GW
+
+    subgraph SVC["Microservices (.NET 8)"]
         IAM["IAM :5001"]
         PAT["Patient :5002"]
         TO["TestOrder :5003"]
         BLOG["Blog :5004"]
         INS["Instrument :5008"]
-        NOTI["Notify :5601"]
+        NOTI["Notify :5601<br/>(consumer nền)"]
     end
-    subgraph DB["PostgreSQL - database per service"]
+
+    GW -->|REST| IAM
+    GW -->|REST| PAT
+    GW -->|REST| TO
+    GW -->|REST| BLOG
+    GW -->|REST| INS
+
+    PAT -->|gRPC-Web GetUser| IAM
+    TO -->|REST lấy hồ sơ| PAT
+    INS -->|REST bridge| TO
+
+    REDIS[["Redis Pub/Sub<br/>kênh lab.notify.v1"]]
+    IAM -.->|publish| REDIS
+    TO -.->|publish| REDIS
+    REDIS -.->|consume| NOTI
+
+    subgraph DB["PostgreSQL — database per service"]
         D1[(LabIAM)]
         D2[(PatientService4)]
         D3[(TestOrderDB)]
@@ -119,7 +145,6 @@ graph LR
         D5[(InstrumentDB)]
         D6[(notify)]
     end
-    REDIS[["Redis Pub/Sub<br/>lab.notify.v1"]]
 
     IAM --- D1
     PAT --- D2
@@ -128,12 +153,17 @@ graph LR
     INS --- D5
     NOTI --- D6
 
-    PAT -->|gRPC-Web GetUser| IAM
-    TO -->|REST hồ sơ| PAT
-    INS -->|REST bridge| TO
-    IAM -->|publish| REDIS
-    TO -->|publish| REDIS
-    REDIS -->|consume| NOTI
+    subgraph EXT["Hệ thống bên thứ ba"]
+        GOOGLE["Google OAuth"]
+        VNPAY["VNPay sandbox"]
+        GEMINI["Google Gemini AI"]
+        SMTP["SMTP (Gmail/Brevo)"]
+    end
+
+    IAM -->|verify id_token| GOOGLE
+    TO -->|thanh toán| VNPAY
+    TO -->|tư vấn AI| GEMINI
+    NOTI -->|gửi email| SMTP
 ```
 
 ### 2.4 Background Workers
