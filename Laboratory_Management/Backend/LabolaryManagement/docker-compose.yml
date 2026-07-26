@@ -10,6 +10,8 @@ services:
       - "5432:5432"
     volumes:
       - pg_data:/var/lib/postgresql/data
+    networks:
+      - hemalink-net
 
   redis:
     image: redis:7-alpine
@@ -17,6 +19,8 @@ services:
     restart: always
     ports:
       - "6379:6379"
+    networks:
+      - hemalink-net
 
   iam.api:
     build:
@@ -38,6 +42,8 @@ services:
       - postgres
       - redis
     ports: [ "5001:5001" ]
+    networks:
+      - hemalink-net
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
@@ -61,6 +67,8 @@ services:
       - postgres
       - iam.api
     ports: [ "5002:5002" ]
+    networks:
+      - hemalink-net
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
@@ -74,6 +82,8 @@ services:
       - patient.api
       - blogservice.api
     ports: [ "8080:8080" ]
+    networks:
+      - hemalink-net
 
   notify.api:
     build:
@@ -94,6 +104,8 @@ services:
       - postgres
       - redis
     ports: [ "5601:5601" ]
+    networks:
+      - hemalink-net
 
   testorder.api:
     build:
@@ -115,6 +127,8 @@ services:
       - redis
     ports:
       - "5003:5003"
+    networks:
+      - hemalink-net
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
@@ -132,6 +146,8 @@ services:
     depends_on:
       - postgres
     ports: [ "5004:5004" ]
+    networks:
+      - hemalink-net
     volumes:
       - ./BlogService.Presentation/Images:/app/Images
     extra_hosts:
@@ -152,6 +168,8 @@ services:
     depends_on:
       - postgres
     ports: [ "5008:5008" ]
+    networks:
+      - hemalink-net
     volumes:
       - ./Instrument.Presentation/Images:/app/Images
     extra_hosts:
@@ -159,3 +177,7 @@ services:
 
 volumes:
   pg_data:
+
+networks:
+  hemalink-net:
+    driver: bridge
